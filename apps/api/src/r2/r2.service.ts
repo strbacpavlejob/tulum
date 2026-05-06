@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import axios from 'axios';
 import sharp from 'sharp';
 
@@ -38,6 +42,32 @@ export class R2Service {
       }),
     );
     return `${this.publicUrl}/${key}`;
+  }
+
+  extractKeyFromUrl(url: string): string | null {
+    if (!this.publicUrl) return null;
+    const prefix = this.publicUrl + '/';
+    if (url.startsWith(prefix)) return url.slice(prefix.length);
+    return null;
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+  }
+
+  async uploadAndProcessImage(
+    buffer: Buffer,
+    key: string,
+    width: number,
+    height: number,
+  ): Promise<string> {
+    const processed = await sharp(Buffer.from(buffer))
+      .resize(width, height, { fit: 'cover', position: 'centre' })
+      .webp({ quality: 80 })
+      .toBuffer();
+    return this.uploadBuffer(key, processed, 'image/webp');
   }
 
   async downloadAndUpload(

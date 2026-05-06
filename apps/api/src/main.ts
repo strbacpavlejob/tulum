@@ -5,10 +5,16 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: process.env.HOST_URL ?? 'http://localhost:3000',
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Tulum API')
     .setDescription('Tulum API documentation')
     .setVersion('1.0')
+    .addApiKey({ type: 'apiKey', in: 'header', name: 'x-api-key' }, 'api-key')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
