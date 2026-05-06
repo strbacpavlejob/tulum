@@ -1,0 +1,28 @@
+{
+  "name": "tulum",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.4",
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "canvas",
+      "sharp",
+      "puppeteer",
+      "@nestjs/core"
+    ]
+  }
+}

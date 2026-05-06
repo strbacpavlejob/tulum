@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  '@clerk/shared': false
+  '@nestjs/core': false
+  '@scarf/scarf': false
+  canvas: false
+  msw: false
+  puppeteer: false
+  react-native-calendar-picker: false
+  sharp: false
+  unrs-resolver: false

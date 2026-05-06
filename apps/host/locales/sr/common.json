@@ -1,0 +1,915 @@
+{
+  "map": {
+    "title": "Nađi popularne događaje u svojoj okolini",
+    "subtitle": "Istraži lokacije događaja na interaktivnoj mapi"
+  },
+  "landingpage": {
+    "map": {
+      "title": "Mapa svih događaja uživo",
+      "subtitle": "Nađi popularne događaje u svojoj okolini"
+    },
+    "nav": {
+      "benefits": "Benefiti",
+      "howItWorks": "Kako funkcioniše",
+      "pricing": "Paketi",
+      "postEvent": "Postavi događaj"
+    },
+    "guest": {
+      "hero": {
+        "title": "Pravi događaji. Pravi ljudi. Pravi trenuci.",
+        "subtitle": "Otkrij događaje i upoznaj ljude koji su već tu. Započnite veče uz nešto zajedničko.",
+        "downloadOn": "Preuzmi na",
+        "appStore": "App Store",
+        "getItOn": "Dostupno na",
+        "googlePlay": "Google Play",
+        "socialProof": "500+ korisnika već koristi aplikaciju"
+      }
+    },
+    "hero": {
+      "badge": "Za klubove, barove i događaj organizatore",
+      "title": "Dovedi više gostiju na tvoje događaje.",
+      "subtitle": "Predvidljiv broj posetilaca bez lutanja u mraku. Plati samo za rezultat, ne nadanje.",
+      "postEvent": "Postavi događaj",
+      "logiIn": "Prijavi se",
+      "viewPricing": "Pogledaj cene",
+      "downloadOn": "Preuzmi na",
+      "appStore": "App Store",
+      "getItOn": "Dostupno na",
+      "googlePlay": "Google Play",
+      "socialProof": "500+ korisnika već koristi aplikaciju",
+      "stats": {
+        "venues": "Aktivnih lokala",
+        "users": "Korisnika",
+        "attendance": "Prosek prisustva",
+        "moreGuests": "Više gostiju"
+      }
+    },
+    "problem": {
+      "title": "Prestani da se oslanjаš na sreću",
+      "subtitle": "Poznata priča: organizuješ događaj i nadaš se da će neko doći",
+      "unpredictable": {
+        "title": "Nepredvidljiv broj gostiju",
+        "description": "Ne znaš da li će doći 20 ili 200 ljudi. Ulaziš u suštinu nerviranja barmenova i bacanja para."
+      },
+      "reachDecline": {
+        "title": "Instagram reach opada",
+        "description": "Algoritam te ne voli. Objave vide samo oni koji te već prate, a i njih nesumnjivo samo jedan deo koji je aktivan."
+      },
+      "noInsights": {
+        "title": "Nemaš pojma ko je publika",
+        "description": "Šta vole tvoji gosti, koliko godina imaju, koliko njih se vraća? Gaziš u mraku bez pravih podataka."
+      },
+      "risk": {
+        "title": "Rizik svaki put",
+        "description": "DJ, dopremanje pića, promo - sve košta. A ne znaš da li će se isplatiti sve dok se sve ne završi."
+      }
+    },
+    "features": {
+      "title": "Alati koji ti daju kontrolu",
+      "subtitle": "Sve što ti treba za uspešan događaj na jednom mestu",
+      "saveStatistics": {
+        "title": "Sačuvaj statistiku",
+        "description": "Preuzmi izveštaje za bilo koji događaj jednim klikom",
+        "cta": "Saznaj više"
+      },
+      "reports": {
+        "files": {
+          "attendance": {
+            "name": "izvestaj-poseta.pdf",
+            "body": "Ukupan broj gostiju, vreme prijave i trendovi posećenosti događaja."
+          },
+          "demographics": {
+            "name": "demografija.pdf",
+            "body": "Starosne grupe, raspodela po polu i profil publike."
+          },
+          "peakHours": {
+            "name": "spic-sati.pdf",
+            "body": "Najaktivnija vremena dolaska i odlaska sa analizom protoka gostiju."
+          },
+          "returning": {
+            "name": "povratni-gosti.pdf",
+            "body": "Odnos novih i povratnih gostiju i metrike lojalnosti."
+          },
+          "revenue": {
+            "name": "pregled-prihoda.pdf",
+            "body": "Prodaja karata, prihod po gostu i finansijski pregled."
+          }
+        }
+      },
+      "notifications": {
+        "title": "Obaveštenja",
+        "description": "Podeli obaveštenja kako bi gosti bili informisani i uključeni",
+        "cta": "Saznaj više",
+        "examples": {
+          "nearbyEvent": {
+            "title": "Nešto se dešava u blizini",
+            "description": "Organizator je upravo otvorio novi događaj u tvojoj blizini"
+          },
+          "eventStarting": {
+            "title": "Tvoje veče uskoro počinje",
+            "description": "Događaj na koji ideš počinje za par sati"
+          },
+          "matchGoing": {
+            "title": "Neko s kim si mečovan ide",
+            "description": "Oboje ćete biti na istom događaju"
+          },
+          "fillingFast": {
+            "title": "Mesta se brzo pune",
+            "description": "Organizator kaže da je gužva"
+          }
+        }
+      },
+      "visibility": {
+        "title": "Lako upravljanje",
+        "description": "Postavi događaj za 30 sekundi. Izmeni ga kad hoćeš. Prati rezultate uživo.",
+        "cta": "Saznaj više"
+      },
+      "statistics": {
+        "title": "Statistika publike",
+        "description": "Starost, pol, novi vs. povratni gosti, peak sati dolazaka. Znaš tačno ko dolazi."
+      },
+      "newGuests": {
+        "title": "Gosti van Instagram-a",
+        "description": "Dosegni ljude koji te ne prate ali žele baš takav događaj. Širi krug bez dodatnog posla.",
+        "cta": "Saznaj više"
+      },
+      "management": {
+        "title": "Vidljivost i Boost",
+        "description": "Tvoj događaj vide ljudi u blizini koji aktivno traže izlaske. Ne čekaš da te neko pronađe."
+      },
+      "rewards": {
+        "title": "Rewards i coini",
+        "description": "Gosti osvajaju poene za dolazak. Ti gradiš lojalnu publiku koja se vraća."
+      },
+      "qr": {
+        "title": "QR Check-in",
+        "description": "Skeniranje na ulazu, tačan broj, live analitika. Nema više nagađanja."
+      }
+    },
+    "featureHighlight": {
+      "title": "Kako funkcioniše",
+      "subtitle": "Od otkrivanja događaja do pronalaženja spoja, sve ti je na jednom mestu.",
+      "features": {
+        "discover": {
+          "title": "Otkrij mesto za sledeći izlazak",
+          "description": "Istraži našu mapu i pronađi događaje koji odgovaraju tebi. Bez obzira na trendove i galamu sa društvenih mreža, nađi ono što tebi odgovara."
+        },
+        "vibe": {
+          "title": "Oseti atmosferu pre nego što odeš",
+          "description": "Otvori stranicu bilo kog događaja da vidiš o čemu se radi. Pogledaj atmosferu, energiju i ko dolazi."
+        },
+        "guestList": {
+          "title": "Priključi se listi posetilaca",
+          "description": "Klikni “Prisustvuj” da se priključiš događaju. Tvoj profil će se naći se na listi gostiju i otključava se mečovanje sa ljudima."
+        },
+        "match": {
+          "title": "Mečuj se samo sa osobama koje su tu",
+          "description": "Kada počne događaj, listaj profle ljudi koji su takođe došli. Nema spojeva na daljinu ni random profila."
+        },
+        "chat": {
+          "title": "Idemo korak dalje",
+          "description": "Našao si svoj spoj. Započnite lagano ćaskanje ili se odmah nađite uživo. Chatovi ističu nakon događaja, nema usiljene priče."
+        },
+        "find": {
+          "title": "Lako prepoznavanje, gde god da se nalazite",
+          "description": "Svaki spoj dobija jedinstveni identifikator, random emoji i boja generisana samo za vas dvoje, da se lako prepoznate u gužvi."
+        }
+      }
+    },
+    "screens": {
+      "chat": {
+        "messagePlaceholder": "Poruka…",
+        "at": "Na",
+        "lines": [
+          "Hej! Vidim da si i ti ovde 👀",
+          "Ovo mesto je prepuno večeras",
+          "DJ je stvarno dobar",
+          "Gde si?",
+          "Kod bara",
+          "Hoćeš piće? 🍹",
+          "Mislim da sam te malo pre video/la",
+          "Dođi na podijum",
+          "Ova pesma je luda 🔥",
+          "Jesi li sa društvom?",
+          "Hajde da se nađemo"
+        ]
+      },
+      "discover": {
+        "searchPlaceholder": "Pretraži događaje",
+        "filterTags": [
+          "Sve",
+          "🔥 Popularno",
+          "🎧 Tehno",
+          "🌇 Rooftop",
+          "🍸 Kokteli",
+          "💃 Ples"
+        ],
+        "going": "ide",
+        "by": "od"
+      },
+      "find": {
+        "title": "Identifikator meča",
+        "pairCode": "Tvoj par kod sa Ana",
+        "description": "Ovaj emoji i boja su jedinstveni za tvoj meč. Oboje vidite isti identifikator. Koristite ga da prepoznate jedan drugog u gužvi."
+      },
+      "guestList": {
+        "freeSpaces": "Slobodna mesta",
+        "spotsLeft": "Još {{count}} mesta",
+        "eventFull": "Događaj je popunjen",
+        "avgAge": "Prosečne godine:",
+        "guestListLabel": "Lista gostiju",
+        "more": "+{{count}} još",
+        "attend": "Prisustvuj"
+      },
+      "match": {
+        "title": "MEČ!",
+        "description": "Imaš priliku da pišeš svom meču do kraja događaja",
+        "messagePlaceholder": "Poruka…"
+      },
+      "vibe": {
+        "eventDescription": "Kasnonoćna žurka na terasi sa house muzikom, koktelima i ekipom koja je došla da se dobro provede.",
+        "going": "Ide",
+        "spotsLeft": "Još {{count}} mesta",
+        "full": "Popunjeno",
+        "attend": "Prisustvuj",
+        "address": "Beograd · Rooftop City Center"
+      }
+    },
+    "howItWorks": {
+      "title": "Kako funkcioniše?",
+      "subtitle": "Tri jednostavna koraka do punog lokala",
+      "step1": {
+        "title": "Postavi događaj za 30 sekundi",
+        "description": "Ime, vreme, stil muzike, osnovne info. Bez komplikacija."
+      },
+      "step2": {
+        "title": "Dobij zainteresovanost i reach",
+        "description": "Ljudi u blizini vide tvoj događaj. Kliknu na \"Interested\", a ti dobijaš obaveštenje o tome pre samog dana."
+      },
+      "step3": {
+        "title": "Check-in i analitika",
+        "description": "Gosti skeniraju QR kod na ulazu. Ti vidiš tačne brojke i statistike uživo."
+      }
+    },
+    "guestPricing": {
+      "title": "Planovi za svaku noć",
+      "subtitle": "Počni besplatno. Pređi na premium kad budeš spreman.",
+      "monthly": "Mesečno",
+      "yearly": "Godišnje",
+      "yearlyBadge": "-20%",
+      "perMonth": "mesec",
+      "mostPopular": "Popularno",
+      "trialBadge": "7 dana besplatno",
+      "getStarted": "Započni",
+      "startTrial": "Počni besplatni period",
+      "free": {
+        "name": "BESPLATNO",
+        "description": "Za odlično iskustvo na događajima",
+        "features": [
+          "Pronalaženje događaja (mapa + lista)",
+          "Osnovni filteri (tip događaja)",
+          "Detalji događaja (vreme, lokacija, opis)",
+          "\"Zanima me / Idem\"",
+          "Ko ide (pol, interesovanja)",
+          "Mečevi samo na događajima",
+          "Čet po događaju (ograničen)",
+          "Osnovna verifikacija + prijava/blokada",
+          "Pregled nekoliko učesnika"
+        ]
+      },
+      "premium": {
+        "name": "PREMIUM",
+        "description": "Za bolje mečeve i veću vidljivost",
+        "features": [
+          "Sve iz besplatnog",
+          "Neograničeni lajkovi",
+          "Neograničeno poništavanje",
+          "Inkognito mod",
+          "Bez reklama",
+          "1 poruka pre mečevanja",
+          "Super lajk (1 dnevno)",
+          "After party čet",
+          "Verifikacijska značka",
+          "Napredni filteri (aktivni, ozbiljne namere)",
+          "Toplo upoznavanje (isti događaj, slični ljudi)",
+          "Boost profila tokom događaja",
+          "Prioritetno prijemno sanduče",
+          "Ko je zainteresovan za tebe",
+          "Status viđeno (opciono)"
+        ]
+      }
+    },
+    "pricing": {
+      "title": "Paketi",
+      "subtitle": "Bez skrivenih troškova. Plaćaš za alate, ne za nadu.",
+      "monthly": "Mesečno",
+      "yearly": "Godišnje",
+      "yearlyBadge": "-20%",
+      "perMonth": "mesec",
+      "totalYearly": "Ukupno",
+      "perYear": "/godišnje",
+      "mostPopular": "Popularno",
+      "startButton": "Započni",
+      "trialInfo": "Svi planovi uključuju 14 dana probnog perioda. Otkažeš kad hoćeš.",
+      "basic": {
+        "name": "BASIC",
+        "description": "Za manje lokale koji žele da privuku pravu publiku",
+        "features": [
+          "Besplatno kačenje događaja",
+          "4 događaja mesečno",
+          "Jezička podrška na tri jezika",
+          "Prikaz aktivnih događaja u blizini",
+          "Prikaz rezervacija",
+          "Notifikacije za pratioce",
+          "Osnovna statistika"
+        ]
+      },
+      "medium": {
+        "name": "MEDIUM",
+        "description": "Najpopularniji plan za aktivne lokale",
+        "features": [
+          "Sve iz basic paketa",
+          "8 događaja mesečno",
+          "3 istaknuta događaja",
+          "Targetirano prikazivanje",
+          "Direktne notifikacije pratiocima",
+          "Pregled broja pratioca",
+          "Detaljna statistika"
+        ]
+      },
+      "premium": {
+        "name": "PREMIUM",
+        "description": "Za velike lokale koji žele maksimalan doseg",
+        "features": [
+          "Sve iz medium paketa",
+          "Neograničeni događaji",
+          "5 istaknutih događaja",
+          "QR sistem čekiranje",
+          "Prikaz broja gostiju uživo",
+          "Promo notifikacije",
+          "Prioritetna podrška",
+          "Pristup najnovijim opcijama",
+          "Napredna statistika"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Često postavljana pitanja",
+      "subtitle": "Odgovori na uobičajena pitanja o našoj platformi i njenim mogućnostima. Ako imate dodatnih pitanja, slobodno nas kontaktirajte.",
+      "q1": {
+        "question": "Šta je Tulum?",
+        "answer": "Platforma koja pomaže lokalima da dovedu prave goste na događaje, upravljaju ulaskom i prate posetu na jednom mestu."
+      },
+      "q2": {
+        "question": "Za koga je Tulum?",
+        "answer": "Za noćne klubove, barove, lokale i nezavisne organizatore događaja."
+      },
+      "q3": {
+        "question": "Da li ima ugovor?",
+        "answer": "Nema ugovora plaćaš mesečno i otkažeš kad god hoćeš."
+      },
+      "q4": {
+        "question": "Da li plaćam ako nema rezultata?",
+        "answer": "Ako nisi zadovoljan nakon mesec dana, vraćamo ti novac."
+      },
+      "q5": {
+        "question": "Kako Tulum dovodi goste?",
+        "answer": "Mi povezujemo tvoj događaj sa ljudima koji aktivno izlaze."
+      },
+      "q6": {
+        "question": "Kako radi check-in?",
+        "answer": "Gosti skeniraju QR kod na ulazu za instant check-in i live statistiku."
+      },
+      "q7": {
+        "question": "Da li mi treba specijalna oprema?",
+        "answer": "Ne dovoljan je telefon ili tablet sa kamerom."
+      },
+      "q8": {
+        "question": "Mogu li koristiti Tulum sa Instagramom?",
+        "answer": "Da Instagram stvara hype, Tulum obezbeđuje dolazak."
+      },
+      "q9": {
+        "question": "Da li dobijem analitiku?",
+        "answer": "Da podaci o poseti i izlaznosti na tvoje događaje u realnom vremenu."
+      },
+      "q10": {
+        "question": "Kako da počnem?",
+        "answer": "Registruj se, kreiraj događaj i objavi ga."
+      }
+    },
+    "cta": {
+      "title": "Prestani da nagađaš, vreme je da znaš.",
+      "subtitle": "Pridruži se lokal-ima koji kontrolišu svoj attendance umesto da ga ostavljaju slučaju.",
+      "postEvent": "Postavi svoj prvi događaj",
+      "talkToUs": "Razgovaraj sa nama",
+      "trial": "14 dana probnog perioda. Bez kartice. Bez obaveza."
+    },
+    "footer": {
+      "tagline": "Platforma za lokale i organizatore događaja koji žele više gostiju sa manje stresa.",
+      "product": "Proizvod",
+      "benefits": "Benefiti",
+      "pricing": "Paketi",
+      "livemap": "Mapa uživo",
+      "company": "Kompanija",
+      "about": "O nama",
+      "blog": "Blog",
+      "careers": "Karijera",
+      "support": "Podrška",
+      "helpCenter": "Help Center",
+      "contact": "Kontakt",
+      "terms": "Uslovi korišćenja",
+      "copyright": "© 2024 Tulum. Sva prava zadržana."
+    },
+    "ctaGuest": {
+      "title": "Kuda večeras?",
+      "subtitle": "Pretraži događaje, upoznaj ljude i ne propusti nijedan dobar provod.",
+      "cta": "Započni"
+    },
+    "testimonials": {
+      "title": "Šta kažu korisnici",
+      "subtitle": "Prave priče pravih ljudi koji su pronašli svoj izlazak."
+    },
+    "faqGuest": {
+      "title": "Često postavljana pitanja",
+      "subtitle": "Sve što trebaš znati o korišćenju Tulum-a kao gost.",
+      "q1": {
+        "question": "Kako funkcioniše Tulum?",
+        "answer": "Tulum te povezuje sa ljudima koji već idu na iste događaje kao i ti. Otkrivаš događaje, pridružuješ im se i uparuješ se samo sa onima koji takođe dolaze."
+      },
+      "q2": {
+        "question": "Moram li da \"swipe-ujem\" kao na drugim aplikacijama?",
+        "answer": "Ne. Više se ne uparuješ sa random ljudima, uparuješ se na licu mesta sa onima sa kojima već imaš nešto zajedničko. I nisu daleko… oni su tu, u blizini."
+      },
+      "q3": {
+        "question": "Kada mogu da počnem da razgovaram s nekim?",
+        "answer": "Čet se otključava kada se upariš na istom događaju. Ostaje otvoren kratko vreme nakon završetka da te podstakne da iskoristiš trenutak i upoznaš se uživo."
+      },
+      "q4": {
+        "question": "Mogu li se uparivati s bilo kim u bilo kom trenutku?",
+        "answer": "Ne. Možeš se upariti samo sa osobama koje idu fizički na isti događaj kao i ti."
+      },
+      "q5": {
+        "question": "Mogu li videti ko ide na događaj?",
+        "answer": "Da. Videćeš pregled svih ljudi koji dolaze, uključujući njihova interesovanja, vibe i  uopšte odnos muškaraca i žena na događaju— bez ugrožavanja bilo čije privatnosti."
+      },
+      "q6": {
+        "question": "Da li je Tulum besplatan?",
+        "answer": "Da. Sve osnovne funkcije su besplatne. Premium otključava dodatnu vidljivost, detaljnije uvide i napredne funkcije."
+      },
+      "q7": {
+        "question": "Šta mi daje Premium?",
+        "answer": "Premium ti daje veću vidljivost, pametnije filtere i više načina za povezivanje kao što su slanje poruke pre uparivanja, isticanje profila i pregled ljudi koji su zainteresovani za tebe."
+      },
+      "q8": {
+        "question": "Da li je bezbedno?",
+        "answer": "Da. Koristimo verifikaciju profila, alate za prijavljivanje i jasna pravila zajednice kako bismo održali bezbedno i pošteno iskustvo."
+      },
+      "q9": {
+        "question": "Po čemu se Tulum razlikuje od aplikacija za upoznavanje?",
+        "answer": "Ne uparuješ se bez-veze uparuješ se kroz događaje iz stvarnog života koje ti biraš. To znači preskakanje površnih razgovora i više pravog povezivanja."
+      },
+      "q10": {
+        "question": "Šta ako se ne upаrim ni sa kim?",
+        "answer": "I dalje ideš na sjajan događaj. Tulum je izgrađen oko odabranih iskustava upoznavanje ljudi uživo ti olakšavamo, nema pritiska, a nikad ne reci nikad, možda se u toku večeri pojavi iskra."
+      }
+    }
+  },
+  "venue": {
+    "title": "Svi lokali",
+    "subtitle": "Upravljaj svojim lokalima i njihovim lokacijama na mapi"
+  },
+  "auth": {
+    "backToHome": "Nazad na početnu",
+    "welcomeTitle": "Dobrodošli u Tulum",
+    "welcomeSubtitle": "Prijavi se da upravljaš svojim događajima",
+    "signIn": "Prijavi se",
+    "signUp": "Registruj se",
+    "signInTitle": "Prijavi se",
+    "signInDescription": "Unesi svoje podatke za pristup nalogu",
+    "createAccountTitle": "Napravi nalog",
+    "createAccountDescription": "Unesi svoje podatke da napraviš novi nalog",
+    "email": "Email",
+    "emailPlaceholder": "ime@primer.com",
+    "password": "Lozinka",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Zaboravio si lozinku?",
+    "signingIn": "Prijava...",
+    "signInButton": "Prijavi se",
+    "orContinueWith": "Ili nastavi sa",
+    "google": "Google",
+    "github": "GitHub",
+    "firstName": "Ime",
+    "firstNamePlaceholder": "Marko",
+    "lastName": "Prezime",
+    "lastNamePlaceholder": "Marković",
+    "confirmPassword": "Potvrdi lozinku",
+    "creatingAccount": "Kreiranje naloga...",
+    "createAccountButton": "Napravi nalog",
+    "termsText": "Registrujući se, slažeš se sa našim",
+    "termsOfService": "Uslovima korišćenja",
+    "and": "i",
+    "privacyPolicy": "Politikom privatnosti",
+    "dontHaveAccount": "Nemaš nalog?",
+    "alreadyHaveAccount": "Imaš već nalog?"
+  },
+  "dashboard": {
+    "header": {
+      "documents": "Dokumenti",
+      "github": "GitHub"
+    },
+    "navigation": {
+      "dashboard": "Kontrolna tabla",
+      "statistics": "Statistika",
+      "venues": "Lokacije",
+      "events": "Događaji",
+      "lifecycle": "Životni ciklus",
+      "analytics": "Analitika",
+      "projects": "Projekti",
+      "team": "Tim",
+      "maps": "Mapa uživo",
+      "capture": "Snimanje",
+      "proposal": "Predlog",
+      "prompts": "Upiti",
+      "activeProposals": "Aktivni predlozi",
+      "archived": "Arhivirano",
+      "settings": "Podešavanja",
+      "getHelp": "Traži pomoć",
+      "search": "Pretraga",
+      "dataLibrary": "Biblioteka podataka",
+      "reports": "Izveštaji",
+      "wordAssistant": "Word asistent",
+      "quickCreate": "Brzo kreiranje događaja",
+      "inbox": "Pristigle poruke",
+      "documents": "Dokumenti"
+    },
+    "userMenu": {
+      "account": "Nalog",
+      "billing": "Plaćanje",
+      "notifications": "Obaveštenja",
+      "logOut": "Odjavi se"
+    },
+    "cards": {
+      "totalRevenue": "Ukupni prihod",
+      "newCustomers": "Novi kupci",
+      "activeAccounts": "Aktivni nalozi",
+      "growthRate": "Stopa rasta",
+      "trendingUp": "Raste ovog meseca",
+      "trendingDown": "Pad od 20% u ovom periodu",
+      "visitorsLast6Months": "Posetilaca u poslednjih 6 meseci",
+      "acquisitionAttention": "Potrebna pažnja pri akviziciji",
+      "strongRetention": "Snažno zadržavanje korisnika",
+      "engagementExceeds": "Angažovanost premašuje ciljeve",
+      "steadyIncrease": "Stabilan rast performansi",
+      "meetsProjections": "Ispunjava projekcije rasta",
+      "eventViews": "Pregledi događaja",
+      "strongVisibility": "Snažna vidljivost",
+      "eventsAppearedToUsers": "Vaši događaji su se pojavili kod {{value}} korisnika ovog meseca",
+      "bookmarksSaved": "Sačuvano /Bookmarks",
+      "highInterest": "Veliko interesovanje",
+      "viewersSavedEvents": "8.2% gledalaca je sačuvalo vaše događaje",
+      "interestedPlanningToAttend": "Zainteresovani / Planiraju prisustvo",
+      "strongEngagement": "Snažno angažovanje",
+      "bookmarksConvertedToInterest": "79.6% sačuvanih je pretvoreno u interesovanje",
+      "ticketConversionRate": "Stopa konverzije karata",
+      "aboveAverage": "Iznad proseka",
+      "ticketsSoldFromViews": "2,012 karata prodato od {{value}} pregleda"
+    },
+    "guestProfile": {
+      "title": "Idealan profil gosta",
+      "description": "Na osnovu statistike posećenosti događaja"
+    },
+    "chart": {
+      "totalVisitors": "Ukupno posetilaca",
+      "totalLast3Months": "Ukupno za poslednjih 3 meseca",
+      "last3Months": "Poslednjih 3 meseca",
+      "last3MonthsShort": "Poslednjih 3 meseca",
+      "last30Days": "Poslednjih 30 dana",
+      "last7Days": "Poslednjih 7 dana",
+      "desktop": "Desktop",
+      "mobile": "Mobilni",
+      "visitors": "Posetilaca",
+      "completed": "Završeno",
+      "eventEngagementTrends": "Trendovi angažovanja na događajima",
+      "eventViewsBookmarksOverTime": "Pregledi događaja i sačuvane stavke tokom vremena",
+      "viewsBookmarksOverTime": "Pregledi i sačuvano tokom vremena",
+      "eventEngagement": "Angažovanje na događajima",
+      "eventViews": "Pregledi događaja",
+      "attended": "Prisustvovalo"
+    },
+    "table": {
+      "header": "Zaglavlje",
+      "eventName": "Naziv događaja",
+      "eventType": "Tip događaja",
+      "venue": "Mesto održavanja",
+      "status": "Status",
+      "views": "Pregleda",
+      "bookmarks": "Sačuvano",
+      "interested": "Zainteresovano",
+      "tickets": "Karte",
+      "attendees": "Posetilaca",
+      "conversionRate": "Konverzija",
+      "sectionType": "Tip sekcije",
+      "target": "Cilj",
+      "limit": "Limit",
+      "reviewer": "Recenzent",
+      "assignReviewer": "Dodeli recenzenta",
+      "openMenu": "Otvori meni",
+      "edit": "Izmeni",
+      "makeACopy": "Napravi kopiju",
+      "favorite": "Omiljeno",
+      "delete": "Obriši",
+      "noResults": "Nema rezultata.",
+      "rowsSelected": "redova odabrano.",
+      "of": "od",
+      "rowsPerPage": "Redova po stranici",
+      "page": "Stranica",
+      "goToFirstPage": "Idi na prvu stranicu",
+      "goToPreviousPage": "Idi na prethodnu stranicu",
+      "goToNextPage": "Idi na sledeću stranicu",
+      "goToLastPage": "Idi na poslednju stranicu",
+      "dragToReorder": "Prevuci za premeštanje"
+    },
+    "tabs": {
+      "outline": "Pregled",
+      "pastPerformance": "Prošle performanse",
+      "keyPersonnel": "Ključno osoblje",
+      "focusDocuments": "Fokus dokumenti",
+      "view": "Prikaz",
+      "selectView": "Izaberi prikaz"
+    },
+    "buttons": {
+      "customizeColumns": "Prilagodi kolone",
+      "columns": "Kolone",
+      "addSection": "Dodaj sekciju",
+      "filter": "Filter",
+      "submit": "Potvrdi",
+      "done": "Gotovo"
+    },
+    "filters": {
+      "venue": "Filtriraj po mestu",
+      "allVenues": "Sva mesta",
+      "status": "Filtriraj po statusu",
+      "allStatuses": "Svi statusi",
+      "live": "Uživo",
+      "published": "Objavljeno",
+      "completed": "Završeno",
+      "canceled": "Otkazano"
+    },
+    "graph": {
+      "selectedEvents": "Analitika odabranih događaja",
+      "showingData": "Prikazani podaci za",
+      "events": "događaj(a)"
+    },
+    "drawer": {
+      "showingVisitors": "Prikazuje ukupno posetilaca za poslednjih 6 meseci",
+      "trendingUpBy": "Raste za 5.2% ovog meseca",
+      "randomText": "Prikazuje ukupno posetilaca za poslednjih 6 meseci. Ovo je samo nasumičan tekst za testiranje rasporeda. Proteže se na više linija i treba da se prelameta.",
+      "selectType": "Izaberi tip",
+      "selectStatus": "Izaberi status",
+      "selectReviewer": "Izaberi recenzenta"
+    },
+    "types": {
+      "tableOfContents": "Sadržaj",
+      "executiveSummary": "Izvršni rezime",
+      "technicalApproach": "Tehnički pristup",
+      "design": "Dizajn",
+      "capabilities": "Mogućnosti",
+      "focusDocuments": "Fokus dokumenti",
+      "narrative": "Narativ",
+      "coverPage": "Naslovna strana"
+    },
+    "statuses": {
+      "done": "Završeno",
+      "inProgress": "U toku",
+      "notStarted": "Nije započeto",
+      "live": "Uživo",
+      "published": "Objavljeno",
+      "completed": "Završeno",
+      "canceled": "Otkazano"
+    },
+    "eventsTable": {
+      "title": "Svi događaji",
+      "description": "Pregledaj i upravljaj svim događajima u tvojim lokalima",
+      "columns": {
+        "eventName": "Naziv događaja",
+        "venue": "Lokal",
+        "date": "Datum",
+        "time": "Vreme",
+        "tickets": "Karte",
+        "status": "Status",
+        "actions": "Akcije"
+      },
+      "status": {
+        "draft": "Nacrt",
+        "active": "Aktivno",
+        "cancelled": "Otkazano"
+      },
+      "actions": {
+        "view": "Pogledaj događaj",
+        "edit": "Izmeni događaj",
+        "delete": "Obriši događaj"
+      }
+    },
+    "eventsPage": {
+      "title": "Događaji",
+      "description": "Upravljaj događajima i kartama u tvojim lokalima",
+      "createButton": "Kreiraj događaj"
+    },
+    "venuesPage": {
+      "title": "Lokali",
+      "description": "Upravljaj svojim lokalima i lokacijama",
+      "createButton": "Kreiraj lokal",
+      "card": {
+        "type": "Tip",
+        "capacity": "Kapacitet",
+        "address": "Adresa",
+        "people": "ljudi",
+        "editButton": "Izmeni",
+        "deleteButton": "Obriši"
+      },
+      "popup": {
+        "close": "Zatvori"
+      },
+      "deleteConfirmation": {
+        "title": "Obriši lokal",
+        "description": "Da li si siguran da želiš da obrišeš ovaj lokal? Svi događaji povezani sa ovim lokalom će takođe biti obrisani. Ova akcija se ne može poništiti.",
+        "cancel": "Otkaži",
+        "confirm": "Obriši"
+      },
+      "toast": {
+        "deleted": "Lokal obrisan",
+        "deletedDescription": "i svi povezani događaji su uklonjeni"
+      }
+    }
+  },
+  "venueDialog": {
+    "createTitle": "Kreiraj novi lokal",
+    "createDescription": "Popuni detalje za kreiranje novog lokala",
+    "editTitle": "Izmeni lokal",
+    "editDescription": "Ažuriraj detalje lokala",
+    "fields": {
+      "name": "Naziv lokala",
+      "type": "Tip lokala",
+      "description": "Opis",
+      "address": "Adresa",
+      "searchLocation": "Pretraži lokaciju",
+      "latitude": "Geografska širina",
+      "longitude": "Geografska dužina",
+      "capacity": "Kapacitet",
+      "picture": "Slika",
+      "pictureDescription": "Otpremi sliku lokala (opciono)",
+      "chooseFile": "Izaberi fajl",
+      "noFileChosen": "Nije izabran fajl"
+    },
+    "placeholders": {
+      "name": "Unesi naziv lokala",
+      "type": "Izaberi tip lokala",
+      "description": "Unesi opis lokala",
+      "address": "Unesi punu adresu",
+      "latitude": "44.8125",
+      "longitude": "20.4489",
+      "capacity": "100"
+    },
+    "types": {
+      "bar": "Bar",
+      "pub": "Pab",
+      "nightclub": "Noćni klub",
+      "restaurant": "Restoran",
+      "cafe": "Kafić",
+      "cocktail_bar": "Koktel bar",
+      "wine_bar": "Vinski bar",
+      "brewery": "Pivara",
+      "tavern": "Kafana",
+      "raft": "Splav"
+    },
+    "validation": {
+      "nameRequired": "Naziv je obavezan",
+      "typeRequired": "Tip lokala je obavezan",
+      "addressRequired": "Adresa je obavezna",
+      "latitudeRequired": "Geografska širina je obavezna",
+      "longitudeRequired": "Geografska dužina je obavezna",
+      "capacityRequired": "Kapacitet je obavezan"
+    },
+    "buttons": {
+      "cancel": "Otkaži",
+      "create": "Kreiraj lokal",
+      "update": "Ažuriraj lokal"
+    }
+  },
+  "eventDialog": {
+    "createTitle": "Kreiraj Novi Događaj",
+    "createDescription": "Popuni detalje da kreiraš novi događaj za svoj lokal",
+    "editTitle": "Izmeni Događaj",
+    "editDescription": "Ažuriraj detalje događaja",
+    "viewTitle": "Detalji Događaja",
+    "viewDescription": "Pogledaj sve informacije o ovom događaju",
+    "at": "u",
+    "fields": {
+      "venue": "Lokal",
+      "title": "Naziv Događaja",
+      "description": "Opis",
+      "startDateTime": "Datum i Vreme Početka",
+      "endDateTime": "Datum i Vreme Kraja",
+      "capacity": "Kapacitet",
+      "status": "Status",
+      "tags": "Tagovi",
+      "picture": "Slika",
+      "pictureDescription": "Izaberi sliku za upload.",
+      "chooseFile": "Izaberi fajl",
+      "noFileChosen": "Nije izabran fajl",
+      "pictureUrls": "URL-ovi Slika (razdvojeni zarezom)",
+      "ticketsSold": "Prodato Karata",
+      "filled": "popunjeno",
+      "guests": "Gosti",
+      "more": "još"
+    },
+    "placeholders": {
+      "venue": "Izaberi lokal",
+      "title": "Letnja Noćna Žurka",
+      "description": "Opiši svoj događaj...",
+      "selectDate": "Izaberi datum",
+      "tags": "Dodaj tagove (npr. elektronska, dens, noćni klub)",
+      "capacity": "500",
+      "pictureUrls": "https://example.com/slika1.jpg, https://example.com/slika2.jpg"
+    },
+    "statuses": {
+      "draft": "Nacrt",
+      "active": "Aktivno",
+      "cancelled": "Otkazano"
+    },
+    "validation": {
+      "venueRequired": "Lokal je obavezan",
+      "titleRequired": "Naziv je obavezan",
+      "descriptionRequired": "Opis je obavezan",
+      "startDateTimeRequired": "Datum i vreme početka su obavezni",
+      "endDateTimeRequired": "Datum i vreme kraja su obavezni",
+      "tagsRequired": "Potreban je najmanje jedan tag",
+      "capacityRequired": "Kapacitet je obavezan",
+      "endAfterStart": "Datum i vreme kraja moraju biti posle datuma i vremena početka"
+    },
+    "buttons": {
+      "cancel": "Otkaži",
+      "create": "Kreiraj Događaj",
+      "update": "Ažuriraj Događaj",
+      "add": "Dodaj"
+    }
+  },
+  "inputTags": {
+    "add": "Dodaj",
+    "maxReached": "Maksimum {{max}} tagova",
+    "duplicate": "Ovaj tag već postoji"
+  },
+  "swipeScreen": {
+    "labels": {
+      "like": "SVIDJA MI SE",
+      "nope": "NE"
+    },
+    "profiles": {
+      "milica": {
+        "name": "Milica",
+        "location": "Ben Akiba",
+        "tags": {
+          "liveMusic": "muzika uživo",
+          "rooftop": "krovna terasa",
+          "party": "žurka"
+        }
+      },
+      "stefan": {
+        "name": "Stefan",
+        "location": "Drugstore",
+        "tags": {
+          "dj": "DJ",
+          "techno": "techno",
+          "coffee": "kafa"
+        }
+      },
+      "ana": {
+        "name": "Ana",
+        "location": "20/44",
+        "tags": {
+          "spontaneous": "spontana",
+          "dancing": "ples",
+          "nightOut": "noćni izlazak"
+        }
+      },
+      "marko": {
+        "name": "Marko",
+        "location": "Barutana",
+        "tags": {
+          "festival": "festival",
+          "rave": "rejv",
+          "summerVibes": "letnji vajb"
+        }
+      },
+      "jovana": {
+        "name": "Jovana",
+        "location": "Freestyler",
+        "tags": {
+          "dance": "ples",
+          "house": "house",
+          "cocktails": "kokteli"
+        }
+      }
+    }
+  }
+}

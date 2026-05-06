@@ -1,0 +1,132 @@
+# =============================================================================
+# Tulum Monorepo — root .gitignore
+# Covers: pnpm workspaces, Turborepo, Next.js, NestJS, Expo / React Native
+# =============================================================================
+
+# -------------------------------------
+# Dependencies
+# -------------------------------------
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# -------------------------------------
+# Turborepo
+# -------------------------------------
+.turbo/
+
+# -------------------------------------
+# Build outputs
+# -------------------------------------
+dist/
+build/
+out/
+.next/
+.expo/
+web-build/
+expo-env.d.ts
+
+# -------------------------------------
+# Environment files
+# -------------------------------------
+.env
+.env.*
+.env*.local
+!.env.example
+!.env.*.example
+
+# -------------------------------------
+# Logs
+# -------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -------------------------------------
+# Testing & coverage
+# -------------------------------------
+coverage/
+.nyc_output/
+
+# -------------------------------------
+# TypeScript
+# -------------------------------------
+*.tsbuildinfo
+
+# -------------------------------------
+# Expo / React Native
+# -------------------------------------
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+
+# -------------------------------------
+# Next.js / Vercel
+# -------------------------------------
+.vercel/
+
+# -------------------------------------
+# Supabase
+# -------------------------------------
+supabase/.branches/
+supabase/.temp/
+
+# -------------------------------------
+# Clerk
+# -------------------------------------
+.clerk/
+
+# -------------------------------------
+# OS
+# -------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# -------------------------------------
+# IDEs & editors
+# -------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# -------------------------------------
+# Misc
+# -------------------------------------
+*.pem
+.temp/
+.tmp/
+pids/
+*.pid
+*.seed
+*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

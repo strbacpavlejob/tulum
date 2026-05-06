@@ -1,0 +1,280 @@
+import { Text } from "@/components/ui/text";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { EventGuests } from "@/types/event";
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { Mars, UserPlus, Venus } from "lucide-react-native";
+import React, { forwardRef, useCallback, useMemo } from "react";
+import { Image, Pressable, View } from "react-native";
+
+interface GuestListModalProps {
+  eventTitle: string;
+  eventDate: string;
+  guests: EventGuests[];
+  capacity: number;
+}
+
+const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
+  ({ eventTitle, eventDate, guests, capacity }, ref) => {
+    const theme = useAppTheme();
+    const snapPoints = useMemo(() => ["85%"], []);
+
+    const goingCount = guests.length;
+    const freeSpots = Math.max(0, capacity - goingCount);
+    const progressValue = Math.min((goingCount / capacity) * 100, 100);
+
+    const visibleGuests = guests.slice(0, 6);
+    const moreCount = Math.max(0, goingCount - visibleGuests.length);
+
+    // Approximate gender split (roughly 50/50 with slight variance)
+    const femaleCount = Math.round(goingCount * 0.52);
+    const maleCount = goingCount - femaleCount;
+
+    const renderBackdrop = useCallback(
+      (props: any) => (
+        <BottomSheetBackdrop
+          opacity={0.4}
+          appearsOnIndex={0}
+          disappearsOnIndex={-1}
+          {...props}
+        />
+      ),
+      [],
+    );
+
+    return (
+      <BottomSheetModal
+        ref={ref}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: theme.background }}
+        handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
+      >
+        <BottomSheetView style={{ flex: 1, paddingHorizontal: 20 }}>
+          {/* Event info */}
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "700",
+              color: theme.gray12,
+              marginBottom: 4,
+            }}
+          >
+            {eventTitle}
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: theme.gray6,
+              marginBottom: 20,
+            }}
+          >
+            {eventDate}
+          </Text>
+
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 16, gap: 16 }}
+          >
+            {/* Capacity card */}
+            <View
+              className="rounded-2xl"
+              style={{
+                padding: 16,
+                borderWidth: 1,
+                borderColor: theme.gray3,
+                backgroundColor: theme.backgroundStrong,
+              }}
+            >
+              <View className="flex-row items-center justify-between mb-2">
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: theme.gray12,
+                  }}
+                >
+                  Free Spaces
+                </Text>
+                <Text style={{ fontSize: 14, color: theme.gray6 }}>
+                  {goingCount}/{capacity}
+                </Text>
+              </View>
+
+              {/* Progress bar */}
+              <View
+                className="w-full rounded-full overflow-hidden"
+                style={{ height: 8, backgroundColor: theme.gray3 }}
+              >
+                <View
+                  style={{
+                    width: `${progressValue}%`,
+                    height: "100%",
+                    backgroundColor: theme.color,
+                    borderRadius: 999,
+                  }}
+                />
+              </View>
+
+              <Text style={{ fontSize: 12, color: theme.gray5, marginTop: 8 }}>
+                {freeSpots > 0 ? `${freeSpots} spots left` : "Event is full"}
+              </Text>
+            </View>
+
+            {/* Gender stats */}
+            <View
+              className="flex-row items-center justify-between rounded-xl"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderWidth: 1,
+                borderColor: theme.gray3,
+                backgroundColor: theme.backgroundStrong,
+              }}
+            >
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="flex-row items-center gap-1 rounded-full"
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    backgroundColor: "rgba(236, 72, 153, 0.1)",
+                  }}
+                >
+                  <Venus size={16} color="#f472b6" />
+                  <Text style={{ fontSize: 14, color: "#f472b6" }}>
+                    {femaleCount}
+                  </Text>
+                </View>
+                <View
+                  className="flex-row items-center gap-1 rounded-full"
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                  }}
+                >
+                  <Mars size={16} color="#60a5fa" />
+                  <Text style={{ fontSize: 14, color: "#60a5fa" }}>
+                    {maleCount}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={{ fontSize: 14, color: theme.gray6 }}>
+                Avg age{" "}
+                <Text style={{ fontWeight: "500", color: theme.gray12 }}>
+                  {guests.length > 0
+                    ? Math.round(
+                        guests.reduce((sum, g) => sum + g.age, 0) /
+                          guests.length,
+                      )
+                    : "—"}
+                </Text>
+              </Text>
+            </View>
+
+            {/* Guest list */}
+            <View
+              className="rounded-2xl"
+              style={{
+                padding: 16,
+                borderWidth: 1,
+                borderColor: theme.gray3,
+                backgroundColor: theme.backgroundStrong,
+              }}
+            >
+              <View className="flex-row items-center justify-between mb-4">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.gray5,
+                    textTransform: "uppercase",
+                    letterSpacing: 2,
+                  }}
+                >
+                  Guest List
+                </Text>
+                {moreCount > 0 && (
+                  <Text style={{ fontSize: 12, color: theme.gray5 }}>
+                    +{moreCount} more
+                  </Text>
+                )}
+              </View>
+
+              <View style={{ gap: 12 }}>
+                {visibleGuests.map((guest, i) => {
+                  const opacity =
+                    i < 3 ? 1 : i === 3 ? 0.7 : i === 4 ? 0.4 : 0.2;
+
+                  return (
+                    <View
+                      key={`${guest.name}-${i}`}
+                      className="flex-row items-center gap-3 rounded-xl"
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        backgroundColor: theme.background,
+                        opacity,
+                      }}
+                    >
+                      <View
+                        className="w-10 h-10 rounded-full overflow-hidden"
+                        style={{
+                          borderWidth: 1,
+                          borderColor: theme.gray3,
+                        }}
+                      >
+                        <Image
+                          source={{ uri: guest.uri }}
+                          className="w-full h-full"
+                          resizeMode="cover"
+                        />
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "500",
+                          color: theme.gray12,
+                        }}
+                      >
+                        {guest.name.split(" ")[0]}, {guest.age}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </BottomSheetScrollView>
+
+          {/* Attend button */}
+          <View style={{ paddingBottom: 20 }}>
+            <Pressable
+              className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
+              style={{ backgroundColor: theme.color }}
+              onPress={() => {}}
+            >
+              <Text
+                style={{
+                  color: theme.background,
+                  fontWeight: "600",
+                  fontSize: 18,
+                }}
+              >
+                Attend
+              </Text>
+              <UserPlus size={20} color={theme.background} />
+            </Pressable>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    );
+  },
+);
+
+GuestListModal.displayName = "GuestListModal";
+export default GuestListModal;

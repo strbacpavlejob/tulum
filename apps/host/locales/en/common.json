@@ -1,0 +1,915 @@
+{
+  "map": {
+    "title": "Discover trending events happening right now in your area",
+    "subtitle": "Explore event locations on the interactive map"
+  },
+  "landingpage": {
+    "map": {
+      "title": "Live Events Map",
+      "subtitle": "Discover trending events happening right now in your area"
+    },
+    "nav": {
+      "benefits": "Benefits",
+      "howItWorks": "How It Works",
+      "pricing": "Pricing",
+      "postEvent": "Post Event"
+    },
+    "guest": {
+      "hero": {
+        "title": "Real Events. Real People. Real Moments.",
+        "subtitle": "Discover events and match with people already there. Start the night with something in common.",
+        "downloadOn": "Download on the",
+        "appStore": "App Store",
+        "getItOn": "Get it on",
+        "googlePlay": "Google Play",
+        "socialProof": "500+ users already on the app"
+      }
+    },
+    "hero": {
+      "badge": "For clubs, bars and event organizers",
+      "title": "Bring more guests to your events.",
+      "subtitle": "Predictable visitor numbers without wandering in the dark. Pay only for results, not hope.",
+      "postEvent": "Post Event",
+      "logiIn": "Log In",
+      "viewPricing": "View Pricing",
+      "downloadOn": "Download on the",
+      "appStore": "App Store",
+      "getItOn": "Get it on",
+      "googlePlay": "Google Play",
+      "socialProof": "500+ users already on the app",
+      "stats": {
+        "venues": "Active Venues",
+        "users": "Users",
+        "attendance": "Average Attendance Rate",
+        "moreGuests": "More Guests"
+      }
+    },
+    "problem": {
+      "title": "Stop Relying on Luck",
+      "subtitle": "Familiar story: you organize an event and hope someone shows up",
+      "unpredictable": {
+        "title": "Unpredictable Guest Count",
+        "description": "You don't know if 20 or 200 people will come. You're essentially annoying bartenders and wasting money."
+      },
+      "reachDecline": {
+        "title": "Instagram Reach Declining",
+        "description": "The algorithm doesn't love you. Only those who already follow you see posts, and even then, just a small portion."
+      },
+      "noInsights": {
+        "title": "No Idea Who Your Audience Is",
+        "description": "What they like, how old they are, how many return? You're walking in the dark without any insights."
+      },
+      "risk": {
+        "title": "Risk Every Time",
+        "description": "DJ, bar stock, promo - everything costs. And you don't know if it will pay off before it's too late."
+      }
+    },
+    "features": {
+      "title": "Tools That Give You Control",
+      "subtitle": "Everything you need for a successful event in one place",
+      "saveStatistics": {
+        "title": "Save your statistics",
+        "description": "Download your reports for any event with a single click",
+        "cta": "Learn more"
+      },
+      "reports": {
+        "files": {
+          "attendance": {
+            "name": "attendance-report.pdf",
+            "body": "Total guest count, check-in times, and attendance trends for your event."
+          },
+          "demographics": {
+            "name": "demographics.pdf",
+            "body": "Age groups, gender distribution, and audience profile breakdown."
+          },
+          "peakHours": {
+            "name": "peak-hours.pdf",
+            "body": "Busiest arrival and departure times with hourly guest flow analysis."
+          },
+          "returning": {
+            "name": "returning-guests.pdf",
+            "body": "New vs. returning guest ratio and loyalty metrics across events."
+          },
+          "revenue": {
+            "name": "revenue-summary.pdf",
+            "body": "Ticket sales, revenue per guest, and financial performance overview."
+          }
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Send notifications to keep your guests informed and engaged",
+        "cta": "Learn more",
+        "examples": {
+          "nearbyEvent": {
+            "title": "Something's happening near you",
+            "description": "A host just opened a new event nearby"
+          },
+          "eventStarting": {
+            "title": "Your night starts soon",
+            "description": "Event you're attending begins in a few hours"
+          },
+          "matchGoing": {
+            "title": "Someone you matched is going",
+            "description": "You'll both be at the same event"
+          },
+          "fillingFast": {
+            "title": "Spots are filling fast",
+            "description": "Host says it's getting crowded"
+          }
+        }
+      },
+      "visibility": {
+        "title": "Easy Management",
+        "description": "Set up an event in 30 seconds. Edit it whenever you want. Track results live.",
+        "cta": "Learn more"
+      },
+      "statistics": {
+        "title": "Audience Statistics",
+        "description": "Age, gender, new vs. returning guests, peak arrival hours. You know exactly who's coming."
+      },
+      "newGuests": {
+        "title": "Guests Beyond Instagram",
+        "description": "Reach people who don't follow you but want exactly this type of event. Expand your circle effortlessly.",
+        "cta": "Learn more"
+      },
+      "management": {
+        "title": "Visibility and Boost",
+        "description": "Your event is seen by nearby people actively looking for nights out. You don't wait to be discovered."
+      },
+      "rewards": {
+        "title": "Rewards and Coins",
+        "description": "Guests earn points for attending. You build a loyal audience that keeps coming back."
+      },
+      "qr": {
+        "title": "QR Check-in",
+        "description": "Scan at the entrance, accurate count, live analytics. No more guessing."
+      }
+    },
+    "featureHighlight": {
+      "title": "How it works",
+      "subtitle": "From discovering events to meeting your match all in one app.",
+      "features": {
+        "discover": {
+          "title": "Discover Your Night",
+          "description": "Explore the map and find events that match your vibe. It's not just about what's trending, but what feels right for you."
+        },
+        "vibe": {
+          "title": "See the Vibe Before You Go",
+          "description": "Open any event to see what it's about. Check the vibe, the energy, and who's already going."
+        },
+        "guestList": {
+          "title": "Get on the List",
+          "description": "Tap Attend to be part of the night. You'll appear on the guest list and unlock matching."
+        },
+        "match": {
+          "title": "Match Only With People There",
+          "description": "Once the event starts, swipe through people who are actually there. No long-distance matches or random profiles."
+        },
+        "chat": {
+          "title": "Take It Further",
+          "description": "Got a match. Start a conversation or meet up right away. Chats expire after the event, so it stays real."
+        },
+        "find": {
+          "title": "Find Them. No Guessing.",
+          "description": "Each match gets a unique identifier. It's a random emoji and color generated just for the two of you, so you can recognize each other instantly in the crowd."
+        }
+      }
+    },
+    "screens": {
+      "chat": {
+        "messagePlaceholder": "Message…",
+        "at": "At",
+        "lines": [
+          "Hey! Saw you're here too 👀",
+          "This place is packed tonight",
+          "The DJ is actually good",
+          "Where are you?",
+          "Near the bar",
+          "Wanna grab a drink? 🍹",
+          "I think I just saw you",
+          "Come to the dance floor",
+          "This song is insane 🔥",
+          "Are you with friends?",
+          "Let's meet up"
+        ]
+      },
+      "discover": {
+        "searchPlaceholder": "Search events",
+        "filterTags": [
+          "All",
+          "🔥 Popular",
+          "🎧 Techno",
+          "🌇 Rooftop",
+          "🍸 Cocktails",
+          "💃 Dance"
+        ],
+        "going": "going",
+        "by": "by"
+      },
+      "find": {
+        "title": "Match identifier",
+        "pairCode": "Your pair code with Ana",
+        "description": "This emoji and color are unique for your match. Both of you see the same identifier. Use it to recognize each other in the crowd."
+      },
+      "guestList": {
+        "freeSpaces": "Free spaces",
+        "spotsLeft": "{{count}} spots left",
+        "eventFull": "Event is full",
+        "avgAge": "Avg age:",
+        "guestListLabel": "Guest list",
+        "more": "+{{count}} more",
+        "attend": "Attend"
+      },
+      "match": {
+        "title": "MATCH!",
+        "description": "You have a chance to message your match until the end of the event",
+        "messagePlaceholder": "Message…"
+      },
+      "vibe": {
+        "eventDescription": "A late-night rooftop party with house music, cocktails, and a crowd that came to have a good time.",
+        "going": "Going",
+        "spotsLeft": "{{count}} spots left",
+        "full": "Full",
+        "attend": "Attend",
+        "address": "Belgrade · Rooftop City Center"
+      }
+    },
+    "howItWorks": {
+      "title": "How Does It Work?",
+      "subtitle": "Three simple steps to a full venue",
+      "step1": {
+        "title": "Set Up Event in 30 Seconds",
+        "description": "Name, time, music style, basic info. No complications."
+      },
+      "step2": {
+        "title": "Get Interest and Reach",
+        "description": "Nearby people see your event. They click \"Interested\", you get notifications before the day."
+      },
+      "step3": {
+        "title": "Check-in and Analytics",
+        "description": "Guests scan QR code at entrance. You see exact numbers and statistics live."
+      }
+    },
+    "guestPricing": {
+      "title": "Plans for Every Night Out",
+      "subtitle": "Start free. Go premium when you're ready.",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlyBadge": "-20%",
+      "perMonth": "month",
+      "mostPopular": "Popular",
+      "trialBadge": "7-day free trial",
+      "getStarted": "Get Started",
+      "startTrial": "Start Free Trial",
+      "free": {
+        "name": "FREE",
+        "description": "For the basic event experience",
+        "features": [
+          "Discover events (map + list)",
+          "Basic filters (event type)",
+          "Event details (time, location, description)",
+          "\"Interested / Going\"",
+          "See who's going (gender, interests)",
+          "Match only at events",
+          "Event-based chat (limited)",
+          "Basic verification + report/block",
+          "Preview a few people attending"
+        ]
+      },
+      "premium": {
+        "name": "PREMIUM",
+        "description": "For better matches and more visibility",
+        "features": [
+          "Everything in FREE",
+          "Unlimited likes",
+          "Unlimited undo",
+          "Incognito mode",
+          "No ads",
+          "1 message before matching",
+          "Super like (1 per day)",
+          "After party chat",
+          "Verified badge",
+          "Advanced filters (active users, serious intent)",
+          "Warm intro (same event, similar people)",
+          "Profile boost during events",
+          "Priority inbox",
+          "See who's interested in you",
+          "Seen status (optional)"
+        ]
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "No hidden costs. Pay for tools, not hope.",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlyBadge": "-20%",
+      "perMonth": "month",
+      "totalYearly": "Total",
+      "perYear": "/year",
+      "mostPopular": "Popular",
+      "startButton": "Get Started",
+      "trialInfo": "All plans include a 14-day trial period. Cancel anytime.",
+      "basic": {
+        "name": "BASIC",
+        "description": "For smaller venues wanting to attract the right audience",
+        "features": [
+          "Free event posting",
+          "4 events per month",
+          "Language support in three languages",
+          "Display active nearby events",
+          "View reservations",
+          "Follower notifications",
+          "Basic statistics"
+        ]
+      },
+      "medium": {
+        "name": "MEDIUM",
+        "description": "Most popular plan for active venues",
+        "features": [
+          "Everything in basic",
+          "8 events per month",
+          "3 featured events",
+          "Targeted display",
+          "Direct follower notifications",
+          "View follower count",
+          "Detailed statistics"
+        ]
+      },
+      "premium": {
+        "name": "PREMIUM",
+        "description": "For large venues wanting maximum reach",
+        "features": [
+          "Everything in medium",
+          "Unlimited events",
+          "5 featured events",
+          "QR check-in system",
+          "Live guest count display",
+          "Promo notifications",
+          "Priority support",
+          "Access to newest features",
+          "Advanced statistics"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Answers to common questions about our platform and its features. If you have any other questions, please don't hesitate to contact us.",
+      "q1": {
+        "question": "What is Tulum?",
+        "answer": "A platform that helps venues bring real guests to events, manage entry, and track attendance in one place."
+      },
+      "q2": {
+        "question": "Who is Tulum for?",
+        "answer": "For nightclubs, bars, venues, and independent event organizers."
+      },
+      "q3": {
+        "question": "Is there a contract?",
+        "answer": "No contracts pay monthly and cancel anytime."
+      },
+      "q4": {
+        "question": "Do I pay if there are no results?",
+        "answer": "If you're not satisfied in your first month, we'll refund you."
+      },
+      "q5": {
+        "question": "How does Tulum bring guests?",
+        "answer": "By connecting your event with people who are actively going out."
+      },
+      "q6": {
+        "question": "How does check-in work?",
+        "answer": "Guests scan a QR code at the entrance for instant check-in and live stats."
+      },
+      "q7": {
+        "question": "Do I need special equipment?",
+        "answer": "No a phone or tablet with a camera is enough."
+      },
+      "q8": {
+        "question": "Can I use Tulum with Instagram?",
+        "answer": "Yes Instagram creates buzz, Tulum delivers attendance."
+      },
+      "q9": {
+        "question": "Do I get analytics?",
+        "answer": "Yes real-time attendance and event performance data."
+      },
+      "q10": {
+        "question": "How do I get started?",
+        "answer": "Sign up, create your event, and publish it."
+      }
+    },
+    "cta": {
+      "title": "Stop Hoping. Start Knowing.",
+      "subtitle": "Join venues that control their attendance instead of leaving it to chance.",
+      "postEvent": "Post Your First Event",
+      "talkToUs": "Talk to Us",
+      "trial": "14-day trial. No card. No obligations."
+    },
+    "footer": {
+      "tagline": "Platform for venues that want more guests and less stress.",
+      "product": "Product",
+      "benefits": "Benefits",
+      "pricing": "Pricing",
+      "livemap": "Live Map",
+      "company": "Company",
+      "about": "About Us",
+      "blog": "Blog",
+      "careers": "Careers",
+      "support": "Support",
+      "helpCenter": "Help Center",
+      "contact": "Contact",
+      "terms": "Terms of Use",
+      "copyright": "© 2024 Tulum. All rights reserved."
+    },
+    "ctaGuest": {
+      "title": "Find Your Scene Tonight.",
+      "subtitle": "Browse events, match with people, and never miss a night out again.",
+      "cta": "Get Started"
+    },
+    "testimonials": {
+      "title": "What People Are Saying",
+      "subtitle": "Real stories from real people who found their night out."
+    },
+    "faqGuest": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Everything you need to know about using Tulum as a guest.",
+      "q1": {
+        "question": "How does Tulum work?",
+        "answer": "Tulum connects you with people who are already going to the same events as you. You discover events, join them, and match only with people who will actually be there."
+      },
+      "q2": {
+        "question": "Do I have to swipe like on other apps?",
+        "answer": "No. You don't match with random people anymore you match with people who already share something in common with you, right now. And they're not miles away… they're right there, nearby."
+      },
+      "q3": {
+        "question": "When can I start chatting with someone?",
+        "answer": "Chat unlocks once you match at the same event. It stays open for a short time after the event ends so you're encouraged to take the moment and meet in real life."
+      },
+      "q4": {
+        "question": "Can I match with anyone anytime?",
+        "answer": "No. You can only match with people who are physically at the same event as you."
+      },
+      "q5": {
+        "question": "Can I see who is going to an event?",
+        "answer": "Yes. You'll see a preview of attendees, including interests, vibe, and general ratios without compromising anyone's privacy."
+      },
+      "q6": {
+        "question": "Is Tulum free to use?",
+        "answer": "Yes. You can use all core features for free. Premium unlocks extra visibility, insights, and advanced features."
+      },
+      "q7": {
+        "question": "What does Premium give me?",
+        "answer": "Premium gives you more visibility, smarter filters, and more ways to connect like sending a message before matching, boosting your profile, and seeing who's interested in you."
+      },
+      "q8": {
+        "question": "Is it safe?",
+        "answer": "Yes. We use profile verification, reporting tools, and clear community rules to keep the experience safe and respectful."
+      },
+      "q9": {
+        "question": "What makes Tulum different from dating apps?",
+        "answer": "You don't match randomly you match through real-life events. That means less small talk and more real moments."
+      },
+      "q10": {
+        "question": "What if I don't match with anyone?",
+        "answer": "You still go to a great event. Tulum is built around real experiences first meeting people is a bonus, not pressure."
+      }
+    }
+  },
+  "venue": {
+    "title": "All venues",
+    "subtitle": "Manage your venues and their locations on the map"
+  },
+  "auth": {
+    "backToHome": "Back to home",
+    "welcomeTitle": "Welcome to Tulum",
+    "welcomeSubtitle": "Sign in to manage your events",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signInTitle": "Sign In",
+    "signInDescription": "Enter your credentials to access your account",
+    "createAccountTitle": "Create Account",
+    "createAccountDescription": "Enter your information to create a new account",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Forgot password?",
+    "signingIn": "Signing in...",
+    "signInButton": "Sign In",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "github": "GitHub",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "John",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Doe",
+    "confirmPassword": "Confirm Password",
+    "creatingAccount": "Creating account...",
+    "createAccountButton": "Create Account",
+    "termsText": "By signing up, you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "dashboard": {
+    "header": {
+      "documents": "Documents",
+      "github": "GitHub"
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "statistics": "Statistics",
+      "venues": "Venues",
+      "events": "Events",
+      "lifecycle": "Lifecycle",
+      "analytics": "Analytics",
+      "projects": "Projects",
+      "team": "Team",
+      "maps": "Live Map",
+      "capture": "Capture",
+      "proposal": "Proposal",
+      "prompts": "Prompts",
+      "activeProposals": "Active Proposals",
+      "archived": "Archived",
+      "settings": "Settings",
+      "getHelp": "Get Help",
+      "search": "Search",
+      "dataLibrary": "Data Library",
+      "reports": "Reports",
+      "wordAssistant": "Word Assistant",
+      "quickCreate": "Quick Event Creation",
+      "inbox": "Inbox",
+      "documents": "Documents"
+    },
+    "userMenu": {
+      "account": "Account",
+      "billing": "Billing",
+      "notifications": "Notifications",
+      "logOut": "Log out"
+    },
+    "cards": {
+      "totalRevenue": "Total Revenue",
+      "newCustomers": "New Customers",
+      "activeAccounts": "Active Accounts",
+      "growthRate": "Growth Rate",
+      "trendingUp": "Trending up this month",
+      "trendingDown": "Down 20% this period",
+      "visitorsLast6Months": "Visitors for the last 6 months",
+      "acquisitionAttention": "Acquisition needs attention",
+      "strongRetention": "Strong user retention",
+      "engagementExceeds": "Engagement exceed targets",
+      "steadyIncrease": "Steady performance increase",
+      "meetsProjections": "Meets growth projections",
+      "eventViews": "Event Views",
+      "strongVisibility": "Strong visibility",
+      "eventsAppearedToUsers": "Your events appeared to {{value}} users this month",
+      "bookmarksSaved": "Bookmarks / Saved",
+      "highInterest": "High interest",
+      "viewersSavedEvents": "8.2% of viewers saved your events",
+      "interestedPlanningToAttend": "Interested / Planning to Attend",
+      "strongEngagement": "Strong engagement",
+      "bookmarksConvertedToInterest": "79.6% of bookmarks converted to interest",
+      "ticketConversionRate": "Ticket Conversion Rate",
+      "aboveAverage": "Above average",
+      "ticketsSoldFromViews": "2,012 tickets sold from {{value}} views"
+    },
+    "guestProfile": {
+      "title": "Ideal Guest Profile",
+      "description": "Based on event attendance statistics"
+    },
+    "chart": {
+      "totalVisitors": "Total Visitors",
+      "totalLast3Months": "Total for the last 3 months",
+      "last3Months": "Last 3 months",
+      "last3MonthsShort": "Last 3 months",
+      "last30Days": "Last 30 days",
+      "last7Days": "Last 7 days",
+      "desktop": "Desktop",
+      "mobile": "Mobile",
+      "visitors": "Visitors",
+      "completed": "Completed",
+      "eventEngagementTrends": "Event Engagement Trends",
+      "eventViewsBookmarksOverTime": "Event views and bookmarks over time",
+      "viewsBookmarksOverTime": "Views & bookmarks over time",
+      "eventEngagement": "Event Engagement",
+      "eventViews": "Event Views",
+      "attended": "Attended"
+    },
+    "table": {
+      "header": "Header",
+      "eventName": "Event Name",
+      "eventType": "Event Type",
+      "venue": "Venue",
+      "status": "Status",
+      "views": "Views",
+      "bookmarks": "Bookmarks",
+      "interested": "Interested",
+      "tickets": "Tickets",
+      "attendees": "Attendees",
+      "conversionRate": "Conv. Rate",
+      "sectionType": "Section Type",
+      "target": "Target",
+      "limit": "Limit",
+      "reviewer": "Reviewer",
+      "assignReviewer": "Assign reviewer",
+      "openMenu": "Open menu",
+      "edit": "Edit",
+      "makeACopy": "Make a copy",
+      "favorite": "Favorite",
+      "delete": "Delete",
+      "noResults": "No results.",
+      "rowsSelected": "row(s) selected.",
+      "of": "of",
+      "rowsPerPage": "Rows per page",
+      "page": "Page",
+      "goToFirstPage": "Go to first page",
+      "goToPreviousPage": "Go to previous page",
+      "goToNextPage": "Go to next page",
+      "goToLastPage": "Go to last page",
+      "dragToReorder": "Drag to reorder"
+    },
+    "tabs": {
+      "outline": "Outline",
+      "pastPerformance": "Past Performance",
+      "keyPersonnel": "Key Personnel",
+      "focusDocuments": "Focus Documents",
+      "view": "View",
+      "selectView": "Select a view"
+    },
+    "buttons": {
+      "customizeColumns": "Customize Columns",
+      "columns": "Columns",
+      "addSection": "Add Section",
+      "filter": "Filter",
+      "submit": "Submit",
+      "done": "Done"
+    },
+    "filters": {
+      "venue": "Filter by Venue",
+      "allVenues": "All Venues",
+      "status": "Filter by Status",
+      "allStatuses": "All Statuses",
+      "live": "Live",
+      "published": "Published",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "graph": {
+      "selectedEvents": "Selected Events Analytics",
+      "showingData": "Showing data for",
+      "events": "event(s)"
+    },
+    "drawer": {
+      "showingVisitors": "Showing total visitors for the last 6 months",
+      "trendingUpBy": "Trending up by 5.2% this month",
+      "randomText": "Showing total visitors for the last 6 months. This is just some random text to test the layout. It spans multiple lines and should wrap around.",
+      "selectType": "Select a type",
+      "selectStatus": "Select a status",
+      "selectReviewer": "Select a reviewer"
+    },
+    "types": {
+      "tableOfContents": "Table of Contents",
+      "executiveSummary": "Executive Summary",
+      "technicalApproach": "Technical Approach",
+      "design": "Design",
+      "capabilities": "Capabilities",
+      "focusDocuments": "Focus Documents",
+      "narrative": "Narrative",
+      "coverPage": "Cover Page"
+    },
+    "statuses": {
+      "done": "Done",
+      "inProgress": "In Progress",
+      "notStarted": "Not Started",
+      "live": "Live",
+      "published": "Published",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "eventsTable": {
+      "title": "All Events",
+      "description": "View and manage all events across your venues",
+      "columns": {
+        "eventName": "Event Name",
+        "venue": "Venue",
+        "date": "Date",
+        "time": "Time",
+        "tickets": "Tickets",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "cancelled": "Cancelled"
+      },
+      "actions": {
+        "view": "View event",
+        "edit": "Edit event",
+        "delete": "Delete event"
+      }
+    },
+    "eventsPage": {
+      "title": "Events",
+      "description": "Manage your venue events and tickets",
+      "createButton": "Create Event"
+    },
+    "venuesPage": {
+      "title": "Venues",
+      "description": "Manage your venues and locations",
+      "createButton": "Create Venue",
+      "card": {
+        "type": "Type",
+        "capacity": "Capacity",
+        "address": "Address",
+        "people": "people",
+        "editButton": "Edit",
+        "deleteButton": "Delete"
+      },
+      "popup": {
+        "close": "Close"
+      },
+      "deleteConfirmation": {
+        "title": "Delete Venue",
+        "description": "Are you sure you want to delete this venue? All events related to this venue will be removed as well. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "toast": {
+        "deleted": "Venue deleted",
+        "deletedDescription": "and all related events have been removed"
+      }
+    }
+  },
+  "venueDialog": {
+    "createTitle": "Create New Venue",
+    "createDescription": "Fill in the details to create a new venue",
+    "editTitle": "Edit Venue",
+    "editDescription": "Update the venue details",
+    "fields": {
+      "name": "Venue Name",
+      "type": "Venue Type",
+      "description": "Description",
+      "address": "Address",
+      "searchLocation": "Search location",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "capacity": "Capacity",
+      "picture": "Picture",
+      "pictureDescription": "Upload a picture of the venue (optional)",
+      "chooseFile": "Choose file",
+      "noFileChosen": "No file chosen"
+    },
+    "placeholders": {
+      "name": "Enter venue name",
+      "type": "Select venue type",
+      "description": "Enter venue description",
+      "address": "Enter full address",
+      "latitude": "44.8125",
+      "longitude": "20.4489",
+      "capacity": "100"
+    },
+    "types": {
+      "bar": "Bar",
+      "pub": "Pub",
+      "nightclub": "Nightclub",
+      "restaurant": "Restaurant",
+      "cafe": "Café",
+      "cocktail_bar": "Cocktail Bar",
+      "wine_bar": "Wine Bar",
+      "brewery": "Brewery",
+      "tavern": "Tavern (Kafana)",
+      "raft": "Floating Club (Splav)"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "typeRequired": "Venue type is required",
+      "addressRequired": "Address is required",
+      "latitudeRequired": "Latitude is required",
+      "longitudeRequired": "Longitude is required",
+      "capacityRequired": "Capacity is required"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create Venue",
+      "update": "Update Venue"
+    }
+  },
+  "eventDialog": {
+    "createTitle": "Create New Event",
+    "createDescription": "Fill in the details to create a new event for your venue",
+    "editTitle": "Edit Event",
+    "editDescription": "Update the event details",
+    "viewTitle": "Event Details",
+    "viewDescription": "View all information about this event",
+    "at": "at",
+    "fields": {
+      "venue": "Venue",
+      "title": "Event Title",
+      "description": "Description",
+      "startDateTime": "Start Date & Time",
+      "endDateTime": "End Date & Time",
+      "capacity": "Capacity",
+      "status": "Status",
+      "tags": "Tags",
+      "picture": "Picture",
+      "pictureDescription": "Select a picture to upload.",
+      "chooseFile": "Choose file",
+      "noFileChosen": "No file chosen",
+      "pictureUrls": "Picture URLs (comma-separated)",
+      "ticketsSold": "Tickets Sold",
+      "filled": "filled",
+      "guests": "Guests",
+      "more": "more"
+    },
+    "placeholders": {
+      "venue": "Select a venue",
+      "title": "Summer Night Party",
+      "description": "Describe your event...",
+      "selectDate": "Select date",
+      "tags": "Add tags (e.g., electronic, dance, nightclub)",
+      "capacity": "500",
+      "pictureUrls": "https://example.com/image1.jpg, https://example.com/image2.jpg"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "active": "Active",
+      "cancelled": "Cancelled"
+    },
+    "validation": {
+      "venueRequired": "Venue is required",
+      "titleRequired": "Title is required",
+      "descriptionRequired": "Description is required",
+      "startDateTimeRequired": "Start date & time is required",
+      "endDateTimeRequired": "End date & time is required",
+      "tagsRequired": "At least one tag is required",
+      "capacityRequired": "Capacity is required",
+      "endAfterStart": "End date & time must be after start date & time"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "create": "Create Event",
+      "update": "Update Event",
+      "add": "Add"
+    }
+  },
+  "inputTags": {
+    "add": "Add",
+    "maxReached": "Maximum {{max}} tags allowed",
+    "duplicate": "This tag already exists"
+  },
+  "swipeScreen": {
+    "labels": {
+      "like": "LIKE",
+      "nope": "NOPE"
+    },
+    "profiles": {
+      "milica": {
+        "name": "Milica",
+        "location": "Ben Akiba",
+        "tags": {
+          "liveMusic": "live music",
+          "rooftop": "rooftop",
+          "party": "party"
+        }
+      },
+      "stefan": {
+        "name": "Stefan",
+        "location": "Drugstore",
+        "tags": {
+          "dj": "DJ",
+          "techno": "techno",
+          "coffee": "coffee"
+        }
+      },
+      "ana": {
+        "name": "Ana",
+        "location": "20/44",
+        "tags": {
+          "spontaneous": "spontaneous",
+          "dancing": "dancing",
+          "nightOut": "night out"
+        }
+      },
+      "marko": {
+        "name": "Marko",
+        "location": "Barutana",
+        "tags": {
+          "festival": "festival",
+          "rave": "rave",
+          "summerVibes": "summer vibes"
+        }
+      },
+      "jovana": {
+        "name": "Jovana",
+        "location": "Freestyler",
+        "tags": {
+          "dance": "dance",
+          "house": "house",
+          "cocktails": "cocktails"
+        }
+      }
+    }
+  }
+}
