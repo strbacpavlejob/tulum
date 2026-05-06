@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { UserId } from '../common/decorators/user-id.decorator';
+import { GetActiveEventsDto } from './dto/get-active-events.dto';
 import { EventsCrudService } from './events-crud.service';
 
 @ApiTags('events')
@@ -27,8 +28,8 @@ export class EventsCrudController {
   /** Public — no API key required */
   @Get('active')
   @Public()
-  async getActiveEvents() {
-    return this.eventsCrudService.getActiveEvents();
+  async getActiveEvents(@Query() query: GetActiveEventsDto) {
+    return this.eventsCrudService.getActiveEvents(query);
   }
 
   @Post('upload')

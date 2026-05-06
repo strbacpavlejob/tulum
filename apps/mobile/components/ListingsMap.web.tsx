@@ -123,6 +123,7 @@ const ListingsMap = memo(() => {
     setFilter,
     applyEventsFilter,
     resetEventsFilter,
+    refreshEvents,
   } = useStore();
   const theme = useAppTheme();
   const colorScheme = useColorScheme();
@@ -345,7 +346,7 @@ const ListingsMap = memo(() => {
     clusterGroupRef.current = clusterGroup;
   }, [listings, selectedIndex, theme, setSelectedEventId]);
 
-  if (!events || events.length === 0)
+  if (events === undefined)
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator size="small" />
@@ -457,7 +458,7 @@ const ListingsMap = memo(() => {
 
       <FiltersBottomSheet
         ref={filtersRef}
-        onApply={() => applyEventsFilter()}
+        onApply={() => refreshEvents()}
         onReset={() => resetEventsFilter()}
       />
 

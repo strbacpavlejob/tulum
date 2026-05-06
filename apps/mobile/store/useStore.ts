@@ -1,3 +1,4 @@
+import { fetchActiveEvents } from "@/lib/api";
 import { Event } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { Settings } from "@/types/settings";
@@ -27,6 +28,8 @@ interface MyStore {
   getFilter: () => Filter;
   applyEventsFilter: () => void;
   resetEventsFilter: () => void;
+  refreshEvents: () => Promise<void>;
+  refreshEvents: () => Promise<void>;
 }
 
 // 3) Create the Zustand store
@@ -120,7 +123,7 @@ const useStore = create<MyStore>((set) => ({
       // Tags overlap (case-insensitive)
       if (tagSet.size) {
         const eventTags = (event.tags ?? []).map((t: string) =>
-          t.toLowerCase()
+          t.toLowerCase(),
         );
         const hasOverlap = eventTags.some((t) => tagSet.has(t));
         if (!hasOverlap) return false;
@@ -179,6 +182,12 @@ const useStore = create<MyStore>((set) => ({
       },
     });
     set({ filteredEvents: events });
+  },
+
+  async refreshEvents() {
+    const { filter, user } = useStore.getState();
+    const fresh = await fetchActiveEvents({ filter, userId: user?.id });
+    set({ events: fresh, filteredEvents: fresh });
   },
 }));
 

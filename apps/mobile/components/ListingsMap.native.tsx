@@ -56,6 +56,7 @@ const ListingsMap = memo(() => {
     filter,
     setFilter,
     applyEventsFilter,
+    refreshEvents,
   } = useStore();
   const theme = useAppTheme();
   const router = useRouter();
@@ -196,7 +197,7 @@ const ListingsMap = memo(() => {
     [filter],
   );
 
-  if (!events || events.length === 0)
+  if (events === undefined)
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <ActivityIndicator size="small" />

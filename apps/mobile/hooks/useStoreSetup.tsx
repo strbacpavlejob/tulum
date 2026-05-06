@@ -1,4 +1,4 @@
-import { mockedEvents } from "@/mock/event";
+import { fetchActiveEvents } from "@/lib/api";
 import { mockedSettings } from "@/mock/settings";
 import useStore from "@/store/useStore";
 import { useEffect, useState } from "react";
@@ -10,7 +10,8 @@ const useStoreSetup = () => {
   useEffect(() => {
     const setupStore = async () => {
       // Load events and settings but NOT user — auth flow handles login
-      setEvents(mockedEvents);
+      const events = await fetchActiveEvents();
+      setEvents(events);
       applyEventsFilter();
       setSettings(mockedSettings);
 

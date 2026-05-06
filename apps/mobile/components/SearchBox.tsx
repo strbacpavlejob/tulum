@@ -10,8 +10,13 @@ import {
 } from "./FiltersBottomSheet";
 
 const SearchBox: React.FC = () => {
-  const { filter, setFilter, applyEventsFilter, resetEventsFilter } =
-    useStore();
+  const {
+    filter,
+    setFilter,
+    applyEventsFilter,
+    resetEventsFilter,
+    refreshEvents,
+  } = useStore();
   const ref = useRef<FiltersBottomSheetRef>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -68,7 +73,7 @@ const SearchBox: React.FC = () => {
           isOnlyFavorite: false,
           priceRange: { min: 10, max: 150 },
         }}
-        onApply={() => applyEventsFilter()}
+        onApply={() => refreshEvents()}
         onReset={() => resetEventsFilter()}
         onChange={(f) => {}}
       />

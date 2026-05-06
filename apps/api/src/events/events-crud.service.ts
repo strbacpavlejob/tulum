@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { GetActiveEventsDto } from './dto/get-active-events.dto';
 
 const EVENTS_TABLE = 'events';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -21,43 +22,82 @@ export class EventsCrudService {
   }
 
   /** GET /events/active — public, no auth required */
-  async getActiveEvents() {
+  async getActiveEvents(filters: GetActiveEventsDto = {}) {
     const now = new Date().toISOString();
     const tenDaysFromNow = new Date(
       Date.now() + 10 * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const { data: events, error: eventsError } = await this.db
+    let eventsQuery = this.db
       .from(EVENTS_TABLE)
       .select(
-        'id, title, description, picture_url, venue_id, status, start_date_time, end_date_time, tags',
+        'id, title, description, picture_url, venue_id, status, start_date_time, end_date_time, tags, created_at',
       )
       .eq('status', 'active')
-      .lte('start_date_time', tenDaysFromNow)
-      .gte('end_date_time', now)
-      .order('start_date_time', { ascending: true });
+      .gte('end_date_time', now);
 
+    // Date range filter
+    if (filters.date_start) {
+      eventsQuery = eventsQuery.gte('start_date_time', filters.date_start);
+    } else {
+      eventsQuery = eventsQuery.lte('start_date_time', tenDaysFromNow);
+    }
+    if (filters.date_end) {
+      eventsQuery = eventsQuery.lte('start_date_time', filters.date_end);
+    }
+
+    eventsQuery = eventsQuery.order('start_date_time', { ascending: true });
+
+    const { data: events, error: eventsError } = await eventsQuery;
     if (eventsError) throw eventsError;
     if (!events || events.length === 0) return [];
 
-    // Keep only the earliest event per venue
+    // Favorites filter
+    let favoriteEventIds: Set<number> | null = null;
+    if (filters.only_favorites === 'true' && filters.user_id) {
+      const { data: favs, error: favsError } = await this.db
+        .from('favorites')
+        .select('event_id')
+        .eq('user_id', filters.user_id);
+      if (favsError) throw favsError;
+      favoriteEventIds = new Set((favs ?? []).map((f) => f.event_id as number));
+    }
+
+    // Keep only the earliest event per venue, optionally filtering by favorites
     const seenVenues = new Set<number>();
     const uniqueEvents = events.filter((event) => {
+      if (favoriteEventIds && !favoriteEventIds.has(event.id as number))
+        return false;
       if (seenVenues.has(event.venue_id as number)) return false;
       seenVenues.add(event.venue_id as number);
       return true;
     });
 
+    if (uniqueEvents.length === 0) return [];
+
     const venueIds = [
       ...new Set(uniqueEvents.map((e) => e.venue_id as number)),
     ];
-    const { data: venues, error: venuesError } = await this.db
+    let venuesQuery = this.db
       .from('venues')
       .select(
         'id, name, latitude, longitude, address, capacity, venue_type, picture_url',
       )
       .in('id', venueIds);
 
+    // Venue type filter
+    if (filters.venue_type) {
+      venuesQuery = venuesQuery.eq('venue_type', filters.venue_type);
+    }
+    // Capacity filter
+    if (filters.capacity_min !== undefined) {
+      venuesQuery = venuesQuery.gte('capacity', Number(filters.capacity_min));
+    }
+    if (filters.capacity_max !== undefined) {
+      venuesQuery = venuesQuery.lte('capacity', Number(filters.capacity_max));
+    }
+
+    const { data: venues, error: venuesError } = await venuesQuery;
     if (venuesError) throw venuesError;
 
     const venueMap = new Map(venues?.map((v) => [v.id as number, v]) ?? []);
@@ -67,7 +107,7 @@ export class EventsCrudService {
         const venue = venueMap.get(event.venue_id as number);
         if (!venue) return null;
         return {
-          id: event.id,
+          id: String(event.id),
           name: event.title,
           longitude: venue.longitude,
           latitude: venue.latitude,
@@ -76,7 +116,10 @@ export class EventsCrudService {
           address: venue.address,
           description: event.description,
           picture: event.picture_url,
+          venue_picture: venue.picture_url ?? null,
           picture_urls: venue.picture_url ? [venue.picture_url] : [],
+          date: event.start_date_time,
+          tags: (event.tags as string[]) ?? [],
         };
       })
       .filter(Boolean);

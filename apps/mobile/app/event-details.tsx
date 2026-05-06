@@ -66,7 +66,7 @@ const EventDetailsScreen = () => {
               style={{ borderColor: "rgba(255,255,255,0.3)" }}
             >
               <Image
-                source={{ uri: event.image }}
+                source={{ uri: event.venue_picture }}
                 className="w-full h-full"
                 resizeMode="cover"
               />

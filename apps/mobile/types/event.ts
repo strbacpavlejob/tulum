@@ -27,6 +27,7 @@ export interface EventComment {
 export interface Event {
   id: string;
   image: string;
+  venue_picture: string | null;
   title: string;
   description: string;
   date: string;
