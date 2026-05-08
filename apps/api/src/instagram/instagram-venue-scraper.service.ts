@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as puppeteer from 'puppeteer';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { RedisService } from '../redis/redis.service';
 import { Venue } from '../scrape/interfaces/venue.interface';
 import { Event } from '../scrape/interfaces/event.interface';
 import { extractEventData } from './instagram-event-extractor';
@@ -34,6 +35,9 @@ const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/search';
 
 const INSTAGRAM_POSTS_LIMIT = 5;
 
+/** How long scraped venue data is cached in Redis (6 hours) */
+const SCRAPE_CACHE_TTL_SECONDS = 6 * 60 * 60;
+
 @Injectable()
 export class InstagramVenueScraperService implements OnModuleDestroy {
   private readonly logger = new Logger(InstagramVenueScraperService.name);
@@ -42,6 +46,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
+    private readonly redisService: RedisService,
   ) {}
 
   async onModuleDestroy() {
@@ -240,6 +245,16 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
   }
 
   async scrapeVenue(username: string): Promise<InstagramVenueData> {
+    const cacheKey = `instagram:venue:${username}`;
+    const cached = await this.redisService.get<InstagramVenueData>(cacheKey);
+    if (cached) {
+      this.logger.log(`[Cache HIT] @${username}: using cached Instagram data`);
+      return cached;
+    }
+    this.logger.log(
+      `[Cache MISS] @${username}: scraping from storiesig.info...`,
+    );
+
     const browser = await this.getBrowser();
     const page = await browser.newPage();
 
@@ -329,7 +344,12 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
         INSTAGRAM_POSTS_LIMIT,
       );
 
-      return { profile, posts };
+      const result: InstagramVenueData = { profile, posts };
+      await this.redisService.set(cacheKey, result, SCRAPE_CACHE_TTL_SECONDS);
+      this.logger.log(
+        `[Cache SET] @${username}: data cached for ${SCRAPE_CACHE_TTL_SECONDS}s`,
+      );
+      return result;
     } finally {
       await page.close();
     }

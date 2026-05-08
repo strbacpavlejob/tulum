@@ -15,10 +15,12 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    RedisModule,
     ScrapeModule,
     EventsModule,
     InstagramModule,

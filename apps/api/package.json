@@ -33,6 +33,7 @@
     "canvas": "^3.2.3",
     "chrono-node": "^2.9.0",
     "date-fns": "^4.1.0",
+    "ioredis": "^5.10.1",
     "puppeteer": "^24.42.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
