@@ -4,10 +4,11 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import "../../../i18n";
-import { IconPlus } from "@tabler/icons-react";
+import { IconPlus, IconLayoutList, IconLayoutGrid } from "@tabler/icons-react";
 
 import { useEventsStore } from "@/store/events";
 import { useVenuesStore } from "@/store/venues";
@@ -15,6 +16,7 @@ import { useStatisticsStore } from "@/store/statistics";
 import { CreateEventDialog } from "@/components/create-event-dialog";
 import { ViewEventDialog } from "@/components/view-event-dialog";
 import { EventsTable } from "@/components/events-table";
+import { EventsGrid } from "@/components/events-grid";
 import { deleteEvent as apiDeleteEvent } from "@/lib/api-client";
 import type { Event } from "@/store/events";
 
@@ -31,6 +33,7 @@ export default function EventsPage() {
   const { invalidate: invalidateStatistics } = useStatisticsStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [view, setView] = useState<"table" | "grid">("table");
   const [editingEvent, setEditingEvent] = useState<(typeof events)[0] | null>(
     null,
   );
@@ -111,19 +114,44 @@ export default function EventsPage() {
                   {t("dashboard.eventsPage.description")}
                 </p>
               </div>
-              <Button onClick={handleCreate} className="gap-2">
-                <IconPlus className="h-4 w-4" />
-                {t("dashboard.eventsPage.createButton")}
-              </Button>
+              <div className="flex items-center gap-2">
+                <ToggleGroup
+                  type="single"
+                  value={view}
+                  onValueChange={(v) => v && setView(v as "table" | "grid")}
+                  variant="outline"
+                >
+                  <ToggleGroupItem value="table" aria-label="Table view">
+                    <IconLayoutList className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="grid" aria-label="Grid view">
+                    <IconLayoutGrid className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <Button onClick={handleCreate} className="gap-2">
+                  <IconPlus className="h-4 w-4" />
+                  {t("dashboard.eventsPage.createButton")}
+                </Button>
+              </div>
             </div>
 
-            <EventsTable
-              events={events}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isLoading={isLoading}
-            />
+            {view === "table" ? (
+              <EventsTable
+                events={events}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isLoading={isLoading}
+              />
+            ) : (
+              <EventsGrid
+                events={events}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isLoading={isLoading}
+              />
+            )}
 
             {/* Create/Edit Event Dialog */}
             <CreateEventDialog

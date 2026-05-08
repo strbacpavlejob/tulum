@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -16,12 +18,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { IconEdit, IconTrash, IconEye } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconTrash,
+  IconEye,
+  IconChevronLeft,
+  IconChevronRight,
+} from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Event } from "@/store/events";
 import { formatDate, formatTime } from "@/lib/locale";
 import EventStatusChip, { EventStatus } from "./event-status-chip";
 import { Skeleton } from "./ui/skeleton";
+
+const PAGE_SIZE = 20;
 
 interface EventsTableProps {
   events: Event[];
@@ -39,7 +49,15 @@ export function EventsTable({
   isLoading,
 }: EventsTableProps) {
   const { t, i18n } = useTranslation();
+  const [page, setPage] = useState(1);
   const columns = ["eventName", "venue", "date", "time", "tickets", "status"];
+
+  const totalPages = Math.max(1, Math.ceil(events.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedEvents = events.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   return (
     <Card>
@@ -81,7 +99,7 @@ export function EventsTable({
                     </TableCell>
                   </TableRow>
                 ))
-              : events.map((event) => (
+              : pagedEvents.map((event) => (
                   <TableRow key={event.id}>
                     <TableCell className="font-medium">{event.title}</TableCell>
                     <TableCell>{event.venue_name}</TableCell>
@@ -128,6 +146,65 @@ export function EventsTable({
           </TableBody>
         </Table>
       </CardContent>
+      {!isLoading && totalPages > 1 && (
+        <CardFooter className="flex items-center justify-between border-t pt-4">
+          <p className="text-muted-foreground text-sm">
+            {(safePage - 1) * PAGE_SIZE + 1}–
+            {Math.min(safePage * PAGE_SIZE, events.length)} of {events.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              aria-label="Previous page"
+            >
+              <IconChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(
+                (p) =>
+                  p === 1 || p === totalPages || Math.abs(p - safePage) <= 1,
+              )
+              .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("…");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === "…" ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-1 text-muted-foreground"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={item === safePage ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setPage(item as number)}
+                    aria-label={`Page ${item}`}
+                    aria-current={item === safePage ? "page" : undefined}
+                  >
+                    {item}
+                  </Button>
+                ),
+              )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              aria-label="Next page"
+            >
+              <IconChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }
