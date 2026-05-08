@@ -100,9 +100,24 @@ export class SupabaseService implements OnModuleInit {
   ): Promise<number> {
     if (events.length === 0) return 0;
 
+    // Deduplicate by the conflict key to avoid "ON CONFLICT DO UPDATE command
+    // cannot affect row a second time" when the scraper returns duplicate events.
+    const seen = new Map<string, Record<string, unknown>>();
+    for (const event of events) {
+      const key = `${event.title}|${event.venue_id}|${event.start_date_time}`;
+      seen.set(key, event);
+    }
+    const deduplicated = Array.from(seen.values());
+
+    if (deduplicated.length < events.length) {
+      this.logger.warn(
+        `Removed ${events.length - deduplicated.length} duplicate events before upsert`,
+      );
+    }
+
     const { data, error } = await this.supabase
       .from(EVENTS_TABLE)
-      .upsert(events, {
+      .upsert(deduplicated, {
         onConflict: 'title,venue_id,start_date_time',
       })
       .select('id');
@@ -135,17 +150,23 @@ export class SupabaseService implements OnModuleInit {
     );
   }
 
+  private sanitize(value: string | null | undefined): string | null {
+    if (value == null) return null;
+    // Remove null bytes which PostgreSQL rejects in json/jsonb columns
+    return value.replace(/\u0000/g, '');
+  }
+
   private mapEventToDbRow(
     event: Omit<Event, 'id'> & { id?: number },
     dbVenueId: number,
   ): Record<string, unknown> {
     return {
       venue_id: dbVenueId,
-      title: event.title,
-      description: event.description,
+      title: this.sanitize(event.title),
+      description: this.sanitize(event.description),
       start_date_time: event.start_date_time,
       end_date_time: event.end_date_time,
-      tags: event.tags,
+      tags: event.tags?.map((t) => t.replace(/\u0000/g, '')) ?? [],
       picture_url: event.picture,
       status: event.status,
     };

@@ -61,14 +61,42 @@ export class GoOutScraperService {
   private async authenticate(): Promise<string> {
     this.logger.log('Authenticating with GoOut...');
 
-    const { data } = await firstValueFrom(
-      this.httpService.post(`${GOOUT_BASE_URL}/auth/register`, {
-        auth: 'client',
-      }),
-    );
+    const token = await this.fetchWithRetry<string>(async () => {
+      const response = await firstValueFrom(
+        this.httpService.post<{ access_token: string }>(
+          `${GOOUT_BASE_URL}/auth/register`,
+          { auth: 'client' },
+          { timeout: 30_000 },
+        ),
+      );
+      return response.data.access_token;
+    });
 
     this.logger.log('Authentication successful');
-    return data.access_token;
+    return token;
+  }
+
+  private async fetchWithRetry<T>(
+    fn: () => Promise<T>,
+    retries = 3,
+    delayMs = 2000,
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
+        const isRetryable = !status || status >= 500;
+        if (!isRetryable || attempt === retries) throw err;
+        const wait = delayMs * 2 ** (attempt - 1);
+        this.logger.warn(
+          `Request failed (attempt ${attempt}/${retries}, status ${status ?? 'no response'}). Retrying in ${wait}ms...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, wait));
+      }
+    }
+    throw new Error('Unreachable');
   }
 
   private async fetchAllEvents(
@@ -89,11 +117,14 @@ export class GoOutScraperService {
           (lastEventId !== undefined ? ` lastEventId=${lastEventId}` : ''),
       );
 
-      const { data: events } = await firstValueFrom(
-        this.httpService.get<GoEvent[]>(`${GOOUT_BASE_URL}/events/tailored`, {
-          params,
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }),
+      const events = await this.fetchWithRetry(() =>
+        firstValueFrom(
+          this.httpService.get<GoEvent[]>(`${GOOUT_BASE_URL}/events/tailored`, {
+            params,
+            headers: { Authorization: `Bearer ${accessToken}` },
+            timeout: 30_000,
+          }),
+        ).then((r) => r.data),
       );
 
       if (!events || events.length === 0) {

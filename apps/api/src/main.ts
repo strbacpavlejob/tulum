@@ -7,6 +7,7 @@ async function bootstrap() {
 
   const allowedOrigins = [
     process.env.HOST_URL ?? 'http://localhost:3000',
+    'http://localhost:3001',
     ...(process.env.MOBILE_URL ? [process.env.MOBILE_URL] : []),
   ];
 

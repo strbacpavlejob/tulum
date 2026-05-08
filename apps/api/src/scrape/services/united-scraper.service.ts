@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { intervalToDuration, formatDuration } from 'date-fns';
 import { GoOutScraperService } from './go-out-scraper.service';
 import { InstagramVenueScraperService } from '../../instagram/instagram-venue-scraper.service';
 import { SupabaseService } from '../../supabase/supabase.service';
@@ -8,6 +9,11 @@ import { Venue } from '../interfaces/venue.interface';
 import { Event } from '../interfaces/event.interface';
 
 export interface ScrapeStats {
+  timing: {
+    start: string;
+    end: string;
+    duration: string;
+  };
   venues: {
     created: number;
     updated: number;
@@ -48,13 +54,18 @@ export class UnitedScraperService {
   ) {}
 
   async runPipeline(): Promise<ScrapeStats> {
+    const pipelineStart = new Date();
+
     const stats: ScrapeStats = {
+      timing: { start: pipelineStart.toISOString(), end: '', duration: '' },
       venues: { created: 0, updated: 0, skipped: 0 },
       events: { created: 0, duplicates: 0, deleted: 0, drafted: 0 },
       errors: [],
     };
 
-    this.logger.log('=== Pipeline started ===');
+    this.logger.log(
+      `=== Pipeline started at ${pipelineStart.toISOString()} ===`,
+    );
 
     // Step 1: Run GO scraper
     this.logger.log('[Step 1/8] Running GO scraper...');
@@ -229,7 +240,22 @@ export class UnitedScraperService {
     );
     const goTitles = new Set(goData.events.map((e) => normalizeTitle(e.title)));
 
-    const finalIgEvents = allIgEvents.map((event) => {
+    // First: remove exact IG-to-IG duplicates (same venue + title + start time)
+    // to prevent ON CONFLICT errors when multiple posts describe the same event.
+    const igSeen = new Map<string, (typeof allIgEvents)[number]>();
+    for (const event of allIgEvents) {
+      const key = `${event.resolvedVenueId}|${normalizeTitle(event.title)}|${event.start_date_time ?? ''}`;
+      igSeen.set(key, event);
+    }
+    const dedupedIgEvents = Array.from(igSeen.values());
+    if (dedupedIgEvents.length < allIgEvents.length) {
+      this.logger.warn(
+        `[Step 7/8] Removed ${allIgEvents.length - dedupedIgEvents.length} duplicate IG event(s) before saving`,
+      );
+    }
+
+    // Then: mark IG events that duplicate a GO event as draft
+    const finalIgEvents = dedupedIgEvents.map((event) => {
       const normalized = normalizeTitle(event.title);
       if (goTitles.has(normalized)) {
         stats.events.duplicates++;
@@ -288,6 +314,14 @@ export class UnitedScraperService {
       this.logger.error(`[Step 8/8] ${msg}`);
       stats.errors.push(msg);
     }
+
+    const pipelineEnd = new Date();
+    const duration = formatDuration(
+      intervalToDuration({ start: pipelineStart, end: pipelineEnd }),
+      { format: ['hours', 'minutes', 'seconds'] },
+    );
+    stats.timing.end = pipelineEnd.toISOString();
+    stats.timing.duration = duration || '< 1 second';
 
     this.logger.log('=== Pipeline complete ===');
     this.logger.log(JSON.stringify(stats, null, 2));

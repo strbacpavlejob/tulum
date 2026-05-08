@@ -102,10 +102,10 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       if (!post.description) continue;
 
       const extracted = extractEventData(post.description);
-      if (!extracted.startDateTime) continue;
 
-      const status: Event['status'] =
-        extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
+      const status: Event['status'] = !extracted.startDateTime
+        ? 'draft'
+        : extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
           ? 'active'
           : 'draft';
 
@@ -117,13 +117,18 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
           )
         : null;
 
+      const fallbackDate = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const startDt = extracted.startDateTime ?? fallbackDate;
       events.push({
         venue_id: 0,
         venue_name: profile.fullName ?? profile.username,
         title: extracted.title ?? post.description.substring(0, 80),
         description: post.description,
-        start_date_time: extracted.startDateTime,
-        end_date_time: extracted.endDateTime ?? extracted.startDateTime,
+        start_date_time: startDt,
+        end_date_time:
+          extracted.endDateTime ?? extracted.startDateTime ?? fallbackDate,
         tags: extracted.tags,
         picture: postImageR2 ?? undefined,
         status,
@@ -211,11 +216,9 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
 
       const extracted = extractEventData(post.description);
 
-      // Skip posts with no detectable date — not likely events
-      if (!extracted.startDateTime) continue;
-
-      const status: Event['status'] =
-        extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
+      const status: Event['status'] = !extracted.startDateTime
+        ? 'draft'
+        : extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
           ? 'active'
           : 'draft';
 
@@ -228,13 +231,18 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
           )
         : null;
 
+      const fallbackDate = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const startDt = extracted.startDateTime ?? fallbackDate;
       events.push({
         venue_id: 0, // resolved by saveScrapedData via venue_name
         venue_name: venueName,
         title: extracted.title ?? post.description.substring(0, 80),
         description: post.description,
-        start_date_time: extracted.startDateTime,
-        end_date_time: extracted.endDateTime ?? extracted.startDateTime,
+        start_date_time: startDt,
+        end_date_time:
+          extracted.endDateTime ?? extracted.startDateTime ?? fallbackDate,
         tags: extracted.tags,
         picture: postImageR2 ?? undefined,
         status,
@@ -306,7 +314,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       // Navigate to storiesig
       await page.goto('https://storiesig.info/en/', {
         waitUntil: 'networkidle2',
-        timeout: 30000,
+        timeout: 60000,
       });
 
       // Type username into search input
@@ -318,25 +326,26 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       // Click search button
       await page.click('button.search-form__button');
 
-      // Wait for both API responses with 30s timeout
-      const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+      // Wait for both API responses with 30s timeout.
+      // Each resolves to null on timeout rather than rejecting, so a slow
+      // postsV2 response doesn't cancel a successful userInfo and vice-versa.
+      const withTimeout = <T>(
+        promise: Promise<T>,
+        ms: number,
+      ): Promise<T | null> =>
         Promise.race([
           promise,
-          new Promise<T>((_, reject) =>
-            setTimeout(
-              () =>
-                reject(
-                  new Error(`Timed out waiting for response after ${ms}ms`),
-                ),
-              ms,
-            ),
-          ),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
         ]);
 
       const [userInfoRaw, postsV2Raw] = await Promise.all([
-        withTimeout(userInfoPromise, 30000),
-        withTimeout(postsV2Promise, 30000),
+        withTimeout(userInfoPromise, 60000),
+        withTimeout(postsV2Promise, 60000),
       ]);
+
+      if (userInfoRaw === null && postsV2Raw === null) {
+        throw new Error('Timed out waiting for response after 60000ms');
+      }
 
       const profile = this.parseUserInfo(username, userInfoRaw);
       const posts = this.parsePostsV2(postsV2Raw).slice(
@@ -400,6 +409,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
           edges?: Array<{
             node?: {
               display_url?: string;
+              taken_at_timestamp?: number;
               edge_media_to_caption?: {
                 edges?: Array<{ node?: { text?: string } }>;
               };
@@ -409,14 +419,21 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       };
 
       const edges = data?.result?.edges ?? [];
+      const cutoff = Date.now() - 10 * 24 * 60 * 60 * 1000; // 10 days ago in ms
 
-      return edges.map((edge) => {
-        const node = edge.node;
-        const imageUrl = node?.display_url ?? null;
-        const description =
-          node?.edge_media_to_caption?.edges?.[0]?.node?.text ?? null;
-        return { imageUrl, description };
-      });
+      return edges
+        .filter((edge) => {
+          const ts = edge.node?.taken_at_timestamp;
+          if (!ts) return true; // no timestamp — don't skip
+          return ts * 1000 >= cutoff;
+        })
+        .map((edge) => {
+          const node = edge.node;
+          const imageUrl = node?.display_url ?? null;
+          const description =
+            node?.edge_media_to_caption?.edges?.[0]?.node?.text ?? null;
+          return { imageUrl, description };
+        });
     } catch (err) {
       this.logger.error('Failed to parse postsV2:', err);
       return [];
