@@ -19,7 +19,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fetchMyProfile } from "@/lib/api";
 import useStore from "@/store/useStore";
+import { useAuth } from "@clerk/expo";
+import { router } from "expo-router";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { User } from "@/types/user";
@@ -41,7 +44,13 @@ import {
   Sun,
   Trash2,
 } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
@@ -159,7 +168,20 @@ function formatList(arr?: string[]) {
 export default function ProfileScreen() {
   const theme = useAppTheme();
   const { user, settings, setUser, setSettings } = useStore();
+  const { userId, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+
+  const [profileLoading, setProfileLoading] = useState(!user);
+
+  useEffect(() => {
+    if (!userId) return;
+    if (user) return; // already loaded
+    setProfileLoading(true);
+    fetchMyProfile(userId)
+      .then(setUser)
+      .catch(console.error)
+      .finally(() => setProfileLoading(false));
+  }, [userId]);
 
   const [activeTab, setActiveTab] = useState("profile");
   const [editConfig, setEditConfig] = useState<EditConfig | null>(null);
@@ -253,7 +275,19 @@ export default function ProfileScreen() {
     );
   };
 
-  if (!user) return <ActivityIndicator />;
+  if (profileLoading || !user)
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: theme.background,
+        }}
+      >
+        <ActivityIndicator color={theme.color} size="large" />
+      </View>
+    );
 
   // ── Sub-components ──────────────────────────────────────────────────────────
 
@@ -595,7 +629,11 @@ export default function ProfileScreen() {
               <View className="mx-4 mt-6 gap-3">
                 <Button
                   variant="outline"
-                  onPress={() => setUser(null)}
+                  onPress={async () => {
+                    await signOut();
+                    setUser(null);
+                    router.replace("/(auth)/login");
+                  }}
                   className="w-full gap-2"
                   style={{ borderColor: theme.border }}
                 >

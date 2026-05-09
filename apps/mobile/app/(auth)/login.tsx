@@ -5,19 +5,47 @@ import Logo from "@/components/illustrations/logo";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useSSO } from "@clerk/expo";
+import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { Mail } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
   const theme = useAppTheme();
   const router = useRouter();
 
-  // Mock sign-in — all providers navigate to onboarding for now.
-  // Replace with real Clerk auth calls once backend is ready.
-  const handleSignIn = (_provider: "apple" | "google" | "email") => {
-    router.push("/(auth)/onboarding");
+  const { startSSOFlow } = useSSO();
+
+  const handleAppleSignIn = async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_apple",
+      });
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/(auth)/onboarding");
+      }
+    } catch (err) {
+      console.error("Apple sign-in error:", err);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_google",
+      });
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/(auth)/onboarding");
+      }
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+    }
   };
 
   return (
@@ -89,7 +117,7 @@ export default function LoginScreen() {
 
         {/* Apple */}
         <Pressable
-          onPress={() => handleSignIn("apple")}
+          onPress={handleAppleSignIn}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
             flexDirection: "row",
@@ -106,7 +134,7 @@ export default function LoginScreen() {
 
         {/* Google */}
         <Pressable
-          onPress={() => handleSignIn("google")}
+          onPress={handleGoogleSignIn}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
             backgroundColor: theme.background,
@@ -129,7 +157,7 @@ export default function LoginScreen() {
         {/* Email */}
         <Button
           variant="outline"
-          onPress={() => handleSignIn("email")}
+          onPress={() => router.push("/(auth)/sign-in" as any)}
           className="h-[54px] rounded-2xl gap-3"
         >
           <Mail size={18} color={theme.color} />

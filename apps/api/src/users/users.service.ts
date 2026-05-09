@@ -154,4 +154,67 @@ export class UsersService {
     if (error) throw error;
     return data;
   }
+
+  // ── Profile (user + guest joined) ──────────────────────────────────────
+
+  async getMyProfile(userId: string) {
+    const [userResult, guestResult] = await Promise.all([
+      this.db.from(USERS_TABLE).select('*').eq('id', userId).single(),
+      this.db
+        .from(GUESTS_TABLE)
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle(),
+    ]);
+
+    if (userResult.error) throw userResult.error;
+
+    return {
+      ...userResult.data,
+      guest: guestResult.data ?? null,
+    };
+  }
+
+  async updateMyProfile(
+    userId: string,
+    userUpdates: Record<string, unknown>,
+    guestUpdates: Record<string, unknown>,
+  ) {
+    const ops: Promise<any>[] = [];
+
+    if (Object.keys(userUpdates).length > 0) {
+      ops.push(
+        Promise.resolve(
+          this.db
+            .from(USERS_TABLE)
+            .update(userUpdates)
+            .eq('id', userId)
+            .select()
+            .single(),
+        ).then(({ data, error }) => {
+          if (error) throw error;
+          return data;
+        }),
+      );
+    }
+
+    if (Object.keys(guestUpdates).length > 0) {
+      ops.push(
+        Promise.resolve(
+          this.db
+            .from(GUESTS_TABLE)
+            .update(guestUpdates)
+            .eq('user_id', userId)
+            .select()
+            .single(),
+        ).then(({ data, error }) => {
+          if (error) throw error;
+          return data;
+        }),
+      );
+    }
+
+    await Promise.all(ops);
+    return this.getMyProfile(userId);
+  }
 }

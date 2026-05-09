@@ -1,5 +1,5 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
-import useStore from "@/store/useStore";
+import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
 import {
   HeartPulse,
@@ -34,9 +34,10 @@ const TabBarIcon: React.FC<IconProps> = ({
 );
 
 export default function TabLayout() {
-  const { user } = useStore();
+  const { isSignedIn, isLoaded } = useAuth();
   const theme = useAppTheme();
-  if (!user) return <Redirect href="/(auth)/login" />;
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect href="/(auth)/login" />;
   return (
     <Tabs
       screenOptions={{

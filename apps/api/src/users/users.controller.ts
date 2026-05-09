@@ -107,4 +107,24 @@ export class UsersController {
   ) {
     return this.usersService.updateSettings(userId, settings);
   }
+
+  // ── Profile (user + guest joined) ──────────────────────────────────────
+
+  @Get('me')
+  async getMyProfile(@Query('user_id') userId: string) {
+    if (!userId)
+      throw new BadRequestException('Missing required parameter: user_id');
+    return this.usersService.getMyProfile(userId);
+  }
+
+  @Patch('me')
+  async updateMyProfile(
+    @Body('user_id') userId: string,
+    @Body('user') userUpdates: Record<string, unknown> = {},
+    @Body('guest') guestUpdates: Record<string, unknown> = {},
+  ) {
+    if (!userId)
+      throw new BadRequestException('Missing required parameter: user_id');
+    return this.usersService.updateMyProfile(userId, userUpdates, guestUpdates);
+  }
 }

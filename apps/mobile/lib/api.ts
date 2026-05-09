@@ -1,5 +1,6 @@
 import { Event } from "@/types/event";
 import { Filter } from "@/types/filter";
+import { User } from "@/types/user";
 
 const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -73,4 +74,72 @@ export async function fetchActiveEvents(
   }
   const data: ActiveEventResponse[] = await response.json();
   return data.map(mapActiveEventToEvent);
+}
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+
+interface MyProfileResponse {
+  id: string;
+  email: string;
+  username: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  guest: {
+    gender: "male" | "female" | "other" | null;
+    seeking: string | null;
+    interested_in: ("male" | "female" | "other")[];
+    interests: string[];
+    picture_urls: string[];
+    birthday: string | null;
+  } | null;
+}
+
+export function mapProfileToUser(raw: MyProfileResponse): User {
+  return {
+    id: raw.id,
+    email: raw.email,
+    firstName: raw.first_name ?? undefined,
+    lastName: raw.last_name ?? undefined,
+    imgUrl: raw.avatar_url ?? undefined,
+    photos: raw.guest?.picture_urls ?? [],
+    gender: raw.guest?.gender ?? undefined,
+    birthday: raw.guest?.birthday
+      ? raw.guest.birthday.split("T")[0]
+      : undefined,
+    interests: raw.guest?.interests ?? [],
+    tags: raw.guest?.interests ?? [],
+  };
+}
+
+export async function fetchMyProfile(userId: string): Promise<User> {
+  const url = `${TULUM_API_URL}/users/me?user_id=${encodeURIComponent(userId)}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch profile: ${response.status}`);
+  }
+  const data: MyProfileResponse = await response.json();
+  return mapProfileToUser(data);
+}
+
+export async function updateMyProfile(
+  userId: string,
+  userUpdates: Record<string, unknown>,
+  guestUpdates: Record<string, unknown>,
+): Promise<User> {
+  const url = `${TULUM_API_URL}/users/me`;
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: userId,
+      user: userUpdates,
+      guest: guestUpdates,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to update profile: ${response.status}`);
+  }
+  const data: MyProfileResponse = await response.json();
+  return mapProfileToUser(data);
 }

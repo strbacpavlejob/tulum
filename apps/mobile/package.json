@@ -13,6 +13,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "@clerk/expo": "^3.2.10",
     "@expo/metro-runtime": "~55.0.11",
     "@expo/vector-icons": "^15.1.1",
     "@gorhom/bottom-sheet": "^5",
@@ -48,8 +49,11 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "expo": "~55.0.23",
+    "expo-apple-authentication": "~55.0.13",
+    "expo-auth-session": "~55.0.15",
     "expo-blur": "~55.0.14",
     "expo-constants": "~55.0.16",
+    "expo-crypto": "~55.0.14",
     "expo-font": "~55.0.7",
     "expo-haptics": "~55.0.14",
     "expo-image": "~55.0.10",
@@ -58,6 +62,7 @@
     "expo-location": "~55.1.9",
     "expo-navigation-bar": "~55.0.12",
     "expo-router": "~55.0.14",
+    "expo-secure-store": "~55.0.13",
     "expo-splash-screen": "~55.0.20",
     "expo-status-bar": "~55.0.6",
     "expo-symbols": "~55.0.8",
