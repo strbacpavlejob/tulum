@@ -275,3 +275,57 @@ export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
   }
   return response.json() as Promise<MatchListItem[]>;
 }
+
+// ─── Swipe ────────────────────────────────────────────────────────────────────
+
+export interface SwipeableProfile {
+  user_id: string;
+  event_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  picture_urls: string[];
+  age: number;
+  interests: string[];
+}
+
+export interface SwipeableResponse {
+  event_id: number | null;
+  event_title: string;
+  event_venue: string;
+  profiles: SwipeableProfile[];
+}
+
+export async function fetchSwipeableProfiles(
+  userId: string,
+  eventId?: number,
+): Promise<SwipeableResponse> {
+  const qs = eventId ? `?event_id=${eventId}` : "";
+  const url = `${TULUM_API_URL}/guests/swipeable${qs}`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch swipeable profiles: ${response.status}`);
+  }
+  return response.json() as Promise<SwipeableResponse>;
+}
+
+export async function createMatchSwipe(
+  userId: string,
+  otherUserId: string,
+  eventId: number,
+): Promise<void> {
+  const url = `${TULUM_API_URL}/matches`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(userId),
+    body: JSON.stringify({
+      guest_id_1: userId,
+      guest_id_2: otherUserId,
+      event_id: eventId,
+    }),
+  });
+  // 409 / 23505 means the match already exists — ignore
+  if (!response.ok && response.status !== 409) {
+    throw new Error(`Failed to create match: ${response.status}`);
+  }
+}

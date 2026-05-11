@@ -22,4 +22,24 @@ export class SeedController {
   seedMockChats(@Param('userId') userId: string) {
     return this.seedService.seedMockChats(userId);
   }
+
+  /**
+   * POST /seed/mock-swipes/:userId
+   *
+   * Creates swipeable mock profiles for the given userId:
+   *  - Ensures user has guest + host profiles
+   *  - Creates a mock venue + currently-active event
+   *  - Creates 5 mock user+guest records with real-looking photos (picsum)
+   *  - Checks all mock users AND the requesting user into the event
+   *    so they appear under GET /guests/swipeable
+   *
+   * Safe to call multiple times (generates unique venue/event each call).
+   */
+  @Post('mock-swipes/:userId')
+  @ApiOperation({
+    summary: 'Seed mock swipeable profiles for a user (dev only)',
+  })
+  seedMockSwipes(@Param('userId') userId: string) {
+    return this.seedService.seedMockSwipes(userId);
+  }
 }

@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
@@ -20,6 +21,26 @@ export class GuestsController {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
     return this.guestsService.getGuestMe(userId);
+  }
+
+  /**
+   * GET /guests/swipeable?event_id=X
+   *
+   * Returns guests at the same event (via event_sessions) who the current user
+   * hasn't matched with yet. If event_id is omitted, auto-detects from the
+   * user's current active event session.
+   */
+  @Get('swipeable')
+  async getSwipeable(
+    @UserId() userId: string,
+    @Query('event_id') eventId?: string,
+  ) {
+    if (!userId)
+      throw new BadRequestException('Missing required header: x-user-id');
+    return this.guestsService.getSwipeableGuests(
+      userId,
+      eventId ? parseInt(eventId, 10) : undefined,
+    );
   }
 
   @Post('onboarding')

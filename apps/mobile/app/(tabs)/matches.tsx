@@ -4,51 +4,118 @@ import HandsIcon from "@/components/illustrations/Hands";
 import MatchModal from "@/components/MatchModal";
 import SwipeCard from "@/components/SwipeCard";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { mockedProfiles } from "@/mock/profiles";
+import {
+  createMatchSwipe,
+  fetchSwipeableProfiles,
+  type SwipeableProfile,
+} from "@/lib/api";
 import { Profile } from "@/types/profile";
+import { useAuth } from "@clerk/expo";
 
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
-import { SafeAreaView, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, SafeAreaView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
+  const images =
+    p.picture_urls.length > 0
+      ? p.picture_urls
+      : p.avatar_url
+        ? [p.avatar_url]
+        : ["https://picsum.photos/400/600"];
+  return {
+    id: p.user_id,
+    name: p.first_name ?? "Unknown",
+    age: p.age,
+    bio: p.interests.join(", "),
+    images,
+    distance: 1, // any truthy value so SwipeCard shows event title
+    hobbies: p.interests,
+    event: {
+      id: String(p.event_id),
+      image: "",
+      venue_picture: null,
+      title: eventTitle,
+      description: "",
+      date: "",
+      tags: [],
+      location: { latitude: 0, longitude: 0 },
+      isFavorite: false,
+      guests: [],
+      price: 0,
+    },
+  };
+}
+
+// ── Screen ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
   const theme = useAppTheme();
+  const { userId } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [eventId, setEventId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [showMatch, setShowMatch] = useState(false);
-  const insets = useSafeAreaInsets();
+
+  // Keep a ref so swipe handlers always see the current eventId
+  const eventIdRef = useRef<number | null>(null);
+  eventIdRef.current = eventId;
+
+  const loadProfiles = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const data = await fetchSwipeableProfiles(userId);
+      setEventId(data.event_id);
+      setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
+    } catch {
+      // Keep empty state on error
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
 
   const handleSwipeLeft = (profile: Profile) => {
-    console.log("Passed on:", profile.name);
     setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
   };
 
   const handleSwipeRight = (profile: Profile) => {
-    console.log("Liked:", profile.name);
-    const isMatch = Math.random() > 0.7;
-    if (isMatch) {
-      setMatchedProfile(profile);
-      setShowMatch(true);
+    // Fire-and-forget — create the match in the background
+    if (userId && eventIdRef.current != null) {
+      createMatchSwipe(userId, profile.id, eventIdRef.current).catch(() => {
+        /* swipe failure is non-fatal */
+      });
     }
+    setMatchedProfile(profile);
+    setShowMatch(true);
     setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
   };
 
   const handleSuperLike = () => {
-    if (currentCardIndex < mockedProfiles.length) {
-      handleSwipeRight(mockedProfiles[currentCardIndex]);
+    if (currentCardIndex < profiles.length) {
+      handleSwipeRight(profiles[currentCardIndex]);
     }
   };
 
   const handlePass = () => {
-    if (currentCardIndex < mockedProfiles.length) {
-      handleSwipeLeft(mockedProfiles[currentCardIndex]);
+    if (currentCardIndex < profiles.length) {
+      handleSwipeLeft(profiles[currentCardIndex]);
     }
   };
 
   const handleLike = () => {
-    if (currentCardIndex < mockedProfiles.length) {
-      handleSwipeRight(mockedProfiles[currentCardIndex]);
+    if (currentCardIndex < profiles.length) {
+      handleSwipeRight(profiles[currentCardIndex]);
     }
   };
 
@@ -64,12 +131,12 @@ export default function MatchesScreen() {
 
     for (let i = 0; i < cardsToShow; i++) {
       const cardIndex = currentCardIndex + i;
-      if (cardIndex >= mockedProfiles.length) break;
+      if (cardIndex >= profiles.length) break;
 
       visible.push(
         <SwipeCard
-          key={mockedProfiles[cardIndex].id}
-          profile={mockedProfiles[cardIndex]}
+          key={profiles[cardIndex].id}
+          profile={profiles[cardIndex]}
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
           index={i}
@@ -81,7 +148,18 @@ export default function MatchesScreen() {
     return visible.reverse();
   };
 
-  if (currentCardIndex >= mockedProfiles.length) {
+  if (loading) {
+    return (
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: theme.background }}
+      >
+        <ActivityIndicator color={theme.color} />
+      </View>
+    );
+  }
+
+  if (currentCardIndex >= profiles.length) {
     return (
       <LinearGradient
         colors={[theme.colorFocus, theme.background]}

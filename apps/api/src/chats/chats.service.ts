@@ -36,12 +36,21 @@ export class ChatsService {
     const existing = await this.getChatByMatchId(matchId);
     if (existing) return existing;
 
-    const payload: Record<string, unknown> = { match_id: matchId };
-    if (eventId != null) payload.event_id = eventId;
+    // If eventId wasn't supplied, fetch it from the match row
+    let resolvedEventId = eventId;
+    if (resolvedEventId == null) {
+      const { data: match, error: matchErr } = await this.db
+        .from('matches')
+        .select('event_id')
+        .eq('id', matchId)
+        .single();
+      if (matchErr) throw matchErr;
+      resolvedEventId = match.event_id as number;
+    }
 
     const { data, error } = await this.db
       .from(CHATS_TABLE)
-      .insert(payload)
+      .insert({ match_id: matchId, event_id: resolvedEventId })
       .select()
       .single();
     if (error) throw error;

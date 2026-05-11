@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { CleanupModule } from './cleanup/cleanup.module';
 import { ScrapeModule } from './scrape/scrape.module';
 import { EventsModule } from './events/events.module';
 import { InstagramModule } from './instagram/instagram.module';
@@ -23,6 +24,7 @@ import { SeedModule } from './seed/seed.module';
   imports: [
     ConfigModule.forRoot(),
     RedisModule,
+    CleanupModule,
     ScrapeModule,
     EventsModule,
     InstagramModule,
