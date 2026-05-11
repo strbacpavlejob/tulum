@@ -13,6 +13,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { UserId } from '../common/decorators/user-id.decorator';
 import { ChatsService } from './chats.service';
 
 @ApiTags('chats')
@@ -26,6 +27,30 @@ export class ChatsController {
     if (matchId)
       return this.chatsService.getChatByMatchId(parseInt(matchId, 10));
     throw new NotFoundException('Missing required parameter: id or match_id');
+  }
+
+  /**
+   * GET /chats/by-match/:matchId
+   * Gets or creates the chat for a match, and returns the chat + its message history.
+   * Used by mobile to open a conversation.
+   */
+  @Get('by-match/:matchId')
+  async getOrCreateByMatch(
+    @Param('matchId', ParseIntPipe) matchId: number,
+    @UserId() userId: string,
+  ) {
+    if (!userId) throw new NotFoundException('Missing x-user-id header');
+    const chat = await this.chatsService.getOrCreateChat(matchId);
+    const rows = await this.chatsService.getMessages(chat.id as number);
+    // Normalize DB column `message` → `text` so mobile ChatMessage type aligns
+    const messages = (rows as Record<string, unknown>[]).map((r) => ({
+      id: r.id,
+      chat_id: r.chat_id,
+      sender_id: r.sender_id,
+      text: r.message,
+      sent_at: r.sent_at,
+    }));
+    return { chat, messages };
   }
 
   @Post()

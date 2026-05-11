@@ -1,4 +1,5 @@
 import FindModal from "@/components/FindModal";
+import { useChatSocket } from "@/hooks/useChatSocket";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -25,10 +26,10 @@ import MatchProfileSheet from "./MatchProfileSheet";
 
 type ChatModalProps = {
   match: Match;
-  currentTime: Date;
-  newMessage: string;
-  onChangeMessage: (text: string) => void;
-  onSend: () => void;
+  /** Authenticated user ID (from Clerk). When provided, enables real-time socket connection. */
+  userId?: string | null;
+  /** Pre-loaded initial messages from the API. Falls back to match.messages when absent. */
+  initialMessages?: Message[];
   onBack: () => void;
 };
 
@@ -152,22 +153,31 @@ const RenderMessage = ({ item }: { item: Message }) => {
 
 export default function ChatModal({
   match,
-  currentTime,
-  newMessage,
-  onChangeMessage,
-  onSend,
+  userId,
+  initialMessages,
   onBack,
 }: ChatModalProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const [showFind, setShowFind] = useState(false);
   const matchProfileSheetRef = useRef<BottomSheetModal>(null);
+  const [newMessage, setNewMessage] = useState("");
 
   const listRef = useRef<FlatList<Message>>(null);
 
+  const {
+    messages: socketMessages,
+    sendMessage,
+    sendTyping,
+  } = useChatSocket(
+    match.chatId ?? null,
+    userId ?? null,
+    initialMessages ?? match.messages,
+  );
+
   const messages = useMemo(
-    () => [...match.messages].reverse(),
-    [match.messages],
+    () => [...socketMessages].reverse(),
+    [socketMessages],
   );
 
   const prevLen = usePrevious(messages.length);
@@ -351,13 +361,20 @@ export default function ChatModal({
                   placeholder="Type a message..."
                   placeholderTextColor={theme.gray10}
                   value={newMessage}
-                  onChangeText={onChangeMessage}
+                  onChangeText={(text) => {
+                    setNewMessage(text);
+                    sendTyping(text.length > 0);
+                  }}
                   onFocus={() => setTimeout(() => scrollToBottom(true), 50)}
                 />
                 <Pressable
                   disabled={!newMessage.trim()}
                   onPress={() => {
-                    onSend();
+                    const text = newMessage.trim();
+                    if (!text) return;
+                    sendMessage(text);
+                    setNewMessage("");
+                    sendTyping(false);
                     setTimeout(() => scrollToBottom(true), 50);
                   }}
                 >

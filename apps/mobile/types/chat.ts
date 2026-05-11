@@ -9,6 +9,7 @@ export interface Message {
 
 export interface Match {
   id: string;
+  chatId?: number;
   name: string;
   age: number;
   photo: string;

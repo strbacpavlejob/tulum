@@ -17,6 +17,7 @@ import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
 import { RedisModule } from './redis/redis.module';
 import { GuestsModule } from './guests/guests.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { GuestsModule } from './guests/guests.module';
     UsersModule,
     VenuesModule,
     GuestsModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [

@@ -27,6 +27,22 @@ export class ChatsService {
       .from(CHATS_TABLE)
       .select('*')
       .eq('match_id', matchId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  }
+
+  async getOrCreateChat(matchId: number, eventId?: number) {
+    const existing = await this.getChatByMatchId(matchId);
+    if (existing) return existing;
+
+    const payload: Record<string, unknown> = { match_id: matchId };
+    if (eventId != null) payload.event_id = eventId;
+
+    const { data, error } = await this.db
+      .from(CHATS_TABLE)
+      .insert(payload)
+      .select()
       .single();
     if (error) throw error;
     return data;
@@ -70,7 +86,7 @@ export class ChatsService {
   async markMessageRead(messageId: number) {
     const { data, error } = await this.db
       .from(MESSAGES_TABLE)
-      .update({ read: true })
+      .update({ is_read: true })
       .eq('id', messageId)
       .select()
       .single();

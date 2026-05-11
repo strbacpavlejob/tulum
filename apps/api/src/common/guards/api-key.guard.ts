@@ -16,6 +16,20 @@ export class ApiKeyGuard implements CanActivate {
     const validApiKey = process.env.INTERNAL_API_KEY;
     if (!validApiKey) return true; // dev mode: skip key check
 
+    // WebSocket context — validate via handshake
+    if (context.getType() === 'ws') {
+      const client = context.switchToWs().getClient<{
+        handshake?: {
+          auth?: Record<string, string>;
+          headers?: Record<string, string>;
+        };
+      }>();
+      const key =
+        client.handshake?.auth?.apiKey ??
+        client.handshake?.headers?.['x-api-key'];
+      return key === validApiKey;
+    }
+
     const request = context
       .switchToHttp()
       .getRequest<{ headers: Record<string, string> }>();

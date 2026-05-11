@@ -205,3 +205,73 @@ export async function submitOnboarding(
   }
   return response.json() as Promise<GuestMeResponse>;
 }
+
+// ─── Chats ────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: number;
+  chat_id: number;
+  sender_id: string;
+  text: string;
+  sent_at: string;
+}
+
+export interface ChatOpenResponse {
+  chat: {
+    id: number;
+    match_id: number;
+    event_id: number | null;
+    created_at: string;
+  };
+  messages: ChatMessage[];
+}
+
+export async function fetchOrCreateChat(
+  matchId: string | number,
+  userId: string,
+): Promise<ChatOpenResponse> {
+  const url = `${TULUM_API_URL}/chats/by-match/${matchId}`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to open chat: ${response.status}`);
+  }
+  return response.json() as Promise<ChatOpenResponse>;
+}
+
+// ─── Matches ──────────────────────────────────────────────────────────────────
+
+export interface MatchListItem {
+  id: number;
+  matched_at: string;
+  chat_id: number | null;
+  has_messages: boolean;
+  last_message: {
+    id: number;
+    text: string;
+    sender_id: string;
+    sent_at: string;
+  } | null;
+  other_guest: {
+    user_id: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    picture_urls: string[];
+    birthday: string | null;
+    interests: string[];
+  };
+  event: {
+    id: number;
+    title: string;
+    venue_name: string | null;
+  } | null;
+}
+
+export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
+  const url = `${TULUM_API_URL}/matches/mine`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch matches: ${response.status}`);
+  }
+  return response.json() as Promise<MatchListItem[]>;
+}

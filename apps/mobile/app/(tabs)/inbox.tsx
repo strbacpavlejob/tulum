@@ -1,10 +1,17 @@
 import ChatModal from "@/components/ChatModal";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { mockMatches, mockNewMatches } from "@/mock/chat";
-import type { Match, NewMatch } from "@/types/chat";
-import React, { useEffect, useState } from "react";
 import {
+  fetchMyMatches,
+  fetchOrCreateChat,
+  type ChatMessage,
+  type MatchListItem,
+} from "@/lib/api";
+import type { Match, Message, NewMatch } from "@/types/chat";
+import { useAuth } from "@clerk/expo";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -49,6 +56,36 @@ function formatLastMessageTime(timestamp: Date): string {
   if (h > 0) return `${h}h`;
   if (m > 0) return `${m}m`;
   return "now";
+}
+
+function mapToMatch(item: MatchListItem): Match {
+  const matchedAt = new Date(item.matched_at);
+  const expiresAt = new Date(matchedAt.getTime() + 6 * 60 * 60 * 1000);
+  const photo =
+    item.other_guest.picture_urls[0] ?? item.other_guest.avatar_url ?? "";
+  const firstName = item.other_guest.first_name ?? "Unknown";
+  const birthday = item.other_guest.birthday
+    ? new Date(item.other_guest.birthday)
+    : null;
+  const age = birthday
+    ? Math.floor(
+        (Date.now() - birthday.getTime()) / (365.25 * 24 * 3600 * 1000),
+      )
+    : 0;
+  return {
+    id: String(item.id),
+    chatId: item.chat_id ?? undefined,
+    name: firstName,
+    age,
+    photo,
+    venue: item.event?.venue_name ?? item.event?.title ?? "Unknown venue",
+    lastMessage: item.last_message?.text ?? "",
+    lastMessageTime: item.last_message
+      ? new Date(item.last_message.sent_at)
+      : matchedAt,
+    expiresAt,
+    messages: [],
+  };
 }
 
 // ── TimerRing ──────────────────────────────────────────────────────────────────
@@ -137,17 +174,82 @@ function NewMatchBubble({
 
 export default function InboxScreen() {
   const theme = useAppTheme();
+  const { userId } = useAuth();
 
-  const [matches, setMatches] = useState<Match[]>(mockMatches);
-  const [newMatches, setNewMatches] = useState<NewMatch[]>(mockNewMatches);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [newMatches, setNewMatches] = useState<NewMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openingChat, setOpeningChat] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [newMessage, setNewMessage] = useState("");
+  const [selectedInitialMessages, setSelectedInitialMessages] = useState<
+    Message[]
+  >([]);
   const [, setCurrentTime] = useState(new Date());
+
+  const loadMatches = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const items = await fetchMyMatches(userId);
+      const active: Match[] = [];
+      const fresh: NewMatch[] = [];
+      for (const item of items) {
+        const mapped = mapToMatch(item);
+        if (!item.has_messages) {
+          // No messages yet → show in "New Matches" bubbles
+          fresh.push({
+            id: mapped.id,
+            name: mapped.name,
+            age: mapped.age,
+            photo: mapped.photo,
+            venue: mapped.venue,
+            expiresAt: mapped.expiresAt,
+          });
+        } else {
+          active.push(mapped);
+        }
+      }
+      setMatches(active);
+      setNewMatches(fresh);
+    } catch {
+      // Keep empty state on error
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadMatches();
+  }, [loadMatches]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const openMatch = async (match: Match) => {
+    if (!userId) return;
+    setOpeningChat(true);
+    try {
+      const { chat, messages: apiMessages } = await fetchOrCreateChat(
+        match.id, // match DB id — endpoint is /chats/by-match/:matchId
+        userId,
+      );
+      const mapped: Message[] = apiMessages.map((m: ChatMessage) => ({
+        id: String(m.id),
+        text: m.text,
+        timestamp: new Date(m.sent_at),
+        isFromUser: m.sender_id === userId,
+      }));
+      setSelectedInitialMessages(mapped);
+      setSelectedMatch({ ...match, chatId: chat.id });
+    } catch {
+      // API unavailable — open without chatId, socket won't connect but UI shows
+      setSelectedInitialMessages(match.messages);
+      setSelectedMatch(match);
+    } finally {
+      setOpeningChat(false);
+    }
+  };
 
   const openNewMatch = (nm: NewMatch) => {
     const asMatch: Match = {
@@ -163,75 +265,19 @@ export default function InboxScreen() {
     };
     setNewMatches((prev) => prev.filter((m) => m.id !== nm.id));
     setMatches((prev) => [asMatch, ...prev]);
-    setSelectedMatch(asMatch);
+    openMatch(asMatch);
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !selectedMatch) return;
-
-    const message = {
-      id: Date.now().toString(),
-      text: newMessage.trim(),
-      timestamp: new Date(),
-      isFromUser: true,
-    };
-
-    const updatedMatch: Match = {
-      ...selectedMatch,
-      messages: [...selectedMatch.messages, message],
-      lastMessage: message.text,
-      lastMessageTime: message.timestamp,
-    };
-
-    setMatches((prev) =>
-      prev.map((m) => (m.id === selectedMatch.id ? updatedMatch : m)),
+  if (loading || openingChat) {
+    return (
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: theme.background }}
+      >
+        <ActivityIndicator color={theme.color} />
+      </View>
     );
-    setSelectedMatch(updatedMatch);
-    setNewMessage("");
-
-    setTimeout(
-      () => {
-        const responses = [
-          "That's interesting! Tell me more 😊",
-          "I totally agree with you!",
-          "Haha, you're funny! 😄",
-          "That sounds amazing!",
-          "I'd love to hear more about that",
-          "You seem really cool!",
-        ];
-        const response = {
-          id: (Date.now() + 1).toString(),
-          text: responses[Math.floor(Math.random() * responses.length)],
-          timestamp: new Date(),
-          isFromUser: false,
-        };
-
-        setMatches((prev) =>
-          prev.map((m) =>
-            m.id === selectedMatch.id
-              ? {
-                  ...m,
-                  messages: [...m.messages, response],
-                  lastMessage: response.text,
-                  lastMessageTime: response.timestamp,
-                }
-              : m,
-          ),
-        );
-        setSelectedMatch((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: [...prev.messages, response],
-                lastMessage: response.text,
-                lastMessageTime: response.timestamp,
-              }
-            : null,
-        );
-      },
-      2000 + Math.random() * 1000,
-    );
-  };
+  }
 
   const renderChatItem = ({ item }: { item: Match }) => {
     const timeRemaining = formatTimeRemaining(item.expiresAt);
@@ -250,7 +296,7 @@ export default function InboxScreen() {
             );
             return;
           }
-          setSelectedMatch(item);
+          openMatch(item);
         }}
       >
         <View
@@ -317,11 +363,12 @@ export default function InboxScreen() {
     return (
       <ChatModal
         match={selectedMatch}
-        currentTime={new Date()}
-        newMessage={newMessage}
-        onChangeMessage={setNewMessage}
-        onSend={sendMessage}
-        onBack={() => setSelectedMatch(null)}
+        userId={userId}
+        initialMessages={selectedInitialMessages}
+        onBack={() => {
+          setSelectedMatch(null);
+          setSelectedInitialMessages([]);
+        }}
       />
     );
   }

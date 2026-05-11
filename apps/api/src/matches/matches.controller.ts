@@ -10,12 +10,23 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { UserId } from '../common/decorators/user-id.decorator';
 import { MatchesService } from './matches.service';
 
 @ApiTags('matches')
 @Controller('matches')
 export class MatchesController {
   constructor(private readonly matchesService: MatchesService) {}
+
+  /**
+   * GET /matches/mine
+   * Returns all matches for the authenticated user, enriched with the other
+   * guest's profile, event/venue info, and the associated chat id (if any).
+   */
+  @Get('mine')
+  async getMyMatches(@UserId() userId: string) {
+    return this.matchesService.getMyMatches(userId);
+  }
 
   @Get()
   async getMatches(
