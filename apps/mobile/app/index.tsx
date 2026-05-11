@@ -19,5 +19,5 @@ export default function Index() {
   }
 
   console.log("User is not signed in, redirecting to login...");
-  return <Redirect href="/(auth)/login" />;
+  return <Redirect href="/(auth)/sign-in" />;
 }
