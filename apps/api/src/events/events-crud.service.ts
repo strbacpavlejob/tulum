@@ -22,7 +22,7 @@ export class EventsCrudService {
   }
 
   /** GET /events/active — public, no auth required */
-  async getActiveEvents(filters: GetActiveEventsDto = {}) {
+  async getActiveEvents(filters: GetActiveEventsDto = {}, userId?: string) {
     const now = new Date().toISOString();
     const tenDaysFromNow = new Date(
       Date.now() + 10 * 24 * 60 * 60 * 1000,
@@ -52,21 +52,27 @@ export class EventsCrudService {
     if (eventsError) throw eventsError;
     if (!events || events.length === 0) return [];
 
-    // Favorites filter
-    let favoriteEventIds: Set<number> | null = null;
-    if (filters.only_favorites === 'true' && filters.user_id) {
+    // Fetch saved event IDs for the current user (used for isFavorite and only_favorites filter)
+    const effectiveUserId = userId ?? filters.user_id;
+    let savedEventIds: Set<number> = new Set();
+    if (effectiveUserId) {
       const { data: favs, error: favsError } = await this.db
-        .from('favorites')
+        .from('event_engagements')
         .select('event_id')
-        .eq('user_id', filters.user_id);
+        .eq('user_id', effectiveUserId)
+        .eq('engagement_type', 'saved');
       if (favsError) throw favsError;
-      favoriteEventIds = new Set((favs ?? []).map((f) => f.event_id as number));
+      savedEventIds = new Set((favs ?? []).map((f) => Number(f.event_id)));
     }
+    const favoriteEventIds: Set<number> | null =
+      filters.only_favorites === 'true' && effectiveUserId
+        ? savedEventIds
+        : null;
 
     // Keep only the earliest event per venue, optionally filtering by favorites
     const seenVenues = new Set<number>();
     const uniqueEvents = events.filter((event) => {
-      if (favoriteEventIds && !favoriteEventIds.has(event.id as number))
+      if (favoriteEventIds && !favoriteEventIds.has(Number(event.id)))
         return false;
       if (seenVenues.has(event.venue_id as number)) return false;
       seenVenues.add(event.venue_id as number);
@@ -120,6 +126,7 @@ export class EventsCrudService {
           picture_urls: venue.picture_url ? [venue.picture_url] : [],
           date: event.start_date_time,
           tags: (event.tags as string[]) ?? [],
+          isFavorite: savedEventIds.has(Number(event.id)),
         };
       })
       .filter(Boolean);

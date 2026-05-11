@@ -1,22 +1,29 @@
 import { AvatarList } from "@/components/AvatarList";
 import { DateCard } from "@/components/DateCard";
+import FavoriteButton from "@/components/FavoriteButton";
 import GuestListModal from "@/components/GuestListModal";
 import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
+import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { format, parseISO } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
-import { MapPin, UserPlus } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowLeft, MapPin, UserPlus } from "lucide-react-native";
 import React, { useCallback, useRef } from "react";
 import { Image, Pressable, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EventDetailsScreen = () => {
   const { getSelectedEvent } = useStore();
   const event = getSelectedEvent();
   const theme = useAppTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { userId } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
 
   const openGuestList = useCallback(() => {
@@ -39,6 +46,8 @@ const EventDetailsScreen = () => {
   const freeSpots = Math.max(0, capacity - goingCount);
   const progressValue = Math.min((goingCount / capacity) * 100, 100);
 
+  console.log("Event details for event ID:", event.id, JSON.stringify(event));
+
   return (
     <View className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Hero */}
@@ -58,6 +67,45 @@ const EventDetailsScreen = () => {
             bottom: 0,
           }}
         />
+
+        {/* Back button — top left */}
+        <Pressable
+          onPress={() => router.back()}
+          style={{
+            position: "absolute",
+            top: insets.top + 8,
+            left: 16,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ArrowLeft size={20} color="#fff" />
+        </Pressable>
+
+        {/* Favorite button — top right */}
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + 8,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FavoriteButton
+            isFavorite={event.isFavorite}
+            userId={userId ?? undefined}
+            eventId={event.id}
+          />
+        </View>
 
         <View className="absolute bottom-0 left-0 right-0 p-4">
           <View className="flex-row items-center gap-4">

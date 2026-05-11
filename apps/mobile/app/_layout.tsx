@@ -34,6 +34,13 @@ SplashScreen.preventAutoHideAsync();
 const MainStack = () => {
   const theme = useAppTheme();
   const background = theme.color;
+  const { isLoadingStore } = useStoreSetup();
+
+  useEffect(() => {
+    if (!isLoadingStore) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoadingStore]);
 
   useEffect(() => {
     StatusBar.setBackgroundColor(background, true);
@@ -72,13 +79,11 @@ const MainStack = () => {
 };
 
 export default function RootLayout() {
-  const { isLoadingStore } = useStoreSetup();
-
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  if (!loaded && !isLoadingStore) {
+  if (!loaded) {
     SplashScreen.hide();
     return null;
   }

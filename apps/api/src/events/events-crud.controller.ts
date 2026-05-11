@@ -28,8 +28,11 @@ export class EventsCrudController {
   /** Public — no API key required */
   @Get('active')
   @Public()
-  async getActiveEvents(@Query() query: GetActiveEventsDto) {
-    return this.eventsCrudService.getActiveEvents(query);
+  async getActiveEvents(
+    @Query() query: GetActiveEventsDto,
+    @UserId() userId?: string,
+  ) {
+    return this.eventsCrudService.getActiveEvents(query, userId);
   }
 
   @Post('upload')

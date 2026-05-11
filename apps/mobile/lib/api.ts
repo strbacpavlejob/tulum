@@ -19,6 +19,7 @@ interface ActiveEventResponse {
   picture_urls: string[];
   date: string;
   tags: string[];
+  isFavorite: boolean;
 }
 
 function mapActiveEventToEvent(item: ActiveEventResponse): Event {
@@ -35,7 +36,7 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
       longitude: item.longitude,
       address: item.address,
     },
-    isFavorite: false,
+    isFavorite: item.isFavorite ?? false,
     guests: [],
     price: 0,
   };
@@ -68,7 +69,9 @@ export async function fetchActiveEvents(
 
   const qs = query.toString();
   const url = `${TULUM_API_URL}/events/active${qs ? `?${qs}` : ""}`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: userId ? authHeaders(userId) : undefined,
+  });
   if (!response.ok) {
     throw new Error(`Failed to fetch active events: ${response.status}`);
   }
@@ -276,7 +279,23 @@ export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
   return response.json() as Promise<MatchListItem[]>;
 }
 
-// ─── Swipe ────────────────────────────────────────────────────────────────────
+// ─── Favorites ────────────────────────────────────────────────────────────────
+
+export async function toggleFavorite(
+  userId: string,
+  eventId: string | number,
+): Promise<{ isFavorite: boolean }> {
+  const url = `${TULUM_API_URL}/favorites/toggle`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { ...authHeaders(userId), "Content-Type": "application/json" },
+    body: JSON.stringify({ event_id: Number(eventId) }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to toggle favorite: ${response.status}`);
+  }
+  return response.json() as Promise<{ isFavorite: boolean }>;
+}
 
 export interface SwipeableProfile {
   user_id: string;

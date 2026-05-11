@@ -1,10 +1,11 @@
+import FavoriteButton from "@/components/FavoriteButton";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Event } from "@/types/event";
+import { useAuth } from "@clerk/expo";
 import { format } from "date-fns";
-import { Heart } from "lucide-react-native";
 import React from "react";
-import { Image, Pressable, View } from "react-native";
+import { Pressable, Image, View } from "react-native";
 
 interface DiscoverCardProps {
   event: Event;
@@ -18,6 +19,7 @@ export const DiscoverCard = ({
   onPress,
 }: DiscoverCardProps) => {
   const theme = useAppTheme();
+  const { userId } = useAuth();
   const dateLabel = format(new Date(event.date), "EEE · haa");
   const goingCount = event.guests?.length ?? 0;
 
@@ -79,15 +81,17 @@ export const DiscoverCard = ({
         </View>
       </View>
 
-      {/* Heart */}
+      {/* Heart — View captures touch to prevent bubbling to card Pressable */}
       <View
         className="absolute top-3 right-3 w-8 h-8 rounded-full items-center justify-center"
         style={{ backgroundColor: theme.background075 }}
+        onStartShouldSetResponder={() => true}
       >
-        <Heart
+        <FavoriteButton
+          isFavorite={event.isFavorite}
+          userId={userId ?? undefined}
+          eventId={event.id}
           size={16}
-          color={event.isFavorite ? theme.color : theme.gray10}
-          fill={event.isFavorite ? theme.color : "transparent"}
         />
       </View>
     </Pressable>
