@@ -3,12 +3,17 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fetchGuestMe, submitOnboarding } from "@/lib/api";
+import type { GenderValue, SeekingValue } from "@/lib/api";
 import useStore from "@/store/useStore";
-import { LookingFor, LookingForGender } from "@/types/user";
+import { LookingForGender } from "@/types/user";
+import { useAuth } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check } from "lucide-react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -37,11 +42,11 @@ const TAGS_OPTIONS = [
   "Fashion",
 ];
 
-const LOOKING_FOR_OPTIONS: { label: string; value: LookingFor }[] = [
-  { label: "To date", value: "to date" },
-  { label: "To party", value: "to party" },
-  { label: "Open to chat", value: "open to chat" },
-  { label: "Ready for a relationship", value: "ready for a relationship" },
+const LOOKING_FOR_OPTIONS: { label: string; value: SeekingValue }[] = [
+  { label: "Casual", value: "casual" },
+  { label: "Relationship", value: "relationship" },
+  { label: "Friendship", value: "friendship" },
+  { label: "Party", value: "party" },
 ];
 
 const VENUE_OPTIONS: { label: string; value: string }[] = [
@@ -279,9 +284,35 @@ export default function OnboardingScreen() {
   const theme = useAppTheme();
   const router = useRouter();
   const { setUser } = useStore();
+  const { userId } = useAuth();
+
+  // Check if onboarding is already complete
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!userId) {
+      setChecking(false);
+      return;
+    }
+    fetchGuestMe(userId)
+      .then(({ isOnboardingComplete }) => {
+        if (isOnboardingComplete) {
+          router.replace("/(tabs)");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => {
+        // Can't reach API — let them fill out the form anyway
+        setChecking(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   // Step state
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Form state
   const [firstName, setFirstName] = useState("");
@@ -290,7 +321,7 @@ export default function OnboardingScreen() {
   const [lookingForGender, setLookingForGender] = useState<
     LookingForGender | ""
   >("");
-  const [lookingFor, setLookingFor] = useState<LookingFor[]>([]);
+  const [seeking, setSeeking] = useState<SeekingValue | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
   const [photoUri] = useState<string>(
@@ -305,14 +336,24 @@ export default function OnboardingScreen() {
     switch (STEPS[step].id) {
       case "name":
         return firstName.trim().length > 0;
-      case "birthday":
-        return birthday.length === 10;
+      case "birthday": {
+        if (birthday.length !== 10) return false;
+        const [dd, mm, yyyy] = birthday.split("/").map(Number);
+        const d = new Date(yyyy, mm - 1, dd);
+        return (
+          d.getFullYear() === yyyy &&
+          d.getMonth() === mm - 1 &&
+          d.getDate() === dd &&
+          yyyy >= 1900 &&
+          yyyy <= new Date().getFullYear()
+        );
+      }
       case "gender":
         return gender !== "";
       case "lookingForGender":
         return lookingForGender !== "";
       case "lookingFor":
-        return lookingFor.length > 0;
+        return seeking !== "";
       case "tags":
         return tags.length >= 1;
       case "venueTypes":
@@ -346,7 +387,7 @@ export default function OnboardingScreen() {
     if (step < TOTAL_STEPS - 1) {
       setStep((s) => s + 1);
     } else {
-      finishOnboarding();
+      void finishOnboarding();
     }
   };
 
@@ -358,23 +399,61 @@ export default function OnboardingScreen() {
     }
   };
 
-  const finishOnboarding = () => {
+  const finishOnboarding = async () => {
+    if (!userId || !gender || !seeking || !lookingForGender) {
+      Alert.alert(
+        "Missing required fields",
+        `Debug: userId=${userId}, gender=${gender}, seeking=${seeking}, lookingForGender=${lookingForGender}`,
+      );
+      return;
+    }
+
     const age = parseAge(birthday);
 
-    setUser({
-      firstName: firstName.trim(),
-      birthday,
-      age,
-      gender: gender as "male" | "female" | "other",
-      lookingForGender: lookingForGender as LookingForGender,
-      lookingFor,
-      tags,
-      preferredVenueTypes: venueTypes,
-      imgUrl: photoUri,
-      photos: [photoUri],
-      info: bio.trim() || undefined,
-    });
-    // Auth routing in _layout.tsx will redirect to (tabs) automatically
+    // Convert DD/MM/YYYY → YYYY-MM-DD
+    const [dd, mm, yyyy] = birthday.split("/");
+    const birthdayIso = `${yyyy}-${mm}-${dd}`;
+
+    // Map lookingForGender → interested_in array
+    const interestedIn: GenderValue[] =
+      lookingForGender === "everyone"
+        ? ["male", "female", "other"]
+        : [lookingForGender as GenderValue];
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await submitOnboarding(userId, {
+        gender: gender as GenderValue,
+        seeking: seeking as SeekingValue,
+        interested_in: interestedIn,
+        interests: tags,
+        picture_urls: photoUri ? [photoUri] : [],
+        birthday: birthdayIso,
+      });
+
+      setUser({
+        firstName: firstName.trim(),
+        birthday,
+        age,
+        gender: gender as "male" | "female" | "other",
+        lookingForGender: lookingForGender as LookingForGender,
+        tags,
+        preferredVenueTypes: venueTypes,
+        imgUrl: photoUri,
+        photos: [photoUri],
+        info: bio.trim() || undefined,
+      });
+
+      router.replace("/(tabs)");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[onboarding] submitOnboarding failed:", msg);
+      Alert.alert("Save failed", msg);
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // ── Step content ──────────────────────────────────────────────────────────
@@ -433,8 +512,8 @@ export default function OnboardingScreen() {
               <CardOption
                 key={opt.value}
                 label={opt.label}
-                selected={lookingFor.includes(opt.value)}
-                onPress={() => toggleItem(setLookingFor, opt.value)}
+                selected={seeking === opt.value}
+                onPress={() => setSeeking(opt.value)}
               />
             ))}
           </View>
@@ -513,6 +592,22 @@ export default function OnboardingScreen() {
 
   const progressPercent = ((step + 1) / TOTAL_STEPS) * 100;
   const isLastStep = step === TOTAL_STEPS - 1;
+
+  if (checking) {
+    return (
+      <SafeAreaView
+        edges={["top", "bottom"]}
+        style={{
+          flex: 1,
+          backgroundColor: theme.background,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color={theme.color} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -601,16 +696,32 @@ export default function OnboardingScreen() {
           className="px-5 pb-4 pt-3"
           style={{ borderTopWidth: 1, borderTopColor: theme.border }}
         >
+          {submitError && (
+            <Text
+              style={{
+                color: "red",
+                fontSize: 13,
+                marginBottom: 8,
+                textAlign: "center",
+              }}
+            >
+              {submitError}
+            </Text>
+          )}
           <Button
             onPress={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || submitting}
             size="lg"
             className="w-full rounded-2xl"
-            style={!canProceed() ? { opacity: 0.45 } : {}}
+            style={!canProceed() || submitting ? { opacity: 0.45 } : {}}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-              {isLastStep ? "Complete Profile" : "Continue"}
-            </Text>
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+                {isLastStep ? "Complete Profile" : "Continue"}
+              </Text>
+            )}
           </Button>
         </View>
       </KeyboardAvoidingView>

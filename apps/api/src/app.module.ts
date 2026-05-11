@@ -16,6 +16,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
 import { RedisModule } from './redis/redis.module';
+import { GuestsModule } from './guests/guests.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RedisModule } from './redis/redis.module';
     TicketsModule,
     UsersModule,
     VenuesModule,
+    GuestsModule,
   ],
   controllers: [AppController],
   providers: [

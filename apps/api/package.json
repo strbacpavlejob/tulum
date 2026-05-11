@@ -32,6 +32,8 @@
     "axios": "^1.13.6",
     "canvas": "^3.2.3",
     "chrono-node": "^2.9.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "date-fns": "^4.1.0",
     "ioredis": "^5.10.1",
     "puppeteer": "^24.42.0",

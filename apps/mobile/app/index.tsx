@@ -1,9 +1,36 @@
+import { fetchGuestMe } from "@/lib/api";
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function Index() {
   const { isSignedIn, isLoaded, userId } = useAuth();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [checkError, setCheckError] = useState(false);
+
+  const checkOnboarding = useCallback(() => {
+    if (!isLoaded || !isSignedIn || !userId) return;
+    setCheckError(false);
+    setOnboardingChecked(false);
+
+    fetchGuestMe(userId)
+      .then(({ isOnboardingComplete }) => {
+        console.log("[index] isOnboardingComplete:", isOnboardingComplete);
+        setOnboardingComplete(isOnboardingComplete);
+        setOnboardingChecked(true);
+      })
+      .catch((err) => {
+        console.error("[index] fetchGuestMe failed:", err);
+        setCheckError(true);
+        setOnboardingChecked(true);
+      });
+  }, [isLoaded, isSignedIn, userId]);
+
+  useEffect(() => {
+    checkOnboarding();
+  }, [checkOnboarding]);
 
   if (!isLoaded) {
     return (
@@ -13,11 +40,57 @@ export default function Index() {
     );
   }
 
-  if (isSignedIn) {
-    console.log("User is signed in, redirecting to main app...userId:", userId);
-    return <Redirect href="/(tabs)" />;
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/login" />;
   }
 
-  console.log("User is not signed in, redirecting to login...");
-  return <Redirect href="/(auth)/login" />;
+  if (!onboardingChecked) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (checkError) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <Text
+          style={{
+            color: "white",
+            fontSize: 16,
+            marginBottom: 16,
+            textAlign: "center",
+          }}
+        >
+          Could not reach the server. Make sure the API is running and
+          EXPO_PUBLIC_API_URL is set correctly.
+        </Text>
+        <Pressable
+          onPress={checkOnboarding}
+          style={{
+            backgroundColor: "#6C47FF",
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 12,
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "700" }}>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return onboardingComplete ? (
+    <Redirect href="/(tabs)" />
+  ) : (
+    <Redirect href="/(auth)/onboarding" />
+  );
 }

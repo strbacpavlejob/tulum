@@ -143,3 +143,65 @@ export async function updateMyProfile(
   const data: MyProfileResponse = await response.json();
   return mapProfileToUser(data);
 }
+
+// ─── Guest onboarding ─────────────────────────────────────────────────────────
+
+export type GenderValue = "male" | "female" | "other";
+export type SeekingValue = "casual" | "relationship" | "friendship" | "party";
+
+export interface GuestProfile {
+  user_id: string;
+  gender: GenderValue | null;
+  seeking: SeekingValue | null;
+  interested_in: GenderValue[];
+  interests: string[];
+  picture_urls: string[];
+  birthday: string;
+}
+
+export interface GuestMeResponse {
+  guest: GuestProfile | null;
+  isOnboardingComplete: boolean;
+}
+
+export interface OnboardingPayload {
+  gender: GenderValue;
+  seeking: SeekingValue;
+  interested_in: GenderValue[];
+  interests?: string[];
+  picture_urls?: string[];
+  birthday: string;
+}
+
+function authHeaders(userId: string): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    "x-user-id": userId,
+  };
+}
+
+export async function fetchGuestMe(userId: string): Promise<GuestMeResponse> {
+  const url = `${TULUM_API_URL}/guests/me`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch guest profile: ${response.status}`);
+  }
+  return response.json() as Promise<GuestMeResponse>;
+}
+
+export async function submitOnboarding(
+  userId: string,
+  payload: OnboardingPayload,
+): Promise<GuestMeResponse> {
+  const url = `${TULUM_API_URL}/guests/onboarding`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(userId),
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to submit onboarding: ${response.status} ${body}`);
+  }
+  return response.json() as Promise<GuestMeResponse>;
+}
