@@ -31,6 +31,7 @@ interface MyStore {
   refreshEvents: () => Promise<void>;
   updateEventSeen: (eventId: string) => void;
   updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
+  updateEventAttending: (eventId: string, isAttending: boolean) => void;
 }
 
 // 3) Create the Zustand store
@@ -203,6 +204,15 @@ const useStore = create<MyStore>((set) => ({
   updateEventFavorite(eventId: string, isFavorite: boolean) {
     const patch = (list: Event[] = []) =>
       list.map((e) => (e.id === eventId ? { ...e, isFavorite } : e));
+    set((s) => ({
+      events: patch(s.events),
+      filteredEvents: patch(s.filteredEvents),
+    }));
+  },
+
+  updateEventAttending(eventId: string, isAttending: boolean) {
+    const patch = (list: Event[] = []) =>
+      list.map((e) => (e.id === eventId ? { ...e, isAttending } : e));
     set((s) => ({
       events: patch(s.events),
       filteredEvents: patch(s.filteredEvents),

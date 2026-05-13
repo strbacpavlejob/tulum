@@ -1,15 +1,13 @@
-import { EventComment, EventGuests, EventLocation } from "./event";
+import { EventLocation } from "./event";
 
 export interface Ticket {
   id: string;
-  image: string;
+  event_id: string;
+  image: string | null;
   title: string;
   description: string;
   date: string;
   tags: string[];
+  venue_name: string;
   location: EventLocation;
-  isFavorite: boolean;
-  guests: EventGuests[];
-  comment?: EventComment[];
-  price: number;
 }

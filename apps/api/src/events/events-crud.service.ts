@@ -56,6 +56,7 @@ export class EventsCrudService {
     const effectiveUserId = userId ?? filters.user_id;
     let savedEventIds: Set<number> = new Set();
     let seenEventIds: Set<number> = new Set();
+    let attendingEventIds: Set<number> = new Set();
     if (effectiveUserId) {
       const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
@@ -68,6 +69,15 @@ export class EventsCrudService {
           savedEventIds.add(Number(e.event_id));
         if (e.engagement_type === 'seen') seenEventIds.add(Number(e.event_id));
       }
+
+      const { data: tickets, error: ticketsError } = await this.db
+        .from('tickets')
+        .select('event_id')
+        .eq('guest_id', effectiveUserId);
+      if (ticketsError) throw ticketsError;
+      attendingEventIds = new Set(
+        (tickets ?? []).map((t) => Number(t.event_id)),
+      );
     }
     const favoriteEventIds: Set<number> | null =
       filters.only_favorites === 'true' && effectiveUserId
@@ -133,6 +143,7 @@ export class EventsCrudService {
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(Number(event.id)),
           isSeen: seenEventIds.has(Number(event.id)),
+          isAttending: attendingEventIds.has(Number(event.id)),
         };
       })
       .filter(Boolean);

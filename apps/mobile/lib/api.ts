@@ -21,6 +21,7 @@ interface ActiveEventResponse {
   tags: string[];
   isFavorite: boolean;
   isSeen: boolean;
+  isAttending: boolean;
 }
 
 function mapActiveEventToEvent(item: ActiveEventResponse): Event {
@@ -39,6 +40,7 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
     },
     isFavorite: item.isFavorite ?? false,
     isSeen: item.isSeen ?? false,
+    isAttending: item.isAttending ?? false,
     guests: [],
     price: 0,
   };
@@ -309,6 +311,56 @@ export async function toggleFavorite(
     throw new Error(`Failed to toggle favorite: ${response.status}`);
   }
   return response.json() as Promise<{ isFavorite: boolean }>;
+}
+
+export async function attendEvent(
+  userId: string,
+  eventId: string | number,
+): Promise<{ ticket: Record<string, unknown>; isNew: boolean }> {
+  const url = `${TULUM_API_URL}/tickets/attend`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(userId),
+    body: JSON.stringify({ event_id: Number(eventId) }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const message =
+      body?.message ?? `Failed to attend event: ${response.status}`;
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+export async function unattendEvent(
+  userId: string,
+  eventId: string | number,
+): Promise<void> {
+  const url = `${TULUM_API_URL}/tickets/attend?event_id=${Number(eventId)}`;
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: authHeaders(userId),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to unattend event: ${response.status}`);
+  }
+}
+
+export async function fetchMyTickets(userId: string) {
+  const url = `${TULUM_API_URL}/tickets?guest_id=${encodeURIComponent(userId)}`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch tickets: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.map((t: any) => ({
+    ...t,
+    location: {
+      latitude: t.latitude,
+      longitude: t.longitude,
+      address: t.address,
+    },
+  }));
 }
 
 export interface SwipeableProfile {

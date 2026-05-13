@@ -2,13 +2,37 @@ import EmptyIndicator from "@/components/EmptyIndicator";
 import MapIcon from "@/components/illustrations/Map";
 import { TicketCard } from "@/components/TicketCard";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fetchMyTickets } from "@/lib/api";
 import useStore from "@/store/useStore";
-import React from "react";
-import { ScrollView, View } from "react-native";
+import { useAuth } from "@clerk/expo";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 
 export default function TicketsScreen() {
-  const { tickets } = useStore();
+  const { tickets, setTickets } = useStore();
   const theme = useAppTheme();
+  const { userId } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    fetchMyTickets(userId)
+      .then(setTickets)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: theme.background }}
+      >
+        <ActivityIndicator color={theme.color} />
+      </View>
+    );
+  }
 
   if (!tickets || tickets.length === 0) {
     return (
@@ -38,11 +62,10 @@ export default function TicketsScreen() {
             id={ticket.id}
             title={ticket.title}
             description={ticket.description}
-            price={ticket.price}
             date={new Date(ticket.date)}
             tags={ticket.tags}
-            favorite={ticket.isFavorite}
-            imgUrl={ticket.image}
+            favorite={false}
+            imgUrl={ticket.image ?? undefined}
           />
         ))}
       </View>

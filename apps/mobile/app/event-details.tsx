@@ -6,7 +6,7 @@ import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { trackEventSeen } from "@/lib/api";
+import { attendEvent, trackEventSeen, unattendEvent } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -14,18 +14,47 @@ import { format, parseISO } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { ArrowLeft, MapPin, UserPlus } from "lucide-react-native";
-import React, { useCallback, useEffect, useRef } from "react";
-import { Image, Pressable, ScrollView, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Image, Alert, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EventDetailsScreen = () => {
-  const { getSelectedEvent, updateEventSeen } = useStore();
+  const { getSelectedEvent, updateEventSeen, updateEventAttending } =
+    useStore();
   const event = getSelectedEvent();
   const theme = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
+  const [attending, setAttending] = useState(false);
+
+  useEffect(() => {
+    if (event?.isAttending) setAttending(true);
+  }, [event?.isAttending]);
+
+  const handleAttend = async () => {
+    if (!userId || !event?.id) return;
+    const next = !attending;
+    setAttending(next);
+    try {
+      if (next) {
+        await attendEvent(userId, event.id);
+      } else {
+        await unattendEvent(userId, event.id);
+      }
+      updateEventAttending(String(event.id), next);
+    } catch (err) {
+      setAttending(!next);
+      if (next) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.";
+        Alert.alert("Can't attend", message);
+      }
+    }
+  };
 
   const openGuestList = useCallback(() => {
     guestListRef.current?.present();
@@ -236,19 +265,24 @@ const EventDetailsScreen = () => {
       <View className="px-5 pb-5">
         <Pressable
           className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
-          style={{ backgroundColor: theme.color }}
-          onPress={() => {}}
+          style={{
+            backgroundColor: attending ? theme.gray3 : theme.color,
+          }}
+          onPress={handleAttend}
         >
           <Text
             style={{
-              color: theme.background,
+              color: attending ? theme.gray6 : theme.background,
               fontWeight: "600",
               fontSize: 18,
             }}
           >
-            Attend
+            {attending ? "Cancel attendance" : "Attend"}
           </Text>
-          <UserPlus size={20} color={theme.background} />
+          <UserPlus
+            size={20}
+            color={attending ? theme.gray6 : theme.background}
+          />
         </Pressable>
       </View>
 

@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { UserId } from '../common/decorators/user-id.decorator';
 import { TicketsService } from './tickets.service';
 
 @ApiTags('tickets')
@@ -28,6 +29,23 @@ export class TicketsController {
       guestId,
       eventId ? parseInt(eventId, 10) : undefined,
     );
+  }
+
+  @Post('attend')
+  async attendEvent(
+    @UserId() userId: string,
+    @Body('event_id', ParseIntPipe) eventId: number,
+  ) {
+    return this.ticketsService.attendEvent(userId, eventId);
+  }
+
+  @Delete('attend')
+  @HttpCode(HttpStatus.OK)
+  async unattendEvent(
+    @UserId() userId: string,
+    @Query('event_id', ParseIntPipe) eventId: number,
+  ) {
+    return this.ticketsService.unattendEvent(userId, eventId);
   }
 
   @Post()
