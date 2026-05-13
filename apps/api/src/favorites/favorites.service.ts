@@ -34,6 +34,21 @@ export class FavoritesService {
     return { isFavorite: !!data };
   }
 
+  async trackSeen(userId: string, eventId: number) {
+    // Only insert 'seen' if no engagement (seen or saved) already exists for this user+event
+    const { data: existing } = await this.db
+      .from(ENGAGEMENTS_TABLE)
+      .select('id')
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+      .limit(1)
+      .maybeSingle();
+    if (existing) return;
+    await this.db
+      .from(ENGAGEMENTS_TABLE)
+      .insert({ user_id: userId, event_id: eventId, engagement_type: 'seen' });
+  }
+
   async addFavorite(userId: string, eventId: number) {
     const { error } = await this.db.from(ENGAGEMENTS_TABLE).upsert(
       { user_id: userId, event_id: eventId, engagement_type: SAVED },

@@ -52,17 +52,22 @@ export class EventsCrudService {
     if (eventsError) throw eventsError;
     if (!events || events.length === 0) return [];
 
-    // Fetch saved event IDs for the current user (used for isFavorite and only_favorites filter)
+    // Fetch saved and seen event IDs for the current user
     const effectiveUserId = userId ?? filters.user_id;
     let savedEventIds: Set<number> = new Set();
+    let seenEventIds: Set<number> = new Set();
     if (effectiveUserId) {
-      const { data: favs, error: favsError } = await this.db
+      const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
-        .select('event_id')
+        .select('event_id, engagement_type')
         .eq('user_id', effectiveUserId)
-        .eq('engagement_type', 'saved');
-      if (favsError) throw favsError;
-      savedEventIds = new Set((favs ?? []).map((f) => Number(f.event_id)));
+        .in('engagement_type', ['saved', 'seen']);
+      if (engagementsError) throw engagementsError;
+      for (const e of engagements ?? []) {
+        if (e.engagement_type === 'saved')
+          savedEventIds.add(Number(e.event_id));
+        if (e.engagement_type === 'seen') seenEventIds.add(Number(e.event_id));
+      }
     }
     const favoriteEventIds: Set<number> | null =
       filters.only_favorites === 'true' && effectiveUserId
@@ -127,6 +132,7 @@ export class EventsCrudService {
           date: event.start_date_time,
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(Number(event.id)),
+          isSeen: seenEventIds.has(Number(event.id)),
         };
       })
       .filter(Boolean);

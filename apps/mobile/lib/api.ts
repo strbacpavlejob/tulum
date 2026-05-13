@@ -20,6 +20,7 @@ interface ActiveEventResponse {
   date: string;
   tags: string[];
   isFavorite: boolean;
+  isSeen: boolean;
 }
 
 function mapActiveEventToEvent(item: ActiveEventResponse): Event {
@@ -37,6 +38,7 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
       address: item.address,
     },
     isFavorite: item.isFavorite ?? false,
+    isSeen: item.isSeen ?? false,
     guests: [],
     price: 0,
   };
@@ -280,6 +282,18 @@ export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
 }
 
 // ─── Favorites ────────────────────────────────────────────────────────────────
+
+export async function trackEventSeen(
+  userId: string,
+  eventId: string | number,
+): Promise<void> {
+  const url = `${TULUM_API_URL}/favorites/seen`;
+  await fetch(url, {
+    method: "POST",
+    headers: authHeaders(userId),
+    body: JSON.stringify({ event_id: Number(eventId) }),
+  });
+}
 
 export async function toggleFavorite(
   userId: string,

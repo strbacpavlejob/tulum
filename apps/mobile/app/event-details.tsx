@@ -6,6 +6,7 @@ import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { trackEventSeen } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -13,12 +14,12 @@ import { format, parseISO } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { ArrowLeft, MapPin, UserPlus } from "lucide-react-native";
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Image, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EventDetailsScreen = () => {
-  const { getSelectedEvent } = useStore();
+  const { getSelectedEvent, updateEventSeen } = useStore();
   const event = getSelectedEvent();
   const theme = useAppTheme();
   const router = useRouter();
@@ -29,6 +30,14 @@ const EventDetailsScreen = () => {
   const openGuestList = useCallback(() => {
     guestListRef.current?.present();
   }, []);
+
+  useEffect(() => {
+    if (userId && event?.id && !event.isSeen) {
+      trackEventSeen(userId, event.id)
+        .then(() => updateEventSeen(String(event.id)))
+        .catch(() => {});
+    }
+  }, [userId, event?.id, event?.isSeen]);
 
   if (!event) {
     return (

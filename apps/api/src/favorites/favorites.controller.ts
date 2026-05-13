@@ -37,6 +37,16 @@ export class FavoritesController {
     return this.favoritesService.addFavorite(userId, eventId);
   }
 
+  @Post('seen')
+  @HttpCode(HttpStatus.OK)
+  async trackSeen(
+    @UserId() userId: string,
+    @Body('event_id', ParseIntPipe) eventId: number,
+  ) {
+    await this.favoritesService.trackSeen(userId, eventId);
+    return { ok: true };
+  }
+
   @Post('toggle')
   async toggleFavorite(
     @UserId() userId: string,

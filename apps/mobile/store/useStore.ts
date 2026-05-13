@@ -29,7 +29,8 @@ interface MyStore {
   applyEventsFilter: () => void;
   resetEventsFilter: () => void;
   refreshEvents: () => Promise<void>;
-  refreshEvents: () => Promise<void>;
+  updateEventSeen: (eventId: string) => void;
+  updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
 }
 
 // 3) Create the Zustand store
@@ -188,6 +189,24 @@ const useStore = create<MyStore>((set) => ({
     const { filter, user } = useStore.getState();
     const fresh = await fetchActiveEvents({ filter, userId: user?.id });
     set({ events: fresh, filteredEvents: fresh });
+  },
+
+  updateEventSeen(eventId: string) {
+    const patch = (list: Event[] = []) =>
+      list.map((e) => (e.id === eventId ? { ...e, isSeen: true } : e));
+    set((s) => ({
+      events: patch(s.events),
+      filteredEvents: patch(s.filteredEvents),
+    }));
+  },
+
+  updateEventFavorite(eventId: string, isFavorite: boolean) {
+    const patch = (list: Event[] = []) =>
+      list.map((e) => (e.id === eventId ? { ...e, isFavorite } : e));
+    set((s) => ({
+      events: patch(s.events),
+      filteredEvents: patch(s.filteredEvents),
+    }));
   },
 }));
 

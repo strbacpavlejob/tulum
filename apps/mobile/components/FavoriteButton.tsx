@@ -1,5 +1,6 @@
 import { toggleFavorite } from "@/lib/api";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import useStore from "@/store/useStore";
 import { Heart } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { TouchableOpacity } from "react-native";
@@ -22,6 +23,7 @@ const FavoriteButton = ({
   customTheme,
 }: FavoriteButtonProps) => {
   const theme = useAppTheme();
+  const { updateEventFavorite } = useStore();
   const [favorite, setFavorite] = useState(isFavorite);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ const FavoriteButton = ({
       try {
         const result = await toggleFavorite(userId, eventId);
         setFavorite(result.isFavorite);
+        updateEventFavorite(String(eventId), result.isFavorite);
       } catch {
         // revert on error
         setFavorite(!next);

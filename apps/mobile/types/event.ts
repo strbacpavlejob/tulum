@@ -34,6 +34,7 @@ export interface Event {
   tags: string[];
   location: EventLocation;
   isFavorite: boolean;
+  isSeen: boolean;
   guests: EventGuests[];
   comment?: EventComment[];
   price: number;
