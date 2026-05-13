@@ -31,6 +31,11 @@ export class TicketsController {
     );
   }
 
+  @Get('attendees')
+  async getEventAttendees(@Query('event_id', ParseIntPipe) eventId: number) {
+    return this.ticketsService.getEventAttendees(eventId);
+  }
+
   @Post('attend')
   async attendEvent(
     @UserId() userId: string,

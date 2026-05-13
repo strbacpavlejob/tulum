@@ -6,7 +6,13 @@ import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { attendEvent, trackEventSeen, unattendEvent } from "@/lib/api";
+import {
+  EventAttendeesData,
+  attendEvent,
+  fetchEventAttendees,
+  trackEventSeen,
+  unattendEvent,
+} from "@/lib/api";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -28,6 +34,20 @@ const EventDetailsScreen = () => {
   const { userId } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
   const [attending, setAttending] = useState(false);
+  const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
+    maxSpots: 0,
+    averageAge: null,
+    females: 0,
+    males: 0,
+    guestList: [],
+  });
+
+  useEffect(() => {
+    if (!userId || !event?.id) return;
+    fetchEventAttendees(event.id, userId)
+      .then(setAttendeesData)
+      .catch(() => {});
+  }, [userId, event?.id]);
 
   useEffect(() => {
     if (event?.isAttending) setAttending(true);
@@ -79,10 +99,11 @@ const EventDetailsScreen = () => {
     );
   }
 
-  const capacity = 120;
-  const goingCount = event.guests.length;
-  const freeSpots = Math.max(0, capacity - goingCount);
-  const progressValue = Math.min((goingCount / capacity) * 100, 100);
+  const { maxSpots, averageAge, females, males, guestList } = attendeesData;
+  const goingCount = guestList.length;
+  const freeSpots = Math.max(0, maxSpots - goingCount);
+  const progressValue =
+    maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
 
   console.log("Event details for event ID:", event.id, JSON.stringify(event));
 
@@ -231,12 +252,12 @@ const EventDetailsScreen = () => {
             <View className="flex-row items-center justify-between mb-2">
               <Text style={{ fontSize: 12, color: theme.gray5 }}>Going</Text>
               <Text style={{ fontSize: 12, color: theme.gray5 }}>
-                {goingCount}/{capacity}
+                {goingCount}/{maxSpots}
               </Text>
             </View>
 
             <View className="mb-3">
-              <AvatarList avatars={event.guests} />
+              <AvatarList avatars={guestList} />
             </View>
 
             {/* Progress bar */}
@@ -290,8 +311,11 @@ const EventDetailsScreen = () => {
         ref={guestListRef}
         eventTitle={event.title}
         eventDate={format(parseISO(event.date), "EEEE · h:mm a")}
-        guests={event.guests}
-        capacity={capacity}
+        guestList={guestList}
+        maxSpots={maxSpots}
+        averageAge={averageAge}
+        females={females}
+        males={males}
       />
     </View>
   );

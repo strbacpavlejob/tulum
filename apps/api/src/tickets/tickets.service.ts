@@ -123,4 +123,60 @@ export class TicketsService {
       .eq('id', ticketId);
     if (error) throw error;
   }
+
+  async getEventAttendees(eventId: number) {
+    const [ticketsResult, eventResult] = await Promise.all([
+      this.db
+        .from(TICKETS_TABLE)
+        .select(
+          'guest_id, guests!tickets_guest_id_fkey(gender, birthday, users!guests_user_id_fkey(first_name, last_name, avatar_url))',
+        )
+        .eq('event_id', eventId),
+      this.db
+        .from('events')
+        .select('venues(capacity)')
+        .eq('id', eventId)
+        .single(),
+    ]);
+
+    if (ticketsResult.error) throw ticketsResult.error;
+    if (eventResult.error) throw eventResult.error;
+
+    const maxSpots: number = (eventResult.data as any)?.venues?.capacity ?? 0;
+    const now = Date.now();
+
+    const guestList = (ticketsResult.data ?? []).map((t: any) => {
+      const guest = t.guests ?? {};
+      const user = guest.users ?? {};
+      const firstName = user.first_name ?? '';
+      const lastName = user.last_name ?? '';
+      const name = [firstName, lastName].filter(Boolean).join(' ') || 'Guest';
+      const age = guest.birthday
+        ? Math.floor(
+            (now - new Date(guest.birthday).getTime()) /
+              (1000 * 60 * 60 * 24 * 365.25),
+          )
+        : null;
+      return {
+        name,
+        age,
+        gender: (guest.gender as string | null) ?? null,
+        uri: (user.avatar_url as string | null) ?? null,
+      };
+    });
+
+    const withAge = guestList.filter((g) => g.age !== null);
+    const averageAge =
+      withAge.length > 0
+        ? Math.round(
+            withAge.reduce((sum, g) => sum + (g.age as number), 0) /
+              withAge.length,
+          )
+        : null;
+
+    const females = guestList.filter((g) => g.gender === 'female').length;
+    const males = guestList.filter((g) => g.gender === 'male').length;
+
+    return { maxSpots, averageAge, females, males, guestList };
+  }
 }

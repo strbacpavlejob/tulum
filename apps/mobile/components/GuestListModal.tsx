@@ -14,25 +14,28 @@ import { Image, Pressable, View } from "react-native";
 interface GuestListModalProps {
   eventTitle: string;
   eventDate: string;
-  guests: EventGuests[];
-  capacity: number;
+  guestList: EventGuests[];
+  maxSpots: number;
+  averageAge: number | null;
+  females: number;
+  males: number;
 }
 
 const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
-  ({ eventTitle, eventDate, guests, capacity }, ref) => {
+  (
+    { eventTitle, eventDate, guestList, maxSpots, averageAge, females, males },
+    ref,
+  ) => {
     const theme = useAppTheme();
     const snapPoints = useMemo(() => ["85%"], []);
 
-    const goingCount = guests.length;
-    const freeSpots = Math.max(0, capacity - goingCount);
-    const progressValue = Math.min((goingCount / capacity) * 100, 100);
+    const goingCount = guestList.length;
+    const freeSpots = Math.max(0, maxSpots - goingCount);
+    const progressValue =
+      maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
 
-    const visibleGuests = guests.slice(0, 6);
+    const visibleGuests = guestList.slice(0, 6);
     const moreCount = Math.max(0, goingCount - visibleGuests.length);
-
-    // Approximate gender split (roughly 50/50 with slight variance)
-    const femaleCount = Math.round(goingCount * 0.52);
-    const maleCount = goingCount - femaleCount;
 
     const renderBackdrop = useCallback(
       (props: any) => (
@@ -101,7 +104,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                   Free Spaces
                 </Text>
                 <Text style={{ fontSize: 14, color: theme.gray6 }}>
-                  {goingCount}/{capacity}
+                  {goingCount}/{maxSpots}
                 </Text>
               </View>
 
@@ -147,7 +150,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                 >
                   <Venus size={16} color="#f472b6" />
                   <Text style={{ fontSize: 14, color: "#f472b6" }}>
-                    {femaleCount}
+                    {females}
                   </Text>
                 </View>
                 <View
@@ -160,7 +163,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                 >
                   <Mars size={16} color="#60a5fa" />
                   <Text style={{ fontSize: 14, color: "#60a5fa" }}>
-                    {maleCount}
+                    {males}
                   </Text>
                 </View>
               </View>
@@ -168,12 +171,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
               <Text style={{ fontSize: 14, color: theme.gray6 }}>
                 Avg age{" "}
                 <Text style={{ fontWeight: "500", color: theme.gray12 }}>
-                  {guests.length > 0
-                    ? Math.round(
-                        guests.reduce((sum, g) => sum + g.age, 0) /
-                          guests.length,
-                      )
-                    : "—"}
+                  {averageAge ?? "—"}
                 </Text>
               </Text>
             </View>
@@ -229,11 +227,18 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                           borderColor: theme.gray3,
                         }}
                       >
-                        <Image
-                          source={{ uri: guest.uri }}
-                          className="w-full h-full"
-                          resizeMode="cover"
-                        />
+                        {guest.uri ? (
+                          <Image
+                            source={{ uri: guest.uri }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View
+                            className="w-full h-full items-center justify-center"
+                            style={{ backgroundColor: theme.gray3 }}
+                          />
+                        )}
                       </View>
                       <Text
                         style={{
@@ -242,7 +247,8 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                           color: theme.gray12,
                         }}
                       >
-                        {guest.name.split(" ")[0]}, {guest.age}
+                        {guest.name.split(" ")[0]}
+                        {guest.age != null ? `, ${guest.age}` : ""}
                       </Text>
                     </View>
                   );

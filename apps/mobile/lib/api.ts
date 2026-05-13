@@ -346,6 +346,35 @@ export async function unattendEvent(
   }
 }
 
+// ─── Event Attendees ──────────────────────────────────────────────────────────
+
+export interface EventAttendee {
+  name: string;
+  age: number | null;
+  gender: "male" | "female" | "other" | null;
+  uri: string | null;
+}
+
+export interface EventAttendeesData {
+  maxSpots: number;
+  averageAge: number | null;
+  females: number;
+  males: number;
+  guestList: EventAttendee[];
+}
+
+export async function fetchEventAttendees(
+  eventId: string | number,
+  userId: string,
+): Promise<EventAttendeesData> {
+  const url = `${TULUM_API_URL}/tickets/attendees?event_id=${Number(eventId)}`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event attendees: ${response.status}`);
+  }
+  return response.json() as Promise<EventAttendeesData>;
+}
+
 export async function fetchMyTickets(userId: string) {
   const url = `${TULUM_API_URL}/tickets?guest_id=${encodeURIComponent(userId)}`;
   const response = await fetch(url, { headers: authHeaders(userId) });

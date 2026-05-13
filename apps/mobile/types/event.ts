@@ -1,7 +1,8 @@
 export interface EventGuests {
   name: string;
-  age: number;
-  uri: string;
+  age: number | null;
+  uri: string | null;
+  gender: "male" | "female" | "other" | null;
 }
 
 export interface EventLocation {

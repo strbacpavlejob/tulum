@@ -3,7 +3,7 @@ import React from "react";
 import { Image, View } from "react-native";
 
 interface AvatarListProps {
-  avatars: { name: string; uri: string }[];
+  avatars: { name: string; uri: string | null }[];
 }
 
 export const AvatarList = ({ avatars }: AvatarListProps) => {
