@@ -23,15 +23,18 @@ const TabBarIcon: React.FC<IconProps> = ({
   color,
   size = 28,
   focused = false,
-}) => (
-  <View style={{ opacity: focused ? 1 : 0.6 }}>
-    <IconComponent
-      color={focused ? color : "white"}
-      size={size}
-      fill={focused ? color : "transparent"}
-    />
-  </View>
-);
+}) => {
+  const theme = useAppTheme();
+  return (
+    <View style={{ opacity: focused ? 1 : 0.6 }}>
+      <IconComponent
+        color={focused ? color : theme.background}
+        size={size}
+        fill={focused ? color : theme.gray10}
+      />
+    </View>
+  );
+};
 
 export default function TabLayout() {
   const { isSignedIn, isLoaded } = useAuth();

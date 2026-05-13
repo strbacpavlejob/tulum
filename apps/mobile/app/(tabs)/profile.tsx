@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { fetchMyProfile } from "@/lib/api";
+import { fetchMyProfile, fetchSettings, updateSettings } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { router } from "expo-router";
@@ -177,8 +177,17 @@ export default function ProfileScreen() {
     if (!userId) return;
     if (user) return; // already loaded
     setProfileLoading(true);
-    fetchMyProfile(userId)
-      .then(setUser)
+    Promise.all([fetchMyProfile(userId), fetchSettings(userId)])
+      .then(([profile, remote]) => {
+        setUser(profile);
+        if (remote) {
+          setSettings({
+            ...settings,
+            language: remote.language,
+            theme: remote.theme,
+          });
+        }
+      })
       .catch(console.error)
       .finally(() => setProfileLoading(false));
   }, [userId]);
@@ -257,7 +266,14 @@ export default function ProfileScreen() {
   };
 
   const patchSettings = (patch: Partial<Settings>) => {
-    setSettings({ ...settings, ...patch });
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    if (userId && (patch.language !== undefined || patch.theme !== undefined)) {
+      const remote: Record<string, string> = {};
+      if (patch.language !== undefined) remote.language = patch.language;
+      if (patch.theme !== undefined) remote.theme = patch.theme;
+      updateSettings(userId, remote).catch(console.error);
+    }
   };
 
   const confirmEdit = () => {

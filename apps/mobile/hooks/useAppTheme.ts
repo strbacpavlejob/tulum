@@ -1,3 +1,4 @@
+import useStore from "@/store/useStore";
 import { useColorScheme } from "react-native";
 
 const lightTheme = {
@@ -160,7 +161,11 @@ const darkTheme: typeof lightTheme = {
 
 export function useAppTheme() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const theme = useStore((s) => s.settings.theme);
+
+  const isDark =
+    theme === "dark" || (theme === "system" && colorScheme === "dark");
+
   return isDark ? darkTheme : lightTheme;
 }
 

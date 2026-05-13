@@ -19,6 +19,7 @@ import { VenuesModule } from './venues/venues.module';
 import { RedisModule } from './redis/redis.module';
 import { GuestsModule } from './guests/guests.module';
 import { SeedModule } from './seed/seed.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SeedModule } from './seed/seed.module';
     VenuesModule,
     GuestsModule,
     SeedModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

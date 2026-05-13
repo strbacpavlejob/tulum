@@ -213,6 +213,40 @@ export async function submitOnboarding(
   return response.json() as Promise<GuestMeResponse>;
 }
 
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+export interface RemoteSettings {
+  language: "EN" | "RS" | "RU";
+  theme: "light" | "dark" | "system";
+}
+
+export async function fetchSettings(
+  userId: string,
+): Promise<RemoteSettings | null> {
+  const url = `${TULUM_API_URL}/settings/me?user_id=${encodeURIComponent(userId)}`;
+  const response = await fetch(url, { headers: authHeaders(userId) });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch settings: ${response.status}`);
+  }
+  return response.json() as Promise<RemoteSettings | null>;
+}
+
+export async function updateSettings(
+  userId: string,
+  patch: Partial<RemoteSettings>,
+): Promise<RemoteSettings> {
+  const url = `${TULUM_API_URL}/settings/me?user_id=${encodeURIComponent(userId)}`;
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: authHeaders(userId),
+    body: JSON.stringify(patch),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to update settings: ${response.status}`);
+  }
+  return response.json() as Promise<RemoteSettings>;
+}
+
 // ─── Chats ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
