@@ -7,10 +7,12 @@ import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export default function TicketsScreen() {
   const { tickets, setTickets } = useStore();
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -41,8 +43,8 @@ export default function TicketsScreen() {
         style={{ backgroundColor: theme.background }}
       >
         <EmptyIndicator
-          title="Gosh darn!"
-          subtitle="No tickets available at the moment!"
+          title={t("noTicketsTitle")}
+          subtitle={t("noTicketsSubtitle")}
           picture={({ color, ...rest }) => (
             <MapIcon {...rest} color={theme.color} />
           )}

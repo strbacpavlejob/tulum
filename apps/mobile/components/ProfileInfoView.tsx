@@ -17,6 +17,7 @@ import {
   Wine,
 } from "lucide-react-native";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable, View } from "react-native";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ export default function ProfileInfoView({
   editCallbacks,
 }: ProfileInfoViewProps) {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const editable = !!editCallbacks;
 
   return (
@@ -128,7 +130,7 @@ export default function ProfileInfoView({
           className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: theme.colorMuted }}
         >
-          Photos
+          {t("photos")}
         </Text>
         <View className="flex-row h-[200px] gap-1.5 mt-2">
           <Pressable className="flex-1" disabled>
@@ -204,7 +206,7 @@ export default function ProfileInfoView({
           className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: theme.colorMuted }}
         >
-          Interests
+          {t("interests")}
         </Text>
         <View className="flex-row flex-wrap gap-2 mt-2">
           {(user.tags ?? []).map((tag, i) => (
@@ -218,7 +220,7 @@ export default function ProfileInfoView({
           ))}
           {(user.tags ?? []).length === 0 && (
             <Text style={{ fontSize: 14, color: theme.colorMuted }}>
-              {editable ? "Add interests…" : "—"}
+              {editable ? t("addInterests") : "—"}
             </Text>
           )}
         </View>
@@ -232,18 +234,18 @@ export default function ProfileInfoView({
           className="text-xs font-semibold uppercase tracking-wide mb-1"
           style={{ color: theme.colorMuted }}
         >
-          Work & Education
+          {t("workAndEducation")}
         </Text>
         <ProfileRow
           icon={Briefcase}
-          label="Work"
+          label={t("work")}
           value={user.work}
           onPress={editCallbacks?.onEditWork}
         />
         <Separator />
         <ProfileRow
           icon={BookOpen}
-          label="Education"
+          label={t("education")}
           value={user.education}
           onPress={editCallbacks?.onEditEducation}
         />
@@ -261,7 +263,7 @@ export default function ProfileInfoView({
           className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: theme.colorMuted }}
         >
-          {"Why you're here"}
+          {t("whyYoureHere")}
         </Text>
         <View className="flex-row flex-wrap gap-2 mt-2">
           {(user.lookingFor ?? []).map((item, i) => (
@@ -277,7 +279,7 @@ export default function ProfileInfoView({
           ))}
           {(user.lookingFor ?? []).length === 0 && (
             <Text style={{ fontSize: 14, color: theme.colorMuted }}>
-              {editable ? "Select…" : "—"}
+              {editable ? t("select") : "—"}
             </Text>
           )}
         </View>
@@ -295,7 +297,7 @@ export default function ProfileInfoView({
           className="text-xs font-semibold uppercase tracking-wide"
           style={{ color: theme.colorMuted }}
         >
-          Bio
+          {t("bio")}
         </Text>
         <Text
           style={{
@@ -305,7 +307,7 @@ export default function ProfileInfoView({
             color: user.info ? theme.colorStrong : theme.colorMuted,
           }}
         >
-          {user.info ?? (editable ? "Tell others about yourself…" : "—")}
+          {user.info ?? (editable ? t("tellOthersAboutYourself") : "—")}
         </Text>
       </Pressable>
 
@@ -315,70 +317,70 @@ export default function ProfileInfoView({
       <View className="mx-4 mt-1">
         <ProfileRow
           icon={Ruler}
-          label="Height"
+          label={t("height")}
           value={user.height ? `${user.height} cm` : undefined}
           onPress={editCallbacks?.onEditHeight}
         />
         <Separator />
         <ProfileRow
           icon={Baby}
-          label="Children"
+          label={t("children")}
           value={user.hasChildren ? capitalize(user.hasChildren) : undefined}
           onPress={editCallbacks?.onEditChildren}
         />
         <Separator />
         <ProfileRow
           icon={Wine}
-          label="Drinking"
+          label={t("drinking")}
           value={user.drinking ? capitalize(user.drinking) : undefined}
           onPress={editCallbacks?.onEditDrinking}
         />
         <Separator />
         <ProfileRow
           icon={Globe}
-          label="Languages"
+          label={t("languages")}
           value={formatList(user.languages)}
           onPress={editCallbacks?.onEditLanguages}
         />
         <Separator />
         <ProfileRow
           icon={Heart}
-          label="Relationship"
+          label={t("relationship")}
           value={user.relationship ? capitalize(user.relationship) : undefined}
           onPress={editCallbacks?.onEditRelationship}
         />
         <Separator />
         <ProfileRow
           icon={Users}
-          label="Sexuality"
+          label={t("sexuality")}
           value={user.sexuality ? capitalize(user.sexuality) : undefined}
           onPress={editCallbacks?.onEditSexuality}
         />
         <Separator />
         <ProfileRow
           icon={Cigarette}
-          label="Smoking"
+          label={t("smoking")}
           value={user.smoking ? capitalize(user.smoking) : undefined}
           onPress={editCallbacks?.onEditSmoking}
         />
         <Separator />
         <ProfileRow
           icon={Star}
-          label="Star sign"
+          label={t("starSign")}
           value={user.starSign}
           onPress={editCallbacks?.onEditStarSign}
         />
         <Separator />
         <ProfileRow
           icon={PawPrint}
-          label="Pets"
+          label={t("pets")}
           value={formatList(user.pets)}
           onPress={editCallbacks?.onEditPets}
         />
         <Separator />
         <ProfileRow
           icon={Heart}
-          label="Religion"
+          label={t("religion")}
           value={user.religion ? capitalize(user.religion) : undefined}
           onPress={editCallbacks?.onEditReligion}
         />

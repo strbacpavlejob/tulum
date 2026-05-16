@@ -1,6 +1,7 @@
 import ProfileInfoView from "@/components/ProfileInfoView";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTranslation } from "react-i18next";
 import { Match } from "@/types/chat";
 import {
   BottomSheetBackdrop,
@@ -19,6 +20,7 @@ type Props = {
 export default function MatchProfileSheet({ match, sheetRef }: Props) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const snapPoints = useMemo(() => ["85%"], []);
 
   const renderBackdrop = useCallback(
@@ -74,7 +76,7 @@ export default function MatchProfileSheet({ match, sheetRef }: Props) {
             {match.age ? `, ${match.age}` : ""}
           </Text>
           <Text style={{ fontSize: 13, color: theme.colorMuted }}>
-            at {match.venue}
+            {t("atVenue", { venue: match.venue })}
           </Text>
         </View>
       </View>

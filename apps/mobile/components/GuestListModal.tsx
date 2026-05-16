@@ -9,6 +9,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { Mars, UserPlus, Venus } from "lucide-react-native";
 import React, { forwardRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable, View } from "react-native";
 
 interface GuestListModalProps {
@@ -27,6 +28,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
     ref,
   ) => {
     const theme = useAppTheme();
+    const { t } = useTranslation();
     const snapPoints = useMemo(() => ["85%"], []);
 
     const goingCount = guestList.length;
@@ -101,7 +103,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                     color: theme.gray12,
                   }}
                 >
-                  Free Spaces
+                  {t("freeSpaces")}
                 </Text>
                 <Text style={{ fontSize: 14, color: theme.gray6 }}>
                   {goingCount}/{maxSpots}
@@ -124,7 +126,9 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
               </View>
 
               <Text style={{ fontSize: 12, color: theme.gray5, marginTop: 8 }}>
-                {freeSpots > 0 ? `${freeSpots} spots left` : "Event is full"}
+                {freeSpots > 0
+                  ? t("spotsLeft", { count: freeSpots })
+                  : t("eventIsFull")}
               </Text>
             </View>
 
@@ -169,7 +173,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
               </View>
 
               <Text style={{ fontSize: 14, color: theme.gray6 }}>
-                Avg age{" "}
+                {t("avgAge")}{" "}
                 <Text style={{ fontWeight: "500", color: theme.gray12 }}>
                   {averageAge ?? "—"}
                 </Text>
@@ -195,7 +199,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                     letterSpacing: 2,
                   }}
                 >
-                  Guest List
+                  {t("guestList")}
                 </Text>
                 {moreCount > 0 && (
                   <Text style={{ fontSize: 12, color: theme.gray5 }}>
@@ -271,7 +275,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                   fontSize: 18,
                 }}
               >
-                Attend
+                {t("attend")}
               </Text>
               <UserPlus size={20} color={theme.background} />
             </Pressable>

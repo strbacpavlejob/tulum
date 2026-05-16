@@ -3,6 +3,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { faker } from "@faker-js/faker";
 import { X } from "lucide-react-native";
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,6 +16,7 @@ type FindModalProps = {
 export default function FindModal({ onClose }: FindModalProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const { emoji, bgColor } = useMemo(
     () => ({
@@ -68,7 +70,7 @@ export default function FindModal({ onClose }: FindModalProps) {
               marginBottom: 8,
             }}
           >
-            Find your match
+            {t("findYourMatch")}
           </Text>
           <Text
             style={{
@@ -78,7 +80,7 @@ export default function FindModal({ onClose }: FindModalProps) {
               opacity: 0.7,
             }}
           >
-            Pair Code: #{faker.string.alphanumeric(6).toUpperCase()}
+            {t("pairCode")}: #{faker.string.alphanumeric(6).toUpperCase()}
           </Text>
         </View>
 
@@ -113,8 +115,7 @@ export default function FindModal({ onClose }: FindModalProps) {
             lineHeight: 22,
           }}
         >
-          Show this emoji to someone nearby to match instantly. Your pair code
-          helps verify the connection.
+          {t("pairCodeDescription")}
         </Text>
       </View>
     </View>

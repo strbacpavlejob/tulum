@@ -3,6 +3,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { format } from "date-fns";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal, Pressable, View } from "react-native";
 import CalendarPicker, { ChangedDate } from "react-native-calendar-picker";
 
@@ -22,6 +23,7 @@ const CalendarRangePicker = ({
   minDate,
 }: CalendarRangePickerProps) => {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [tempStart, setTempStart] = useState<Date | null>(startDate);
@@ -60,7 +62,7 @@ const CalendarRangePicker = ({
   return (
     <View className="flex-row gap-3 justify-between items-center">
       <Text className="font-bold" style={{ color: theme.gray11 }}>
-        Date Range
+        {t("dateRange")}
       </Text>
       <Pressable onPress={handleOpen}>
         <Text className="text-xs" style={{ color: theme.gray10 }}>
@@ -98,7 +100,7 @@ const CalendarRangePicker = ({
                   style={{ borderColor: theme.gray4 }}
                   onPress={handleCancel}
                 >
-                  <Text>Cancel</Text>
+                  <Text>{t("cancel")}</Text>
                 </Pressable>
                 <Pressable
                   className="px-4 py-2 rounded-lg"
@@ -109,7 +111,7 @@ const CalendarRangePicker = ({
                   disabled={!tempStart || !tempEnd}
                   onPress={handleApply}
                 >
-                  <Text className="text-white">Apply</Text>
+                  <Text className="text-white">{t("apply")}</Text>
                 </Pressable>
               </View>
             </View>

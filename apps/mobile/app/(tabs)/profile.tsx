@@ -20,6 +20,7 @@ import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fetchMyProfile, fetchSettings, updateSettings } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { router } from "expo-router";
@@ -59,97 +60,12 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const LOOKING_FOR_OPTIONS = [
-  "to date",
-  "to party",
-  "open to chat",
-  "ready for a relationship",
-];
-const DRINKING_OPTIONS = [
-  "never",
-  "socially",
-  "regularly",
-  "prefer not to say",
-];
-const SMOKING_OPTIONS = ["never", "socially", "regularly", "prefer not to say"];
-const CHILDREN_OPTIONS = ["no", "yes", "prefer not to say"];
-const RELATIONSHIP_OPTIONS = [
-  "single",
-  "divorced",
-  "separated",
-  "prefer not to say",
-];
-const SEXUALITY_OPTIONS = ["straight", "gay", "bisexual", "prefer not to say"];
-const STAR_SIGN_OPTIONS = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
-];
-const RELIGION_OPTIONS = [
-  "atheist",
-  "agnostic",
-  "christian",
-  "muslim",
-  "jewish",
-  "buddhist",
-  "hindu",
-  "other",
-  "prefer not to say",
-];
-const PETS_OPTIONS = ["cat", "dog", "fish", "bird", "none"];
-const LANGUAGE_OPTIONS = [
-  "English",
-  "Serbian",
-  "Russian",
-  "Spanish",
-  "French",
-  "German",
-];
-const TAGS_OPTIONS = [
-  "Photography",
-  "Travel",
-  "Yoga",
-  "Music",
-  "Coffee",
-  "Art",
-  "Dancing",
-  "Hiking",
-  "Food",
-  "Tech",
-  "Fitness",
-  "Reading",
-  "Movies",
-  "Gaming",
-  "Fashion",
-];
-const VENUE_OPTIONS: { label: string; value: VenueType }[] = [
-  { label: "Bar", value: "bar" },
-  { label: "Pub", value: "pub" },
-  { label: "Nightclub", value: "nightclub" },
-  { label: "Restaurant", value: "restaurant" },
-  { label: "Cafe", value: "cafe" },
-  { label: "Cocktail Bar", value: "cocktail_bar" },
-  { label: "Wine Bar", value: "wine_bar" },
-  { label: "Brewery", value: "brewery" },
-  { label: "Tavern", value: "tavern" },
-  { label: "Raft", value: "raft" },
-];
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EditConfig = {
   title: string;
   type: "single" | "multi" | "text";
-  options?: string[];
+  options?: { name: string; value: string }[];
   onSave: (value: string | string[]) => void;
 };
 
@@ -167,7 +83,120 @@ function formatList(arr?: string[]) {
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const { user, settings, setUser, setSettings } = useStore();
+
+  // ─── Translated option arrays ───────────────────────────────────────────────
+  const LOOKING_FOR_OPTIONS = [
+    { name: t("toDate"), value: "to date" },
+    { name: t("toParty"), value: "to party" },
+    { name: t("openToChat"), value: "open to chat" },
+    { name: t("readyForRelationship"), value: "ready for a relationship" },
+  ];
+  const LIFESTYLE_OPTS = [
+    { name: t("never"), value: "never" },
+    { name: t("socially"), value: "socially" },
+    { name: t("regularly"), value: "regularly" },
+    { name: t("preferNotToSay"), value: "prefer not to say" },
+  ];
+  const DRINKING_OPTIONS = LIFESTYLE_OPTS;
+  const SMOKING_OPTIONS = LIFESTYLE_OPTS;
+  const CHILDREN_OPTIONS = [
+    { name: t("no"), value: "no" },
+    { name: t("yes"), value: "yes" },
+    { name: t("preferNotToSay"), value: "prefer not to say" },
+  ];
+  const RELATIONSHIP_OPTIONS = [
+    { name: t("single"), value: "single" },
+    { name: t("divorced"), value: "divorced" },
+    { name: t("separated"), value: "separated" },
+    { name: t("preferNotToSay"), value: "prefer not to say" },
+  ];
+  const SEXUALITY_OPTIONS = [
+    { name: t("straight"), value: "straight" },
+    { name: t("gay"), value: "gay" },
+    { name: t("bisexual"), value: "bisexual" },
+    { name: t("preferNotToSay"), value: "prefer not to say" },
+  ];
+  const STAR_SIGN_OPTIONS = [
+    { name: t("aries"), value: "Aries" },
+    { name: t("taurus"), value: "Taurus" },
+    { name: t("gemini"), value: "Gemini" },
+    { name: t("cancer"), value: "Cancer" },
+    { name: t("leo"), value: "Leo" },
+    { name: t("virgo"), value: "Virgo" },
+    { name: t("libra"), value: "Libra" },
+    { name: t("scorpio"), value: "Scorpio" },
+    { name: t("sagittarius"), value: "Sagittarius" },
+    { name: t("capricorn"), value: "Capricorn" },
+    { name: t("aquarius"), value: "Aquarius" },
+    { name: t("pisces"), value: "Pisces" },
+  ];
+  const RELIGION_OPTIONS = [
+    { name: t("atheist"), value: "atheist" },
+    { name: t("agnostic"), value: "agnostic" },
+    { name: t("christian"), value: "christian" },
+    { name: t("muslim"), value: "muslim" },
+    { name: t("jewish"), value: "jewish" },
+    { name: t("buddhist"), value: "buddhist" },
+    { name: t("hindu"), value: "hindu" },
+    { name: t("other"), value: "other" },
+    { name: t("preferNotToSay"), value: "prefer not to say" },
+  ];
+  const PETS_OPTIONS = [
+    { name: t("cat"), value: "cat" },
+    { name: t("dog"), value: "dog" },
+    { name: t("fish"), value: "fish" },
+    { name: t("bird"), value: "bird" },
+    { name: t("none"), value: "none" },
+  ];
+  const LANGUAGE_OPTIONS = [
+    { name: t("english"), value: "English" },
+    { name: t("serbian"), value: "Serbian" },
+    { name: t("russian"), value: "Russian" },
+    { name: t("spanish"), value: "Spanish" },
+    { name: t("french"), value: "French" },
+    { name: t("german"), value: "German" },
+  ];
+  const TAGS_OPTIONS = [
+    { name: t("photography"), value: "Photography" },
+    { name: t("travel"), value: "Travel" },
+    { name: t("yoga"), value: "Yoga" },
+    { name: t("music"), value: "Music" },
+    { name: t("coffee"), value: "Coffee" },
+    { name: t("art"), value: "Art" },
+    { name: t("dancing"), value: "Dancing" },
+    { name: t("hiking"), value: "Hiking" },
+    { name: t("food"), value: "Food" },
+    { name: t("tech"), value: "Tech" },
+    { name: t("fitness"), value: "Fitness" },
+    { name: t("reading"), value: "Reading" },
+    { name: t("movies"), value: "Movies" },
+    { name: t("gaming"), value: "Gaming" },
+    { name: t("fashion"), value: "Fashion" },
+  ];
+  const VENUE_OPTIONS: { name: string; value: VenueType }[] = [
+    { name: t("bar"), value: "bar" },
+    { name: t("pub"), value: "pub" },
+    { name: t("nightclub"), value: "nightclub" },
+    { name: t("restaurant"), value: "restaurant" },
+    { name: t("cafe"), value: "cafe" },
+    { name: t("cocktailBar"), value: "cocktail_bar" },
+    { name: t("wineBar"), value: "wine_bar" },
+    { name: t("brewery"), value: "brewery" },
+    { name: t("tavern"), value: "tavern" },
+    { name: t("raft"), value: "raft" },
+  ];
+  const THEME_OPTIONS = [
+    { name: t("light"), value: "light" },
+    { name: t("dark"), value: "dark" },
+    { name: t("system"), value: "system" },
+  ];
+  const APP_LANGUAGE_OPTIONS = [
+    { name: t("english"), value: "EN" },
+    { name: t("serbian"), value: "RS" },
+    { name: t("russian"), value: "RU" },
+  ];
   const { userId, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -221,7 +250,7 @@ export default function ProfileScreen() {
 
   const openSingleSelect = (
     title: string,
-    options: string[],
+    options: { name: string; value: string }[],
     current: string,
     onSave: (v: string) => void,
   ) => {
@@ -237,7 +266,7 @@ export default function ProfileScreen() {
 
   const openMultiSelect = (
     title: string,
-    options: string[],
+    options: { name: string; value: string }[],
     current: string[],
     onSave: (v: string[]) => void,
   ) => {
@@ -416,7 +445,7 @@ export default function ProfileScreen() {
                     activeTab === "profile" ? theme.color : theme.colorMuted,
                 }}
               >
-                Profile
+                {t("profile")}
               </Text>
             </TabsTrigger>
             <TabsTrigger
@@ -436,7 +465,7 @@ export default function ProfileScreen() {
                     activeTab === "settings" ? theme.color : theme.colorMuted,
                 }}
               >
-                Settings
+                {t("settings")}
               </Text>
             </TabsTrigger>
           </TabsList>
@@ -453,96 +482,96 @@ export default function ProfileScreen() {
                 editCallbacks={{
                   onEditTags: () =>
                     openMultiSelect(
-                      "Tags",
+                      t("tags"),
                       TAGS_OPTIONS,
                       user.tags ?? [],
                       (v) => patchUser({ tags: v as string[] }),
                     ),
                   onEditWork: () =>
-                    openTextEdit("Work", user.work ?? "", (v) =>
+                    openTextEdit(t("work"), user.work ?? "", (v) =>
                       patchUser({ work: v }),
                     ),
                   onEditEducation: () =>
-                    openTextEdit("Education", user.education ?? "", (v) =>
+                    openTextEdit(t("education"), user.education ?? "", (v) =>
                       patchUser({ education: v }),
                     ),
                   onEditLookingFor: () =>
                     openMultiSelect(
-                      "Why you're here",
+                      t("whyYoureHere"),
                       LOOKING_FOR_OPTIONS,
                       user.lookingFor ?? [],
                       (v) => patchUser({ lookingFor: v as any }),
                     ),
                   onEditBio: () =>
-                    openTextEdit("Bio", user.info ?? "", (v) =>
+                    openTextEdit(t("bio"), user.info ?? "", (v) =>
                       patchUser({ info: v }),
                     ),
                   onEditHeight: () =>
                     openTextEdit(
-                      "Height (cm)",
+                      t("heightCm"),
                       user.height?.toString() ?? "",
                       (v) =>
                         patchUser({ height: parseInt(v, 10) || undefined }),
                     ),
                   onEditChildren: () =>
                     openSingleSelect(
-                      "Children",
+                      t("children"),
                       CHILDREN_OPTIONS,
                       user.hasChildren ?? "",
                       (v) => patchUser({ hasChildren: v as any }),
                     ),
                   onEditDrinking: () =>
                     openSingleSelect(
-                      "Drinking",
+                      t("drinking"),
                       DRINKING_OPTIONS,
                       user.drinking ?? "",
                       (v) => patchUser({ drinking: v as any }),
                     ),
                   onEditLanguages: () =>
                     openMultiSelect(
-                      "Languages",
+                      t("languages"),
                       LANGUAGE_OPTIONS,
                       user.languages ?? [],
                       (v) => patchUser({ languages: v as string[] }),
                     ),
                   onEditRelationship: () =>
                     openSingleSelect(
-                      "Relationship status",
+                      t("relationshipStatus"),
                       RELATIONSHIP_OPTIONS,
                       user.relationship ?? "",
                       (v) => patchUser({ relationship: v as any }),
                     ),
                   onEditSexuality: () =>
                     openSingleSelect(
-                      "Sexuality",
+                      t("sexuality"),
                       SEXUALITY_OPTIONS,
                       user.sexuality ?? "",
                       (v) => patchUser({ sexuality: v as any }),
                     ),
                   onEditSmoking: () =>
                     openSingleSelect(
-                      "Smoking",
+                      t("smoking"),
                       SMOKING_OPTIONS,
                       user.smoking ?? "",
                       (v) => patchUser({ smoking: v as any }),
                     ),
                   onEditStarSign: () =>
                     openSingleSelect(
-                      "Star sign",
+                      t("starSign"),
                       STAR_SIGN_OPTIONS,
                       user.starSign ?? "",
                       (v) => patchUser({ starSign: v as any }),
                     ),
                   onEditPets: () =>
                     openMultiSelect(
-                      "Pets",
+                      t("pets"),
                       PETS_OPTIONS,
                       user.pets ?? [],
                       (v) => patchUser({ pets: v as string[] }),
                     ),
                   onEditReligion: () =>
                     openSingleSelect(
-                      "Religion",
+                      t("religion"),
                       RELIGION_OPTIONS,
                       user.religion ?? "",
                       (v) => patchUser({ religion: v as any }),
@@ -562,12 +591,12 @@ export default function ProfileScreen() {
               <View className="mx-4 mt-2">
                 <SettingsRow
                   icon={Sun}
-                  title="Theme"
-                  subtitle={capitalize(settings.theme)}
+                  title={t("theme")}
+                  subtitle={t(settings.theme.toLowerCase() as any)}
                   onPress={() =>
                     openSingleSelect(
-                      "Theme",
-                      ["light", "dark", "system"],
+                      t("theme"),
+                      THEME_OPTIONS,
                       settings.theme,
                       (v) => patchSettings({ theme: v as any }),
                     )
@@ -576,8 +605,8 @@ export default function ProfileScreen() {
                 <Separator />
                 <SettingsRow
                   icon={Bell}
-                  title="Notifications"
-                  subtitle={settings.notificationsEnabled ? "On" : "Off"}
+                  title={t("notifications")}
+                  subtitle={settings.notificationsEnabled ? t("on") : t("off")}
                   right={
                     <Switch
                       checked={settings.notificationsEnabled}
@@ -590,18 +619,18 @@ export default function ProfileScreen() {
                 <Separator />
                 <SettingsRow
                   icon={Globe}
-                  title="Language"
+                  title={t("language")}
                   subtitle={
                     settings.language === "EN"
-                      ? "English"
+                      ? t("english")
                       : settings.language === "RS"
-                        ? "Serbian"
-                        : "Russian"
+                        ? t("serbian")
+                        : t("russian")
                   }
                   onPress={() =>
                     openSingleSelect(
-                      "Language",
-                      ["EN", "RS", "RU"],
+                      t("language"),
+                      APP_LANGUAGE_OPTIONS,
                       settings.language,
                       (v) => patchSettings({ language: v as any }),
                     )
@@ -610,7 +639,7 @@ export default function ProfileScreen() {
                 <Separator />
                 <SettingsRow
                   icon={MapPin}
-                  title="Location"
+                  title={t("location")}
                   subtitle="Belgrade"
                   onPress={undefined}
                   right={<View />}
@@ -618,16 +647,16 @@ export default function ProfileScreen() {
                 <Separator />
                 <SettingsRow
                   icon={MapPin}
-                  title="Default Venue Type"
+                  title={t("defaultVenueType")}
                   subtitle={
                     VENUE_OPTIONS.find(
                       (v) => v.value === settings.defaultVenueType,
-                    )?.label ?? "Not set"
+                    )?.name ?? t("notSet")
                   }
                   onPress={() =>
                     openSingleSelect(
-                      "Default venue type",
-                      VENUE_OPTIONS.map((v) => v.value),
+                      t("defaultVenueType"),
+                      VENUE_OPTIONS,
                       settings.defaultVenueType ?? "",
                       (v) =>
                         patchSettings({ defaultVenueType: v as VenueType }),
@@ -637,7 +666,7 @@ export default function ProfileScreen() {
                 <Separator />
                 <SettingsRow
                   icon={Bug}
-                  title="Report a bug"
+                  title={t("reportBug")}
                   onPress={() => bugSheetRef.current?.present()}
                 />
               </View>
@@ -661,7 +690,7 @@ export default function ProfileScreen() {
                       color: theme.colorStrong,
                     }}
                   >
-                    Log out
+                    {t("logOut")}
                   </Text>
                 </Button>
 
@@ -679,7 +708,7 @@ export default function ProfileScreen() {
                       color: theme.destructive,
                     }}
                   >
-                    Delete account
+                    {t("deleteAccount")}
                   </Text>
                 </Button>
               </View>
@@ -720,17 +749,17 @@ export default function ProfileScreen() {
               {editConfig.type === "single" &&
                 (editConfig.options ?? []).map((opt) => (
                   <Button
-                    key={opt}
+                    key={opt.value}
                     variant="ghost"
                     onPress={() => {
-                      setSingleValue(opt);
-                      editConfig.onSave(opt);
+                      setSingleValue(opt.value);
+                      editConfig.onSave(opt.value);
                       editSheetRef.current?.close();
                       setEditConfig(null);
                     }}
                     className="w-full justify-between h-auto py-3.5 px-3 rounded-xl mb-0.5"
                     style={
-                      singleValue === opt
+                      singleValue === opt.value
                         ? { backgroundColor: theme.color025 }
                         : {}
                     }
@@ -741,12 +770,14 @@ export default function ProfileScreen() {
                         flex: 1,
                         textAlign: "left",
                         color:
-                          singleValue === opt ? theme.color : theme.colorStrong,
+                          singleValue === opt.value
+                            ? theme.color
+                            : theme.colorStrong,
                       }}
                     >
-                      {capitalize(opt)}
+                      {opt.name}
                     </Text>
-                    {singleValue === opt && (
+                    {singleValue === opt.value && (
                       <Check size={18} color={theme.color} />
                     )}
                   </Button>
@@ -756,12 +787,12 @@ export default function ProfileScreen() {
               {editConfig.type === "multi" && (
                 <>
                   {(editConfig.options ?? []).map((opt) => {
-                    const selected = multiValues.includes(opt);
+                    const selected = multiValues.includes(opt.value);
                     return (
                       <Button
-                        key={opt}
+                        key={opt.value}
                         variant="ghost"
-                        onPress={() => toggleMulti(opt)}
+                        onPress={() => toggleMulti(opt.value)}
                         className="w-full justify-between h-auto py-3.5 px-3 rounded-xl mb-0.5"
                         style={
                           selected ? { backgroundColor: theme.color025 } : {}
@@ -775,7 +806,7 @@ export default function ProfileScreen() {
                             color: selected ? theme.color : theme.colorStrong,
                           }}
                         >
-                          {capitalize(opt)}
+                          {opt.name}
                         </Text>
                         {selected && <Check size={18} color={theme.color} />}
                       </Button>
@@ -785,7 +816,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}
                     >
-                      Save
+                      {t("confirm")}
                     </Text>
                   </Button>
                 </>
@@ -797,7 +828,7 @@ export default function ProfileScreen() {
                   <Textarea
                     value={textValue}
                     onChangeText={setTextValue}
-                    placeholder="Type here…"
+                    placeholder={t("bio") + "…"}
                     autoFocus
                     className="min-h-[100px]"
                   />
@@ -805,7 +836,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}
                     >
-                      Save
+                      {t("confirm")}
                     </Text>
                   </Button>
                 </>
@@ -839,12 +870,12 @@ export default function ProfileScreen() {
               marginTop: 4,
             }}
           >
-            Report a bug
+            {t("reportBug")}
           </Text>
           <Textarea
             value={bugText}
             onChangeText={setBugText}
-            placeholder="Describe what went wrong…"
+            placeholder={t("bugReportPlaceholder")}
             className="flex-1 max-h-[140px]"
           />
           <Button
@@ -856,7 +887,7 @@ export default function ProfileScreen() {
           >
             <Send size={16} color="#fff" />
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-              Send report
+              {t("send")}
             </Text>
           </Button>
         </BottomSheetView>
@@ -866,15 +897,14 @@ export default function ProfileScreen() {
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete account</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteAlertTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action is permanent and cannot be undone. All your data will
-              be erased.
+              {t("deleteAlertDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
-              <Text>Cancel</Text>
+              <Text>{t("cancel")}</Text>
             </AlertDialogCancel>
             <AlertDialogAction
               onPress={() => {
@@ -883,7 +913,7 @@ export default function ProfileScreen() {
               }}
               className="bg-destructive"
             >
-              <Text className="text-white">Delete</Text>
+              <Text className="text-white">{t("confirm")}</Text>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

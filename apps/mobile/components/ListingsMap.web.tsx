@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Search, SlidersHorizontal } from "lucide-react-native";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createRoot } from "react-dom/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -128,6 +129,7 @@ const ListingsMap = memo(() => {
   const theme = useAppTheme();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { t } = useTranslation();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
@@ -388,7 +390,7 @@ const ListingsMap = memo(() => {
           >
             <Search size={20} color={theme.gray10} />
             <TextInput
-              placeholder="Search events..."
+              placeholder={t("searchEvents")}
               placeholderTextColor={theme.gray10}
               value={filter.title}
               onChangeText={(text) => setFilter({ ...filter, title: text })}

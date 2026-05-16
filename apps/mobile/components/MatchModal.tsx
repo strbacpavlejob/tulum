@@ -6,6 +6,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { Heart, MapPin, SendHorizonal, X } from "lucide-react-native";
 import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Modal, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -177,6 +178,7 @@ export default function MatchModal({
   onClose,
 }: MatchModalProps) {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const contentOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.8);
 
@@ -236,10 +238,10 @@ export default function MatchModal({
 
           {/* Text */}
           <Text className="text-5xl font-bold text-white mb-2 text-center tracking-[-1px]">
-            It's a Match!
+            {t("itsAMatch")}
           </Text>
           <Text className="text-sm text-white/50 text-center leading-5 max-w-[260px]">
-            You and {profile.name} have liked each other
+            {t("youAndLikedEachOther", { name: profile.name })}
           </Text>
         </Animated.View>
 
@@ -247,7 +249,7 @@ export default function MatchModal({
         <View className="px-5 pb-6 ios:pb-10 z-10">
           <View className="flex-row items-center justify-between bg-white/10 rounded-full px-5 py-[14px]">
             <Text className="text-base text-white/50">
-              Say something nice...
+              {t("saySomethingNice")}
             </Text>
             <SendHorizonal size={20} color="rgba(255,255,255,0.5)" />
           </View>

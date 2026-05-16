@@ -1,6 +1,7 @@
 import ChatModal from "@/components/ChatModal";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTranslation } from "react-i18next";
 import {
   fetchMyMatches,
   fetchOrCreateChat,
@@ -174,6 +175,7 @@ function NewMatchBubble({
 
 export default function InboxScreen() {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const { userId } = useAuth();
 
   const [matches, setMatches] = useState<Match[]>([]);
@@ -290,10 +292,7 @@ export default function InboxScreen() {
         style={{ opacity: isExpired ? 0.5 : 1 }}
         onPress={() => {
           if (isExpired) {
-            Alert.alert(
-              "Chat Expired",
-              "This conversation has expired and can no longer be accessed.",
-            );
+            Alert.alert(t("chatExpiredTitle"), t("chatExpiredDescription"));
             return;
           }
           openMatch(item);
@@ -340,7 +339,7 @@ export default function InboxScreen() {
                 style={{ color: theme.gray10, fontSize: 15, flex: 1 }}
                 numberOfLines={1}
               >
-                {item.lastMessage || "Say hello!"}
+                {item.lastMessage || t("sayHello")}
               </Text>
               <Text
                 style={{
@@ -390,7 +389,7 @@ export default function InboxScreen() {
               letterSpacing: 0.5,
             }}
           >
-            NEW MATCHES · {newMatches.length}
+            {t("newMatches").toUpperCase()} · {newMatches.length}
           </Text>
           <ScrollView
             horizontal
@@ -422,7 +421,7 @@ export default function InboxScreen() {
             letterSpacing: 0.5,
           }}
         >
-          MESSAGES · {matches.length}
+          {t("messages").toUpperCase()} · {matches.length}
         </Text>
       </View>
 

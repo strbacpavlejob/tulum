@@ -7,6 +7,7 @@ import type { Match, Message } from "@/types/chat";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { ArrowLeft, SendHorizontal, UserSearch } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
   Image,
@@ -159,6 +160,7 @@ export default function ChatModal({
 }: ChatModalProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [showFind, setShowFind] = useState(false);
   const matchProfileSheetRef = useRef<BottomSheetModal>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -292,7 +294,7 @@ export default function ChatModal({
                     marginTop: 2,
                   }}
                 >
-                  at {match.venue}
+                  {t("atVenue", { venue: match.venue })}
                 </Text>
               </View>
             </View>
@@ -358,7 +360,7 @@ export default function ChatModal({
                     padding: 0,
                     maxHeight: 100,
                   }}
-                  placeholder="Type a message..."
+                  placeholder={t("typeAMessage")}
                   placeholderTextColor={theme.gray10}
                   value={newMessage}
                   onChangeText={(text) => {

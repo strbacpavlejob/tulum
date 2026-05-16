@@ -2,10 +2,12 @@ import { fetchGuestMe } from "@/lib/api";
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function Index() {
   const { isSignedIn, isLoaded, userId } = useAuth();
+  const { t } = useTranslation();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [checkError, setCheckError] = useState(false);
@@ -70,8 +72,7 @@ export default function Index() {
             textAlign: "center",
           }}
         >
-          Could not reach the server. Make sure the API is running and
-          EXPO_PUBLIC_API_URL is set correctly.
+          {t("serverUnreachable")}
         </Text>
         <Pressable
           onPress={checkOnboarding}
@@ -82,7 +83,9 @@ export default function Index() {
             borderRadius: 12,
           }}
         >
-          <Text style={{ color: "white", fontWeight: "700" }}>Retry</Text>
+          <Text style={{ color: "white", fontWeight: "700" }}>
+            {t("retry")}
+          </Text>
         </Pressable>
       </View>
     );

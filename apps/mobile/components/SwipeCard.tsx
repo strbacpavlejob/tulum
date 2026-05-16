@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MapPin } from "lucide-react-native";
 import React, { useState } from "react";
 import { Dimensions, Image, Platform, Pressable, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
@@ -43,6 +44,7 @@ export default function SwipeCard({
   const translateY = useSharedValue(0);
   const rotateZ = useSharedValue(0);
   const scale = useSharedValue(1);
+  const { t } = useTranslation();
 
   const triggerHaptic = () => {
     if (Platform.OS !== "web") {
@@ -220,7 +222,7 @@ export default function SwipeCard({
             ]}
           >
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 18 }}>
-              LIKE
+              {t("like")}
             </Text>
           </AnimatedView>
 
@@ -243,7 +245,7 @@ export default function SwipeCard({
             ]}
           >
             <Text style={{ color: "#fff", fontWeight: "700", fontSize: 18 }}>
-              PASS
+              {t("pass")}
             </Text>
           </AnimatedView>
 

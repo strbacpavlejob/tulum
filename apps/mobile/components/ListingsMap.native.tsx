@@ -6,6 +6,7 @@ import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Search, SlidersHorizontal } from "lucide-react-native";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import useStore from "@/store/useStore";
@@ -61,6 +62,7 @@ const ListingsMap = memo(() => {
   const theme = useAppTheme();
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
+  const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
   const mapStyle = useCustomMapStyle();
   const insets = useSafeAreaInsets();
@@ -268,7 +270,7 @@ const ListingsMap = memo(() => {
           >
             <Search size={20} color={theme.gray10} />
             <TextInput
-              placeholder="Search events..."
+              placeholder={t("searchEvents")}
               placeholderTextColor={theme.gray10}
               value={filter.title}
               onChangeText={(text) => setFilter({ ...filter, title: text })}

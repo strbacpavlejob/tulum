@@ -9,6 +9,7 @@ import {
   fetchSwipeableProfiles,
   type SwipeableProfile,
 } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 import { Profile } from "@/types/profile";
 import { useAuth } from "@clerk/expo";
 
@@ -54,6 +55,7 @@ function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
 
 export default function MatchesScreen() {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const { userId } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -161,12 +163,7 @@ export default function MatchesScreen() {
 
   if (currentCardIndex >= profiles.length) {
     return (
-      <LinearGradient
-        colors={[theme.colorFocus, theme.background]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ flex: 1, width: "100%", height: "100%" }}
-      >
+      <View className="flex-1" style={{ backgroundColor: theme.background }}>
         <SafeAreaView style={{ flex: 1 }}>
           <View
             style={{
@@ -179,13 +176,13 @@ export default function MatchesScreen() {
             <View className="flex-1 justify-center items-center px-6">
               <EmptyIndicator
                 picture={HandsIcon}
-                title="No More Matches"
-                subtitle="Find event on map!"
+                title={t("noMatchesTitle")}
+                subtitle={t("noMatchesSubtitle")}
               />
             </View>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
     );
   }
 

@@ -1,5 +1,7 @@
 import "@/global.css";
+import "@/lib/i18n";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useLanguageSync } from "@/hooks/useLanguageSync";
 import useStoreSetup from "@/hooks/useStoreSetup";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ClerkProvider } from "@clerk/expo";
@@ -35,6 +37,7 @@ const MainStack = () => {
   const theme = useAppTheme();
   const background = theme.color;
   const { isLoadingStore } = useStoreSetup();
+  useLanguageSync();
 
   useEffect(() => {
     if (!isLoadingStore) {

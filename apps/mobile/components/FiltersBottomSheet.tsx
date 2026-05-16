@@ -27,6 +27,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CalendarRangePicker from "./CalendarRangePicker";
@@ -72,6 +73,7 @@ const defaultFilters: Filter = {
 export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
   ({ onChange, onApply, onReset, snapPoints }, ref) => {
     const theme = useAppTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const contentInsets = {
       top: insets.top,
@@ -185,7 +187,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
               onPress={reset}
             >
               <Text className="font-semibold" style={{ color: theme.gray11 }}>
-                Reset
+                {t("reset")}
               </Text>
             </Pressable>
             <Pressable
@@ -193,7 +195,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
               style={{ backgroundColor: theme.color }}
               onPress={apply}
             >
-              <Text className="font-semibold text-white">Apply</Text>
+              <Text className="font-semibold text-white">{t("apply")}</Text>
             </Pressable>
           </View>
         </BottomSheetFooter>
@@ -217,7 +219,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
         >
           <View className="flex-1 gap-3">
             <Text className="text-xl font-bold" style={{ color: theme.gray12 }}>
-              Filters
+              {t("filters")}
             </Text>
 
             <BottomSheetScrollView
@@ -233,7 +235,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                     className="font-semibold"
                     style={{ color: theme.gray11 }}
                   >
-                    Venue Type
+                    {t("filterVenueType")}
                   </Text>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -256,7 +258,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                             ? VENUE_TYPE_OPTIONS.find(
                                 (o) => o.value === filters.venueType,
                               )?.label
-                            : "Select venue type"}
+                            : t("selectVenueType")}
                         </Text>
                         <Text style={{ color: theme.gray9 }}>▾</Text>
                       </Pressable>
@@ -303,7 +305,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                       className="font-semibold"
                       style={{ color: theme.gray11 }}
                     >
-                      Capacity
+                      {t("capacity")}
                     </Text>
                     <Text className="text-xs" style={{ color: theme.gray10 }}>
                       {filters.capacityRange.min ?? 0} –{" "}
@@ -312,7 +314,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                   </View>
                   <View className="gap-1">
                     <Text className="text-xs" style={{ color: theme.gray9 }}>
-                      Min
+                      {t("min")}
                     </Text>
                     <Slider
                       minimumValue={0}
@@ -329,7 +331,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                   </View>
                   <View className="gap-1">
                     <Text className="text-xs" style={{ color: theme.gray9 }}>
-                      Max
+                      {t("max")}
                     </Text>
                     <Slider
                       minimumValue={0}
@@ -372,7 +374,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                     className="font-semibold"
                     style={{ color: theme.gray11 }}
                   >
-                    Only favorites
+                    {t("onlyFavorites")}
                   </Text>
                   <Pressable
                     onPress={() =>
