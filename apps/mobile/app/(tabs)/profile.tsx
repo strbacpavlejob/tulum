@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { fetchMyProfile, fetchSettings, updateSettings } from "@/lib/api";
+import { updateSettings } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
@@ -45,13 +45,7 @@ import {
   Sun,
   Trash2,
 } from "lucide-react-native";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
@@ -200,27 +194,6 @@ export default function ProfileScreen() {
   const { userId, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const [profileLoading, setProfileLoading] = useState(!user);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (user) return; // already loaded
-    setProfileLoading(true);
-    Promise.all([fetchMyProfile(userId), fetchSettings(userId)])
-      .then(([profile, remote]) => {
-        setUser(profile);
-        if (remote) {
-          setSettings({
-            ...settings,
-            language: remote.language,
-            theme: remote.theme,
-          });
-        }
-      })
-      .catch(console.error)
-      .finally(() => setProfileLoading(false));
-  }, [userId]);
-
   const [activeTab, setActiveTab] = useState("profile");
   const [editConfig, setEditConfig] = useState<EditConfig | null>(null);
   const [singleValue, setSingleValue] = useState("");
@@ -320,7 +293,7 @@ export default function ProfileScreen() {
     );
   };
 
-  if (profileLoading || !user)
+  if (!user)
     return (
       <View
         style={{

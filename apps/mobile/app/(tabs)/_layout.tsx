@@ -1,4 +1,6 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { fetchMyProfile, fetchSettings } from "@/lib/api";
+import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
 import {
@@ -8,7 +10,7 @@ import {
   Tickets,
   User,
 } from "lucide-react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Platform, View } from "react-native";
 
 type IconProps = {
@@ -37,8 +39,26 @@ const TabBarIcon: React.FC<IconProps> = ({
 };
 
 export default function TabLayout() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, userId } = useAuth();
   const theme = useAppTheme();
+  const { user, settings, setUser, setSettings } = useStore();
+
+  useEffect(() => {
+    if (!userId || user) return;
+    Promise.all([fetchMyProfile(userId), fetchSettings(userId)])
+      .then(([profile, remote]) => {
+        setUser(profile);
+        if (remote) {
+          setSettings({
+            ...settings,
+            language: remote.language,
+            theme: remote.theme,
+          });
+        }
+      })
+      .catch(console.error);
+  }, [userId]);
+
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect href="/(auth)/login" />;
   return (
