@@ -86,4 +86,30 @@ export class VenuesController {
     await this.venuesService.deleteVenue(id, userId);
     return { success: true };
   }
+
+  // ─── Venue Contact ───────────────────────────────────────────────────────────
+
+  @Get(':id/contact')
+  async getVenueContact(@Param('id', ParseIntPipe) id: number) {
+    return this.venuesService.getVenueContact(id);
+  }
+
+  @Post(':id/contact')
+  async upsertVenueContact(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() userId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.venuesService.upsertVenueContact(id, userId, body);
+  }
+
+  @Delete(':id/contact')
+  @HttpCode(HttpStatus.OK)
+  async deleteVenueContact(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() userId: string,
+  ) {
+    await this.venuesService.deleteVenueContact(id, userId);
+    return { success: true };
+  }
 }

@@ -14,6 +14,7 @@ export interface InstagramVenueProfile {
   biography: string | null;
   website: string | null;
   phoneNumber: string | null;
+  isWhatsappLinked: boolean;
   email: string | null;
   profilePictureUrl: string | null;
   address: string | null;
@@ -205,6 +206,25 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       picture_urls: profilePicR2 ? [profilePicR2] : [],
       instagram_url: `https://www.instagram.com/${profile.username}/`,
       scraper: 'instagram',
+      contact: profile.phoneNumber
+        ? {
+            phone_number: profile.phoneNumber,
+            is_phone: true,
+            is_viber: false,
+            is_sms: false,
+            is_whatsapp: profile.isWhatsappLinked,
+            instagram_handle: profile.username ?? null,
+          }
+        : profile.username
+          ? {
+              phone_number: '',
+              is_phone: false,
+              is_viber: false,
+              is_sms: false,
+              is_whatsapp: profile.isWhatsappLinked,
+              instagram_handle: profile.username,
+            }
+          : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -392,6 +412,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
         biography: (user.biography as string) ?? null,
         website: website ?? null,
         phoneNumber: (user.contact_phone_number as string) ?? null,
+        isWhatsappLinked: (user.is_whatsapp_linked as boolean) === true,
         email: (user.public_email as string) ?? null,
         profilePictureUrl: hdPicUrl ?? (user.profile_pic_url as string) ?? null,
         address: (user.address_street as string) ?? null,
@@ -496,6 +517,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       biography: null,
       website: null,
       phoneNumber: null,
+      isWhatsappLinked: false,
       email: null,
       profilePictureUrl: null,
       address: null,

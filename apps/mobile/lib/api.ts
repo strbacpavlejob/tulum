@@ -1,9 +1,19 @@
-import { Event } from "@/types/event";
+import { Event, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { User } from "@/types/user";
 
 const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+
+interface ActiveEventVenueContact {
+  id: number;
+  phone_number: string;
+  is_viber: boolean;
+  is_phone: boolean;
+  is_sms: boolean;
+  is_whatsapp: boolean;
+  instagram_handle: string | null;
+}
 
 interface ActiveEventResponse {
   id: string;
@@ -22,6 +32,8 @@ interface ActiveEventResponse {
   isFavorite: boolean;
   isSeen: boolean;
   isAttending: boolean;
+  venue_instagram_url: string | null;
+  venue_contact: ActiveEventVenueContact | null;
 }
 
 function mapActiveEventToEvent(item: ActiveEventResponse): Event {
@@ -43,6 +55,29 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
     isAttending: item.isAttending ?? false,
     guests: [],
     price: 0,
+    venueContact: item.venue_contact
+      ? ({
+          id: item.venue_contact.id,
+          phoneNumber: item.venue_contact.phone_number,
+          isViber: item.venue_contact.is_viber,
+          isPhone: item.venue_contact.is_phone,
+          isSms: item.venue_contact.is_sms,
+          isWhatsapp: item.venue_contact.is_whatsapp,
+          instagramHandle: item.venue_contact.instagram_handle,
+        } as VenueContact)
+      : item.venue_instagram_url
+        ? ({
+            id: 0,
+            phoneNumber: "",
+            isViber: false,
+            isPhone: false,
+            isSms: false,
+            isWhatsapp: false,
+            instagramHandle:
+              item.venue_instagram_url.replace(/\/+$/, "").split("/").pop() ??
+              null,
+          } as VenueContact)
+        : null,
   };
 }
 

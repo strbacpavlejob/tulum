@@ -102,7 +102,7 @@ export class EventsCrudService {
     let venuesQuery = this.db
       .from('venues')
       .select(
-        'id, name, latitude, longitude, address, capacity, venue_type, picture_url',
+        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, instagram_url',
       )
       .in('id', venueIds);
 
@@ -121,12 +121,43 @@ export class EventsCrudService {
     const { data: venues, error: venuesError } = await venuesQuery;
     if (venuesError) throw venuesError;
 
+    // Fetch contacts for venues that have one
+    const contactIds = [
+      ...new Set(
+        (venues ?? [])
+          .map(
+            (v) => (v as Record<string, unknown>).contact_id as number | null,
+          )
+          .filter(Boolean) as number[],
+      ),
+    ];
+    const contactMap = new Map<number, Record<string, unknown>>();
+    if (contactIds.length > 0) {
+      const { data: contacts, error: contactsError } = await this.db
+        .from('venue_contacts')
+        .select(
+          'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, instagram_handle',
+        )
+        .in('id', contactIds);
+      if (contactsError) throw contactsError;
+      for (const c of contacts ?? []) {
+        contactMap.set(
+          (c as Record<string, unknown>).id as number,
+          c as Record<string, unknown>,
+        );
+      }
+    }
+
     const venueMap = new Map(venues?.map((v) => [v.id as number, v]) ?? []);
 
     return uniqueEvents
       .map((event) => {
         const venue = venueMap.get(event.venue_id as number);
         if (!venue) return null;
+        const venueTyped = venue as Record<string, unknown>;
+        const contact = venueTyped.contact_id
+          ? (contactMap.get(venueTyped.contact_id as number) ?? null)
+          : null;
         return {
           id: String(event.id),
           name: event.title,
@@ -144,6 +175,19 @@ export class EventsCrudService {
           isFavorite: savedEventIds.has(Number(event.id)),
           isSeen: seenEventIds.has(Number(event.id)),
           isAttending: attendingEventIds.has(Number(event.id)),
+          venue_instagram_url: (venueTyped.instagram_url as string) ?? null,
+          venue_contact: contact
+            ? {
+                id: (contact as Record<string, unknown>).id,
+                phone_number: (contact as Record<string, unknown>).phone_number,
+                is_viber: (contact as Record<string, unknown>).is_viber,
+                is_phone: (contact as Record<string, unknown>).is_phone,
+                is_sms: (contact as Record<string, unknown>).is_sms,
+                is_whatsapp: (contact as Record<string, unknown>).is_whatsapp,
+                instagram_handle:
+                  (contact as Record<string, unknown>).instagram_handle ?? null,
+              }
+            : null,
         };
       })
       .filter(Boolean);

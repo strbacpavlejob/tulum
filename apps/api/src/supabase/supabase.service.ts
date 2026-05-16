@@ -47,6 +47,9 @@ export class SupabaseService implements OnModuleInit {
     // 1. Upsert venues and get back their DB IDs
     const venueNameToId = await this.upsertVenues(data.venues);
 
+    // 1b. Upsert contacts for venues that have contact info
+    await this.upsertVenueContacts(data.venues, venueNameToId);
+
     // 2. Map events to use real DB venue IDs (scraped data uses temporary IDs)
     const mappedEvents: Record<string, unknown>[] = [];
     for (const event of data.events) {
@@ -70,6 +73,84 @@ export class SupabaseService implements OnModuleInit {
     );
 
     return { venues: venueNameToId.size, events: savedEventsCount };
+  }
+
+  private async upsertVenueContacts(
+    venues: Omit<Venue, 'id'>[],
+    venueNameToId: Map<string, number>,
+  ): Promise<void> {
+    for (const venue of venues) {
+      if (!venue.contact) continue;
+      const venueId = venueNameToId.get(venue.name);
+      if (!venueId) continue;
+
+      // Skip contacts that have neither phone nor instagram handle
+      if (!venue.contact.phone_number && !venue.contact.instagram_handle)
+        continue;
+
+      // Upsert contact row — check if venue already has one
+      const { data: existingVenue } = await this.supabase
+        .from('venues')
+        .select('contact_id')
+        .eq('id', venueId)
+        .single();
+
+      let contactId: number | null =
+        (existingVenue as { contact_id: number | null } | null)?.contact_id ??
+        null;
+
+      if (contactId) {
+        // Update existing contact
+        const { error } = await this.supabase
+          .from('venue_contacts')
+          .update({
+            phone_number: venue.contact.phone_number,
+            is_phone: venue.contact.is_phone,
+            is_viber: venue.contact.is_viber,
+            is_sms: venue.contact.is_sms,
+            is_whatsapp: venue.contact.is_whatsapp,
+            instagram_handle: venue.contact.instagram_handle ?? null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', contactId);
+        if (error) {
+          this.logger.warn(
+            `Failed to update venue_contact for venue ${venue.name}: ${error.message}`,
+          );
+        }
+      } else {
+        // Insert new contact and link to venue
+        const { data: newContact, error: insertError } = await this.supabase
+          .from('venue_contacts')
+          .insert({
+            phone_number: venue.contact.phone_number,
+            is_phone: venue.contact.is_phone,
+            is_viber: venue.contact.is_viber,
+            is_sms: venue.contact.is_sms,
+            is_whatsapp: venue.contact.is_whatsapp,
+            instagram_handle: venue.contact.instagram_handle ?? null,
+          })
+          .select('id')
+          .single();
+        if (insertError || !newContact) {
+          this.logger.warn(
+            `Failed to insert venue_contact for venue ${venue.name}: ${insertError?.message}`,
+          );
+          continue;
+        }
+        contactId = (newContact as { id: number }).id;
+
+        const { error: linkError } = await this.supabase
+          .from('venues')
+          .update({ contact_id: contactId })
+          .eq('id', venueId);
+        if (linkError) {
+          this.logger.warn(
+            `Failed to link venue_contact to venue ${venue.name}: ${linkError.message}`,
+          );
+        }
+      }
+    }
   }
 
   private async upsertVenues(

@@ -14,15 +14,262 @@ import {
   unattendEvent,
 } from "@/lib/api";
 import useStore from "@/store/useStore";
+import { VenueContact } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { format, parseISO } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
-import { ArrowLeft, MapPin, UserPlus } from "lucide-react-native";
+import {
+  ArrowLeft,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Send,
+  UserPlus,
+} from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Image, Alert, Pressable, ScrollView, View } from "react-native";
+import {
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// ─── Helpers for deep-linking to contact apps ────────────────────────────
+
+function normalizePhone(raw: string): string {
+  return raw.replace(/[^+0-9]/g, "");
+}
+
+function openPhone(phone: string) {
+  Linking.openURL(`tel:${normalizePhone(phone)}`);
+}
+
+function openSms(phone: string) {
+  Linking.openURL(`sms:${normalizePhone(phone)}`);
+}
+
+function openViber(phone: string) {
+  Linking.openURL(`viber://chat?number=${normalizePhone(phone)}`).catch(() =>
+    Linking.openURL(`tel:${normalizePhone(phone)}`),
+  );
+}
+
+function openWhatsapp(phone: string) {
+  const number = normalizePhone(phone).replace(/^\+/, "");
+  Linking.openURL(`https://wa.me/${number}`).catch(() =>
+    Linking.openURL(`tel:${normalizePhone(phone)}`),
+  );
+}
+
+function openInstagramDm(handle: string) {
+  const username = handle.replace(/^@/, "");
+  Linking.openURL(`instagram://user?username=${username}`).catch(() =>
+    Linking.openURL(`https://instagram.com/${username}`),
+  );
+}
+
+// ─── Reservation Modal ───────────────────────────────────────────────────
+
+interface ReservationModalProps {
+  visible: boolean;
+  contact: VenueContact;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+function ReservationModal({
+  visible,
+  contact,
+  onClose,
+  onConfirm,
+}: ReservationModalProps) {
+  const theme = useAppTheme();
+  const [contacted, setContacted] = useState(false);
+
+  const contactMethods: {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    onPress: () => void;
+  }[] = [];
+
+  if (contact.isPhone) {
+    contactMethods.push({
+      key: "phone",
+      label: "Call",
+      icon: <Phone size={20} color={theme.color} />,
+      onPress: () => {
+        openPhone(contact.phoneNumber);
+        setContacted(true);
+      },
+    });
+  }
+  if (contact.isSms) {
+    contactMethods.push({
+      key: "sms",
+      label: "SMS",
+      icon: <MessageCircle size={20} color={theme.color} />,
+      onPress: () => {
+        openSms(contact.phoneNumber);
+        setContacted(true);
+      },
+    });
+  }
+  if (contact.isViber) {
+    contactMethods.push({
+      key: "viber",
+      label: "Viber",
+      icon: <Send size={20} color="#7360f2" />,
+      onPress: () => {
+        openViber(contact.phoneNumber);
+        setContacted(true);
+      },
+    });
+  }
+  if (contact.isWhatsapp) {
+    contactMethods.push({
+      key: "whatsapp",
+      label: "WhatsApp",
+      icon: <MessageCircle size={20} color="#25d366" />,
+      onPress: () => {
+        openWhatsapp(contact.phoneNumber);
+        setContacted(true);
+      },
+    });
+  }
+  if (contact.instagramHandle) {
+    const handle = contact.instagramHandle;
+    contactMethods.push({
+      key: "instagram",
+      label: "Instagram DM",
+      icon: <Send size={20} color="#e1306c" />,
+      onPress: () => {
+        openInstagramDm(handle);
+        setContacted(true);
+      },
+    });
+  }
+
+  const methodLabels = contactMethods.map((m) => m.label).join(", ");
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          justifyContent: "flex-end",
+        }}
+        onPress={onClose}
+      >
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: theme.backgroundStrong,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            padding: 24,
+            gap: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: theme.colorStrong,
+              textAlign: "center",
+            }}
+          >
+            Reservation required
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: theme.gray6,
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            {`This venue requires a reservation via ${methodLabels}. Contact them first, then confirm below.`}
+          </Text>
+
+          {/* Contact method buttons */}
+          <View style={{ gap: 10 }}>
+            {contactMethods.map((m) => (
+              <TouchableOpacity
+                key={m.key}
+                onPress={m.onPress}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 14,
+                  borderRadius: 12,
+                  backgroundColor: theme.background,
+                  borderWidth: 1,
+                  borderColor: theme.gray3,
+                }}
+              >
+                {m.icon}
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: theme.colorStrong,
+                  }}
+                >
+                  {m.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Confirm button — enabled once user has tapped a contact method */}
+          <TouchableOpacity
+            onPress={contacted ? onConfirm : undefined}
+            style={{
+              padding: 16,
+              borderRadius: 50,
+              alignItems: "center",
+              backgroundColor: contacted ? theme.color : theme.gray3,
+              marginTop: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: contacted ? theme.background : theme.gray6,
+              }}
+            >
+              {contacted
+                ? "I made the reservation — Attend"
+                : "Contact the venue first"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onClose} style={{ alignItems: "center" }}>
+            <Text style={{ fontSize: 14, color: theme.gray6 }}>Cancel</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+// ─── Main Screen ───────────────────────────────────────────────────────────
 
 const EventDetailsScreen = () => {
   const { getSelectedEvent, updateEventSeen, updateEventAttending } =
@@ -34,6 +281,7 @@ const EventDetailsScreen = () => {
   const { userId } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
   const [attending, setAttending] = useState(false);
+  const [showReservationModal, setShowReservationModal] = useState(false);
   const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
     maxSpots: 0,
     averageAge: null,
@@ -55,24 +303,43 @@ const EventDetailsScreen = () => {
 
   const handleAttend = async () => {
     if (!userId || !event?.id) return;
-    const next = !attending;
-    setAttending(next);
-    try {
-      if (next) {
-        await attendEvent(userId, event.id);
-      } else {
+
+    // If already attending — just cancel (no reservation needed)
+    if (attending) {
+      setAttending(false);
+      try {
         await unattendEvent(userId, event.id);
+        updateEventAttending(String(event.id), false);
+      } catch {
+        setAttending(true);
       }
-      updateEventAttending(String(event.id), next);
+      return;
+    }
+
+    // Show reservation/contact modal before attending
+    if (event.venueContact) {
+      setShowReservationModal(true);
+      return;
+    }
+
+    // No contact info at all — standard attend
+    await confirmAttend();
+  };
+
+  const confirmAttend = async () => {
+    if (!userId || !event?.id) return;
+    setShowReservationModal(false);
+    setAttending(true);
+    try {
+      await attendEvent(userId, event.id);
+      updateEventAttending(String(event.id), true);
     } catch (err) {
-      setAttending(!next);
-      if (next) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Something went wrong. Please try again.";
-        Alert.alert("Can't attend", message);
-      }
+      setAttending(false);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
+      Alert.alert("Can't attend", message);
     }
   };
 
@@ -317,6 +584,16 @@ const EventDetailsScreen = () => {
         females={females}
         males={males}
       />
+
+      {/* Reservation modal — always shown when attending */}
+      {event.venueContact && (
+        <ReservationModal
+          visible={showReservationModal}
+          contact={event.venueContact}
+          onClose={() => setShowReservationModal(false)}
+          onConfirm={confirmAttend}
+        />
+      )}
     </View>
   );
 };

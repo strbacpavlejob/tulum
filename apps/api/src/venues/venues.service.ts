@@ -151,6 +151,105 @@ export class VenuesService {
     await this.r2Service.deleteObject(key);
   }
 
+  // ─── Venue Contact ────────────────────────────────────────────────────────
+
+  async getVenueContact(venueId: number) {
+    const { data: venue, error } = await this.db
+      .from(VENUES_TABLE)
+      .select('contact_id')
+      .eq('id', venueId)
+      .single();
+    if (error) throw error;
+    if (!(venue as Record<string, unknown>).contact_id) return null;
+
+    const { data: contact, error: contactError } = await this.db
+      .from('venue_contacts')
+      .select(
+        'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, instagram_handle',
+      )
+      .eq('id', (venue as Record<string, unknown>).contact_id)
+      .single();
+    if (contactError) throw contactError;
+    return contact;
+  }
+
+  async upsertVenueContact(
+    venueId: number,
+    userId: string,
+    data: Record<string, unknown>,
+  ) {
+    await this.assertOwnership(venueId, userId);
+
+    const { data: existing } = await this.db
+      .from(VENUES_TABLE)
+      .select('contact_id')
+      .eq('id', venueId)
+      .single();
+
+    const existingContactId = (existing as Record<string, unknown>)
+      ?.contact_id as number | null;
+
+    const contactPayload = {
+      phone_number: data.phone_number,
+      is_viber: data.is_viber ?? false,
+      is_phone: data.is_phone ?? false,
+      is_sms: data.is_sms ?? false,
+      is_whatsapp: data.is_whatsapp ?? false,
+      instagram_handle: data.instagram_handle ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
+    let contactId: number;
+
+    if (existingContactId) {
+      const { data: updated, error } = await this.db
+        .from('venue_contacts')
+        .update(contactPayload)
+        .eq('id', existingContactId)
+        .select()
+        .single();
+      if (error) throw error;
+      contactId = (updated as Record<string, unknown>).id as number;
+    } else {
+      const { data: created, error } = await this.db
+        .from('venue_contacts')
+        .insert(contactPayload)
+        .select()
+        .single();
+      if (error) throw error;
+      contactId = (created as Record<string, unknown>).id as number;
+
+      await this.db
+        .from(VENUES_TABLE)
+        .update({ contact_id: contactId })
+        .eq('id', venueId);
+    }
+
+    return this.getVenueContact(venueId);
+  }
+
+  async deleteVenueContact(venueId: number, userId: string) {
+    await this.assertOwnership(venueId, userId);
+
+    const { data: venue } = await this.db
+      .from(VENUES_TABLE)
+      .select('contact_id')
+      .eq('id', venueId)
+      .single();
+
+    const contactId = (venue as Record<string, unknown>)?.contact_id as
+      | number
+      | null;
+    if (!contactId) return;
+
+    await this.db
+      .from(VENUES_TABLE)
+      .update({ contact_id: null })
+      .eq('id', venueId);
+
+    await this.db.from('venue_contacts').delete().eq('id', contactId);
+  }
+
   private async assertOwnership(venueId: number, userId: string) {
     const { data: venue } = await this.db
       .from(VENUES_TABLE)

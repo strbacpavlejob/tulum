@@ -10,6 +10,15 @@ export type VenueType =
   | 'tavern'
   | 'raft';
 
+export interface VenueContact {
+  phone_number: string;
+  is_viber: boolean;
+  is_phone: boolean;
+  is_sms: boolean;
+  is_whatsapp: boolean;
+  instagram_handle?: string | null;
+}
+
 export interface Venue {
   id: number;
   host_id?: string;
@@ -24,6 +33,7 @@ export interface Venue {
   picture_urls?: string[];
   scraper?: string;
   instagram_url?: string;
+  contact?: VenueContact | null;
   created_at?: string;
   updated_at?: string;
 }

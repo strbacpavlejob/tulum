@@ -1,3 +1,13 @@
+export interface VenueContact {
+  id: number;
+  phoneNumber: string;
+  isViber: boolean;
+  isPhone: boolean;
+  isSms: boolean;
+  isWhatsapp: boolean;
+  instagramHandle: string | null;
+}
+
 export interface EventGuests {
   name: string;
   age: number | null;
@@ -40,4 +50,5 @@ export interface Event {
   guests: EventGuests[];
   comment?: EventComment[];
   price: number;
+  venueContact: VenueContact | null;
 }
