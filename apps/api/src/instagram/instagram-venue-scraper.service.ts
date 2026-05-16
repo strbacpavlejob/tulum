@@ -4,9 +4,10 @@ import * as puppeteer from 'puppeteer';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RedisService } from '../redis/redis.service';
-import { Venue } from '../scrape/interfaces/venue.interface';
+import { Venue, VenueContact } from '../scrape/interfaces/venue.interface';
 import { Event } from '../scrape/interfaces/event.interface';
 import { extractEventData } from './instagram-event-extractor';
+import { instagramUsernameList } from '../scrape/instagram-username-list';
 
 export interface InstagramVenueProfile {
   username: string;
@@ -137,6 +138,97 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     }
 
     return { events, profilePictureUrl: profile.profilePictureUrl };
+  }
+
+  async syncInstagramContacts(): Promise<{
+    total: number;
+    updated: number;
+    created: number;
+    skipped: number;
+    errors: { username: string; reason: string }[];
+  }> {
+    const allVenues = await this.supabaseService.fetchAllVenues();
+
+    // Build a map from instagram handle → venue id
+    const handleToVenueId = new Map<string, number>();
+    for (const venue of allVenues) {
+      if (!venue.instagram_url) continue;
+      const handle = venue.instagram_url
+        .replace(/\/+$/, '')
+        .split('/')
+        .pop()
+        ?.toLowerCase();
+      if (handle) handleToVenueId.set(handle, venue.id);
+    }
+
+    const stats = {
+      total: 0,
+      updated: 0,
+      created: 0,
+      skipped: 0,
+      errors: [] as { username: string; reason: string }[],
+    };
+
+    for (const username of instagramUsernameList) {
+      stats.total++;
+      const venueId = handleToVenueId.get(username.toLowerCase());
+      if (!venueId) {
+        this.logger.warn(`@${username}: no matching venue in DB — skipping`);
+        stats.skipped++;
+        stats.errors.push({ username, reason: 'No matching venue in DB' });
+        continue;
+      }
+
+      try {
+        this.logger.log(`@${username}: scraping profile for contact info...`);
+        const { profile } = await this.scrapeVenue(username);
+
+        const contact: VenueContact | null = profile.phoneNumber
+          ? {
+              phone_number: profile.phoneNumber,
+              is_phone: true,
+              is_viber: false,
+              is_sms: false,
+              is_whatsapp: profile.isWhatsappLinked,
+              instagram_handle: profile.username ?? null,
+            }
+          : profile.username
+            ? {
+                phone_number: '',
+                is_phone: false,
+                is_viber: false,
+                is_sms: false,
+                is_whatsapp: profile.isWhatsappLinked,
+                instagram_handle: profile.username,
+              }
+            : null;
+
+        if (!contact) {
+          this.logger.warn(`@${username}: no contact info found — skipping`);
+          stats.skipped++;
+          continue;
+        }
+
+        const wasNew = await this.supabaseService.upsertVenueContactById(
+          venueId,
+          contact,
+        );
+        if (wasNew) {
+          stats.created++;
+          this.logger.log(`@${username}: contact created`);
+        } else {
+          stats.updated++;
+          this.logger.log(`@${username}: contact updated`);
+        }
+      } catch (err) {
+        const reason = (err as Error).message;
+        this.logger.error(`@${username}: failed — ${reason}`);
+        stats.errors.push({ username, reason });
+        stats.skipped++;
+      }
+    }
+
+    return stats;
   }
 
   async scrapeAllVenues(): Promise<{

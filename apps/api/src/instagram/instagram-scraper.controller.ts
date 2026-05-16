@@ -23,4 +23,10 @@ export class InstagramScraperController {
     const data = await this.instagramVenueScraperService.scrapeVenue(username);
     return data;
   }
+
+  @Post('sync-contacts')
+  async syncInstagramContacts() {
+    this.logger.log('Starting Instagram contact sync for all listed venues...');
+    return this.instagramVenueScraperService.syncInstagramContacts();
+  }
 }
