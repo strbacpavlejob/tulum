@@ -1,0 +1,60 @@
+# Dependencies (rebuilt inside image)
+
+node_modules/
+.pnp
+.pnp.\*
+
+# Build artifacts (rebuilt inside image)
+
+dist/
+build/
+
+# Turborepo cache
+
+.turbo/
+
+# Test files
+
+test/
+coverage/
+_.spec.ts
+_.e2e-spec.ts
+
+# Temporary files
+
+tmp/
+\*.log
+logs/
+
+# Git
+
+.git/
+.gitignore
+
+# Environment files (injected at runtime)
+
+.env
+.env.\*
+!.env.example
+
+# TypeScript build info
+
+\*.tsbuildinfo
+
+# IDE / OS
+
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Docker files themselves
+
+Dockerfile\*
+.dockerignore
+
+# CI / tooling
+
+.github/
+.prettierrc
+eslint.config.\*
