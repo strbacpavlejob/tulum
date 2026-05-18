@@ -33,7 +33,6 @@
     "@nestjs/websockets": "^11.1.19",
     "@supabase/supabase-js": "^2.100.1",
     "axios": "^1.13.6",
-    "canvas": "^3.2.3",
     "chrono-node": "^2.9.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
