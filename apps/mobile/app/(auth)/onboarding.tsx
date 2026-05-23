@@ -3,17 +3,24 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { fetchGuestMe, submitOnboarding } from "@/lib/api";
+import {
+  deleteGuestPhoto,
+  fetchGuestMe,
+  submitOnboarding,
+  uploadGuestPhoto,
+} from "@/lib/api";
 import type { GenderValue, SeekingValue } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { LookingForGender } from "@/types/user";
 import { useAuth } from "@clerk/expo";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, Check } from "lucide-react-native";
+import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -278,6 +285,158 @@ function BirthdayInput({
   );
 }
 
+// ─── Photo picker step ────────────────────────────────────────────────────────
+
+function PhotoPickerStep({
+  userId,
+  photos,
+  onPhotosChange,
+  uploading,
+  onUploadingChange,
+}: {
+  userId: string;
+  photos: string[];
+  onPhotosChange: (urls: string[]) => void;
+  uploading: boolean;
+  onUploadingChange: (v: boolean) => void;
+}) {
+  const theme = useAppTheme();
+
+  const pickAndUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Please allow access to your photo library.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    onUploadingChange(true);
+    try {
+      const updatedUrls = await uploadGuestPhoto(
+        userId,
+        asset.uri,
+        asset.mimeType ?? "image/jpeg",
+      );
+      onPhotosChange(updatedUrls);
+    } catch (err) {
+      Alert.alert(
+        "Upload failed",
+        err instanceof Error ? err.message : String(err),
+      );
+    } finally {
+      onUploadingChange(false);
+    }
+  };
+
+  const removePhoto = async (url: string) => {
+    onUploadingChange(true);
+    try {
+      const updatedUrls = await deleteGuestPhoto(userId, url);
+      onPhotosChange(updatedUrls);
+    } catch (err) {
+      Alert.alert(
+        "Remove failed",
+        err instanceof Error ? err.message : String(err),
+      );
+    } finally {
+      onUploadingChange(false);
+    }
+  };
+
+  const slots = Array.from({ length: 3 });
+
+  return (
+    <View>
+      <View className="flex-row flex-wrap gap-3 justify-center">
+        {slots.map((_, idx) => {
+          const photoUrl = photos[idx];
+          return (
+            <View
+              key={idx}
+              className="w-[30%] aspect-[3/4] rounded-2xl overflow-hidden"
+              style={{ backgroundColor: theme.backgroundMuted }}
+            >
+              {photoUrl ? (
+                <>
+                  <Image
+                    source={{ uri: photoUrl }}
+                    style={{ flex: 1 }}
+                    resizeMode="cover"
+                  />
+                  <Pressable
+                    onPress={() => removePhoto(photoUrl)}
+                    disabled={uploading}
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full items-center justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                  >
+                    <Trash2 size={14} color="#fff" />
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable
+                  onPress={photos.length >= 3 ? undefined : pickAndUpload}
+                  disabled={uploading || photos.length >= 3}
+                  className="flex-1 items-center justify-center gap-1"
+                >
+                  {uploading && idx === photos.length ? (
+                    <ActivityIndicator color={theme.color} />
+                  ) : (
+                    <>
+                      <Camera
+                        size={24}
+                        color={
+                          photos.length >= 3
+                            ? theme.backgroundMuted
+                            : theme.colorMuted
+                        }
+                      />
+                      {idx === 0 && photos.length === 0 && (
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            color: theme.colorMuted,
+                            textAlign: "center",
+                          }}
+                        >
+                          Add photo
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+      </View>
+      <Text
+        style={{
+          fontSize: 13,
+          color: theme.colorMuted,
+          textAlign: "center",
+          marginTop: 16,
+        }}
+      >
+        {photos.length === 0
+          ? "Add up to 3 photos"
+          : `${photos.length}/3 photo${photos.length > 1 ? "s" : ""} added`}
+      </Text>
+    </View>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
@@ -295,10 +454,15 @@ export default function OnboardingScreen() {
       return;
     }
     fetchGuestMe(userId)
-      .then(({ isOnboardingComplete }) => {
+      .then(({ guest, isOnboardingComplete }) => {
         if (isOnboardingComplete) {
           router.replace("/(tabs)");
         } else {
+          // Pre-populate photos from the database so previously uploaded
+          // photos are visible if the user returns before finishing.
+          if (guest?.picture_urls?.length) {
+            setPhotos(guest.picture_urls);
+          }
           setChecking(false);
         }
       })
@@ -324,10 +488,9 @@ export default function OnboardingScreen() {
   const [seeking, setSeeking] = useState<SeekingValue | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [venueTypes, setVenueTypes] = useState<string[]>([]);
-  const [photoUri] = useState<string>(
-    // Mock photo — replace with real expo-image-picker call
-    "https://api.dicebear.com/7.x/adventurer/png?seed=" + Math.random(),
-  );
+  // Uploaded R2 URLs (up to 3); populated as photos are picked and uploaded
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [bio, setBio] = useState("");
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -428,7 +591,7 @@ export default function OnboardingScreen() {
         seeking: seeking as SeekingValue,
         interested_in: interestedIn,
         interests: tags,
-        picture_urls: photoUri ? [photoUri] : [],
+        picture_urls: photos,
         birthday: birthdayIso,
       });
 
@@ -440,8 +603,8 @@ export default function OnboardingScreen() {
         lookingForGender: lookingForGender as LookingForGender,
         tags,
         preferredVenueTypes: venueTypes,
-        imgUrl: photoUri,
-        photos: [photoUri],
+        imgUrl: photos[0],
+        photos,
         info: bio.trim() || undefined,
       });
 
@@ -549,27 +712,13 @@ export default function OnboardingScreen() {
 
       case "photo":
         return (
-          <View className="items-center gap-4">
-            <Pressable
-              className="w-40 h-40 rounded-full items-center justify-center"
-              style={{ backgroundColor: theme.backgroundMuted }}
-            >
-              <Camera size={40} color={theme.colorMuted} />
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: theme.colorMuted,
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                Tap to upload
-              </Text>
-            </Pressable>
-            <Text style={{ fontSize: 13, color: theme.colorMuted }}>
-              Photo upload coming soon — you can skip this step
-            </Text>
-          </View>
+          <PhotoPickerStep
+            userId={userId!}
+            photos={photos}
+            onPhotosChange={setPhotos}
+            uploading={photoUploading}
+            onUploadingChange={setPhotoUploading}
+          />
         );
 
       case "bio":

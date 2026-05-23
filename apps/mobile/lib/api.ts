@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { Event, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { User } from "@/types/user";
@@ -246,6 +247,97 @@ export async function submitOnboarding(
     throw new Error(`Failed to submit onboarding: ${response.status} ${body}`);
   }
   return response.json() as Promise<GuestMeResponse>;
+}
+
+// ─── Guest photos ─────────────────────────────────────────────────────────────
+
+/**
+ * Upload a single profile photo. The server compresses it to 800×600 WebP
+ * (~200 KB) using sharp and stores it in R2.
+ * Returns the full updated picture_urls array (up to 3 photos).
+ */
+export async function uploadGuestPhoto(
+  userId: string,
+  fileUri: string,
+  mimeType: string = "image/jpeg",
+): Promise<string[]> {
+  if (Platform.OS === "web") {
+    // In the browser (Expo Web), the asset URI is a data: or blob: URL.
+    // FormData requires an actual File/Blob — appending a plain object
+    // would stringify it as "[object Object]", causing a 400 on the server.
+    const res = await fetch(fileUri);
+    const blob = await res.blob();
+    const file = new File([blob], "photo.jpg", { type: mimeType });
+
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const response = await fetch(`${TULUM_API_URL}/guests/photos`, {
+      method: "POST",
+      headers: { "x-user-id": userId },
+      // Do NOT set Content-Type — the browser sets it with the correct boundary.
+      body: formData,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to upload photo: ${response.status} ${text}`);
+    }
+    const data = (await response.json()) as { picture_urls: string[] };
+    return data.picture_urls;
+  }
+
+  // React Native (iOS / Android): XHR is used instead of fetch because
+  // React Native's fetch does not reliably set the multipart/form-data
+  // boundary, causing multer on the server to miss the file entirely.
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("photo", {
+      uri: fileUri,
+      name: "photo.jpg",
+      type: mimeType,
+    } as unknown as Blob);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${TULUM_API_URL}/guests/photos`);
+    // Do NOT set Content-Type manually — XHR sets it with the correct boundary.
+    xhr.setRequestHeader("x-user-id", userId);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const data = JSON.parse(xhr.responseText) as { picture_urls: string[] };
+        resolve(data.picture_urls);
+      } else {
+        reject(
+          new Error(
+            `Failed to upload photo: ${xhr.status} ${xhr.responseText}`,
+          ),
+        );
+      }
+    };
+    xhr.onerror = () =>
+      reject(new Error("Network error while uploading photo"));
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Delete a profile photo by its R2 URL.
+ * Returns the full updated picture_urls array.
+ */
+export async function deleteGuestPhoto(
+  userId: string,
+  url: string,
+): Promise<string[]> {
+  const response = await fetch(`${TULUM_API_URL}/guests/photos`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", "x-user-id": userId },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to delete photo: ${response.status} ${body}`);
+  }
+  const data = (await response.json()) as { picture_urls: string[] };
+  return data.picture_urls;
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

@@ -2,11 +2,18 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
+  ParseFilePipe,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { GuestsService } from './guests.service';
@@ -48,5 +55,49 @@ export class GuestsController {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
     return this.guestsService.upsertOnboarding(userId, dto);
+  }
+
+  /**
+   * POST /guests/photos
+   * Upload a single profile photo (max 3 total).
+   * Accepts multipart/form-data with field name "photo".
+   * Returns the updated picture_urls array.
+   */
+  @Post('photos')
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiConsumes('multipart/form-data')
+  async uploadPhoto(
+    @UserId() userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 15 * 1024 * 1024 }), // 15 MB raw
+          new FileTypeValidator({
+            fileType: /^image\/(jpeg|png|webp|heic|heif)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    if (!userId)
+      throw new BadRequestException('Missing required header: x-user-id');
+    const pictureUrls = await this.guestsService.uploadPhoto(userId, file);
+    return { picture_urls: pictureUrls };
+  }
+
+  /**
+   * DELETE /guests/photos
+   * Remove a profile photo by its URL.
+   * Returns the updated picture_urls array.
+   */
+  @Delete('photos')
+  async deletePhoto(@UserId() userId: string, @Body() body: { url: string }) {
+    if (!userId)
+      throw new BadRequestException('Missing required header: x-user-id');
+    if (!body?.url)
+      throw new BadRequestException('Missing required field: url');
+    const pictureUrls = await this.guestsService.deletePhoto(userId, body.url);
+    return { picture_urls: pictureUrls };
   }
 }
