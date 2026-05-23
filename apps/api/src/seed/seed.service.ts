@@ -93,19 +93,22 @@ export class SeedService {
         { onConflict: 'user_id', ignoreDuplicates: true },
       );
 
-    // 4 ── Create a mock venue owned by this user
+    // 4 ── Create a mock venue owned by this user (upsert on name to be idempotent)
     const { data: venue, error: venueErr } = await this.db
       .from('venues')
-      .insert({
-        host_id: userId,
-        venue_type: 'nightclub',
-        name: 'Mock Club Tulum',
-        description: 'A fictional venue created for testing purposes.',
-        latitude: 44.8176,
-        longitude: 20.4569,
-        address: 'Knez Mihailova 1, Belgrade',
-        capacity: 300,
-      })
+      .upsert(
+        {
+          host_id: userId,
+          venue_type: 'nightclub',
+          name: 'Mock Club Tulum',
+          description: 'A fictional venue created for testing purposes.',
+          latitude: 44.8176,
+          longitude: 20.4569,
+          address: 'Knez Mihailova 1, Belgrade',
+          capacity: 300,
+        },
+        { onConflict: 'name' },
+      )
       .select('id')
       .single();
     if (venueErr) throw venueErr;

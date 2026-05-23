@@ -6,6 +6,7 @@ import {
   Baby,
   BookOpen,
   Briefcase,
+  Camera,
   ChevronRight,
   Cigarette,
   Globe,
@@ -13,6 +14,7 @@ import {
   PawPrint,
   Ruler,
   Star,
+  Trash2,
   Users,
   Wine,
 } from "lucide-react-native";
@@ -37,6 +39,8 @@ function formatList(arr?: string[]) {
  * When omitted, the view is fully read-only.
  */
 export type ProfileInfoEditCallbacks = {
+  onAddPhoto(): void;
+  onRemovePhoto(url: string): void;
   onEditTags(): void;
   onEditWork(): void;
   onEditEducation(): void;
@@ -133,44 +137,93 @@ export default function ProfileInfoView({
           {t("photos")}
         </Text>
         <View className="flex-row h-[200px] gap-1.5 mt-2">
-          <Pressable className="flex-1" disabled>
+          {/* Slot 0 — large left */}
+          <View className="flex-1 relative">
             {user.photos?.[0] ? (
-              <Image
-                source={{ uri: user.photos[0] }}
-                className="flex-1 rounded-xl"
-                resizeMode="cover"
-              />
+              <>
+                <Image
+                  source={{ uri: user.photos[0] }}
+                  className="flex-1 rounded-xl"
+                  resizeMode="cover"
+                />
+                {editable && (
+                  <Pressable
+                    onPress={() =>
+                      editCallbacks!.onRemovePhoto(user.photos![0])
+                    }
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full items-center justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                  >
+                    <Trash2 size={13} color="#fff" />
+                  </Pressable>
+                )}
+              </>
             ) : (
-              <View
+              <Pressable
+                onPress={
+                  editable && (user.photos?.length ?? 0) < 3
+                    ? editCallbacks!.onAddPhoto
+                    : undefined
+                }
+                disabled={!editable}
                 className="flex-1 rounded-xl items-center justify-center"
                 style={{ backgroundColor: theme.backgroundMuted }}
               >
-                <Text style={{ color: theme.colorMuted, fontSize: 28 }}>
-                  {editable ? "+" : "—"}
-                </Text>
-              </View>
+                {editable ? (
+                  <Camera size={26} color={theme.colorMuted} />
+                ) : (
+                  <Text style={{ color: theme.colorMuted, fontSize: 28 }}>
+                    —
+                  </Text>
+                )}
+              </Pressable>
             )}
-          </Pressable>
+          </View>
+
+          {/* Slots 1 & 2 — right column */}
           <View className="flex-1 gap-1.5">
             {[1, 2].map((idx) => (
-              <Pressable key={idx} className="flex-1" disabled>
+              <View key={idx} className="flex-1 relative">
                 {user.photos?.[idx] ? (
-                  <Image
-                    source={{ uri: user.photos[idx] }}
-                    className="flex-1 rounded-xl"
-                    resizeMode="cover"
-                  />
+                  <>
+                    <Image
+                      source={{ uri: user.photos[idx] }}
+                      className="flex-1 rounded-xl"
+                      resizeMode="cover"
+                    />
+                    {editable && (
+                      <Pressable
+                        onPress={() =>
+                          editCallbacks!.onRemovePhoto(user.photos![idx])
+                        }
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full items-center justify-center"
+                        style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                      >
+                        <Trash2 size={11} color="#fff" />
+                      </Pressable>
+                    )}
+                  </>
                 ) : (
-                  <View
+                  <Pressable
+                    onPress={
+                      editable && (user.photos?.length ?? 0) < 3
+                        ? editCallbacks!.onAddPhoto
+                        : undefined
+                    }
+                    disabled={!editable}
                     className="flex-1 rounded-xl items-center justify-center"
                     style={{ backgroundColor: theme.backgroundMuted }}
                   >
-                    <Text style={{ color: theme.colorMuted, fontSize: 22 }}>
-                      {editable ? "+" : "—"}
-                    </Text>
-                  </View>
+                    {editable ? (
+                      <Camera size={18} color={theme.colorMuted} />
+                    ) : (
+                      <Text style={{ color: theme.colorMuted, fontSize: 22 }}>
+                        —
+                      </Text>
+                    )}
+                  </Pressable>
                 )}
-              </Pressable>
+              </View>
             ))}
           </View>
         </View>

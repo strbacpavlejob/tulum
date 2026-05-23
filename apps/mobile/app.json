@@ -55,7 +55,13 @@
       "expo-web-browser",
       "expo-font",
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set a profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

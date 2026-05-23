@@ -44,7 +44,9 @@ export default function TabLayout() {
   const { user, settings, setUser, setSettings } = useStore();
 
   useEffect(() => {
-    if (!userId || user) return;
+    // Re-fetch whenever userId changes or the store user lacks an id
+    // (e.g. after onboarding sets a partial user without id/email).
+    if (!userId || user?.id) return;
     Promise.all([fetchMyProfile(userId), fetchSettings(userId)])
       .then(([profile, remote]) => {
         setUser(profile);

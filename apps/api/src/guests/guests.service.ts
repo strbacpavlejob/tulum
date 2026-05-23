@@ -1,8 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 
 const GUESTS_TABLE = 'guests';
+const MAX_PHOTOS = 3;
+// Profile photo dimensions and target quality
+const PHOTO_WIDTH = 800;
+const PHOTO_HEIGHT = 600;
 
 function isOnboardingComplete(guest: Record<string, unknown> | null): boolean {
   if (!guest) return false;
@@ -16,7 +22,10 @@ function isOnboardingComplete(guest: Record<string, unknown> | null): boolean {
 
 @Injectable()
 export class GuestsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly r2Service: R2Service,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -154,5 +163,75 @@ export class GuestsService {
         data as Record<string, unknown>,
       ),
     };
+  }
+
+  async uploadPhoto(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<string[]> {
+    const { data: guest } = await this.db
+      .from(GUESTS_TABLE)
+      .select('picture_urls')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const currentUrls: string[] = (guest?.picture_urls as string[]) ?? [];
+    if (currentUrls.length >= MAX_PHOTOS) {
+      throw new BadRequestException(
+        `Maximum ${MAX_PHOTOS} photos allowed. Remove a photo first.`,
+      );
+    }
+
+    const key = `guests/${userId}/${randomUUID()}.webp`;
+    const url = await this.r2Service.uploadAndProcessImage(
+      file.buffer,
+      key,
+      PHOTO_WIDTH,
+      PHOTO_HEIGHT,
+    );
+
+    const updatedUrls = [...currentUrls, url];
+
+    // Only UPDATE when the guest row already exists. If it doesn't (photo
+    // uploaded during onboarding before submitOnboarding is called), skip the
+    // DB write — the URL is returned to the client and will be included in
+    // picture_urls when submitOnboarding completes.
+    // Using UPDATE (not upsert) avoids a silent INSERT failure caused by the
+    // NOT NULL constraint on `interested_in` which has no default.
+    if (guest) {
+      const { error } = await this.db
+        .from(GUESTS_TABLE)
+        .update({ picture_urls: updatedUrls })
+        .eq('user_id', userId);
+      if (error) throw error;
+    }
+
+    return updatedUrls;
+  }
+
+  async deletePhoto(userId: string, url: string): Promise<string[]> {
+    const { data: guest } = await this.db
+      .from(GUESTS_TABLE)
+      .select('picture_urls')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const currentUrls: string[] = (guest?.picture_urls as string[]) ?? [];
+
+    const key = this.r2Service.extractKeyFromUrl(url);
+    if (key) {
+      await this.r2Service.deleteObject(key).catch(() => {
+        // Deletion from R2 is best-effort; proceed even if it fails
+      });
+    }
+
+    const updatedUrls = currentUrls.filter((u) => u !== url);
+    const { error } = await this.db
+      .from(GUESTS_TABLE)
+      .update({ picture_urls: updatedUrls })
+      .eq('user_id', userId);
+    if (error) throw error;
+
+    return updatedUrls;
   }
 }

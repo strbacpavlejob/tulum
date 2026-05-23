@@ -19,7 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { updateSettings } from "@/lib/api";
+import { updateSettings, uploadGuestPhoto, deleteGuestPhoto } from "@/lib/api";
+import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
@@ -46,7 +47,13 @@ import {
   Trash2,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -267,6 +274,54 @@ export default function ProfileScreen() {
     if (user) setUser({ ...user, ...patch });
   };
 
+  // ── Photo callbacks ─────────────────────────────────────────────────────────
+
+  const handleAddPhoto = async () => {
+    if (!userId) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Please allow access to your photo library.",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    try {
+      const updatedUrls = await uploadGuestPhoto(
+        userId,
+        asset.uri,
+        asset.mimeType ?? "image/jpeg",
+      );
+      patchUser({ photos: updatedUrls, imgUrl: updatedUrls[0] });
+    } catch (err) {
+      Alert.alert(
+        "Upload failed",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  };
+
+  const handleRemovePhoto = async (url: string) => {
+    if (!userId) return;
+    try {
+      const updatedUrls = await deleteGuestPhoto(userId, url);
+      patchUser({ photos: updatedUrls, imgUrl: updatedUrls[0] });
+    } catch (err) {
+      Alert.alert(
+        "Remove failed",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  };
+
   const patchSettings = (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
     setSettings(next);
@@ -453,6 +508,12 @@ export default function ProfileScreen() {
               <ProfileInfoView
                 user={user}
                 editCallbacks={{
+                  onAddPhoto: () => {
+                    void handleAddPhoto();
+                  },
+                  onRemovePhoto: (url) => {
+                    void handleRemovePhoto(url);
+                  },
                   onEditTags: () =>
                     openMultiSelect(
                       t("tags"),
