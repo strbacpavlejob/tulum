@@ -1,9 +1,9 @@
-import { Input } from "@/components/ui/input";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
-import { Filter, Search, XCircle } from "lucide-react-native";
+import { CircleX, Search, SlidersHorizontal } from "lucide-react-native";
 import React, { useRef } from "react";
-import type { TextInput } from "react-native";
-import { View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { Pressable, TextInput, View } from "react-native";
 import {
   FiltersBottomSheet,
   FiltersBottomSheetRef,
@@ -17,65 +17,67 @@ const SearchBox: React.FC = () => {
     resetEventsFilter,
     refreshEvents,
   } = useStore();
+  const theme = useAppTheme();
+  const { t } = useTranslation();
   const ref = useRef<FiltersBottomSheetRef>(null);
-  const inputRef = useRef<TextInput>(null);
 
   return (
     <>
-      <View className="flex-1 h-[50px] w-full flex-row items-center justify-between gap-4">
-        {/* Search Field */}
+      <View className="flex-row items-center gap-3">
         <View
-          className="flex-1 flex-row items-center bg-white rounded-xl px-4 h-[50px]"
+          className="flex-1 flex-row items-center gap-2 rounded-full px-4"
           style={{
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
+            height: 48,
+            backgroundColor: theme.background075,
+            borderWidth: 1,
+            borderColor: theme.gray4,
           }}
         >
           {filter.title.length > 0 ? (
-            <XCircle
-              color="#6b7280"
-              size={20}
+            <Pressable
               onPress={() => {
                 setFilter({ ...filter, title: "" });
                 applyEventsFilter();
               }}
-            />
+              hitSlop={8}
+            >
+              <CircleX size={20} color={theme.gray10} />
+            </Pressable>
           ) : (
-            <Search color="#6b7280" size={20} />
+            <Search size={20} color={theme.gray10} />
           )}
-          <Input
-            ref={inputRef}
-            className="flex-1 h-full ml-2 border-0 shadow-none"
+          <TextInput
+            placeholder={t("searchEvents")}
+            placeholderTextColor={theme.gray10}
             value={filter.title}
-            placeholderTextColor="#6b7280"
-            placeholder="Search..."
+            onChangeText={(text) => setFilter({ ...filter, title: text })}
+            onSubmitEditing={() => applyEventsFilter()}
             returnKeyType="search"
-            onChange={(e) =>
-              setFilter({ ...filter, title: e.nativeEvent.text })
-            }
-            onSubmitEditing={() => {
-              applyEventsFilter();
-            }}
-          />
-          <Filter
-            color="#6b7280"
-            size={20}
-            onPress={() => ref.current?.open()}
+            style={{ flex: 1, fontSize: 14, color: theme.gray12 }}
           />
         </View>
+
+        <Pressable
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: theme.background075,
+            borderWidth: 1,
+            borderColor: theme.gray4,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onPress={() => ref.current?.open()}
+        >
+          <SlidersHorizontal size={20} color={theme.gray10} />
+        </Pressable>
       </View>
+
       <FiltersBottomSheet
         ref={ref}
-        initial={{
-          isOnlyFavorite: false,
-          priceRange: { min: 10, max: 150 },
-        }}
         onApply={() => refreshEvents()}
         onReset={() => resetEventsFilter()}
-        onChange={(f) => {}}
       />
     </>
   );

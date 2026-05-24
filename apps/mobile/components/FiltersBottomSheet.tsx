@@ -100,6 +100,10 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
       },
     }));
 
+    // Keep a ref so stable callbacks always read the latest filters
+    const filtersRef = useRef(filters);
+    filtersRef.current = filters;
+
     const rehydrateFromStore = () => {
       const current = getFilterFromStore();
       const merged: Filter = {
@@ -164,18 +168,23 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
       });
     };
 
-    const reset = () => {
+    const reset = useCallback(() => {
       const cleared = { ...defaultFilters };
       setFilters(cleared);
       setFilterInStore(cleared);
+      onApply?.(cleared);
       onReset?.();
-    };
-
-    const apply = () => {
-      setFilterInStore(filters);
-      onApply?.(filters);
       modalRef.current?.close();
-    };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const apply = useCallback(() => {
+      const current = filtersRef.current;
+      setFilterInStore(current);
+      onApply?.(current);
+      modalRef.current?.close();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const renderFooter = useCallback(
       (props: any) => (
@@ -201,7 +210,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
         </BottomSheetFooter>
       ),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [reset, apply],
+      [],
     );
 
     return (
@@ -321,7 +330,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                       maximumValue={1000}
                       step={10}
                       value={filters.capacityRange.min ?? 0}
-                      onValueChange={(val) =>
+                      onSlidingComplete={(val) =>
                         patchNested(["capacityRange", "min"], Math.round(val))
                       }
                       minimumTrackTintColor={theme.color}
@@ -338,7 +347,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                       maximumValue={1000}
                       step={10}
                       value={filters.capacityRange.max ?? 1000}
-                      onValueChange={(val) =>
+                      onSlidingComplete={(val) =>
                         patchNested(["capacityRange", "max"], Math.round(val))
                       }
                       minimumTrackTintColor={theme.color}

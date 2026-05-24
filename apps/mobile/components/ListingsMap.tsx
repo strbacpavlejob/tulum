@@ -2,7 +2,7 @@ import { LATITUDE_DELTA, LONGITUDE_DELTA } from "@/constants/map";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Search, SlidersHorizontal } from "lucide-react-native";
+
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createRoot } from "react-dom/client";
@@ -16,19 +16,15 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   useColorScheme,
   View,
   ViewToken,
 } from "react-native";
 import { DiscoverCard } from "./DiscoverCard";
-import {
-  FiltersBottomSheet,
-  FiltersBottomSheetRef,
-} from "./FiltersBottomSheet";
 import MapClusterIcon from "./MapClusterIcon";
 import MapControlsOverlay from "./MapControlsOverlay";
 import MapMarkerIcon from "./MapMarkerIcon";
+import SearchBox from "./SearchBox";
 
 /* ── Render a React component into a DOM element for Leaflet ── */
 function renderToDiv(
@@ -125,8 +121,6 @@ const ListingsMap = memo(() => {
     filter,
     setFilter,
     applyEventsFilter,
-    resetEventsFilter,
-    refreshEvents,
   } = useStore();
   const theme = useAppTheme();
   const colorScheme = useColorScheme();
@@ -138,7 +132,6 @@ const ListingsMap = memo(() => {
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
-  const filtersRef = useRef<FiltersBottomSheetRef>(null);
 
   const CARD_WIDTH = 300;
   const CARD_GAP = 12;
@@ -384,43 +377,8 @@ const ListingsMap = memo(() => {
         className="absolute top-0 left-0 right-0 z-10 px-4 pb-3"
         pointerEvents="box-none"
       >
-        <View className="flex-row items-center gap-3" pointerEvents="auto">
-          <View
-            className="flex-1 flex-row items-center gap-2 rounded-full px-4"
-            style={{
-              height: 48,
-              backgroundColor: theme.background075,
-              borderWidth: 1,
-              borderColor: theme.gray4,
-            }}
-          >
-            <Search size={20} color={theme.gray10} />
-            <TextInput
-              placeholder={t("searchEvents")}
-              placeholderTextColor={theme.gray10}
-              value={filter.title}
-              onChangeText={(text) => setFilter({ ...filter, title: text })}
-              onSubmitEditing={() => applyEventsFilter()}
-              returnKeyType="search"
-              style={{ flex: 1, fontSize: 14, color: theme.gray12 }}
-            />
-          </View>
-
-          <Pressable
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: theme.background075,
-              borderWidth: 1,
-              borderColor: theme.gray4,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onPress={() => filtersRef.current?.open()}
-          >
-            <SlidersHorizontal size={20} color={theme.gray10} />
-          </Pressable>
+        <View pointerEvents="auto">
+          <SearchBox />
         </View>
 
         <ScrollView
@@ -462,12 +420,6 @@ const ListingsMap = memo(() => {
         onZoomIn={onZoomIn}
         onZoomOut={onZoomOut}
         onLocate={onLocate}
-      />
-
-      <FiltersBottomSheet
-        ref={filtersRef}
-        onApply={() => refreshEvents()}
-        onReset={() => resetEventsFilter()}
       />
 
       {/* Bottom gradient + cards */}
