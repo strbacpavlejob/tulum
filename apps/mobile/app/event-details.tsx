@@ -282,6 +282,8 @@ const EventDetailsScreen = () => {
   const guestListRef = useRef<BottomSheetModal>(null);
   const [attending, setAttending] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
+  const [titleExpanded, setTitleExpanded] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
   const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
     maxSpots: 0,
     averageAge: null,
@@ -457,12 +459,14 @@ const EventDetailsScreen = () => {
             </View>
 
             <View className="flex-1 pb-1">
-              <Text
-                style={{ fontSize: 22, fontWeight: "700", color: "#fff" }}
-                numberOfLines={1}
-              >
-                {event.title}
-              </Text>
+              <Pressable onPress={() => setTitleExpanded((v) => !v)}>
+                <Text
+                  style={{ fontSize: 22, fontWeight: "700", color: "#fff" }}
+                  numberOfLines={titleExpanded ? undefined : 1}
+                >
+                  {event.title}
+                </Text>
+              </Pressable>
               <View className="flex-row flex-wrap gap-2 mt-2">
                 <Tags tags={event.tags} />
               </View>
@@ -483,14 +487,16 @@ const EventDetailsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Description + Date */}
-        <View className="flex-row items-center gap-4">
+        <View className="flex-row items-start gap-4">
           <View className="flex-1">
-            <Text
-              style={{ fontSize: 14, lineHeight: 22, color: theme.gray6 }}
-              numberOfLines={3}
-            >
-              {event.description}
-            </Text>
+            <Pressable onPress={() => setDescExpanded((v) => !v)}>
+              <Text
+                style={{ fontSize: 14, lineHeight: 22, color: theme.gray6 }}
+                numberOfLines={descExpanded ? undefined : 3}
+              >
+                {event.description}
+              </Text>
+            </Pressable>
           </View>
           <View className="shrink-0">
             <DateCard dateString={event.date} />
