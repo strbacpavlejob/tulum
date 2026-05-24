@@ -190,7 +190,7 @@ export function extractEventData(caption: string): ExtractedEventData {
     venue: venue.value,
     startDateTime,
     endDateTime,
-    tags,
+    tags: tags.slice(0, 3),
     confidence: {
       title: title.confidence,
       venue: venue.confidence,

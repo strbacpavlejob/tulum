@@ -253,7 +253,10 @@ export class SupabaseService implements OnModuleInit {
       description: this.sanitize(event.description),
       start_date_time: event.start_date_time,
       end_date_time: event.end_date_time,
-      tags: event.tags?.map((t) => t.replace(/\u0000/g, '')) ?? [],
+      tags: (event.tags?.map((t) => t.replace(/\u0000/g, '')) ?? []).slice(
+        0,
+        3,
+      ),
       picture_url: event.picture,
       status: event.status,
     };
@@ -332,7 +335,8 @@ export class SupabaseService implements OnModuleInit {
       .single();
 
     const existingContactId =
-      (existingVenue as { contact_id: number | null } | null)?.contact_id ?? null;
+      (existingVenue as { contact_id: number | null } | null)?.contact_id ??
+      null;
 
     if (existingContactId) {
       const { error } = await this.supabase

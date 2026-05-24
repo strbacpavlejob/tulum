@@ -42,7 +42,7 @@ export function mapGoEventToEvent(
     description: goEvent.description,
     start_date_time: startDate.toISOString(),
     end_date_time: endDate.toISOString(),
-    tags: goEvent.tags?.map((tag) => tag.name) ?? [],
+    tags: (goEvent.tags?.map((tag) => tag.name) ?? []).slice(0, 3),
     picture: goEvent.image_url || goEvent.thumb_url,
     status: 'active',
     tickets_sold: 0,
