@@ -3,7 +3,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createRoot } from "react-dom/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -101,18 +101,6 @@ const INITIAL_REGION = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
-const FILTER_TAGS = [
-  "All",
-  "Nightlife",
-  "Rooftop",
-  "Live Music",
-  "Cocktails",
-  "House",
-  "Deep House",
-  "Outdoor",
-  "Festival",
-];
-
 const ListingsMap = memo(() => {
   const {
     filteredEvents: listings,
@@ -139,6 +127,18 @@ const ListingsMap = memo(() => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const [activeTag, setActiveTag] = useState("All");
   const [mapReady, setMapReady] = useState(false);
+
+  const filterTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    (events ?? []).forEach((e) =>
+      e.tags?.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)),
+    );
+    const top10 = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag]) => tag);
+    return ["All", ...top10];
+  }, [events]);
 
   /* ── Leaflet map refs ─────────────────────────────── */
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -387,7 +387,7 @@ const ListingsMap = memo(() => {
           contentContainerStyle={{ gap: 8, paddingTop: 12, paddingBottom: 4 }}
           pointerEvents="auto"
         >
-          {FILTER_TAGS.map((tag) => (
+          {filterTags.map((tag) => (
             <Pressable
               key={tag}
               onPress={() => handleTagPress(tag)}
