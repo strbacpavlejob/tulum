@@ -4,7 +4,7 @@ import { Tag } from "./Tag";
 
 interface TagsProps {
   tags: string[];
-  size?: "sm" | "md" | "lg";
+  size?: "ssm" | "sm" | "md" | "lg";
 }
 
 const Tags = ({ tags, size }: TagsProps) => {

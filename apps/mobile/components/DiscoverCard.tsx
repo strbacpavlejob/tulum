@@ -1,4 +1,5 @@
 import FavoriteButton from "@/components/FavoriteButton";
+import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Event } from "@/types/event";
@@ -27,8 +28,8 @@ export const DiscoverCard = ({
     <Pressable
       onPress={onPress}
       style={{
-        height: 96,
-        minWidth: 300,
+        height: 112,
+        width: 300,
         flexDirection: "row",
         borderRadius: 16,
         overflow: "hidden",
@@ -38,7 +39,7 @@ export const DiscoverCard = ({
       }}
     >
       {/* Image */}
-      <View style={{ width: "33%", height: "100%" }}>
+      <View style={{ width: 100, height: "100%" }}>
         <Image
           source={{ uri: event.image }}
           style={{ width: "100%", height: "100%" }}
@@ -47,37 +48,38 @@ export const DiscoverCard = ({
       </View>
 
       {/* Content */}
-      <View className="flex-1 justify-between p-3 pr-10">
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "space-between",
+          padding: 10,
+          paddingRight: 38,
+        }}
+      >
         {/* Top info */}
         <View>
           <Text
-            style={{ fontSize: 14, fontWeight: "600", color: theme.gray12 }}
             numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ fontSize: 14, fontWeight: "600", color: theme.gray12 }}
           >
             {event.title}
           </Text>
           <Text
-            style={{ fontSize: 12, color: theme.gray10, marginTop: 1 }}
             numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ fontSize: 12, color: theme.gray10, marginTop: 1 }}
           >
             {event.location.address ?? ""}
           </Text>
-          <Text style={{ fontSize: 11, color: theme.gray10, marginTop: 4 }}>
+          <Text style={{ fontSize: 11, color: theme.gray10, marginTop: 1 }}>
             {dateLabel} · {goingCount} {t("going")}
           </Text>
-        </View>
 
-        {/* Tags */}
-        <View className="flex-row flex-wrap gap-1.5">
-          {event.tags.slice(0, 3).map((tag) => (
-            <View
-              key={tag}
-              className="rounded-full px-2 py-0.5"
-              style={{ backgroundColor: theme.gray3 }}
-            >
-              <Text style={{ fontSize: 10, color: theme.gray10 }}>{tag}</Text>
-            </View>
-          ))}
+          {/* Tags */}
+          <View className="flex-row flex-wrap ">
+            <Tags tags={event.tags} size="ssm" />
+          </View>
         </View>
       </View>
 
