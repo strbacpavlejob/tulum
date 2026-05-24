@@ -10,7 +10,7 @@ export async function GET(
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  return callTulumApi(request, `/venues/${id}`, { userId });
+  return callTulumApi(request, `/venues/${id}`);
 }
 
 export async function PATCH(
@@ -21,7 +21,7 @@ export async function PATCH(
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  return callTulumApi(request, `/venues/${id}`, { userId });
+  return callTulumApi(request, `/venues/${id}`);
 }
 
 export async function DELETE(
@@ -32,5 +32,5 @@ export async function DELETE(
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  return callTulumApi(request, `/venues/${id}`, { userId });
+  return callTulumApi(request, `/venues/${id}`);
 }

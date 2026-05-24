@@ -39,7 +39,7 @@ const TabBarIcon: React.FC<IconProps> = ({
 };
 
 export default function TabLayout() {
-  const { isSignedIn, isLoaded, userId } = useAuth();
+  const { isSignedIn, isLoaded, userId, getToken } = useAuth();
   const theme = useAppTheme();
   const { user, settings, setUser, setSettings } = useStore();
 
@@ -47,7 +47,14 @@ export default function TabLayout() {
     // Re-fetch whenever userId changes or the store user lacks an id
     // (e.g. after onboarding sets a partial user without id/email).
     if (!userId || user?.id) return;
-    Promise.all([fetchMyProfile(userId), fetchSettings(userId)])
+    getToken()
+      .then((token) => {
+        if (!token) throw new Error("No token");
+        return Promise.all([
+          fetchMyProfile(token, userId),
+          fetchSettings(token, userId),
+        ]);
+      })
       .then(([profile, remote]) => {
         setUser(profile);
         if (remote) {

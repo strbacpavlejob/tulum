@@ -56,7 +56,7 @@ function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
 export default function MatchesScreen() {
   const theme = useAppTheme();
   const { t } = useTranslation();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -73,7 +73,9 @@ export default function MatchesScreen() {
   const loadProfiles = useCallback(async () => {
     if (!userId) return;
     try {
-      const data = await fetchSwipeableProfiles(userId);
+      const token = await getToken();
+      if (!token) return;
+      const data = await fetchSwipeableProfiles(token);
       setEventId(data.event_id);
       setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
     } catch {
@@ -81,7 +83,7 @@ export default function MatchesScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadProfiles();
@@ -91,12 +93,17 @@ export default function MatchesScreen() {
     setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
   };
 
-  const handleSwipeRight = (profile: Profile) => {
+  const handleSwipeRight = async (profile: Profile) => {
     // Fire-and-forget — create the match in the background
     if (userId && eventIdRef.current != null) {
-      createMatchSwipe(userId, profile.id, eventIdRef.current).catch(() => {
-        /* swipe failure is non-fatal */
-      });
+      const token = await getToken();
+      if (token) {
+        createMatchSwipe(token, userId, profile.id, eventIdRef.current).catch(
+          () => {
+            /* swipe failure is non-fatal */
+          },
+        );
+      }
     }
     setMatchedProfile(profile);
     setShowMatch(true);

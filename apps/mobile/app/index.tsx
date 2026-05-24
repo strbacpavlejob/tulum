@@ -6,18 +6,22 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 export default function Index() {
-  const { isSignedIn, isLoaded, userId } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
   const { t } = useTranslation();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [checkError, setCheckError] = useState(false);
 
   const checkOnboarding = useCallback(() => {
-    if (!isLoaded || !isSignedIn || !userId) return;
+    if (!isLoaded || !isSignedIn) return;
     setCheckError(false);
     setOnboardingChecked(false);
 
-    fetchGuestMe(userId)
+    getToken()
+      .then((token) => {
+        if (!token) throw new Error("No auth token");
+        return fetchGuestMe(token);
+      })
       .then(({ isOnboardingComplete }) => {
         console.log("[index] isOnboardingComplete:", isOnboardingComplete);
         setOnboardingComplete(isOnboardingComplete);
@@ -28,7 +32,7 @@ export default function Index() {
         setCheckError(true);
         setOnboardingChecked(true);
       });
-  }, [isLoaded, isSignedIn, userId]);
+  }, [isLoaded, isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     checkOnboarding();

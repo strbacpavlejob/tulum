@@ -6,8 +6,5 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/geocode", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/geocode", { forwardSearchParams: true });
 }

@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { ClerkAuthGuard } from './common/guards/clerk-auth.guard';
 import { CleanupModule } from './cleanup/cleanup.module';
 import { ScrapeModule } from './scrape/scrape.module';
 import { EventsModule } from './events/events.module';
@@ -46,7 +46,7 @@ import { SettingsModule } from './settings/settings.module';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ApiKeyGuard,
+      useClass: ClerkAuthGuard,
     },
   ],
 })

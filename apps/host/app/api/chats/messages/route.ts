@@ -6,32 +6,26 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/chats/messages", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/chats/messages", { forwardSearchParams: true });
 }
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/chats/messages", { userId });
+  return callTulumApi(request, "/chats/messages");
 }
 
 export async function PATCH(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/chats/messages", { userId });
+  return callTulumApi(request, "/chats/messages");
 }
 
 export async function DELETE(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/chats/messages", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/chats/messages", { forwardSearchParams: true });
 }

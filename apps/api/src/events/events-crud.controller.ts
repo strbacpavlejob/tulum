@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiSecurity } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { GetActiveEventsDto } from './dto/get-active-events.dto';
@@ -25,9 +26,10 @@ import { EventsCrudService } from './events-crud.service';
 export class EventsCrudController {
   constructor(private readonly eventsCrudService: EventsCrudService) {}
 
-  /** Public — no API key required */
+  /** Public — no authentication required */
   @Get('active')
   @Public()
+  @ApiSecurity({})
   async getActiveEvents(
     @Query() query: GetActiveEventsDto,
     @UserId() userId?: string,

@@ -6,15 +6,12 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/venues", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/venues", { forwardSearchParams: true });
 }
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/venues", { userId });
+  return callTulumApi(request, "/venues");
 }

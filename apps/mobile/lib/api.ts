@@ -84,13 +84,13 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
 
 export interface FetchActiveEventsParams {
   filter?: Partial<Filter>;
-  userId?: string;
+  token?: string;
 }
 
 export async function fetchActiveEvents(
   params?: FetchActiveEventsParams,
 ): Promise<Event[]> {
-  const { filter, userId } = params ?? {};
+  const { filter, token } = params ?? {};
   const query = new URLSearchParams();
 
   if (filter?.venueType) query.set("venue_type", filter.venueType);
@@ -102,15 +102,14 @@ export async function fetchActiveEvents(
     query.set("date_start", new Date(filter.dateRange.start).toISOString());
   if (filter?.dateRange?.end)
     query.set("date_end", new Date(filter.dateRange.end).toISOString());
-  if (filter?.isOnlyFavorite && userId) {
+  if (filter?.isOnlyFavorite && token) {
     query.set("only_favorites", "true");
-    query.set("user_id", userId);
   }
 
   const qs = query.toString();
   const url = `${TULUM_API_URL}/events/active${qs ? `?${qs}` : ""}`;
   const response = await fetch(url, {
-    headers: userId ? authHeaders(userId) : undefined,
+    headers: token ? authHeaders(token) : undefined,
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch active events: ${response.status}`);
@@ -155,9 +154,12 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
   };
 }
 
-export async function fetchMyProfile(userId: string): Promise<User> {
+export async function fetchMyProfile(
+  token: string,
+  userId: string,
+): Promise<User> {
   const url = `${TULUM_API_URL}/users/me?user_id=${encodeURIComponent(userId)}`;
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch profile: ${response.status}`);
   }
@@ -166,6 +168,7 @@ export async function fetchMyProfile(userId: string): Promise<User> {
 }
 
 export async function updateMyProfile(
+  token: string,
   userId: string,
   userUpdates: Record<string, unknown>,
   guestUpdates: Record<string, unknown>,
@@ -173,7 +176,10 @@ export async function updateMyProfile(
   const url = `${TULUM_API_URL}/users/me`;
   const response = await fetch(url, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({
       user_id: userId,
       user: userUpdates,
@@ -216,16 +222,16 @@ export interface OnboardingPayload {
   birthday: string;
 }
 
-function authHeaders(userId: string): Record<string, string> {
+function authHeaders(token: string): Record<string, string> {
   return {
     "Content-Type": "application/json",
-    "x-user-id": userId,
+    Authorization: `Bearer ${token}`,
   };
 }
 
-export async function fetchGuestMe(userId: string): Promise<GuestMeResponse> {
+export async function fetchGuestMe(token: string): Promise<GuestMeResponse> {
   const url = `${TULUM_API_URL}/guests/me`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch guest profile: ${response.status}`);
   }
@@ -233,13 +239,13 @@ export async function fetchGuestMe(userId: string): Promise<GuestMeResponse> {
 }
 
 export async function submitOnboarding(
-  userId: string,
+  token: string,
   payload: OnboardingPayload,
 ): Promise<GuestMeResponse> {
   const url = `${TULUM_API_URL}/guests/onboarding`;
   const response = await fetch(url, {
     method: "POST",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -257,7 +263,7 @@ export async function submitOnboarding(
  * Returns the full updated picture_urls array (up to 3 photos).
  */
 export async function uploadGuestPhoto(
-  userId: string,
+  token: string,
   fileUri: string,
   mimeType: string = "image/jpeg",
 ): Promise<string[]> {
@@ -274,7 +280,7 @@ export async function uploadGuestPhoto(
 
     const response = await fetch(`${TULUM_API_URL}/guests/photos`, {
       method: "POST",
-      headers: { "x-user-id": userId },
+      headers: { Authorization: `Bearer ${token}` },
       // Do NOT set Content-Type — the browser sets it with the correct boundary.
       body: formData,
     });
@@ -300,7 +306,7 @@ export async function uploadGuestPhoto(
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${TULUM_API_URL}/guests/photos`);
     // Do NOT set Content-Type manually — XHR sets it with the correct boundary.
-    xhr.setRequestHeader("x-user-id", userId);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         const data = JSON.parse(xhr.responseText) as { picture_urls: string[] };
@@ -324,12 +330,15 @@ export async function uploadGuestPhoto(
  * Returns the full updated picture_urls array.
  */
 export async function deleteGuestPhoto(
-  userId: string,
+  token: string,
   url: string,
 ): Promise<string[]> {
   const response = await fetch(`${TULUM_API_URL}/guests/photos`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json", "x-user-id": userId },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ url }),
   });
   if (!response.ok) {
@@ -348,10 +357,11 @@ export interface RemoteSettings {
 }
 
 export async function fetchSettings(
+  token: string,
   userId: string,
 ): Promise<RemoteSettings | null> {
   const url = `${TULUM_API_URL}/settings/me?user_id=${encodeURIComponent(userId)}`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch settings: ${response.status}`);
   }
@@ -359,13 +369,14 @@ export async function fetchSettings(
 }
 
 export async function updateSettings(
+  token: string,
   userId: string,
   patch: Partial<RemoteSettings>,
 ): Promise<RemoteSettings> {
   const url = `${TULUM_API_URL}/settings/me?user_id=${encodeURIComponent(userId)}`;
   const response = await fetch(url, {
     method: "PATCH",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
     body: JSON.stringify(patch),
   });
   if (!response.ok) {
@@ -396,10 +407,10 @@ export interface ChatOpenResponse {
 
 export async function fetchOrCreateChat(
   matchId: string | number,
-  userId: string,
+  token: string,
 ): Promise<ChatOpenResponse> {
   const url = `${TULUM_API_URL}/chats/by-match/${matchId}`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to open chat: ${response.status}`);
   }
@@ -435,9 +446,9 @@ export interface MatchListItem {
   } | null;
 }
 
-export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
+export async function fetchMyMatches(token: string): Promise<MatchListItem[]> {
   const url = `${TULUM_API_URL}/matches/mine`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch matches: ${response.status}`);
   }
@@ -447,25 +458,25 @@ export async function fetchMyMatches(userId: string): Promise<MatchListItem[]> {
 // ─── Favorites ────────────────────────────────────────────────────────────────
 
 export async function trackEventSeen(
-  userId: string,
+  token: string,
   eventId: string | number,
 ): Promise<void> {
   const url = `${TULUM_API_URL}/favorites/seen`;
   await fetch(url, {
     method: "POST",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
     body: JSON.stringify({ event_id: Number(eventId) }),
   });
 }
 
 export async function toggleFavorite(
-  userId: string,
+  token: string,
   eventId: string | number,
 ): Promise<{ isFavorite: boolean }> {
   const url = `${TULUM_API_URL}/favorites/toggle`;
   const response = await fetch(url, {
     method: "POST",
-    headers: { ...authHeaders(userId), "Content-Type": "application/json" },
+    headers: authHeaders(token),
     body: JSON.stringify({ event_id: Number(eventId) }),
   });
   if (!response.ok) {
@@ -475,13 +486,13 @@ export async function toggleFavorite(
 }
 
 export async function attendEvent(
-  userId: string,
+  token: string,
   eventId: string | number,
 ): Promise<{ ticket: Record<string, unknown>; isNew: boolean }> {
   const url = `${TULUM_API_URL}/tickets/attend`;
   const response = await fetch(url, {
     method: "POST",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
     body: JSON.stringify({ event_id: Number(eventId) }),
   });
   if (!response.ok) {
@@ -494,13 +505,13 @@ export async function attendEvent(
 }
 
 export async function unattendEvent(
-  userId: string,
+  token: string,
   eventId: string | number,
 ): Promise<void> {
   const url = `${TULUM_API_URL}/tickets/attend?event_id=${Number(eventId)}`;
   const response = await fetch(url, {
     method: "DELETE",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
   });
   if (!response.ok) {
     throw new Error(`Failed to unattend event: ${response.status}`);
@@ -526,19 +537,19 @@ export interface EventAttendeesData {
 
 export async function fetchEventAttendees(
   eventId: string | number,
-  userId: string,
+  token: string,
 ): Promise<EventAttendeesData> {
   const url = `${TULUM_API_URL}/tickets/attendees?event_id=${Number(eventId)}`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch event attendees: ${response.status}`);
   }
   return response.json() as Promise<EventAttendeesData>;
 }
 
-export async function fetchMyTickets(userId: string) {
+export async function fetchMyTickets(token: string, userId: string) {
   const url = `${TULUM_API_URL}/tickets?guest_id=${encodeURIComponent(userId)}`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch tickets: ${response.status}`);
   }
@@ -572,12 +583,12 @@ export interface SwipeableResponse {
 }
 
 export async function fetchSwipeableProfiles(
-  userId: string,
+  token: string,
   eventId?: number,
 ): Promise<SwipeableResponse> {
   const qs = eventId ? `?event_id=${eventId}` : "";
   const url = `${TULUM_API_URL}/guests/swipeable${qs}`;
-  const response = await fetch(url, { headers: authHeaders(userId) });
+  const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch swipeable profiles: ${response.status}`);
   }
@@ -585,6 +596,7 @@ export async function fetchSwipeableProfiles(
 }
 
 export async function createMatchSwipe(
+  token: string,
   userId: string,
   otherUserId: string,
   eventId: number,
@@ -592,7 +604,7 @@ export async function createMatchSwipe(
   const url = `${TULUM_API_URL}/matches`;
   const response = await fetch(url, {
     method: "POST",
-    headers: authHeaders(userId),
+    headers: authHeaders(token),
     body: JSON.stringify({
       guest_id_1: userId,
       guest_id_2: otherUserId,

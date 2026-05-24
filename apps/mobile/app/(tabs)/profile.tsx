@@ -198,7 +198,7 @@ export default function ProfileScreen() {
     { name: t("serbian"), value: "RS" },
     { name: t("russian"), value: "RU" },
   ];
-  const { userId, signOut } = useAuth();
+  const { userId, signOut, getToken } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [activeTab, setActiveTab] = useState("profile");
@@ -278,6 +278,8 @@ export default function ProfileScreen() {
 
   const handleAddPhoto = async () => {
     if (!userId) return;
+    const token = await getToken();
+    if (!token) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
@@ -296,7 +298,7 @@ export default function ProfileScreen() {
     const asset = result.assets[0];
     try {
       const updatedUrls = await uploadGuestPhoto(
-        userId,
+        token,
         asset.uri,
         asset.mimeType ?? "image/jpeg",
       );
@@ -311,8 +313,10 @@ export default function ProfileScreen() {
 
   const handleRemovePhoto = async (url: string) => {
     if (!userId) return;
+    const token = await getToken();
+    if (!token) return;
     try {
-      const updatedUrls = await deleteGuestPhoto(userId, url);
+      const updatedUrls = await deleteGuestPhoto(token, url);
       patchUser({ photos: updatedUrls, imgUrl: updatedUrls[0] });
     } catch (err) {
       Alert.alert(
@@ -322,14 +326,16 @@ export default function ProfileScreen() {
     }
   };
 
-  const patchSettings = (patch: Partial<Settings>) => {
+  const patchSettings = async (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
     setSettings(next);
     if (userId && (patch.language !== undefined || patch.theme !== undefined)) {
+      const token = await getToken();
+      if (!token) return;
       const remote: Record<string, string> = {};
       if (patch.language !== undefined) remote.language = patch.language;
       if (patch.theme !== undefined) remote.theme = patch.theme;
-      updateSettings(userId, remote).catch(console.error);
+      updateSettings(token, userId, remote).catch(console.error);
     }
   };
 

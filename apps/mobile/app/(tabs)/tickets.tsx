@@ -13,17 +13,21 @@ export default function TicketsScreen() {
   const { tickets, setTickets } = useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
-    fetchMyTickets(userId)
+    getToken()
+      .then((token) => {
+        if (!token) throw new Error("No token");
+        return fetchMyTickets(token, userId);
+      })
       .then(setTickets)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

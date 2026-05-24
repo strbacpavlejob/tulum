@@ -29,7 +29,16 @@ async function bootstrap() {
     .setTitle('Tulum API')
     .setDescription('Tulum API documentation')
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', in: 'header', name: 'x-api-key' }, 'api-key')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Clerk session token',
+      },
+      'clerk-jwt',
+    )
+    .addSecurityRequirements('clerk-jwt')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

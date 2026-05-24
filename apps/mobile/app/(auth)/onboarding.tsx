@@ -288,19 +288,18 @@ function BirthdayInput({
 // ─── Photo picker step ────────────────────────────────────────────────────────
 
 function PhotoPickerStep({
-  userId,
   photos,
   onPhotosChange,
   uploading,
   onUploadingChange,
 }: {
-  userId: string;
   photos: string[];
   onPhotosChange: (urls: string[]) => void;
   uploading: boolean;
   onUploadingChange: (v: boolean) => void;
 }) {
   const theme = useAppTheme();
+  const { getToken } = useAuth();
 
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -324,8 +323,10 @@ function PhotoPickerStep({
     const asset = result.assets[0];
     onUploadingChange(true);
     try {
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
       const updatedUrls = await uploadGuestPhoto(
-        userId,
+        token,
         asset.uri,
         asset.mimeType ?? "image/jpeg",
       );
@@ -343,7 +344,9 @@ function PhotoPickerStep({
   const removePhoto = async (url: string) => {
     onUploadingChange(true);
     try {
-      const updatedUrls = await deleteGuestPhoto(userId, url);
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+      const updatedUrls = await deleteGuestPhoto(token, url);
       onPhotosChange(updatedUrls);
     } catch (err) {
       Alert.alert(
@@ -443,7 +446,7 @@ export default function OnboardingScreen() {
   const theme = useAppTheme();
   const router = useRouter();
   const { setUser } = useStore();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   // Check if onboarding is already complete
   const [checking, setChecking] = useState(true);
@@ -453,7 +456,11 @@ export default function OnboardingScreen() {
       setChecking(false);
       return;
     }
-    fetchGuestMe(userId)
+    getToken()
+      .then((token) => {
+        if (!token) throw new Error("No token");
+        return fetchGuestMe(token);
+      })
       .then(({ guest, isOnboardingComplete }) => {
         if (isOnboardingComplete) {
           router.replace("/(tabs)");
@@ -586,7 +593,13 @@ export default function OnboardingScreen() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await submitOnboarding(userId, {
+      const token = await getToken();
+      if (!token) {
+        setSubmitError("Authentication error. Please sign in again.");
+        setSubmitting(false);
+        return;
+      }
+      await submitOnboarding(token, {
         gender: gender as GenderValue,
         seeking: seeking as SeekingValue,
         interested_in: interestedIn,
@@ -713,7 +726,6 @@ export default function OnboardingScreen() {
       case "photo":
         return (
           <PhotoPickerStep
-            userId={userId!}
             photos={photos}
             onPhotosChange={setPhotos}
             uploading={photoUploading}

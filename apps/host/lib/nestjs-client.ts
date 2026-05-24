@@ -1,17 +1,16 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const TULUM_API_URL = process.env.TULUM_API_URL ?? "http://localhost:3001";
-const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY ?? "";
 
 interface ProxyOptions {
-  userId?: string;
   /** Forward the request's search params to the upstream URL */
   forwardSearchParams?: boolean;
 }
 
 /**
- * Forward a Frontend App Router request to the Tulum backend.
- * Auth headers (x-api-key, x-user-id) are injected automatically.
+ * Forward a Next.js App Router request to the Tulum backend.
+ * The Clerk JWT is forwarded as Authorization: Bearer <token>.
  */
 export async function callTulumApi(
   request: NextRequest,
@@ -27,12 +26,11 @@ export async function callTulumApi(
       );
     }
 
-    const headers: Record<string, string> = {
-      "x-api-key": INTERNAL_API_KEY,
-    };
-
-    if (options.userId) {
-      headers["x-user-id"] = options.userId;
+    const { getToken } = await auth();
+    const token = await getToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const contentType = request.headers.get("content-type");

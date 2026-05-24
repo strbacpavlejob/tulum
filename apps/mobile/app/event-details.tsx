@@ -278,7 +278,7 @@ const EventDetailsScreen = () => {
   const theme = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
   const [attending, setAttending] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -292,8 +292,14 @@ const EventDetailsScreen = () => {
 
   useEffect(() => {
     if (!userId || !event?.id) return;
-    fetchEventAttendees(event.id, userId)
-      .then(setAttendeesData)
+    getToken()
+      .then((token) => {
+        if (!token) return;
+        return fetchEventAttendees(event.id, token);
+      })
+      .then((data) => {
+        if (data) setAttendeesData(data);
+      })
       .catch(() => {});
   }, [userId, event?.id]);
 
@@ -303,12 +309,14 @@ const EventDetailsScreen = () => {
 
   const handleAttend = async () => {
     if (!userId || !event?.id) return;
+    const token = await getToken();
+    if (!token) return;
 
     // If already attending — just cancel (no reservation needed)
     if (attending) {
       setAttending(false);
       try {
-        await unattendEvent(userId, event.id);
+        await unattendEvent(token, event.id);
         updateEventAttending(String(event.id), false);
       } catch {
         setAttending(true);
@@ -328,10 +336,12 @@ const EventDetailsScreen = () => {
 
   const confirmAttend = async () => {
     if (!userId || !event?.id) return;
+    const token = await getToken();
+    if (!token) return;
     setShowReservationModal(false);
     setAttending(true);
     try {
-      await attendEvent(userId, event.id);
+      await attendEvent(token, event.id);
       updateEventAttending(String(event.id), true);
     } catch (err) {
       setAttending(false);
@@ -349,7 +359,11 @@ const EventDetailsScreen = () => {
 
   useEffect(() => {
     if (userId && event?.id && !event.isSeen) {
-      trackEventSeen(userId, event.id)
+      getToken()
+        .then((token) => {
+          if (!token) return;
+          return trackEventSeen(token, event.id);
+        })
         .then(() => updateEventSeen(String(event.id)))
         .catch(() => {});
     }
@@ -426,11 +440,7 @@ const EventDetailsScreen = () => {
             justifyContent: "center",
           }}
         >
-          <FavoriteButton
-            isFavorite={event.isFavorite}
-            userId={userId ?? undefined}
-            eventId={event.id}
-          />
+          <FavoriteButton isFavorite={event.isFavorite} eventId={event.id} />
         </View>
 
         <View className="absolute bottom-0 left-0 right-0 p-4">

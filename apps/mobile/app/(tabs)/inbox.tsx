@@ -176,7 +176,7 @@ function NewMatchBubble({
 export default function InboxScreen() {
   const theme = useAppTheme();
   const { t } = useTranslation();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [newMatches, setNewMatches] = useState<NewMatch[]>([]);
@@ -191,7 +191,9 @@ export default function InboxScreen() {
   const loadMatches = useCallback(async () => {
     if (!userId) return;
     try {
-      const items = await fetchMyMatches(userId);
+      const token = await getToken();
+      if (!token) return;
+      const items = await fetchMyMatches(token);
       const active: Match[] = [];
       const fresh: NewMatch[] = [];
       for (const item of items) {
@@ -217,7 +219,7 @@ export default function InboxScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadMatches();
@@ -230,11 +232,13 @@ export default function InboxScreen() {
 
   const openMatch = async (match: Match) => {
     if (!userId) return;
+    const token = await getToken();
+    if (!token) return;
     setOpeningChat(true);
     try {
       const { chat, messages: apiMessages } = await fetchOrCreateChat(
         match.id, // match DB id — endpoint is /chats/by-match/:matchId
-        userId,
+        token,
       );
       const mapped: Message[] = apiMessages.map((m: ChatMessage) => ({
         id: String(m.id),

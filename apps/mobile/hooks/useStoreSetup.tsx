@@ -7,12 +7,13 @@ import { useEffect, useState } from "react";
 const useStoreSetup = () => {
   const { setSettings, setEvents, setTickets, applyEventsFilter } = useStore();
   const [isLoadingStore, setIsLoadingStore] = useState(true);
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   useEffect(() => {
     const setupStore = async () => {
       // Load events and settings but NOT user — auth flow handles login
-      const events = await fetchActiveEvents({ userId: userId ?? undefined });
+      const token = await getToken();
+      const events = await fetchActiveEvents({ token: token ?? undefined });
       setEvents(events);
       applyEventsFilter();
       setSettings(mockedSettings);
@@ -21,7 +22,7 @@ const useStoreSetup = () => {
     };
 
     setupStore();
-  }, [userId, setEvents, setSettings, setIsLoadingStore, setTickets]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { isLoadingStore };
 };

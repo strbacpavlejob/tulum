@@ -6,25 +6,19 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/tickets", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/tickets", { forwardSearchParams: true });
 }
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/tickets", { userId });
+  return callTulumApi(request, "/tickets");
 }
 
 export async function DELETE(request: NextRequest) {
   const { userId } = await auth();
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return callTulumApi(request, "/tickets", {
-    userId,
-    forwardSearchParams: true,
-  });
+  return callTulumApi(request, "/tickets", { forwardSearchParams: true });
 }

@@ -1,13 +1,13 @@
 import { toggleFavorite } from "@/lib/api";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
+import { useAuth } from "@clerk/expo";
 import { Heart } from "lucide-react-native";
 import React, { useState, useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 
 interface FavoriteButtonProps {
   isFavorite: boolean;
-  userId?: string;
   eventId?: string | number;
   size?: number;
   onPress?: () => void;
@@ -16,7 +16,6 @@ interface FavoriteButtonProps {
 
 const FavoriteButton = ({
   isFavorite,
-  userId,
   eventId,
   size = 24,
   onPress,
@@ -24,6 +23,7 @@ const FavoriteButton = ({
 }: FavoriteButtonProps) => {
   const theme = useAppTheme();
   const { updateEventFavorite } = useStore();
+  const { getToken } = useAuth();
   const [favorite, setFavorite] = useState(isFavorite);
 
   useEffect(() => {
@@ -34,9 +34,14 @@ const FavoriteButton = ({
   const handlePress = async () => {
     const next = !favorite;
     setFavorite(next);
-    if (userId && eventId != null) {
+    if (eventId != null) {
       try {
-        const result = await toggleFavorite(userId, eventId);
+        const token = await getToken();
+        if (!token) {
+          setFavorite(!next);
+          return;
+        }
+        const result = await toggleFavorite(token, eventId);
         setFavorite(result.isFavorite);
         updateEventFavorite(String(eventId), result.isFavorite);
       } catch {
