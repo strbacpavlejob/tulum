@@ -1,7 +1,7 @@
 const lightJSON =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
-const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
+const maptilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY ?? "";
 
 const customLayers = [
   {

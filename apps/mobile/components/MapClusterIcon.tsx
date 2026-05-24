@@ -40,7 +40,6 @@ const MapClusterIcon = ({ count }: MapClusterIconProps) => {
         height: diameter,
         borderRadius: diameter / 2,
         backgroundColor: theme.color,
-        opacity,
         borderWidth: 2,
         borderColor: theme.background,
         alignItems: "center",

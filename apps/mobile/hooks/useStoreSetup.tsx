@@ -1,11 +1,10 @@
 import { fetchActiveEvents } from "@/lib/api";
-import { mockedSettings } from "@/mock/settings";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { useEffect, useState } from "react";
 
 const useStoreSetup = () => {
-  const { setSettings, setEvents, setTickets, applyEventsFilter } = useStore();
+  const { setEvents, setTickets, applyEventsFilter } = useStore();
   const [isLoadingStore, setIsLoadingStore] = useState(true);
   const { userId, getToken } = useAuth();
 
@@ -16,7 +15,6 @@ const useStoreSetup = () => {
       const events = await fetchActiveEvents({ token: token ?? undefined });
       setEvents(events);
       applyEventsFilter();
-      setSettings(mockedSettings);
 
       setIsLoadingStore(false);
     };

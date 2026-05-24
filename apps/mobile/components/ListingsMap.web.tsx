@@ -91,9 +91,11 @@ function loadLeaflet(): Promise<void> {
   return leafletReady;
 }
 
+const maptilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY ?? "";
+
 const TILE_URLS = {
-  dark: "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-  light: "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  dark: `https://api.maptiler.com/maps/dataviz-dark/{z}/{x}/{y}.png?key=${maptilerKey}`,
+  light: `https://api.maptiler.com/maps/dataviz/{z}/{x}/{y}.png?key=${maptilerKey}`,
 };
 
 const INITIAL_REGION = {
@@ -128,7 +130,10 @@ const ListingsMap = memo(() => {
   } = useStore();
   const theme = useAppTheme();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const storeTheme = useStore((s) => s.settings.theme);
+  const isDark =
+    storeTheme === "dark" ||
+    (storeTheme === "system" && colorScheme === "dark");
   const { t } = useTranslation();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
@@ -140,6 +145,7 @@ const ListingsMap = memo(() => {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const [activeTag, setActiveTag] = useState("All");
+  const [mapReady, setMapReady] = useState(false);
 
   /* ── Leaflet map refs ─────────────────────────────── */
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -249,12 +255,8 @@ const ListingsMap = memo(() => {
         attributionControl: false,
       }).setView([INITIAL_REGION.latitude, INITIAL_REGION.longitude], 13);
 
-      tileLayerRef.current = L.tileLayer(
-        isDark ? TILE_URLS.dark : TILE_URLS.light,
-        { maxZoom: 19 },
-      ).addTo(map);
-
       mapInstanceRef.current = map;
+      setMapReady(true);
     });
 
     return () => {
@@ -262,23 +264,27 @@ const ListingsMap = memo(() => {
         map.remove();
         mapInstanceRef.current = null;
         tileLayerRef.current = null;
+        setMapReady(false);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Swap tile layer on theme change ──────────────── */
+  /* ── Apply / swap tile layer when map is ready or theme changes ── */
   useEffect(() => {
+    if (!mapReady) return;
     const L = (window as any).L;
     const map = mapInstanceRef.current;
-    if (!L || !map || !tileLayerRef.current) return;
+    if (!L || !map) return;
 
-    tileLayerRef.current.remove();
+    if (tileLayerRef.current) {
+      tileLayerRef.current.remove();
+    }
     tileLayerRef.current = L.tileLayer(
       isDark ? TILE_URLS.dark : TILE_URLS.light,
       { maxZoom: 19 },
     ).addTo(map);
-  }, [isDark]);
+  }, [isDark, mapReady]);
 
   /* ── Sync markers with listings (clustered) ──────── */
   useEffect(() => {
