@@ -22,7 +22,6 @@ import {
 } from "react-native";
 import { DiscoverCard } from "./DiscoverCard";
 import MapClusterIcon from "./MapClusterIcon";
-import MapControlsOverlay from "./MapControlsOverlay";
 import MapMarkerIcon from "./MapMarkerIcon";
 import SearchBox from "./SearchBox";
 
@@ -217,25 +216,6 @@ const ListingsMap = memo(() => {
     [filter, setFilter, applyEventsFilter],
   );
 
-  const onZoomIn = useCallback(() => {
-    mapInstanceRef.current?.zoomIn();
-  }, []);
-
-  const onZoomOut = useCallback(() => {
-    mapInstanceRef.current?.zoomOut();
-  }, []);
-
-  const onLocate = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        mapInstanceRef.current?.setView(
-          [position.coords.latitude, position.coords.longitude],
-          mapInstanceRef.current.getZoom(),
-        );
-      });
-    }
-  }, []);
-
   /* ── Initialize Leaflet map ──────────────────────── */
   useEffect(() => {
     let map: any;
@@ -414,13 +394,6 @@ const ListingsMap = memo(() => {
           ))}
         </ScrollView>
       </View>
-
-      {/* Map controls */}
-      <MapControlsOverlay
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onLocate={onLocate}
-      />
 
       {/* Bottom gradient + cards */}
       <View
