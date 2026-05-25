@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { useColorScheme, View } from "react-native";
+import { Linking, useColorScheme, View } from "react-native";
 import useStore from "@/store/useStore";
 import MapMarkerIcon from "./MapMarkerIcon";
 
@@ -88,7 +88,10 @@ export const MiniMap = ({
         iconAnchor: [markerSize / 2, markerSize / 2],
       });
 
-      L.marker([latitude, longitude], { icon }).addTo(map);
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+      L.marker([latitude, longitude], { icon })
+        .addTo(map)
+        .on("click", () => Linking.openURL(mapsUrl));
 
       mapInstanceRef.current = map;
       setMapReady(true);
@@ -129,6 +132,7 @@ export const MiniMap = ({
           height: "100%",
           borderRadius: 16,
           overflow: "hidden",
+          cursor: "pointer",
         }}
       />
     </View>
