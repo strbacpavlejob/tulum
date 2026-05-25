@@ -414,6 +414,11 @@ const ListingsMap = memo(() => {
             snapToInterval={CARD_WIDTH + CARD_GAP}
             decelerationRate="fast"
             contentContainerStyle={{ paddingHorizontal: 16, gap: CARD_GAP }}
+            getItemLayout={(_, index) => ({
+              length: CARD_WIDTH,
+              offset: 16 + index * (CARD_WIDTH + CARD_GAP),
+              index,
+            })}
             renderItem={renderItem}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
