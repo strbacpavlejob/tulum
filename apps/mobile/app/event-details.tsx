@@ -18,7 +18,6 @@ import { VenueContact } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { format, parseISO } from "date-fns";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import {
@@ -399,14 +398,14 @@ const EventDetailsScreen = () => {
           style={{ width: "100%", height: "100%" }}
           resizeMode="cover"
         />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.6)"]}
+        <View
           style={{
             position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
+            backgroundColor: `${theme.background}99`,
           }}
         />
 
@@ -461,7 +460,11 @@ const EventDetailsScreen = () => {
             <View className="flex-1 pb-1">
               <Pressable onPress={() => setTitleExpanded((v) => !v)}>
                 <Text
-                  style={{ fontSize: 22, fontWeight: "700", color: "#fff" }}
+                  style={{
+                    fontSize: 22,
+                    fontWeight: "700",
+                    color: theme.colorStrong,
+                  }}
                   numberOfLines={titleExpanded ? undefined : 1}
                 >
                   {event.title}
