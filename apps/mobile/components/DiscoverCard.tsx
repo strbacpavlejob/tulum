@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Event } from "@/types/event";
 import { format } from "date-fns";
+import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, Image, View, StyleProp, ViewStyle } from "react-native";
@@ -22,8 +23,24 @@ export const DiscoverCard = ({
   style,
 }: DiscoverCardProps) => {
   const theme = useAppTheme();
-  const { t } = useTranslation();
-  const dateLabel = format(new Date(event.date), "EEE · haa");
+  const { t, i18n } = useTranslation();
+
+  const getDateLocale = () => {
+    switch (i18n.language) {
+      case "RU":
+        return ru;
+      case "RS":
+        return srLatn;
+      default:
+        return enUS;
+    }
+  };
+
+  const timeFormat = i18n.language === "EN" ? "EEEE · haa" : "EEEE · HH:mm";
+  const dateLabel = format(new Date(event.date), timeFormat, {
+    locale: getDateLocale(),
+  });
+
   const goingCount = event.guests?.length ?? 0;
 
   return (

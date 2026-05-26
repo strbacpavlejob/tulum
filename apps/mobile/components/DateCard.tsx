@@ -1,7 +1,9 @@
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { format, parseISO } from "date-fns";
+import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface DateCardProps {
@@ -10,9 +12,23 @@ interface DateCardProps {
 
 export const DateCard = ({ dateString }: DateCardProps) => {
   const theme = useAppTheme();
+  const { i18n } = useTranslation();
+
+  const getDateLocale = () => {
+    switch (i18n.language) {
+      case "RU":
+        return ru;
+      case "RS":
+        return srLatn;
+      default:
+        return enUS;
+    }
+  };
+
+  const dateLocale = getDateLocale();
   const date = parseISO(dateString);
-  const dayName = format(date, "EEEE");
-  const monthDay = format(date, "MMM d");
+  const dayName = format(date, "EEEE", { locale: dateLocale });
+  const monthDay = format(date, "MMM d", { locale: dateLocale });
   const time = format(date, "HH:mm");
 
   return (
