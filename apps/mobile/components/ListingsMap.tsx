@@ -388,7 +388,7 @@ const ListingsMap = memo(() => {
                   color: activeTag === tag ? theme.background : theme.gray10,
                 }}
               >
-                {tag}
+                {tag === "All" ? t("all") : tag}
               </Text>
             </Pressable>
           ))}

@@ -216,9 +216,18 @@ export default function TicketsScreen() {
           />
         }
       >
-        <Section title="Live now" events={live} onPress={handlePress} live />
-        <Section title="Starting soon" events={soon} onPress={handlePress} />
-        <Section title="Upcoming" events={rest} onPress={handlePress} />
+        <Section
+          title={t("liveNow")}
+          events={live}
+          onPress={handlePress}
+          live
+        />
+        <Section
+          title={t("startingSoon")}
+          events={soon}
+          onPress={handlePress}
+        />
+        <Section title={t("upcoming")} events={rest} onPress={handlePress} />
       </ScrollView>
     </View>
   );

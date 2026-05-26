@@ -1,4 +1,5 @@
 import { AvatarList } from "@/components/AvatarList";
+import { useTranslation } from "react-i18next";
 import { DateCard } from "@/components/DateCard";
 import FavoriteButton from "@/components/FavoriteButton";
 import GuestListModal from "@/components/GuestListModal";
@@ -90,6 +91,7 @@ function ReservationModal({
   onConfirm,
 }: ReservationModalProps) {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const [contacted, setContacted] = useState(false);
 
   const contactMethods: {
@@ -102,7 +104,7 @@ function ReservationModal({
   if (contact.isPhone) {
     contactMethods.push({
       key: "phone",
-      label: "Call",
+      label: t("call"),
       icon: <Phone size={20} color={theme.color} />,
       onPress: () => {
         openPhone(contact.phoneNumber);
@@ -113,7 +115,7 @@ function ReservationModal({
   if (contact.isSms) {
     contactMethods.push({
       key: "sms",
-      label: "SMS",
+      label: t("sms"),
       icon: <MessageCircle size={20} color={theme.color} />,
       onPress: () => {
         openSms(contact.phoneNumber);
@@ -124,7 +126,7 @@ function ReservationModal({
   if (contact.isViber) {
     contactMethods.push({
       key: "viber",
-      label: "Viber",
+      label: t("viber"),
       icon: <Send size={20} color="#7360f2" />,
       onPress: () => {
         openViber(contact.phoneNumber);
@@ -135,7 +137,7 @@ function ReservationModal({
   if (contact.isWhatsapp) {
     contactMethods.push({
       key: "whatsapp",
-      label: "WhatsApp",
+      label: t("whatsapp"),
       icon: <MessageCircle size={20} color="#25d366" />,
       onPress: () => {
         openWhatsapp(contact.phoneNumber);
@@ -147,7 +149,7 @@ function ReservationModal({
     const handle = contact.instagramHandle;
     contactMethods.push({
       key: "instagram",
-      label: "Instagram DM",
+      label: t("instagramDm"),
       icon: <Send size={20} color="#e1306c" />,
       onPress: () => {
         openInstagramDm(handle);
@@ -191,7 +193,7 @@ function ReservationModal({
               textAlign: "center",
             }}
           >
-            Reservation required
+            {t("reservationRequired")}
           </Text>
           <Text
             style={{
@@ -201,7 +203,7 @@ function ReservationModal({
               lineHeight: 20,
             }}
           >
-            {`This venue requires a reservation via ${methodLabels}. Contact them first, then confirm below.`}
+            {t("reservationDescription", { methods: methodLabels })}
           </Text>
 
           {/* Contact method buttons */}
@@ -253,14 +255,14 @@ function ReservationModal({
                 color: contacted ? theme.background : theme.gray6,
               }}
             >
-              {contacted
-                ? "I made the reservation — Attend"
-                : "Contact the venue first"}
+              {contacted ? t("madeReservationAttend") : t("contactVenueFirst")}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onClose} style={{ alignItems: "center" }}>
-            <Text style={{ fontSize: 14, color: theme.gray6 }}>Cancel</Text>
+            <Text style={{ fontSize: 14, color: theme.gray6 }}>
+              {t("cancel")}
+            </Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>
@@ -280,6 +282,7 @@ const EventDetailsScreen = () => {
   } = useStore();
   const event = getSelectedEvent();
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId, getToken } = useAuth();
@@ -393,7 +396,7 @@ const EventDetailsScreen = () => {
         className="flex-1 justify-center items-center"
         style={{ backgroundColor: theme.background }}
       >
-        <Text style={{ color: theme.gray10 }}>No event selected</Text>
+        <Text style={{ color: theme.gray10 }}>{t("noEventSelected")}</Text>
       </View>
     );
   }
@@ -553,7 +556,9 @@ const EventDetailsScreen = () => {
         <Pressable onPress={openGuestList}>
           <View>
             <View className="flex-row items-center justify-between mb-2">
-              <Text style={{ fontSize: 12, color: theme.gray5 }}>Going</Text>
+              <Text style={{ fontSize: 12, color: theme.gray5 }}>
+                {t("goingLabel")}
+              </Text>
               <Text style={{ fontSize: 12, color: theme.gray5 }}>
                 {goingCount}/{maxSpots}
               </Text>
@@ -579,7 +584,9 @@ const EventDetailsScreen = () => {
             </View>
 
             <Text style={{ fontSize: 12, color: theme.gray5, marginTop: 4 }}>
-              {freeSpots > 0 ? `${freeSpots} spots left` : "Full"}
+              {freeSpots > 0
+                ? t("spotsLeft", { count: freeSpots })
+                : t("eventIsFull")}
             </Text>
           </View>
         </Pressable>
@@ -601,7 +608,7 @@ const EventDetailsScreen = () => {
               fontSize: 18,
             }}
           >
-            {attending ? "Cancel attendance" : "Attend"}
+            {attending ? t("cancelAttendance") : t("attend")}
           </Text>
           <UserPlus
             size={20}

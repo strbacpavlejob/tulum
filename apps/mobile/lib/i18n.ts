@@ -233,6 +233,32 @@ const resources = {
       brewery: "Brewery",
       tavern: "Tavern",
       raft: "Raft",
+
+      // Filter / map
+      all: "All",
+
+      // Tickets sections
+      liveNow: "Live now",
+      startingSoon: "Starting soon",
+      upcoming: "Upcoming",
+
+      // Attend / event actions
+      cancelAttendance: "Cancel attendance",
+      noEventSelected: "No event selected",
+      goingLabel: "Going",
+      full: "Full",
+
+      // Reservation modal
+      reservationRequired: "Reservation required",
+      reservationDescription:
+        "This venue requires a reservation via {{methods}}. Contact them first, then confirm below.",
+      madeReservationAttend: "I made the reservation — Attend",
+      contactVenueFirst: "Contact the venue first",
+      call: "Call",
+      sms: "SMS",
+      viber: "Viber",
+      whatsapp: "WhatsApp",
+      instagramDm: "Instagram DM",
     },
   },
 
@@ -467,6 +493,32 @@ const resources = {
       brewery: "Pivara",
       tavern: "Taverna",
       raft: "Splav",
+
+      // Filter / map
+      all: "Sve",
+
+      // Tickets sections
+      liveNow: "Uživo",
+      startingSoon: "Uskoro počinje",
+      upcoming: "Predstojeće",
+
+      // Attend / event actions
+      cancelAttendance: "Otkaži prisustvo",
+      noEventSelected: "Nije izabran događaj",
+      goingLabel: "Ide",
+      full: "Popunjeno",
+
+      // Reservation modal
+      reservationRequired: "Rezervacija je potrebna",
+      reservationDescription:
+        "Ovaj lokal zahteva rezervaciju putem {{methods}}. Kontaktirajte ih prvo, a zatim potvrdite ispod.",
+      madeReservationAttend: "Napravio/la sam rezervaciju — Prisustvuj",
+      contactVenueFirst: "Najpre kontaktirajte lokal",
+      call: "Pozovi",
+      sms: "SMS",
+      viber: "Viber",
+      whatsapp: "WhatsApp",
+      instagramDm: "Instagram poruka",
     },
   },
 
@@ -700,6 +752,32 @@ const resources = {
       brewery: "Пивоварня",
       tavern: "Таверна",
       raft: "Плот",
+
+      // Filter / map
+      all: "Все",
+
+      // Tickets sections
+      liveNow: "Сейчас идёт",
+      startingSoon: "Скоро начнётся",
+      upcoming: "Предстоящие",
+
+      // Attend / event actions
+      cancelAttendance: "Отменить посещение",
+      noEventSelected: "Мероприятие не выбрано",
+      goingLabel: "Идут",
+      full: "Заполнено",
+
+      // Reservation modal
+      reservationRequired: "Требуется бронирование",
+      reservationDescription:
+        "Это заведение требует бронирования через {{methods}}. Сначала свяжитесь с ними, затем подтвердите ниже.",
+      madeReservationAttend: "Я сделал(а) бронирование — Посетить",
+      contactVenueFirst: "Сначала свяжитесь с заведением",
+      call: "Позвонить",
+      sms: "СМС",
+      viber: "Viber",
+      whatsapp: "WhatsApp",
+      instagramDm: "Instagram DM",
     },
   },
 };
