@@ -94,8 +94,8 @@ const TILE_URLS = {
 };
 
 const INITIAL_REGION = {
-  latitude: 20.4573,
-  longitude: 44.8156,
+  longitude: 20.4573,
+  latitude: 44.8156,
   latitudeDelta: LATITUDE_DELTA,
   longitudeDelta: LONGITUDE_DELTA,
 };
