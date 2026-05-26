@@ -6,18 +6,20 @@ import { Event } from "@/types/event";
 import { format } from "date-fns";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Image, View } from "react-native";
+import { Pressable, Image, View, StyleProp, ViewStyle } from "react-native";
 
 interface DiscoverCardProps {
   event: Event;
   isSelected: boolean;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const DiscoverCard = ({
   event,
   isSelected,
   onPress,
+  style,
 }: DiscoverCardProps) => {
   const theme = useAppTheme();
   const { t } = useTranslation();
@@ -27,16 +29,19 @@ export const DiscoverCard = ({
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        height: 112,
-        width: 300,
-        flexDirection: "row",
-        borderRadius: 16,
-        overflow: "hidden",
-        backgroundColor: theme.background075,
-        borderWidth: isSelected ? 2 : 1,
-        borderColor: isSelected ? theme.color : theme.gray4,
-      }}
+      style={[
+        {
+          height: 112,
+          width: 300,
+          flexDirection: "row",
+          borderRadius: 16,
+          overflow: "hidden",
+          backgroundColor: theme.background075,
+          borderWidth: isSelected ? 2 : 1,
+          borderColor: isSelected ? theme.color : theme.gray4,
+        },
+        style,
+      ]}
     >
       {/* Image */}
       <View style={{ width: 100, height: "100%" }}>

@@ -32,6 +32,8 @@ interface MyStore {
   updateEventSeen: (eventId: string) => void;
   updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
   updateEventAttending: (eventId: string, isAttending: boolean) => void;
+  addTicket: (ticket: Ticket) => void;
+  removeTicketByEventId: (eventId: string) => void;
 }
 
 // 3) Create the Zustand store
@@ -216,6 +218,21 @@ const useStore = create<MyStore>((set) => ({
     set((s) => ({
       events: patch(s.events),
       filteredEvents: patch(s.filteredEvents),
+    }));
+  },
+
+  addTicket(ticket: Ticket) {
+    set((s) => ({
+      tickets: [
+        ticket,
+        ...(s.tickets ?? []).filter((t) => t.event_id !== ticket.event_id),
+      ],
+    }));
+  },
+
+  removeTicketByEventId(eventId: string) {
+    set((s) => ({
+      tickets: (s.tickets ?? []).filter((t) => t.event_id !== eventId),
     }));
   },
 }));

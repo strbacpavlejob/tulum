@@ -271,8 +271,13 @@ function ReservationModal({
 // ─── Main Screen ───────────────────────────────────────────────────────────
 
 const EventDetailsScreen = () => {
-  const { getSelectedEvent, updateEventSeen, updateEventAttending } =
-    useStore();
+  const {
+    getSelectedEvent,
+    updateEventSeen,
+    updateEventAttending,
+    addTicket,
+    removeTicketByEventId,
+  } = useStore();
   const event = getSelectedEvent();
   const theme = useAppTheme();
   const router = useRouter();
@@ -319,6 +324,7 @@ const EventDetailsScreen = () => {
       try {
         await unattendEvent(token, event.id);
         updateEventAttending(String(event.id), false);
+        removeTicketByEventId(String(event.id));
       } catch {
         setAttending(true);
       }
@@ -342,8 +348,19 @@ const EventDetailsScreen = () => {
     setShowReservationModal(false);
     setAttending(true);
     try {
-      await attendEvent(token, event.id);
+      const { ticket: raw } = await attendEvent(token, event.id);
       updateEventAttending(String(event.id), true);
+      addTicket({
+        id: String(raw.id ?? ""),
+        event_id: String(event.id),
+        image: event.image ?? null,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        tags: event.tags,
+        venue_name: String(raw.venue_name ?? ""),
+        location: event.location,
+      });
     } catch (err) {
       setAttending(false);
       const message =
