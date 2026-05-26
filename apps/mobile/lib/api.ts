@@ -140,6 +140,19 @@ interface MyProfileResponse {
 }
 
 export function mapProfileToUser(raw: MyProfileResponse): User {
+  const birthday = raw.guest?.birthday
+    ? raw.guest.birthday.split("T")[0]
+    : undefined;
+
+  let age: number | undefined;
+  if (birthday) {
+    const birth = new Date(birthday);
+    const today = new Date();
+    age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  }
+
   return {
     id: raw.id,
     email: raw.email,
@@ -148,9 +161,8 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
     imgUrl: raw.avatar_url ?? undefined,
     photos: raw.guest?.picture_urls ?? [],
     gender: raw.guest?.gender ?? undefined,
-    birthday: raw.guest?.birthday
-      ? raw.guest.birthday.split("T")[0]
-      : undefined,
+    birthday,
+    age,
     interests: raw.guest?.interests ?? [],
     tags: raw.guest?.interests ?? [],
   };
