@@ -51,4 +51,5 @@ export interface Event {
   comment?: EventComment[];
   price: number;
   venueContact: VenueContact | null;
+  requiresReservation: boolean;
 }

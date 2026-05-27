@@ -488,7 +488,8 @@ CREATE TABLE IF NOT EXISTS "public"."venues" (
     "picture_url" "text",
     "scraper" "text",
     "instagram_url" "text",
-    "contact_id" bigint
+    "contact_id" bigint,
+    "requires_reservation" boolean DEFAULT false NOT NULL
 );
 
 

@@ -335,7 +335,7 @@ const EventDetailsScreen = () => {
     }
 
     // Show reservation/contact modal before attending
-    if (event.venueContact) {
+    if (event.venueContact && event.requiresReservation) {
       setShowReservationModal(true);
       return;
     }
@@ -629,7 +629,7 @@ const EventDetailsScreen = () => {
       />
 
       {/* Reservation modal — always shown when attending */}
-      {event.venueContact && (
+      {event.venueContact && event.requiresReservation && (
         <ReservationModal
           visible={showReservationModal}
           contact={event.venueContact}

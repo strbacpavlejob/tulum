@@ -34,6 +34,7 @@ interface ActiveEventResponse {
   isSeen: boolean;
   isAttending: boolean;
   venue_instagram_url: string | null;
+  requires_reservation: boolean;
   venue_contact: ActiveEventVenueContact | null;
 }
 
@@ -56,6 +57,7 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
     isAttending: item.isAttending ?? false,
     guests: [],
     price: 0,
+    requiresReservation: item.requires_reservation ?? false,
     venueContact: item.venue_contact
       ? ({
           id: item.venue_contact.id,

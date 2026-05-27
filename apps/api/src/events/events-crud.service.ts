@@ -102,7 +102,7 @@ export class EventsCrudService {
     let venuesQuery = this.db
       .from('venues')
       .select(
-        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, instagram_url',
+        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, instagram_url, requires_reservation',
       )
       .in('id', venueIds);
 
@@ -176,6 +176,8 @@ export class EventsCrudService {
           isSeen: seenEventIds.has(Number(event.id)),
           isAttending: attendingEventIds.has(Number(event.id)),
           venue_instagram_url: (venueTyped.instagram_url as string) ?? null,
+          requires_reservation:
+            (venueTyped.requires_reservation as boolean) ?? false,
           venue_contact: contact
             ? {
                 id: (contact as Record<string, unknown>).id,
