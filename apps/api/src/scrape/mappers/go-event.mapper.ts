@@ -43,15 +43,14 @@ export function mapGoEventToVenue(
 export function mapGoEventToEvent(
   goEvent: GoEvent,
   venueId: number,
-): Omit<Event, 'id'> & { id?: number } {
+): Omit<Event, 'id'> & { id?: string } {
   const startDate = new Date(goEvent.start_timestamp);
   const endDate = new Date(
     startDate.getTime() + DEFAULT_EVENT_DURATION_HOURS * 60 * 60 * 1000,
   );
 
   return {
-    id: goEvent.id,
-    venue_id: venueId,
+    venue_id: venueId.toString(),
     title: goEvent.name,
     description: stripHtml(goEvent.description),
     start_date_time: startDate.toISOString(),

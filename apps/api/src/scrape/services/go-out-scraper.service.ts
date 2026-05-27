@@ -33,7 +33,7 @@ export class GoOutScraperService {
 
   async scrape(): Promise<{
     venues: Omit<Venue, 'id'>[];
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
   }> {
     const accessToken = await this.authenticate();
 
@@ -147,10 +147,10 @@ export class GoOutScraperService {
     goEvents: { event: GoEvent; venueType: VenueType }[],
   ): {
     venues: Omit<Venue, 'id'>[];
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
   } {
     const venueMap = new Map<number, Omit<Venue, 'id'>>();
-    const events: (Omit<Event, 'id'> & { id?: number })[] = [];
+    const events: (Omit<Event, 'id'> & { id?: string })[] = [];
 
     for (const { event: goEvent, venueType } of goEvents) {
       if (!venueMap.has(goEvent.host_id)) {

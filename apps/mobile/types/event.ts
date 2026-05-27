@@ -1,5 +1,5 @@
 export interface VenueContact {
-  id: number;
+  id: string;
   phoneNumber: string;
   isViber: boolean;
   isPhone: boolean;

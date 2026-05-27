@@ -5,7 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -24,22 +24,19 @@ export class TicketsController {
     @Query('guest_id') guestId?: string,
     @Query('event_id') eventId?: string,
   ) {
-    if (id) return this.ticketsService.getTicketById(parseInt(id, 10));
-    return this.ticketsService.getTickets(
-      guestId,
-      eventId ? parseInt(eventId, 10) : undefined,
-    );
+    if (id) return this.ticketsService.getTicketById(id);
+    return this.ticketsService.getTickets(guestId, eventId);
   }
 
   @Get('attendees')
-  async getEventAttendees(@Query('event_id', ParseIntPipe) eventId: number) {
+  async getEventAttendees(@Query('event_id', ParseUUIDPipe) eventId: string) {
     return this.ticketsService.getEventAttendees(eventId);
   }
 
   @Post('attend')
   async attendEvent(
     @UserId() userId: string,
-    @Body('event_id', ParseIntPipe) eventId: number,
+    @Body('event_id', ParseUUIDPipe) eventId: string,
   ) {
     return this.ticketsService.attendEvent(userId, eventId);
   }
@@ -48,7 +45,7 @@ export class TicketsController {
   @HttpCode(HttpStatus.OK)
   async unattendEvent(
     @UserId() userId: string,
-    @Query('event_id', ParseIntPipe) eventId: number,
+    @Query('event_id', ParseUUIDPipe) eventId: string,
   ) {
     return this.ticketsService.unattendEvent(userId, eventId);
   }
@@ -60,7 +57,7 @@ export class TicketsController {
 
   @Delete()
   @HttpCode(HttpStatus.OK)
-  async deleteTicket(@Query('id', ParseIntPipe) id: number) {
+  async deleteTicket(@Query('id', ParseUUIDPipe) id: string) {
     await this.ticketsService.deleteTicket(id);
     return { success: true };
   }

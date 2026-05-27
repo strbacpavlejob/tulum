@@ -35,10 +35,7 @@ export class MatchesController {
     @Query('event_id') eventId?: string,
   ) {
     if (id) return this.matchesService.getMatchById(parseInt(id, 10));
-    return this.matchesService.getMatches(
-      guestId,
-      eventId ? parseInt(eventId, 10) : undefined,
-    );
+    return this.matchesService.getMatches(guestId, eventId ?? undefined);
   }
 
   @Post()

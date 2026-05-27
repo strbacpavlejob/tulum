@@ -45,8 +45,12 @@ function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
       tags: [],
       location: { latitude: 0, longitude: 0 },
       isFavorite: false,
+      isSeen: false,
+      isAttending: false,
       guests: [],
       price: 0,
+      venueContact: null,
+      requiresReservation: false,
     },
   };
 }
@@ -60,14 +64,14 @@ export default function MatchesScreen() {
   const insets = useSafeAreaInsets();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [eventId, setEventId] = useState<number | null>(null);
+  const [eventId, setEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [showMatch, setShowMatch] = useState(false);
 
   // Keep a ref so swipe handlers always see the current eventId
-  const eventIdRef = useRef<number | null>(null);
+  const eventIdRef = useRef<string | null>(null);
   eventIdRef.current = eventId;
 
   const loadProfiles = useCallback(async () => {

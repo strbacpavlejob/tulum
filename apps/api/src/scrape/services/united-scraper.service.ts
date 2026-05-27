@@ -65,7 +65,7 @@ export class UnitedScraperService {
     this.logger.log('[Step 1/8] Running GO scraper...');
     let goData: {
       venues: Omit<Venue, 'id'>[];
-      events: (Omit<Event, 'id'> & { id?: number })[];
+      events: (Omit<Event, 'id'> & { id?: string })[];
     } = { venues: [], events: [] };
 
     try {
@@ -96,7 +96,7 @@ export class UnitedScraperService {
     // Step 3: Fetch existing venues from Supabase and build username → id map
     this.logger.log('[Step 3/8] Fetching existing venues from Supabase...');
     const existingVenues = await this.supabaseService.fetchAllVenues();
-    const existingVenuesMap = new Map<string, { id: number; name: string }>();
+    const existingVenuesMap = new Map<string, { id: string; name: string }>();
     for (const venue of existingVenues) {
       const username = venue.instagram_handle?.toLowerCase() ?? null;
       if (username) {
@@ -133,8 +133,8 @@ export class UnitedScraperService {
 
     // Collect IG events with their resolved venue IDs
     const allIgEvents: (Omit<Event, 'id'> & {
-      id?: number;
-      resolvedVenueId: number;
+      id?: string;
+      resolvedVenueId: string;
     })[] = [];
 
     // Step 5: Handle missing venues — scrape and create in DB
@@ -268,8 +268,8 @@ export class UnitedScraperService {
     // Step 8: Persist IG events grouped by venue
     this.logger.log(`[Step 8/8] Persisting IG events to Supabase...`);
     const eventsByVenue = new Map<
-      number,
-      (Omit<Event, 'id'> & { id?: number })[]
+      string,
+      (Omit<Event, 'id'> & { id?: string })[]
     >();
     for (const event of finalIgEvents) {
       const venueId = event.resolvedVenueId;

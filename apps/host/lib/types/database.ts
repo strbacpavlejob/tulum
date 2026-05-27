@@ -1,13 +1,23 @@
 // Database types based on PostgreSQL schema
 
-export type EventStatus = 'draft' | 'active' | 'cancelled';
-export type Gender = 'male' | 'female' | 'other';
-export type Language = 'EN' | 'SR' | 'RU';
-export type Seeking = 'casual' | 'relationship' | 'friendship' | 'party';
-export type Theme = 'dark' | 'light' | 'system';
-export type TransactionMode = 'transfer' | 'purchase';
-export type TransactionStatus = 'pending' | 'completed' | 'failed';
-export type VenueType = 'bar' | 'pub' | 'nightclub' | 'restaurant' | 'cafe' | 'cocktail_bar' | 'wine_bar' | 'brewery' | 'tavern' | 'raft';
+export type EventStatus = "draft" | "active" | "cancelled";
+export type Gender = "male" | "female" | "other";
+export type Language = "EN" | "SR" | "RU";
+export type Seeking = "casual" | "relationship" | "friendship" | "party";
+export type Theme = "dark" | "light" | "system";
+export type TransactionMode = "transfer" | "purchase";
+export type TransactionStatus = "pending" | "completed" | "failed";
+export type VenueType =
+  | "bar"
+  | "pub"
+  | "nightclub"
+  | "restaurant"
+  | "cafe"
+  | "cocktail_bar"
+  | "wine_bar"
+  | "brewery"
+  | "tavern"
+  | "raft";
 
 export interface User {
   id: string;
@@ -42,7 +52,7 @@ export interface Settings {
 }
 
 export interface Venue {
-  id?: number;
+  id?: string;
   host_id: string;
   venue_type: VenueType;
   name: string;
@@ -58,8 +68,8 @@ export interface Venue {
 }
 
 export interface Event {
-  id?: number;
-  venue_id: number;
+  id?: string;
+  venue_id: string;
   title: string;
   description: string;
   start_date_time: string;
@@ -72,15 +82,15 @@ export interface Event {
 }
 
 export interface Favorite {
-  id?: number;
+  id?: string;
   user_id: string;
-  event_id: number;
+  event_id: string;
   created_at?: string;
 }
 
 export interface Ticket {
-  id?: number;
-  event_id: number;
+  id?: string;
+  event_id: string;
   guest_id: string;
   created_at?: string;
   updated_at?: string;
@@ -90,20 +100,20 @@ export interface Match {
   id?: number;
   guest_id_1: string;
   guest_id_2: string;
-  event_id: number;
+  event_id: string;
   matched_at?: string;
 }
 
 export interface Chat {
-  id?: number;
+  id?: string;
   match_id: number;
-  event_id: number;
+  event_id: string;
   created_at?: string;
 }
 
 export interface ChatMessage {
-  id?: number;
-  chat_id: number;
+  id?: string;
+  chat_id: string;
   sender_id: string;
   message: string;
   is_read: boolean;

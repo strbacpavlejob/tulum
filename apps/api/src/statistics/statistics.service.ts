@@ -10,12 +10,12 @@ enum EventStatus {
 }
 
 type EventWithVenue = {
-  id: number;
+  id: string;
   title: string;
   status: string;
   start_date_time: string;
   end_date_time: string;
-  venue_id: number;
+  venue_id: string;
   venues: { name: string } | { name: string }[] | null;
 };
 
@@ -39,20 +39,20 @@ export class StatisticsService {
       return this.emptyStats();
     }
 
-    const venueIds = venues.map((v) => v.id as number);
-    const targetVenueIds = venueId ? [parseInt(venueId, 10)] : venueIds;
+    const venueIds = venues.map((v) => v.id as string);
+    const targetVenueIds = venueId ? [venueId] : venueIds;
 
     // 2. Get event IDs
     let eventsQuery = this.db
       .from('events')
       .select('id')
       .in('venue_id', targetVenueIds);
-    if (eventId) eventsQuery = eventsQuery.eq('id', parseInt(eventId, 10));
+    if (eventId) eventsQuery = eventsQuery.eq('id', eventId);
 
     const { data: events, error: eventsError } = await eventsQuery;
     if (eventsError) throw eventsError;
 
-    const eventIds = events?.map((e) => e.id as number) ?? [];
+    const eventIds = events?.map((e) => e.id as string) ?? [];
     if (eventIds.length === 0) return this.emptyStats();
 
     // 3. Parallel stat counts
@@ -95,7 +95,7 @@ export class StatisticsService {
       'get_engagement_chart_data',
       {
         p_venue_ids: targetVenueIds,
-        p_event_id: eventId ? parseInt(eventId, 10) : null,
+        p_event_id: eventId ?? null,
       },
     )) as { data: unknown[] | null; error: unknown | null };
 
@@ -107,7 +107,7 @@ export class StatisticsService {
     const { data: eventsTableData, error: eventsTableError } =
       (await rpcClient.rpc('get_events_statistics', {
         p_venue_ids: targetVenueIds,
-        p_event_id: eventId ? parseInt(eventId, 10) : null,
+        p_event_id: eventId ?? null,
       })) as { data: unknown[] | null; error: unknown | null };
 
     const eventsTable = eventsTableError
@@ -139,7 +139,7 @@ export class StatisticsService {
     };
   }
 
-  private async buildChartDataManually(eventIds: number[]) {
+  private async buildChartDataManually(eventIds: string[]) {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 90);
@@ -212,7 +212,7 @@ export class StatisticsService {
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  private async buildEventsTableManually(venueIds: number[]) {
+  private async buildEventsTableManually(venueIds: string[]) {
     const { data: eventsWithVenues } = await this.db
       .from('events')
       .select(
@@ -223,7 +223,7 @@ export class StatisticsService {
 
     if (!eventsWithVenues || eventsWithVenues.length === 0) return [];
 
-    const ids = eventsWithVenues.map((e) => (e as { id: number }).id);
+    const ids = eventsWithVenues.map((e) => (e as { id: string }).id);
 
     const [seenEng, savedEng, ticketsData, sessionsData] = await Promise.all([
       this.db
@@ -244,21 +244,21 @@ export class StatisticsService {
         .in('event_id', ids),
     ]);
 
-    const seenByEvent: Record<number, number> = {};
-    const savedByEvent: Record<number, number> = {};
-    const ticketsByEvent: Record<number, number> = {};
-    const attendeesByEvent: Record<number, Set<string>> = {};
+    const seenByEvent: Record<string, number> = {};
+    const savedByEvent: Record<string, number> = {};
+    const ticketsByEvent: Record<string, number> = {};
+    const attendeesByEvent: Record<string, Set<string>> = {};
 
-    seenEng.data?.forEach((e: { event_id: number }) => {
+    seenEng.data?.forEach((e: { event_id: string }) => {
       seenByEvent[e.event_id] = (seenByEvent[e.event_id] ?? 0) + 1;
     });
-    savedEng.data?.forEach((e: { event_id: number }) => {
+    savedEng.data?.forEach((e: { event_id: string }) => {
       savedByEvent[e.event_id] = (savedByEvent[e.event_id] ?? 0) + 1;
     });
-    ticketsData.data?.forEach((t: { event_id: number }) => {
+    ticketsData.data?.forEach((t: { event_id: string }) => {
       ticketsByEvent[t.event_id] = (ticketsByEvent[t.event_id] ?? 0) + 1;
     });
-    sessionsData.data?.forEach((s: { event_id: number; user_id: string }) => {
+    sessionsData.data?.forEach((s: { event_id: string; user_id: string }) => {
       if (!attendeesByEvent[s.event_id])
         attendeesByEvent[s.event_id] = new Set();
       attendeesByEvent[s.event_id].add(s.user_id);

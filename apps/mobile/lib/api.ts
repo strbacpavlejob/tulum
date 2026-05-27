@@ -7,7 +7,7 @@ const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
 
 interface ActiveEventVenueContact {
-  id: number;
+  id: string;
   phone_number: string;
   is_viber: boolean;
   is_phone: boolean;
@@ -393,8 +393,8 @@ export async function updateSettings(
 // ─── Chats ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
-  id: number;
-  chat_id: number;
+  id: string;
+  chat_id: string;
   sender_id: string;
   text: string;
   sent_at: string;
@@ -402,9 +402,9 @@ export interface ChatMessage {
 
 export interface ChatOpenResponse {
   chat: {
-    id: number;
+    id: string;
     match_id: number;
-    event_id: number | null;
+    event_id: string | null;
     created_at: string;
   };
   messages: ChatMessage[];
@@ -427,10 +427,10 @@ export async function fetchOrCreateChat(
 export interface MatchListItem {
   id: number;
   matched_at: string;
-  chat_id: number | null;
+  chat_id: string | null;
   has_messages: boolean;
   last_message: {
-    id: number;
+    id: string;
     text: string;
     sender_id: string;
     sent_at: string;
@@ -445,7 +445,7 @@ export interface MatchListItem {
     interests: string[];
   };
   event: {
-    id: number;
+    id: string;
     title: string;
     venue_name: string | null;
   } | null;
@@ -470,7 +470,7 @@ export async function trackEventSeen(
   await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ event_id: Number(eventId) }),
+    body: JSON.stringify({ event_id: eventId }),
   });
 }
 
@@ -482,7 +482,7 @@ export async function toggleFavorite(
   const response = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ event_id: Number(eventId) }),
+    body: JSON.stringify({ event_id: eventId }),
   });
   if (!response.ok) {
     throw new Error(`Failed to toggle favorite: ${response.status}`);
@@ -498,7 +498,7 @@ export async function attendEvent(
   const response = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ event_id: Number(eventId) }),
+    body: JSON.stringify({ event_id: eventId }),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -513,7 +513,7 @@ export async function unattendEvent(
   token: string,
   eventId: string | number,
 ): Promise<void> {
-  const url = `${TULUM_API_URL}/tickets/attend?event_id=${Number(eventId)}`;
+  const url = `${TULUM_API_URL}/tickets/attend?event_id=${eventId}`;
   const response = await fetch(url, {
     method: "DELETE",
     headers: authHeaders(token),
@@ -544,7 +544,7 @@ export async function fetchEventAttendees(
   eventId: string | number,
   token: string,
 ): Promise<EventAttendeesData> {
-  const url = `${TULUM_API_URL}/tickets/attendees?event_id=${Number(eventId)}`;
+  const url = `${TULUM_API_URL}/tickets/attendees?event_id=${eventId}`;
   const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch event attendees: ${response.status}`);
@@ -571,7 +571,7 @@ export async function fetchMyTickets(token: string, userId: string) {
 
 export interface SwipeableProfile {
   user_id: string;
-  event_id: number;
+  event_id: string;
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
@@ -581,7 +581,7 @@ export interface SwipeableProfile {
 }
 
 export interface SwipeableResponse {
-  event_id: number | null;
+  event_id: string | null;
   event_title: string;
   event_venue: string;
   profiles: SwipeableProfile[];
@@ -589,7 +589,7 @@ export interface SwipeableResponse {
 
 export async function fetchSwipeableProfiles(
   token: string,
-  eventId?: number,
+  eventId?: string,
 ): Promise<SwipeableResponse> {
   const qs = eventId ? `?event_id=${eventId}` : "";
   const url = `${TULUM_API_URL}/guests/swipeable${qs}`;
@@ -604,7 +604,7 @@ export async function createMatchSwipe(
   token: string,
   userId: string,
   otherUserId: string,
-  eventId: number,
+  eventId: string,
 ): Promise<void> {
   const url = `${TULUM_API_URL}/matches`;
   const response = await fetch(url, {

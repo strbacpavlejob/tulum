@@ -12,7 +12,7 @@ export function DiscoverScreen() {
   }) as string[];
   const events = [
     {
-      id: 1,
+      id: "1",
       name: "Neon Terrace",
       venue: "Skyline Rooftop",
       tags: ["Rooftop", "House"],
@@ -26,7 +26,7 @@ export function DiscoverScreen() {
       address: "Belgrade Center",
     },
     {
-      id: 2,
+      id: "2",
       name: "Club Paragon",
       venue: "Paragon Club",
       tags: ["Cocktails", "Deep House"],
@@ -40,7 +40,7 @@ export function DiscoverScreen() {
       address: "Dorćol",
     },
     {
-      id: 3,
+      id: "3",
       name: "Sunset Sessions",
       venue: "Beach Club",
       tags: ["Cocktails", "Deep House"],
@@ -55,7 +55,7 @@ export function DiscoverScreen() {
     },
   ];
 
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(
     events[0].id,
   );
 

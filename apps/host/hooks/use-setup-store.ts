@@ -3,11 +3,7 @@ import { faker } from "@faker-js/faker";
 import { useEventsStore, type Event } from "@/store/events";
 import { useVenuesStore, type Venue } from "@/store/venues";
 
-const EVENT_STATUSES: Event["status"][] = [
-  "draft",
-  "active",
-  "cancelled",
-];
+const EVENT_STATUSES: Event["status"][] = ["draft", "active", "cancelled"];
 
 const VENUE_TYPES = [
   "Restaurant",
@@ -27,7 +23,7 @@ const generateMockVenues = (count: number = 10): Venue[] => {
 
   for (let i = 1; i <= count; i++) {
     venues.push({
-      id: i,
+      id: faker.string.uuid(),
       name: faker.company.name(),
       longitude: faker.location.longitude({
         min: 20.3,
@@ -68,7 +64,7 @@ const generateMockEvents = (venues: Venue[], count: number = 20): Event[] => {
     const ticketsSold = faker.number.int({ min: 0, max: capacity });
 
     events.push({
-      id: i,
+      id: faker.string.uuid(),
       venue_id: venue.id,
       venue_name: venue.name,
       title: faker.helpers.arrayElement([

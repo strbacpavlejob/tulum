@@ -35,12 +35,12 @@ export default function MapsPage() {
     useVenuesStore();
   const { invalidate: invalidateEvents } = useEventsStore();
   const { invalidate: invalidateStatistics } = useStatisticsStore();
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState<(typeof venues)[0] | null>(
     null,
   );
-  const [venueToDelete, setVenueToDelete] = useState<number | null>(null);
+  const [venueToDelete, setVenueToDelete] = useState<string | null>(null);
 
   // Load venues from store cache (only fetches from API on first load)
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function MapsPage() {
     setIsCreateOpen(true);
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     const venue = venues.find((v) => v.id === id);
     if (venue) {
       setEditingVenue(venue);
@@ -76,7 +76,7 @@ export default function MapsPage() {
     refreshVenues();
   };
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setVenueToDelete(id);
   };
 

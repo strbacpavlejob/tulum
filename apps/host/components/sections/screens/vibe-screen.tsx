@@ -35,7 +35,7 @@ export function VibeScreen() {
   const progressValue = (goingCount / capacity) * 100;
 
   const location = {
-    id: 1,
+    id: "1",
     name: "Neon Terrace",
     latitude: 44.8125,
     longitude: 20.4489,

@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -61,7 +61,7 @@ export class VenuesController {
   }
 
   @Get(':id')
-  async getVenue(@Param('id', ParseIntPipe) id: number) {
+  async getVenue(@Param('id', ParseUUIDPipe) id: string) {
     return this.venuesService.getVenueById(id);
   }
 
@@ -69,7 +69,7 @@ export class VenuesController {
   @ApiConsumes('multipart/form-data', 'application/json')
   @UseInterceptors(FileInterceptor('picture'))
   async updateVenue(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
     @Body() body: Record<string, unknown>,
     @UploadedFile() picture?: Express.Multer.File,
@@ -80,7 +80,7 @@ export class VenuesController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async deleteVenue(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
   ) {
     await this.venuesService.deleteVenue(id, userId);
@@ -90,13 +90,13 @@ export class VenuesController {
   // ─── Venue Contact ───────────────────────────────────────────────────────────
 
   @Get(':id/contact')
-  async getVenueContact(@Param('id', ParseIntPipe) id: number) {
+  async getVenueContact(@Param('id', ParseUUIDPipe) id: string) {
     return this.venuesService.getVenueContact(id);
   }
 
   @Post(':id/contact')
   async upsertVenueContact(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
     @Body() body: Record<string, unknown>,
   ) {
@@ -106,7 +106,7 @@ export class VenuesController {
   @Delete(':id/contact')
   @HttpCode(HttpStatus.OK)
   async deleteVenueContact(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
   ) {
     await this.venuesService.deleteVenueContact(id, userId);

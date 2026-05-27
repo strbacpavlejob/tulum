@@ -38,7 +38,7 @@ export class SupabaseService implements OnModuleInit {
 
   async saveScrapedData(data: {
     venues: Omit<Venue, 'id'>[];
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
   }): Promise<{ venues: number; events: number }> {
     this.logger.log(
       `Saving scraped data: ${data.venues.length} venues, ${data.events.length} events`,
@@ -83,7 +83,7 @@ export class SupabaseService implements OnModuleInit {
 
   private async upsertVenueContacts(
     venues: Omit<Venue, 'id'>[],
-    venueNameToId: Map<string, number>,
+    venueNameToId: Map<string, string>,
   ): Promise<void> {
     for (const venue of venues) {
       if (!venue.contact) continue;
@@ -101,8 +101,8 @@ export class SupabaseService implements OnModuleInit {
         .eq('id', venueId)
         .single();
 
-      let contactId: number | null =
-        (existingVenue as { contact_id: number | null } | null)?.contact_id ??
+      let contactId: string | null =
+        (existingVenue as { contact_id: string | null } | null)?.contact_id ??
         null;
 
       if (contactId) {
@@ -146,7 +146,7 @@ export class SupabaseService implements OnModuleInit {
           );
           continue;
         }
-        contactId = (newContact as { id: number }).id;
+        contactId = (newContact as { id: string }).id;
 
         const { error: linkError } = await this.supabase
           .from('venues')
@@ -163,7 +163,7 @@ export class SupabaseService implements OnModuleInit {
 
   private async upsertVenues(
     venues: Omit<Venue, 'id'>[],
-  ): Promise<Map<string, number>> {
+  ): Promise<Map<string, string>> {
     const dbRows = venues.map((venue) => this.mapVenueToDbRow(venue));
 
     const { data, error } = await this.supabase
@@ -176,8 +176,8 @@ export class SupabaseService implements OnModuleInit {
       throw new Error(`Failed to upsert venues: ${error.message}`);
     }
 
-    const venueNameToId = new Map<string, number>();
-    data?.forEach((v: { name: string; id: number }) =>
+    const venueNameToId = new Map<string, string>();
+    data?.forEach((v: { name: string; id: string }) =>
       venueNameToId.set(v.name, v.id),
     );
 
@@ -245,8 +245,8 @@ export class SupabaseService implements OnModuleInit {
   }
 
   private mapEventToDbRow(
-    event: Omit<Event, 'id'> & { id?: number },
-    dbVenueId: number,
+    event: Omit<Event, 'id'> & { id?: string },
+    dbVenueId: string,
   ): Record<string, unknown> {
     return {
       venue_id: dbVenueId,
@@ -290,7 +290,7 @@ export class SupabaseService implements OnModuleInit {
   }
 
   async fetchAllVenues(): Promise<
-    { id: number; name: string; instagram_handle?: string }[]
+    { id: string; name: string; instagram_handle?: string }[]
   > {
     const { data, error } = await this.supabase
       .from(VENUES_TABLE)
@@ -305,7 +305,7 @@ export class SupabaseService implements OnModuleInit {
 
     return (
       (data as {
-        id: number;
+        id: string;
         name: string;
         venue_contacts: { instagram_handle?: string } | null;
       }[]) ?? []
@@ -316,7 +316,7 @@ export class SupabaseService implements OnModuleInit {
     }));
   }
 
-  async createVenue(venue: Omit<Venue, 'id'>): Promise<number> {
+  async createVenue(venue: Omit<Venue, 'id'>): Promise<string> {
     const row = this.mapVenueToDbRow(venue);
 
     const { data, error } = await this.supabase
@@ -330,11 +330,11 @@ export class SupabaseService implements OnModuleInit {
       throw new Error(`Failed to create venue: ${error.message}`);
     }
 
-    return (data as { id: number }).id;
+    return (data as { id: string }).id;
   }
 
   async upsertVenueContactById(
-    venueId: number,
+    venueId: string,
     contact: import('../scrape/interfaces/venue.interface').VenueContact,
   ): Promise<boolean> {
     if (!contact.phone_number && !contact.instagram_handle) return false;
@@ -346,7 +346,7 @@ export class SupabaseService implements OnModuleInit {
       .single();
 
     const existingContactId =
-      (existingVenue as { contact_id: number | null } | null)?.contact_id ??
+      (existingVenue as { contact_id: string | null } | null)?.contact_id ??
       null;
 
     if (existingContactId) {
@@ -389,7 +389,7 @@ export class SupabaseService implements OnModuleInit {
         );
         return false;
       }
-      const contactId = (newContact as { id: number }).id;
+      const contactId = (newContact as { id: string }).id;
       const { error: linkError } = await this.supabase
         .from('venues')
         .update({ contact_id: contactId })
@@ -403,7 +403,7 @@ export class SupabaseService implements OnModuleInit {
     }
   }
 
-  async updateVenuePicture(venueId: number, pictureUrl: string): Promise<void> {
+  async updateVenuePicture(venueId: string, pictureUrl: string): Promise<void> {
     const { error } = await this.supabase
       .from(VENUES_TABLE)
       .update({ picture_url: pictureUrl })
@@ -419,8 +419,8 @@ export class SupabaseService implements OnModuleInit {
   }
 
   async saveVenueEvents(
-    events: (Omit<Event, 'id'> & { id?: number })[],
-    venueId: number,
+    events: (Omit<Event, 'id'> & { id?: string })[],
+    venueId: string,
   ): Promise<number> {
     if (events.length === 0) return 0;
 

@@ -21,7 +21,7 @@ export class MatchesService {
     return data;
   }
 
-  async getMatches(guestId?: string, eventId?: number) {
+  async getMatches(guestId?: string, eventId?: string) {
     let query = this.db.from(MATCHES_TABLE).select('*');
     if (guestId)
       query = query.or(`guest_id_1.eq.${guestId},guest_id_2.eq.${guestId}`);
@@ -80,7 +80,7 @@ export class MatchesService {
       const isGuest1 = match.guest_id_1 === userId;
       const other = isGuest1 ? match.guest2 : match.guest1;
       const chat = match.chats?.[0] ?? null;
-      const chatId: number | null = chat?.id ?? null;
+      const chatId: string | null = chat?.id ?? null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const msgs: any[] = chat?.chat_messages ?? [];
       const sortedMsgs = [...msgs].sort(
@@ -112,7 +112,7 @@ export class MatchesService {
         },
         event: match.event
           ? {
-              id: match.event.id as number,
+              id: match.event.id as string,
               title: match.event.title as string,
               venue_name: (match.event.venue?.name ?? null) as string | null,
             }

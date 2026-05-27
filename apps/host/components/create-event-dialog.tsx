@@ -79,8 +79,8 @@ const createEventFormSchema = (t: (key: string) => string) =>
 export type EventFormData = z.infer<ReturnType<typeof createEventFormSchema>>;
 
 interface Event {
-  id: number;
-  venue_id: number;
+  id: string;
+  venue_id: string;
   title: string;
   description: string;
   start_date_time: string;
@@ -251,7 +251,7 @@ export function CreateEventDialog({
       if (event?.id) {
         // Update existing event
         const updates = {
-          venue_id: parseInt(data.venue_id),
+          venue_id: data.venue_id,
           title: data.title,
           description: data.description,
           start_date_time: data.start_date_time,
@@ -270,7 +270,7 @@ export function CreateEventDialog({
         // Create new event
         const newEventData = {
           host_id: userId,
-          venue_id: parseInt(data.venue_id),
+          venue_id: data.venue_id,
           title: data.title,
           description: data.description,
           start_date_time: data.start_date_time,

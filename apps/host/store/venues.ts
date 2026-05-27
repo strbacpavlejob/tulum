@@ -3,7 +3,7 @@ import { getVenues as apiGetVenues } from "@/lib/api-client";
 import type { Venue as DBVenue } from "@/lib/types/database";
 
 export interface Venue {
-  id: number;
+  id: string;
   host_id?: string;
   name: string;
   longitude: number;
@@ -44,8 +44,8 @@ interface VenuesState {
   lastFetched: number | null;
   setVenues: (venues: Venue[]) => void;
   addVenue: (venue: Venue) => void;
-  updateVenue: (id: number, venue: Partial<Venue>) => void;
-  deleteVenue: (id: number) => void;
+  updateVenue: (id: string, venue: Partial<Venue>) => void;
+  deleteVenue: (id: string) => void;
   selectVenue: (venue: Venue | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;

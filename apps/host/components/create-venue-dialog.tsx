@@ -94,7 +94,7 @@ const createVenueFormSchema = (t: (key: string) => string) =>
 export type VenueFormData = z.infer<ReturnType<typeof createVenueFormSchema>>;
 
 interface Venue {
-  id: number;
+  id: string;
   name: string;
   longitude: number;
   latitude: number;

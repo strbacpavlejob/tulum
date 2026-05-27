@@ -54,9 +54,9 @@ export class EventsCrudService {
 
     // Fetch saved and seen event IDs for the current user
     const effectiveUserId = userId ?? filters.user_id;
-    let savedEventIds: Set<number> = new Set();
-    let seenEventIds: Set<number> = new Set();
-    let attendingEventIds: Set<number> = new Set();
+    let savedEventIds: Set<string> = new Set();
+    let seenEventIds: Set<string> = new Set();
+    let attendingEventIds: Set<string> = new Set();
     if (effectiveUserId) {
       const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
@@ -66,8 +66,9 @@ export class EventsCrudService {
       if (engagementsError) throw engagementsError;
       for (const e of engagements ?? []) {
         if (e.engagement_type === 'saved')
-          savedEventIds.add(Number(e.event_id));
-        if (e.engagement_type === 'seen') seenEventIds.add(Number(e.event_id));
+          savedEventIds.add(e.event_id as string);
+        if (e.engagement_type === 'seen')
+          seenEventIds.add(e.event_id as string);
       }
 
       const { data: tickets, error: ticketsError } = await this.db
@@ -76,28 +77,28 @@ export class EventsCrudService {
         .eq('guest_id', effectiveUserId);
       if (ticketsError) throw ticketsError;
       attendingEventIds = new Set(
-        (tickets ?? []).map((t) => Number(t.event_id)),
+        (tickets ?? []).map((t) => t.event_id as string),
       );
     }
-    const favoriteEventIds: Set<number> | null =
+    const favoriteEventIds: Set<string> | null =
       filters.only_favorites === 'true' && effectiveUserId
         ? savedEventIds
         : null;
 
     // Keep only the earliest event per venue, optionally filtering by favorites
-    const seenVenues = new Set<number>();
+    const seenVenues = new Set<string>();
     const uniqueEvents = events.filter((event) => {
-      if (favoriteEventIds && !favoriteEventIds.has(Number(event.id)))
+      if (favoriteEventIds && !favoriteEventIds.has(event.id as string))
         return false;
-      if (seenVenues.has(event.venue_id as number)) return false;
-      seenVenues.add(event.venue_id as number);
+      if (seenVenues.has(event.venue_id as string)) return false;
+      seenVenues.add(event.venue_id as string);
       return true;
     });
 
     if (uniqueEvents.length === 0) return [];
 
     const venueIds = [
-      ...new Set(uniqueEvents.map((e) => e.venue_id as number)),
+      ...new Set(uniqueEvents.map((e) => e.venue_id as string)),
     ];
     let venuesQuery = this.db
       .from('venues')
@@ -126,12 +127,12 @@ export class EventsCrudService {
       ...new Set(
         (venues ?? [])
           .map(
-            (v) => (v as Record<string, unknown>).contact_id as number | null,
+            (v) => (v as Record<string, unknown>).contact_id as string | null,
           )
-          .filter(Boolean) as number[],
+          .filter(Boolean) as string[],
       ),
     ];
-    const contactMap = new Map<number, Record<string, unknown>>();
+    const contactMap = new Map<string, Record<string, unknown>>();
     if (contactIds.length > 0) {
       const { data: contacts, error: contactsError } = await this.db
         .from('venue_contacts')
@@ -142,24 +143,24 @@ export class EventsCrudService {
       if (contactsError) throw contactsError;
       for (const c of contacts ?? []) {
         contactMap.set(
-          (c as Record<string, unknown>).id as number,
+          (c as Record<string, unknown>).id as string,
           c as Record<string, unknown>,
         );
       }
     }
 
-    const venueMap = new Map(venues?.map((v) => [v.id as number, v]) ?? []);
+    const venueMap = new Map(venues?.map((v) => [v.id as string, v]) ?? []);
 
     return uniqueEvents
       .map((event) => {
-        const venue = venueMap.get(event.venue_id as number);
+        const venue = venueMap.get(event.venue_id as string);
         if (!venue) return null;
         const venueTyped = venue as Record<string, unknown>;
         const contact = venueTyped.contact_id
-          ? (contactMap.get(venueTyped.contact_id as number) ?? null)
+          ? (contactMap.get(venueTyped.contact_id as string) ?? null)
           : null;
         return {
-          id: String(event.id),
+          id: event.id as string,
           name: event.title,
           longitude: venue.longitude,
           latitude: venue.latitude,
@@ -172,9 +173,9 @@ export class EventsCrudService {
           picture_urls: venue.picture_url ? [venue.picture_url] : [],
           date: event.start_date_time,
           tags: (event.tags as string[]) ?? [],
-          isFavorite: savedEventIds.has(Number(event.id)),
-          isSeen: seenEventIds.has(Number(event.id)),
-          isAttending: attendingEventIds.has(Number(event.id)),
+          isFavorite: savedEventIds.has(event.id as string),
+          isSeen: seenEventIds.has(event.id as string),
+          isAttending: attendingEventIds.has(event.id as string),
           requires_reservation:
             (venueTyped.requires_reservation as boolean) ?? false,
           venue_contact: contact
@@ -205,9 +206,9 @@ export class EventsCrudService {
     if (venuesError) throw venuesError;
     if (!venues || venues.length === 0) return [];
 
-    const venueIds = venues.map((v) => v.id as number);
+    const venueIds = venues.map((v) => v.id as string);
     let query = this.db.from(EVENTS_TABLE).select('*').in('venue_id', venueIds);
-    if (venueId) query = query.eq('venue_id', parseInt(venueId, 10));
+    if (venueId) query = query.eq('venue_id', venueId);
     if (status) query = query.eq('status', status);
 
     const { data, error } = await query;
@@ -216,7 +217,7 @@ export class EventsCrudService {
   }
 
   /** GET /events/:id */
-  async getEventById(eventId: number) {
+  async getEventById(eventId: string) {
     const { data, error } = await this.db
       .from(EVENTS_TABLE)
       .select('*')
@@ -233,16 +234,12 @@ export class EventsCrudService {
     eventData: Record<string, unknown>,
     imageFile?: Express.Multer.File,
   ) {
-    const venueId = eventData.venue_id as number;
+    const venueId = eventData.venue_id as string;
     await this.assertVenueOwnership(venueId, userId);
 
     let pictureUrl: string | null = null;
     if (imageFile) {
-      const key = this.buildImageKey(
-        userId,
-        venueId.toString(),
-        imageFile.originalname,
-      );
+      const key = this.buildImageKey(userId, venueId, imageFile.originalname);
       pictureUrl = await this.r2Service.uploadAndProcessImage(
         imageFile.buffer,
         key,
@@ -262,7 +259,7 @@ export class EventsCrudService {
 
   /** PATCH /events/:id */
   async updateEvent(
-    eventId: number,
+    eventId: string,
     userId: string,
     updates: Record<string, unknown>,
     imageFile?: Express.Multer.File,
@@ -300,7 +297,7 @@ export class EventsCrudService {
   }
 
   /** DELETE /events/:id */
-  async deleteEvent(eventId: number, userId: string) {
+  async deleteEvent(eventId: string, userId: string) {
     const event = await this.assertEventOwnership(eventId, userId);
     if ((event as Record<string, unknown>).picture_url) {
       const key = this.r2Service.extractKeyFromUrl(
@@ -325,7 +322,7 @@ export class EventsCrudService {
       throw new Error('File size exceeds 5MB limit');
     if (!file.mimetype.startsWith('image/'))
       throw new Error('File must be an image');
-    await this.assertVenueOwnership(parseInt(venueId, 10), userId);
+    await this.assertVenueOwnership(venueId, userId);
 
     const key = `event-images/${userId}/${venueId}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.webp`;
     const url = await this.r2Service.uploadAndProcessImage(
@@ -346,7 +343,7 @@ export class EventsCrudService {
     await this.r2Service.deleteObject(key);
   }
 
-  private async assertVenueOwnership(venueId: number, userId: string) {
+  private async assertVenueOwnership(venueId: string, userId: string) {
     const { data: venue } = await this.db
       .from('venues')
       .select('host_id')
@@ -358,7 +355,7 @@ export class EventsCrudService {
     return venue;
   }
 
-  private async assertEventOwnership(eventId: number, userId: string) {
+  private async assertEventOwnership(eventId: string, userId: string) {
     const { data: event } = await this.db
       .from(EVENTS_TABLE)
       .select('venue_id, picture_url')
@@ -367,7 +364,7 @@ export class EventsCrudService {
     if (!event) throw new NotFoundException('Event not found');
 
     await this.assertVenueOwnership(
-      (event as { venue_id: number }).venue_id,
+      (event as { venue_id: string }).venue_id,
       userId,
     );
     return event;

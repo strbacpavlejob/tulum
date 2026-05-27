@@ -11,7 +11,7 @@ export class TicketsService {
     return this.supabaseService.getClient();
   }
 
-  async getTicketById(ticketId: number) {
+  async getTicketById(ticketId: string) {
     const { data, error } = await this.db
       .from(TICKETS_TABLE)
       .select('*')
@@ -21,7 +21,7 @@ export class TicketsService {
     return data;
   }
 
-  async getTickets(guestId?: string, eventId?: number) {
+  async getTickets(guestId?: string, eventId?: string) {
     let query = this.db
       .from(TICKETS_TABLE)
       .select(
@@ -56,7 +56,7 @@ export class TicketsService {
     return data;
   }
 
-  async attendEvent(guestId: string, eventId: number) {
+  async attendEvent(guestId: string, eventId: string) {
     // Return existing ticket if already attending (idempotent)
     const { data: existing } = await this.db
       .from(TICKETS_TABLE)
@@ -106,7 +106,7 @@ export class TicketsService {
     return { ticket: data, isNew: true };
   }
 
-  async unattendEvent(guestId: string, eventId: number) {
+  async unattendEvent(guestId: string, eventId: string) {
     const { error } = await this.db
       .from(TICKETS_TABLE)
       .delete()
@@ -116,7 +116,7 @@ export class TicketsService {
     return { success: true };
   }
 
-  async deleteTicket(ticketId: number) {
+  async deleteTicket(ticketId: string) {
     const { error } = await this.db
       .from(TICKETS_TABLE)
       .delete()
@@ -124,7 +124,7 @@ export class TicketsService {
     if (error) throw error;
   }
 
-  async getEventAttendees(eventId: number) {
+  async getEventAttendees(eventId: string) {
     const [ticketsResult, eventResult] = await Promise.all([
       this.db
         .from(TICKETS_TABLE)

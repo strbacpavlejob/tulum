@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -79,7 +79,7 @@ export class EventsCrudController {
   }
 
   @Get(':id')
-  async getEvent(@Param('id', ParseIntPipe) id: number) {
+  async getEvent(@Param('id', ParseUUIDPipe) id: string) {
     return this.eventsCrudService.getEventById(id);
   }
 
@@ -87,7 +87,7 @@ export class EventsCrudController {
   @ApiConsumes('multipart/form-data', 'application/json')
   @UseInterceptors(FileInterceptor('picture'))
   async updateEvent(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
     @Body() body: Record<string, unknown>,
     @UploadedFile() picture?: Express.Multer.File,
@@ -98,7 +98,7 @@ export class EventsCrudController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async deleteEvent(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId: string,
   ) {
     await this.eventsCrudService.deleteEvent(id, userId);

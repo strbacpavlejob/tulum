@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -23,7 +24,7 @@ export class ChatsController {
 
   @Get()
   async getChat(@Query('id') id?: string, @Query('match_id') matchId?: string) {
-    if (id) return this.chatsService.getChatById(parseInt(id, 10));
+    if (id) return this.chatsService.getChatById(id);
     if (matchId)
       return this.chatsService.getChatByMatchId(parseInt(matchId, 10));
     throw new NotFoundException('Missing required parameter: id or match_id');
@@ -41,7 +42,7 @@ export class ChatsController {
   ) {
     if (!userId) throw new NotFoundException('Missing x-user-id header');
     const chat = await this.chatsService.getOrCreateChat(matchId);
-    const rows = await this.chatsService.getMessages(chat.id as number);
+    const rows = await this.chatsService.getMessages(chat.id as string);
     // Normalize DB column `message` → `text` so mobile ChatMessage type aligns
     const messages = (rows as Record<string, unknown>[]).map((r) => ({
       id: r.id,
@@ -60,7 +61,7 @@ export class ChatsController {
 
   @Delete()
   @HttpCode(HttpStatus.OK)
-  async deleteChat(@Query('id', ParseIntPipe) id: number) {
+  async deleteChat(@Query('id', ParseUUIDPipe) id: string) {
     await this.chatsService.deleteChat(id);
     return { success: true };
   }
@@ -68,7 +69,7 @@ export class ChatsController {
   // ── Messages ──────────────────────────────────────────────────────────
 
   @Get('messages')
-  async getMessages(@Query('chat_id', ParseIntPipe) chatId: number) {
+  async getMessages(@Query('chat_id', ParseUUIDPipe) chatId: string) {
     return this.chatsService.getMessages(chatId);
   }
 
@@ -78,13 +79,13 @@ export class ChatsController {
   }
 
   @Patch('messages')
-  async markMessageRead(@Body('message_id', ParseIntPipe) messageId: number) {
+  async markMessageRead(@Body('message_id', ParseUUIDPipe) messageId: string) {
     return this.chatsService.markMessageRead(messageId);
   }
 
   @Delete('messages')
   @HttpCode(HttpStatus.OK)
-  async deleteMessage(@Query('id', ParseIntPipe) id: number) {
+  async deleteMessage(@Query('id', ParseUUIDPipe) id: string) {
     await this.chatsService.deleteMessage(id);
     return { success: true };
   }

@@ -83,7 +83,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
    */
   async scrapeNewVenue(username: string): Promise<{
     venue: Omit<Venue, 'id'>;
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
   }> {
     const data = await this.scrapeVenue(username);
     return this.buildDbObjects(data);
@@ -94,11 +94,11 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
    * Also returns the raw profile picture URL so the caller can optionally update it.
    */
   async scrapeEventsForVenue(username: string): Promise<{
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
     profilePictureUrl: string | null;
   }> {
     const { profile, posts } = await this.scrapeVenue(username);
-    const events: (Omit<Event, 'id'> & { id?: number })[] = [];
+    const events: (Omit<Event, 'id'> & { id?: string })[] = [];
 
     for (const post of posts) {
       if (!post.description) continue;
@@ -124,7 +124,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       ).toISOString();
       const startDt = extracted.startDateTime ?? fallbackDate;
       events.push({
-        venue_id: 0,
+        venue_id: '0',
         venue_name: profile.fullName ?? profile.username,
         title: extracted.title ?? post.description.substring(0, 80),
         description: post.description,
@@ -150,7 +150,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     const allVenues = await this.supabaseService.fetchAllVenues();
 
     // Build a map from instagram handle → venue id
-    const handleToVenueId = new Map<string, number>();
+    const handleToVenueId = new Map<string, string>();
     for (const venue of allVenues) {
       if (!venue.instagram_handle) continue;
       handleToVenueId.set(venue.instagram_handle.toLowerCase(), venue.id);
@@ -233,7 +233,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     saved: { venues: number; events: number };
   }> {
     const allVenues: Omit<Venue, 'id'>[] = [];
-    const allEvents: (Omit<Event, 'id'> & { id?: number })[] = [];
+    const allEvents: (Omit<Event, 'id'> & { id?: string })[] = [];
 
     for (const username of VENUE_USERNAMES) {
       try {
@@ -260,7 +260,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
 
   private async buildDbObjects(data: InstagramVenueData): Promise<{
     venue: Omit<Venue, 'id'>;
-    events: (Omit<Event, 'id'> & { id?: number })[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
   }> {
     const { profile, posts } = data;
     const venueName = profile.fullName ?? profile.username;
@@ -319,7 +319,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       updated_at: new Date().toISOString(),
     };
 
-    const events: (Omit<Event, 'id'> & { id?: number })[] = [];
+    const events: (Omit<Event, 'id'> & { id?: string })[] = [];
 
     for (const post of posts) {
       if (!post.description) continue;
@@ -346,7 +346,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       ).toISOString();
       const startDt = extracted.startDateTime ?? fallbackDate;
       events.push({
-        venue_id: 0, // resolved by saveScrapedData via venue_name
+        venue_id: '0', // resolved by saveScrapedData via venue_name
         venue_name: venueName,
         title: extracted.title ?? post.description.substring(0, 80),
         description: post.description,

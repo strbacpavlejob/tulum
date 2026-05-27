@@ -28,7 +28,7 @@ export async function getVenues(hostId?: string): Promise<Venue[]> {
   return response.json();
 }
 
-export async function getVenue(venueId: number): Promise<Venue> {
+export async function getVenue(venueId: string): Promise<Venue> {
   const response = await fetch(`/api/venues/${venueId}`);
   if (!response.ok) throw new Error("Failed to fetch venue");
   return response.json();
@@ -36,10 +36,10 @@ export async function getVenue(venueId: number): Promise<Venue> {
 
 export async function createVenue(
   venue: Omit<Venue, "id" | "created_at" | "updated_at">,
-  imageFile?: File
+  imageFile?: File,
 ): Promise<Venue> {
   let response: Response;
-  
+
   if (imageFile) {
     // Send as FormData with image
     const formData = new FormData();
@@ -52,7 +52,7 @@ export async function createVenue(
     formData.append("capacity", (venue.capacity ?? 0).toString());
     if (venue.description) formData.append("description", venue.description);
     formData.append("picture", imageFile);
-    
+
     response = await fetch("/api/venues", {
       method: "POST",
       body: formData,
@@ -65,35 +65,35 @@ export async function createVenue(
       body: JSON.stringify(venue),
     });
   }
-  
+
   if (!response.ok) throw new Error("Failed to create venue");
   return response.json();
 }
 
 export async function updateVenue(
-  venueId: number,
+  venueId: string,
   updates: Partial<Venue>,
-  imageFile?: File
+  imageFile?: File,
 ): Promise<Venue> {
   let response: Response;
-  
+
   if (imageFile) {
     // Send as FormData with image
     const formData = new FormData();
-    
+
     // Add all update fields to FormData
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        if (typeof value === 'object' && !Array.isArray(value)) {
+        if (typeof value === "object" && !Array.isArray(value)) {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
         }
       }
     });
-    
+
     formData.append("picture", imageFile);
-    
+
     response = await fetch(`/api/venues/${venueId}`, {
       method: "PATCH",
       body: formData,
@@ -106,12 +106,12 @@ export async function updateVenue(
       body: JSON.stringify(updates),
     });
   }
-  
+
   if (!response.ok) throw new Error("Failed to update venue");
   return response.json();
 }
 
-export async function deleteVenue(venueId: number): Promise<void> {
+export async function deleteVenue(venueId: string): Promise<void> {
   const response = await fetch(`/api/venues/${venueId}`, {
     method: "DELETE",
   });
@@ -123,20 +123,20 @@ export async function deleteVenue(venueId: number): Promise<void> {
 // ============================================
 
 export async function getEvents(
-  venueId?: number,
-  status?: string
+  venueId?: string,
+  status?: string,
 ): Promise<Event[]> {
   const params = new URLSearchParams();
   if (venueId) params.set("venue_id", venueId.toString());
   if (status) params.set("status", status);
   const query = params.toString() ? `?${params.toString()}` : "";
-  
+
   const response = await fetch(`/api/events${query}`);
   if (!response.ok) throw new Error("Failed to fetch events");
   return response.json();
 }
 
-export async function getEvent(eventId: number): Promise<Event> {
+export async function getEvent(eventId: string): Promise<Event> {
   const response = await fetch(`/api/events/${eventId}`);
   if (!response.ok) throw new Error("Failed to fetch event");
   return response.json();
@@ -144,10 +144,10 @@ export async function getEvent(eventId: number): Promise<Event> {
 
 export async function createEvent(
   event: Omit<Event, "id" | "created_at" | "updated_at">,
-  imageFile?: File
+  imageFile?: File,
 ): Promise<Event> {
   let response: Response;
-  
+
   if (imageFile) {
     // Send as FormData with image
     const formData = new FormData();
@@ -159,7 +159,7 @@ export async function createEvent(
     formData.append("tags", JSON.stringify(event.tags));
     formData.append("status", event.status);
     formData.append("picture", imageFile);
-    
+
     response = await fetch("/api/events", {
       method: "POST",
       body: formData,
@@ -172,37 +172,37 @@ export async function createEvent(
       body: JSON.stringify(event),
     });
   }
-  
+
   if (!response.ok) throw new Error("Failed to create event");
   return response.json();
 }
 
 export async function updateEvent(
-  eventId: number,
+  eventId: string,
   updates: Partial<Event>,
-  imageFile?: File
+  imageFile?: File,
 ): Promise<Event> {
   let response: Response;
-  
+
   if (imageFile) {
     // Send as FormData with image
     const formData = new FormData();
-    
+
     // Add all update fields to FormData
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
           formData.append(key, JSON.stringify(value));
-        } else if (typeof value === 'object') {
+        } else if (typeof value === "object") {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
         }
       }
     });
-    
+
     formData.append("picture", imageFile);
-    
+
     response = await fetch(`/api/events/${eventId}`, {
       method: "PATCH",
       body: formData,
@@ -215,12 +215,12 @@ export async function updateEvent(
       body: JSON.stringify(updates),
     });
   }
-  
+
   if (!response.ok) throw new Error("Failed to update event");
   return response.json();
 }
 
-export async function deleteEvent(eventId: number): Promise<void> {
+export async function deleteEvent(eventId: string): Promise<void> {
   const response = await fetch(`/api/events/${eventId}`, {
     method: "DELETE",
   });
@@ -255,7 +255,7 @@ export async function createUser(user: Omit<User, "id">): Promise<User> {
 
 export async function updateUser(
   userId: string,
-  updates: Partial<User>
+  updates: Partial<User>,
 ): Promise<User> {
   const response = await fetch("/api/users", {
     method: "PATCH",
@@ -295,7 +295,7 @@ export async function createGuest(guest: Guest): Promise<Guest> {
 
 export async function updateGuest(
   userId: string,
-  updates: Partial<Guest>
+  updates: Partial<Guest>,
 ): Promise<Guest> {
   const response = await fetch("/api/users/guests", {
     method: "PATCH",
@@ -352,7 +352,7 @@ export async function getUserSettings(userId: string): Promise<Settings> {
 
 export async function updateUserSettings(
   userId: string,
-  settings: Partial<Settings>
+  settings: Partial<Settings>,
 ): Promise<Settings> {
   const response = await fetch("/api/users/settings", {
     method: "PATCH",
@@ -375,10 +375,10 @@ export async function getUserFavorites(userId: string): Promise<Favorite[]> {
 
 export async function isFavorite(
   userId: string,
-  eventId: number
+  eventId: string,
 ): Promise<boolean> {
   const response = await fetch(
-    `/api/favorites?user_id=${userId}&event_id=${eventId}`
+    `/api/favorites?user_id=${userId}&event_id=${eventId}`,
   );
   if (!response.ok) return false;
   const data = await response.json();
@@ -387,7 +387,7 @@ export async function isFavorite(
 
 export async function addFavorite(
   userId: string,
-  eventId: number
+  eventId: string,
 ): Promise<Favorite> {
   const response = await fetch("/api/favorites", {
     method: "POST",
@@ -398,7 +398,7 @@ export async function addFavorite(
   return response.json();
 }
 
-export async function removeFavorite(favoriteId: number): Promise<void> {
+export async function removeFavorite(favoriteId: string): Promise<void> {
   const response = await fetch(`/api/favorites?id=${favoriteId}`, {
     method: "DELETE",
   });
@@ -409,7 +409,7 @@ export async function removeFavorite(favoriteId: number): Promise<void> {
 // TICKETS
 // ============================================
 
-export async function getTicket(ticketId: number): Promise<Ticket> {
+export async function getTicket(ticketId: string): Promise<Ticket> {
   const response = await fetch(`/api/tickets?id=${ticketId}`);
   if (!response.ok) throw new Error("Failed to fetch ticket");
   return response.json();
@@ -421,14 +421,14 @@ export async function getUserTickets(guestId: string): Promise<Ticket[]> {
   return response.json();
 }
 
-export async function getEventTickets(eventId: number): Promise<Ticket[]> {
+export async function getEventTickets(eventId: string): Promise<Ticket[]> {
   const response = await fetch(`/api/tickets?event_id=${eventId}`);
   if (!response.ok) throw new Error("Failed to fetch tickets");
   return response.json();
 }
 
 export async function createTicket(
-  ticket: Omit<Ticket, "id" | "created_at" | "updated_at">
+  ticket: Omit<Ticket, "id" | "created_at" | "updated_at">,
 ): Promise<Ticket> {
   const response = await fetch("/api/tickets", {
     method: "POST",
@@ -439,7 +439,7 @@ export async function createTicket(
   return response.json();
 }
 
-export async function deleteTicket(ticketId: number): Promise<void> {
+export async function deleteTicket(ticketId: string): Promise<void> {
   const response = await fetch(`/api/tickets?id=${ticketId}`, {
     method: "DELETE",
   });
@@ -462,14 +462,14 @@ export async function getGuestMatches(guestId: string): Promise<Match[]> {
   return response.json();
 }
 
-export async function getEventMatches(eventId: number): Promise<Match[]> {
+export async function getEventMatches(eventId: string): Promise<Match[]> {
   const response = await fetch(`/api/matches?event_id=${eventId}`);
   if (!response.ok) throw new Error("Failed to fetch matches");
   return response.json();
 }
 
 export async function createMatch(
-  match: Omit<Match, "id" | "matched_at">
+  match: Omit<Match, "id" | "matched_at">,
 ): Promise<Match> {
   const response = await fetch("/api/matches", {
     method: "POST",
@@ -491,7 +491,7 @@ export async function deleteMatch(matchId: number): Promise<void> {
 // CHATS
 // ============================================
 
-export async function getChat(chatId: number): Promise<Chat> {
+export async function getChat(chatId: string): Promise<Chat> {
   const response = await fetch(`/api/chats?id=${chatId}`);
   if (!response.ok) throw new Error("Failed to fetch chat");
   return response.json();
@@ -504,7 +504,7 @@ export async function getChatByMatch(matchId: number): Promise<Chat> {
 }
 
 export async function createChat(
-  chat: Omit<Chat, "id" | "created_at">
+  chat: Omit<Chat, "id" | "created_at">,
 ): Promise<Chat> {
   const response = await fetch("/api/chats", {
     method: "POST",
@@ -515,7 +515,7 @@ export async function createChat(
   return response.json();
 }
 
-export async function deleteChat(chatId: number): Promise<void> {
+export async function deleteChat(chatId: string): Promise<void> {
   const response = await fetch(`/api/chats?id=${chatId}`, {
     method: "DELETE",
   });
@@ -526,14 +526,14 @@ export async function deleteChat(chatId: number): Promise<void> {
 // CHAT MESSAGES
 // ============================================
 
-export async function getChatMessages(chatId: number): Promise<ChatMessage[]> {
+export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
   const response = await fetch(`/api/chats/messages?chat_id=${chatId}`);
   if (!response.ok) throw new Error("Failed to fetch messages");
   return response.json();
 }
 
 export async function sendMessage(
-  message: Omit<ChatMessage, "id" | "sent_at">
+  message: Omit<ChatMessage, "id" | "sent_at">,
 ): Promise<ChatMessage> {
   const response = await fetch("/api/chats/messages", {
     method: "POST",
@@ -545,7 +545,7 @@ export async function sendMessage(
 }
 
 export async function markMessageAsRead(
-  messageId: number
+  messageId: string,
 ): Promise<ChatMessage> {
   const response = await fetch("/api/chats/messages", {
     method: "PATCH",
@@ -556,7 +556,7 @@ export async function markMessageAsRead(
   return response.json();
 }
 
-export async function deleteMessage(messageId: number): Promise<void> {
+export async function deleteMessage(messageId: string): Promise<void> {
   const response = await fetch(`/api/chats/messages?id=${messageId}`, {
     method: "DELETE",
   });
@@ -573,7 +573,7 @@ export async function geocodeAddress(address: string): Promise<{
   display_name: string;
 }> {
   const response = await fetch(
-    `/api/geocode?address=${encodeURIComponent(address)}`
+    `/api/geocode?address=${encodeURIComponent(address)}`,
   );
   if (!response.ok) throw new Error("Failed to geocode address");
   return response.json();

@@ -28,7 +28,7 @@ export class VenuesService {
     return data ?? [];
   }
 
-  async getVenueById(venueId: number) {
+  async getVenueById(venueId: string) {
     const { data, error } = await this.db
       .from(VENUES_TABLE)
       .select('*')
@@ -65,7 +65,7 @@ export class VenuesService {
   }
 
   async updateVenue(
-    venueId: number,
+    venueId: string,
     userId: string,
     updates: Record<string, unknown>,
     imageFile?: Express.Multer.File,
@@ -79,11 +79,7 @@ export class VenuesService {
         );
         if (oldKey) await this.r2Service.deleteObject(oldKey).catch(() => null);
       }
-      const key = this.buildImageKey(
-        userId,
-        venueId.toString(),
-        imageFile.originalname,
-      );
+      const key = this.buildImageKey(userId, venueId, imageFile.originalname);
       updates.picture_url = await this.r2Service.uploadAndProcessImage(
         imageFile.buffer,
         key,
@@ -102,7 +98,7 @@ export class VenuesService {
     return data;
   }
 
-  async deleteVenue(venueId: number, userId: string) {
+  async deleteVenue(venueId: string, userId: string) {
     const venue = await this.assertOwnership(venueId, userId);
     if (venue.picture_url) {
       const key = this.r2Service.extractKeyFromUrl(venue.picture_url as string);
@@ -127,7 +123,7 @@ export class VenuesService {
       throw new Error('File must be an image');
     }
     if (venueId) {
-      await this.assertOwnership(parseInt(venueId, 10), userId);
+      await this.assertOwnership(venueId, userId);
     }
 
     const key = venueId
@@ -153,7 +149,7 @@ export class VenuesService {
 
   // ─── Venue Contact ────────────────────────────────────────────────────────
 
-  async getVenueContact(venueId: number) {
+  async getVenueContact(venueId: string) {
     const { data: venue, error } = await this.db
       .from(VENUES_TABLE)
       .select('contact_id')
@@ -174,7 +170,7 @@ export class VenuesService {
   }
 
   async upsertVenueContact(
-    venueId: number,
+    venueId: string,
     userId: string,
     data: Record<string, unknown>,
   ) {
@@ -187,7 +183,7 @@ export class VenuesService {
       .single();
 
     const existingContactId = (existing as Record<string, unknown>)
-      ?.contact_id as number | null;
+      ?.contact_id as string | null;
 
     const contactPayload = {
       phone_number: data.phone_number,
@@ -199,7 +195,7 @@ export class VenuesService {
       updated_at: new Date().toISOString(),
     };
 
-    let contactId: number;
+    let contactId: string;
 
     if (existingContactId) {
       const { data: updated, error } = await this.db
@@ -209,7 +205,7 @@ export class VenuesService {
         .select()
         .single();
       if (error) throw error;
-      contactId = (updated as Record<string, unknown>).id as number;
+      contactId = (updated as Record<string, unknown>).id as string;
     } else {
       const { data: created, error } = await this.db
         .from('venue_contacts')
@@ -217,7 +213,7 @@ export class VenuesService {
         .select()
         .single();
       if (error) throw error;
-      contactId = (created as Record<string, unknown>).id as number;
+      contactId = (created as Record<string, unknown>).id as string;
 
       await this.db
         .from(VENUES_TABLE)
@@ -228,7 +224,7 @@ export class VenuesService {
     return this.getVenueContact(venueId);
   }
 
-  async deleteVenueContact(venueId: number, userId: string) {
+  async deleteVenueContact(venueId: string, userId: string) {
     await this.assertOwnership(venueId, userId);
 
     const { data: venue } = await this.db
@@ -238,7 +234,7 @@ export class VenuesService {
       .single();
 
     const contactId = (venue as Record<string, unknown>)?.contact_id as
-      | number
+      | string
       | null;
     if (!contactId) return;
 
@@ -250,7 +246,7 @@ export class VenuesService {
     await this.db.from('venue_contacts').delete().eq('id', contactId);
   }
 
-  private async assertOwnership(venueId: number, userId: string) {
+  private async assertOwnership(venueId: string, userId: string) {
     const { data: venue } = await this.db
       .from(VENUES_TABLE)
       .select('host_id, picture_url')

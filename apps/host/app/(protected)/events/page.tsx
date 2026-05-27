@@ -50,7 +50,7 @@ export default function EventsPage() {
     setIsCreateOpen(true);
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     const event = events.find((e) => e.id === id);
     if (event) {
       setEditingEvent(event);
@@ -71,7 +71,7 @@ export default function EventsPage() {
     refreshEvents();
   };
 
-  const handleView = (id: number) => {
+  const handleView = (id: string) => {
     const event = events.find((e) => e.id === id);
     if (event) {
       setSelectedEvent(event);
@@ -79,7 +79,7 @@ export default function EventsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       // TODO: Show confirmation dialog
       await apiDeleteEvent(id);

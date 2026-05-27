@@ -17,7 +17,7 @@ import { getNewLightMapStyle } from "@/public/map-styles/light";
 import Cluster from "./common/cluster";
 
 interface Location {
-  id: number;
+  id: string;
   name: string;
   longitude: number;
   latitude: number;
@@ -31,8 +31,8 @@ interface Location {
 
 interface StyledMapProps {
   locations: Location[];
-  selectedLocation: number | null;
-  onLocationSelect: (locationId: number | null) => void;
+  selectedLocation: string | null;
+  onLocationSelect: (locationId: string | null) => void;
   onLocationFocus?: (location: Location) => void;
   disablePopOver?: boolean;
   markerSize?: "sm" | "md" | "xl";

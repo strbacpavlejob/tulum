@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export interface Location {
-  id: number;
+  id: string;
   name: string;
   longitude: number;
   latitude: number;
@@ -41,7 +41,10 @@ export const useLocationsStore = create<LocationsState>((set, get) => ({
     const state = get();
 
     // If fetched today, use cached data
-    if (state.lastFetched !== null && isSameDay(state.lastFetched, Date.now())) {
+    if (
+      state.lastFetched !== null &&
+      isSameDay(state.lastFetched, Date.now())
+    ) {
       return;
     }
 

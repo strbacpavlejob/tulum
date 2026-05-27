@@ -68,63 +68,63 @@ type ProviderProps = {
     venue: Omit<Venue, "id" | "created_at" | "updated_at">,
   ) => Promise<Venue>;
   getVenues: (hostId?: string) => Promise<Venue[]>;
-  getVenue: (venueId: number) => Promise<Venue | null>;
-  updateVenue: (venueId: number, updates: Partial<Venue>) => Promise<Venue>;
-  deleteVenue: (venueId: number) => Promise<void>;
+  getVenue: (venueId: string) => Promise<Venue | null>;
+  updateVenue: (venueId: string, updates: Partial<Venue>) => Promise<Venue>;
+  deleteVenue: (venueId: string) => Promise<void>;
 
   // Event operations
   createEvent: (
     event: Omit<Event, "id" | "created_at" | "updated_at">,
   ) => Promise<Event>;
-  getEvents: (venueId?: number) => Promise<Event[]>;
-  getEvent: (eventId: number) => Promise<Event | null>;
-  updateEvent: (eventId: number, updates: Partial<Event>) => Promise<Event>;
-  deleteEvent: (eventId: number) => Promise<void>;
+  getEvents: (venueId?: string) => Promise<Event[]>;
+  getEvent: (eventId: string) => Promise<Event | null>;
+  updateEvent: (eventId: string, updates: Partial<Event>) => Promise<Event>;
+  deleteEvent: (eventId: string) => Promise<void>;
   getEventsByStatus: (status: Event["status"]) => Promise<Event[]>;
 
   // Favorite operations
-  addFavorite: (userId: string, eventId: number) => Promise<Favorite>;
-  removeFavorite: (favoriteId: number) => Promise<void>;
+  addFavorite: (userId: string, eventId: string) => Promise<Favorite>;
+  removeFavorite: (favoriteId: string) => Promise<void>;
   getUserFavorites: (userId: string) => Promise<Favorite[]>;
-  isFavorite: (userId: string, eventId: number) => Promise<boolean>;
+  isFavorite: (userId: string, eventId: string) => Promise<boolean>;
 
   // Ticket operations
   createTicket: (
     ticket: Omit<Ticket, "id" | "created_at" | "updated_at">,
   ) => Promise<Ticket>;
-  getTicket: (ticketId: number) => Promise<Ticket | null>;
+  getTicket: (ticketId: string) => Promise<Ticket | null>;
   getUserTickets: (guestId: string) => Promise<Ticket[]>;
-  getEventTickets: (eventId: number) => Promise<Ticket[]>;
-  deleteTicket: (ticketId: number) => Promise<void>;
+  getEventTickets: (eventId: string) => Promise<Ticket[]>;
+  deleteTicket: (ticketId: string) => Promise<void>;
 
   // Match operations
   createMatch: (match: Omit<Match, "id" | "matched_at">) => Promise<Match>;
   getMatch: (matchId: number) => Promise<Match | null>;
   getGuestMatches: (guestId: string) => Promise<Match[]>;
-  getEventMatches: (eventId: number) => Promise<Match[]>;
+  getEventMatches: (eventId: string) => Promise<Match[]>;
   deleteMatch: (matchId: number) => Promise<void>;
 
   // Chat operations
   createChat: (chat: Omit<Chat, "id" | "created_at">) => Promise<Chat>;
-  getChat: (chatId: number) => Promise<Chat | null>;
+  getChat: (chatId: string) => Promise<Chat | null>;
   getChatByMatch: (matchId: number) => Promise<Chat | null>;
-  deleteChat: (chatId: number) => Promise<void>;
+  deleteChat: (chatId: string) => Promise<void>;
 
   // Chat message operations
   sendMessage: (
     message: Omit<ChatMessage, "id" | "sent_at">,
   ) => Promise<ChatMessage>;
-  getChatMessages: (chatId: number) => Promise<ChatMessage[]>;
-  markMessageAsRead: (messageId: number) => Promise<ChatMessage>;
-  deleteMessage: (messageId: number) => Promise<void>;
+  getChatMessages: (chatId: string) => Promise<ChatMessage[]>;
+  markMessageAsRead: (messageId: string) => Promise<ChatMessage>;
+  deleteMessage: (messageId: string) => Promise<void>;
 
   // Realtime subscriptions
   subscribeToChat: (
-    chatId: number,
+    chatId: string,
     callback: (payload: RealtimePostgresChangesPayload<ChatMessage>) => void,
   ) => RealtimeChannel;
   subscribeToEvent: (
-    eventId: number,
+    eventId: string,
     callback: (payload: RealtimePostgresChangesPayload<Event>) => void,
   ) => RealtimeChannel;
 
@@ -440,7 +440,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const getVenue = async (venueId: number) => {
+  const getVenue = async (venueId: string) => {
     const { data, error } = await supabase
       .from(VENUES_TABLE)
       .select("*")
@@ -454,7 +454,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const updateVenue = async (venueId: number, updates: Partial<Venue>) => {
+  const updateVenue = async (venueId: string, updates: Partial<Venue>) => {
     const { data, error } = await supabase
       .from(VENUES_TABLE)
       .update(updates)
@@ -469,7 +469,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const deleteVenue = async (venueId: number) => {
+  const deleteVenue = async (venueId: string) => {
     const { error } = await supabase
       .from(VENUES_TABLE)
       .delete()
@@ -501,7 +501,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const getEvents = async (venueId?: number) => {
+  const getEvents = async (venueId?: string) => {
     let query = supabase.from(EVENTS_TABLE).select("*");
 
     if (venueId) {
@@ -517,7 +517,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const getEvent = async (eventId: number) => {
+  const getEvent = async (eventId: string) => {
     const { data, error } = await supabase
       .from(EVENTS_TABLE)
       .select("*")
@@ -531,7 +531,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const updateEvent = async (eventId: number, updates: Partial<Event>) => {
+  const updateEvent = async (eventId: string, updates: Partial<Event>) => {
     const { data, error } = await supabase
       .from(EVENTS_TABLE)
       .update(updates)
@@ -546,7 +546,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const deleteEvent = async (eventId: number) => {
+  const deleteEvent = async (eventId: string) => {
     const { error } = await supabase
       .from(EVENTS_TABLE)
       .delete()
@@ -575,7 +575,7 @@ export const SupabaseProvider = ({
   // FAVORITE OPERATIONS
   // ============================================
 
-  const addFavorite = async (userId: string, eventId: number) => {
+  const addFavorite = async (userId: string, eventId: string) => {
     const { data, error } = await supabase
       .from(FAVORITES_TABLE)
       .insert({ user_id: userId, event_id: eventId })
@@ -589,7 +589,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const removeFavorite = async (favoriteId: number) => {
+  const removeFavorite = async (favoriteId: string) => {
     const { error } = await supabase
       .from(FAVORITES_TABLE)
       .delete()
@@ -614,7 +614,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const isFavorite = async (userId: string, eventId: number) => {
+  const isFavorite = async (userId: string, eventId: string) => {
     const { data, error } = await supabase
       .from(FAVORITES_TABLE)
       .select("id")
@@ -645,7 +645,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const getTicket = async (ticketId: number) => {
+  const getTicket = async (ticketId: string) => {
     const { data, error } = await supabase
       .from(TICKETS_TABLE)
       .select("*")
@@ -672,7 +672,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const getEventTickets = async (eventId: number) => {
+  const getEventTickets = async (eventId: string) => {
     const { data, error } = await supabase
       .from(TICKETS_TABLE)
       .select("*")
@@ -685,7 +685,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const deleteTicket = async (ticketId: number) => {
+  const deleteTicket = async (ticketId: string) => {
     const { error } = await supabase
       .from(TICKETS_TABLE)
       .delete()
@@ -742,7 +742,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const getEventMatches = async (eventId: number) => {
+  const getEventMatches = async (eventId: string) => {
     const { data, error } = await supabase
       .from(MATCHES_TABLE)
       .select("*")
@@ -785,7 +785,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const getChat = async (chatId: number) => {
+  const getChat = async (chatId: string) => {
     const { data, error } = await supabase
       .from(CHATS_TABLE)
       .select("*")
@@ -813,7 +813,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const deleteChat = async (chatId: number) => {
+  const deleteChat = async (chatId: string) => {
     const { error } = await supabase
       .from(CHATS_TABLE)
       .delete()
@@ -843,7 +843,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const getChatMessages = async (chatId: number) => {
+  const getChatMessages = async (chatId: string) => {
     const { data, error } = await supabase
       .from(CHAT_MESSAGES_TABLE)
       .select("*")
@@ -857,7 +857,7 @@ export const SupabaseProvider = ({
     return data || [];
   };
 
-  const markMessageAsRead = async (messageId: number) => {
+  const markMessageAsRead = async (messageId: string) => {
     const { data, error } = await supabase
       .from(CHAT_MESSAGES_TABLE)
       .update({ is_read: true })
@@ -872,7 +872,7 @@ export const SupabaseProvider = ({
     return data;
   };
 
-  const deleteMessage = async (messageId: number) => {
+  const deleteMessage = async (messageId: string) => {
     const { error } = await supabase
       .from(CHAT_MESSAGES_TABLE)
       .delete()
@@ -889,7 +889,7 @@ export const SupabaseProvider = ({
   // ============================================
 
   const subscribeToChat = (
-    chatId: number,
+    chatId: string,
     callback: (payload: RealtimePostgresChangesPayload<ChatMessage>) => void,
   ) => {
     console.log("Creating realtime chat connection...");
@@ -910,7 +910,7 @@ export const SupabaseProvider = ({
   };
 
   const subscribeToEvent = (
-    eventId: number,
+    eventId: string,
     callback: (payload: RealtimePostgresChangesPayload<Event>) => void,
   ) => {
     console.log("Creating realtime event connection...");

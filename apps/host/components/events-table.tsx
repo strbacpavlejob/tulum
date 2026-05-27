@@ -35,9 +35,9 @@ const PAGE_SIZE = 20;
 
 interface EventsTableProps {
   events: Event[];
-  onView: (id: number) => void;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   isLoading: boolean;
 }
 

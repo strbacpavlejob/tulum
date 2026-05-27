@@ -1,9 +1,12 @@
 import { create } from "zustand";
-import { getEvents as apiGetEvents, getVenues as apiGetVenues } from "@/lib/api-client";
+import {
+  getEvents as apiGetEvents,
+  getVenues as apiGetVenues,
+} from "@/lib/api-client";
 
 export interface Event {
-  id: number;
-  venue_id: number;
+  id: string;
+  venue_id: string;
   title: string;
   description: string;
   start_date_time: string;
@@ -24,8 +27,8 @@ interface EventsState {
   lastFetched: number | null;
   setEvents: (events: Event[]) => void;
   addEvent: (event: Event) => void;
-  updateEvent: (id: number, event: Partial<Event>) => void;
-  deleteEvent: (id: number) => void;
+  updateEvent: (id: string, event: Partial<Event>) => void;
+  deleteEvent: (id: string) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   fetchEvents: () => Promise<void>;

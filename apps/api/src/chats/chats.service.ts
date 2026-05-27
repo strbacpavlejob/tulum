@@ -12,7 +12,7 @@ export class ChatsService {
     return this.supabaseService.getClient();
   }
 
-  async getChatById(chatId: number) {
+  async getChatById(chatId: string) {
     const { data, error } = await this.db
       .from(CHATS_TABLE)
       .select('*')
@@ -32,7 +32,7 @@ export class ChatsService {
     return data ?? null;
   }
 
-  async getOrCreateChat(matchId: number, eventId?: number) {
+  async getOrCreateChat(matchId: number, eventId?: string) {
     const existing = await this.getChatByMatchId(matchId);
     if (existing) return existing;
 
@@ -45,7 +45,7 @@ export class ChatsService {
         .eq('id', matchId)
         .single();
       if (matchErr) throw matchErr;
-      resolvedEventId = match.event_id as number;
+      resolvedEventId = match.event_id as string;
     }
 
     const { data, error } = await this.db
@@ -67,12 +67,12 @@ export class ChatsService {
     return data;
   }
 
-  async deleteChat(chatId: number) {
+  async deleteChat(chatId: string) {
     const { error } = await this.db.from(CHATS_TABLE).delete().eq('id', chatId);
     if (error) throw error;
   }
 
-  async getMessages(chatId: number) {
+  async getMessages(chatId: string) {
     const { data, error } = await this.db
       .from(MESSAGES_TABLE)
       .select('*')
@@ -92,7 +92,7 @@ export class ChatsService {
     return data;
   }
 
-  async markMessageRead(messageId: number) {
+  async markMessageRead(messageId: string) {
     const { data, error } = await this.db
       .from(MESSAGES_TABLE)
       .update({ is_read: true })
@@ -103,7 +103,7 @@ export class ChatsService {
     return data;
   }
 
-  async deleteMessage(messageId: number) {
+  async deleteMessage(messageId: string) {
     const { error } = await this.db
       .from(MESSAGES_TABLE)
       .delete()

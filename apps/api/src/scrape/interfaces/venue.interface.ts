@@ -21,7 +21,7 @@ export interface VenueContact {
 }
 
 export interface Venue {
-  id: number;
+  id: string;
   host_id?: string;
   name: string;
   longitude: number;

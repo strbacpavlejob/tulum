@@ -5,7 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -24,7 +24,7 @@ export class FavoritesController {
     @Query('event_id') eventId?: string,
   ) {
     if (eventId) {
-      return this.favoritesService.isFavorited(userId, parseInt(eventId, 10));
+      return this.favoritesService.isFavorited(userId, eventId);
     }
     return this.favoritesService.getFavorites(userId);
   }
@@ -32,7 +32,7 @@ export class FavoritesController {
   @Post()
   async addFavorite(
     @UserId() userId: string,
-    @Body('event_id', ParseIntPipe) eventId: number,
+    @Body('event_id', ParseUUIDPipe) eventId: string,
   ) {
     return this.favoritesService.addFavorite(userId, eventId);
   }
@@ -41,7 +41,7 @@ export class FavoritesController {
   @HttpCode(HttpStatus.OK)
   async trackSeen(
     @UserId() userId: string,
-    @Body('event_id', ParseIntPipe) eventId: number,
+    @Body('event_id', ParseUUIDPipe) eventId: string,
   ) {
     await this.favoritesService.trackSeen(userId, eventId);
     return { ok: true };
@@ -50,7 +50,7 @@ export class FavoritesController {
   @Post('toggle')
   async toggleFavorite(
     @UserId() userId: string,
-    @Body('event_id', ParseIntPipe) eventId: number,
+    @Body('event_id', ParseUUIDPipe) eventId: string,
   ) {
     return this.favoritesService.toggleFavorite(userId, eventId);
   }
@@ -59,7 +59,7 @@ export class FavoritesController {
   @HttpCode(HttpStatus.OK)
   async removeFavorite(
     @UserId() userId: string,
-    @Query('event_id', ParseIntPipe) eventId: number,
+    @Query('event_id', ParseUUIDPipe) eventId: string,
   ) {
     return this.favoritesService.removeFavorite(userId, eventId);
   }

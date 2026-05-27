@@ -41,7 +41,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('join_chat')
   handleJoinChat(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { chatId: number },
+    @MessageBody() payload: { chatId: string },
   ) {
     client.join(`chat:${payload.chatId}`);
     return { event: 'joined', data: { chatId: payload.chatId } };
@@ -50,7 +50,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { chatId: number; text: string },
+    @MessageBody() payload: { chatId: string; text: string },
   ) {
     const userId = client.data.userId as string;
     if (!userId || !payload?.text?.trim()) return;
@@ -73,7 +73,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('typing')
   handleTyping(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { chatId: number; isTyping: boolean },
+    @MessageBody() payload: { chatId: string; isTyping: boolean },
   ) {
     const userId = client.data.userId as string;
     client.to(`chat:${payload.chatId}`).emit('user_typing', {

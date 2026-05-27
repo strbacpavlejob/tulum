@@ -6,7 +6,7 @@ const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export function useChatSocket(
-  chatId: number | null | undefined,
+  chatId: string | null | undefined,
   userId: string | null | undefined,
   initialMessages: Message[] = [],
 ) {
@@ -41,8 +41,8 @@ export function useChatSocket(
     socket.on(
       "new_message",
       (msg: {
-        id: number;
-        chatId: number;
+        id: string;
+        chatId: string;
         senderId: string;
         text: string;
         sentAt: string;

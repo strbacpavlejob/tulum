@@ -25,7 +25,7 @@ function MapSkeleton() {
 
 export default function MapSection() {
   const { t } = useTranslation();
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const { locations, isLoading, error, fetchLocations } = useLocationsStore();
 
   useEffect(() => {

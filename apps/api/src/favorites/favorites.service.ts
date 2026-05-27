@@ -22,7 +22,7 @@ export class FavoritesService {
     return data ?? [];
   }
 
-  async isFavorited(userId: string, eventId: number) {
+  async isFavorited(userId: string, eventId: string) {
     const { data, error } = await this.db
       .from(ENGAGEMENTS_TABLE)
       .select('id')
@@ -34,7 +34,7 @@ export class FavoritesService {
     return { isFavorite: !!data };
   }
 
-  async trackSeen(userId: string, eventId: number) {
+  async trackSeen(userId: string, eventId: string) {
     // Only insert 'seen' if no engagement (seen or saved) already exists for this user+event
     const { data: existing } = await this.db
       .from(ENGAGEMENTS_TABLE)
@@ -49,7 +49,7 @@ export class FavoritesService {
       .insert({ user_id: userId, event_id: eventId, engagement_type: 'seen' });
   }
 
-  async addFavorite(userId: string, eventId: number) {
+  async addFavorite(userId: string, eventId: string) {
     const { error } = await this.db.from(ENGAGEMENTS_TABLE).upsert(
       { user_id: userId, event_id: eventId, engagement_type: SAVED },
       {
@@ -61,7 +61,7 @@ export class FavoritesService {
     return { isFavorite: true };
   }
 
-  async removeFavorite(userId: string, eventId: number) {
+  async removeFavorite(userId: string, eventId: string) {
     const { error } = await this.db
       .from(ENGAGEMENTS_TABLE)
       .delete()
@@ -72,7 +72,7 @@ export class FavoritesService {
     return { isFavorite: false };
   }
 
-  async toggleFavorite(userId: string, eventId: number) {
+  async toggleFavorite(userId: string, eventId: string) {
     const { isFavorite } = await this.isFavorited(userId, eventId);
     if (isFavorite) {
       return this.removeFavorite(userId, eventId);

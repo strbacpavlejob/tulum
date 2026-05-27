@@ -38,6 +38,7 @@ function ticketToEvent(ticket: Ticket): Event {
     guests: [],
     price: 0,
     venueContact: null,
+    requiresReservation: false,
   };
 }
 
