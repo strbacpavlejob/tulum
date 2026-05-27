@@ -1,7 +1,8 @@
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Heart } from "lucide-react-native";
-import { Image, View } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 import IndicatorIcon from "./IndicatorIcon";
 import { InfoSection } from "./InforSection";
 import Tags from "./Tags";
@@ -51,7 +52,8 @@ export const TicketCard = ({
                 width: "100%",
                 height: "100%",
               }}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="disk"
             />
           ) : (
             <Text className="text-gray-400 text-lg">Imgzz</Text>

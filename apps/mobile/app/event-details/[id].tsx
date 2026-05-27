@@ -31,10 +31,10 @@ import {
   UserPlus,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -431,7 +431,8 @@ const EventDetailsScreen = () => {
         <Image
           source={{ uri: event.image || undefined }}
           style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="disk"
         />
         <View
           style={{
@@ -488,7 +489,8 @@ const EventDetailsScreen = () => {
               <Image
                 source={{ uri: event.venue_picture ?? undefined }}
                 className="w-full h-full"
-                resizeMode="cover"
+                contentFit="cover"
+                cachePolicy="disk"
               />
             </View>
 

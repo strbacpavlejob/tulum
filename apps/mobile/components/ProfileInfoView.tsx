@@ -20,7 +20,8 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Pressable, View } from "react-native";
+import { Image } from "expo-image";
+import { Pressable, View } from "react-native";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,7 +145,8 @@ export default function ProfileInfoView({
                 <Image
                   source={{ uri: user.photos[0] }}
                   className="flex-1 rounded-xl"
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="disk"
                 />
                 {editable && (
                   <Pressable
@@ -189,7 +191,8 @@ export default function ProfileInfoView({
                     <Image
                       source={{ uri: user.photos[idx] }}
                       className="flex-1 rounded-xl"
-                      resizeMode="cover"
+                      contentFit="cover"
+                      cachePolicy="disk"
                     />
                     {editable && (
                       <Pressable

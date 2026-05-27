@@ -7,7 +7,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Heart, MapPin, SendHorizonal, X } from "lucide-react-native";
 import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Modal, Platform, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
+import { Modal, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -43,7 +44,8 @@ function ProfileCard({
       <Image
         source={{ uri: image }}
         className="absolute inset-0 w-full h-full"
-        resizeMode="cover"
+        contentFit="cover"
+        cachePolicy="disk"
       />
       <LinearGradient
         colors={["transparent", "rgba(0,0,0,0.8)"]}

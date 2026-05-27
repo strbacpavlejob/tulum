@@ -10,7 +10,8 @@ import {
 import { Mars, UserPlus, Venus } from "lucide-react-native";
 import React, { forwardRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Pressable, View } from "react-native";
+import { Image } from "expo-image";
+import { Pressable, View } from "react-native";
 
 interface GuestListModalProps {
   eventTitle: string;
@@ -235,7 +236,8 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                           <Image
                             source={{ uri: guest.uri }}
                             className="w-full h-full"
-                            resizeMode="cover"
+                            contentFit="cover"
+                            cachePolicy="disk"
                           />
                         ) : (
                           <View

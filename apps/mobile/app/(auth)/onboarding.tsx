@@ -17,10 +17,10 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -376,7 +376,8 @@ function PhotoPickerStep({
                   <Image
                     source={{ uri: photoUrl }}
                     style={{ flex: 1 }}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="disk"
                   />
                   <Pressable
                     onPress={() => removePhoto(photoUrl)}

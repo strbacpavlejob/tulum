@@ -7,7 +7,8 @@ import { format } from "date-fns";
 import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Image, View, StyleProp, ViewStyle } from "react-native";
+import { Image } from "expo-image";
+import { Pressable, View, StyleProp, ViewStyle } from "react-native";
 
 interface DiscoverCardProps {
   event: EventSummary;
@@ -65,7 +66,8 @@ export const DiscoverCard = ({
         <Image
           source={{ uri: event.image }}
           style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="disk"
         />
       </View>
 

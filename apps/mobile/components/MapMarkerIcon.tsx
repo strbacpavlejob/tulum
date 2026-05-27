@@ -1,7 +1,8 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { MapPin } from "lucide-react-native";
 import React, { useEffect } from "react";
-import { Image, View } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -126,7 +127,8 @@ const MapMarkerIcon = ({
           <Image
             source={{ uri: image }}
             style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="disk"
           />
         </View>
       ) : (

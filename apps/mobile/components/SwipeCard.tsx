@@ -4,7 +4,8 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { MapPin } from "lucide-react-native";
 import React, { useState } from "react";
-import { Dimensions, Image, Platform, Pressable, View } from "react-native";
+import { Image } from "expo-image";
+import { Dimensions, Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -162,7 +163,8 @@ export default function SwipeCard({
           <Image
             source={{ uri: profile.images[currentPhotoIndex] }}
             style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="disk"
           />
 
           {/* Top progress bars */}

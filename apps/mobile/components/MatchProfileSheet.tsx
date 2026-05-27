@@ -9,7 +9,8 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo } from "react";
-import { Image, View } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
@@ -62,7 +63,8 @@ export default function MatchProfileSheet({ match, sheetRef }: Props) {
         <Image
           source={{ uri: match.photo }}
           style={{ width: 44, height: 44, borderRadius: 22 }}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="disk"
         />
         <View>
           <Text

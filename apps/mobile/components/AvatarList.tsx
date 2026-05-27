@@ -1,6 +1,7 @@
 import { Text } from "@/components/ui/text";
 import React from "react";
-import { Image, View } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 
 interface AvatarListProps {
   avatars: { name: string; uri: string | null }[];
@@ -22,7 +23,8 @@ export const AvatarList = ({ avatars }: AvatarListProps) => {
           <Image
             source={{ uri: user.uri }}
             className="w-full h-full"
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy="disk"
           />
         </View>
       ))}

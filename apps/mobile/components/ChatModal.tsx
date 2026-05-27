@@ -8,9 +8,9 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { ArrowLeft, SendHorizontal, UserSearch } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Image } from "expo-image";
 import {
   FlatList,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   LayoutChangeEvent,
@@ -273,7 +273,8 @@ export default function ChatModal({
                     borderRadius: HEADER_AVATAR_SIZE / 2,
                     margin: (HEADER_RING_SIZE - HEADER_AVATAR_SIZE) / 2,
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="disk"
                 />
                 <HeaderTimerRing expiresAt={match.expiresAt} />
               </Pressable>

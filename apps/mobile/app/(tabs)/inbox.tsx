@@ -11,11 +11,11 @@ import {
 import type { Match, Message, NewMatch } from "@/types/chat";
 import { useAuth } from "@clerk/expo";
 import React, { useCallback, useEffect, useState } from "react";
+import { Image } from "expo-image";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Pressable,
   ScrollView,
   View,
@@ -157,7 +157,8 @@ function NewMatchBubble({
             borderRadius: MATCH_AVATAR_SIZE / 2,
             margin: avatarMargin,
           }}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="disk"
         />
         <TimerRing expiresAt={match.expiresAt} size={MATCH_RING_SIZE} />
       </View>
@@ -315,7 +316,8 @@ export default function InboxScreen() {
                 borderRadius: CHAT_AVATAR_SIZE / 2,
                 margin: avatarMargin,
               }}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="disk"
             />
             <TimerRing expiresAt={item.expiresAt} size={CHAT_RING_SIZE} />
           </View>

@@ -2,7 +2,8 @@ import { Text } from "@/components/ui/text";
 import { EventComment } from "@/types/event";
 import { formatDistanceToNow } from "date-fns";
 import React, { useState } from "react";
-import { Image, Pressable, View } from "react-native";
+import { Image } from "expo-image";
+import { Pressable, View } from "react-native";
 import { Rating } from "./Rating";
 
 type Props = {
@@ -25,7 +26,8 @@ export const Comment = ({ comment }: Props) => {
                 <Image
                   source={{ uri: comment.host.avatar }}
                   className="w-full h-full"
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="disk"
                 />
               </View>
               <View className="gap-1 shrink">
