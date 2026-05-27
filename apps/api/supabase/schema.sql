@@ -461,6 +461,7 @@ CREATE TABLE IF NOT EXISTS "public"."venue_contacts" (
     "is_sms" boolean DEFAULT false NOT NULL,
     "is_whatsapp" boolean DEFAULT false NOT NULL,
     "instagram_handle" "text",
+    "is_instagram" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
 );
@@ -487,7 +488,6 @@ CREATE TABLE IF NOT EXISTS "public"."venues" (
     "capacity" integer,
     "picture_url" "text",
     "scraper" "text",
-    "instagram_url" "text",
     "contact_id" bigint,
     "requires_reservation" boolean DEFAULT false NOT NULL
 );

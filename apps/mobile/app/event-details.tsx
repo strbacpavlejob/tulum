@@ -145,7 +145,7 @@ function ReservationModal({
       },
     });
   }
-  if (contact.instagramHandle) {
+  if (contact.isInstagram && contact.instagramHandle) {
     const handle = contact.instagramHandle;
     contactMethods.push({
       key: "instagram",

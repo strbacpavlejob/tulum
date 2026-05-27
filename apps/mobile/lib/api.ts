@@ -13,6 +13,7 @@ interface ActiveEventVenueContact {
   is_phone: boolean;
   is_sms: boolean;
   is_whatsapp: boolean;
+  is_instagram: boolean;
   instagram_handle: string | null;
 }
 
@@ -33,7 +34,6 @@ interface ActiveEventResponse {
   isFavorite: boolean;
   isSeen: boolean;
   isAttending: boolean;
-  venue_instagram_url: string | null;
   requires_reservation: boolean;
   venue_contact: ActiveEventVenueContact | null;
 }
@@ -66,21 +66,10 @@ function mapActiveEventToEvent(item: ActiveEventResponse): Event {
           isPhone: item.venue_contact.is_phone,
           isSms: item.venue_contact.is_sms,
           isWhatsapp: item.venue_contact.is_whatsapp,
+          isInstagram: item.venue_contact.is_instagram,
           instagramHandle: item.venue_contact.instagram_handle,
         } as VenueContact)
-      : item.venue_instagram_url
-        ? ({
-            id: 0,
-            phoneNumber: "",
-            isViber: false,
-            isPhone: false,
-            isSms: false,
-            isWhatsapp: false,
-            instagramHandle:
-              item.venue_instagram_url.replace(/\/+$/, "").split("/").pop() ??
-              null,
-          } as VenueContact)
-        : null,
+      : null,
   };
 }
 

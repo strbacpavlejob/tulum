@@ -28,12 +28,6 @@ export interface ScrapeStats {
   errors: string[];
 }
 
-function extractInstagramUsername(instagramUrl?: string): string | null {
-  if (!instagramUrl) return null;
-  const match = instagramUrl.match(/instagram\.com\/([^/]+)\/?/);
-  return match?.[1]?.toLowerCase() ?? null;
-}
-
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
@@ -104,7 +98,7 @@ export class UnitedScraperService {
     const existingVenues = await this.supabaseService.fetchAllVenues();
     const existingVenuesMap = new Map<string, { id: number; name: string }>();
     for (const venue of existingVenues) {
-      const username = extractInstagramUsername(venue.instagram_url);
+      const username = venue.instagram_handle?.toLowerCase() ?? null;
       if (username) {
         existingVenuesMap.set(username, { id: venue.id, name: venue.name });
       }

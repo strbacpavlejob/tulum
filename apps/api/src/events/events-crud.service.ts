@@ -102,7 +102,7 @@ export class EventsCrudService {
     let venuesQuery = this.db
       .from('venues')
       .select(
-        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, instagram_url, requires_reservation',
+        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, requires_reservation',
       )
       .in('id', venueIds);
 
@@ -136,7 +136,7 @@ export class EventsCrudService {
       const { data: contacts, error: contactsError } = await this.db
         .from('venue_contacts')
         .select(
-          'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, instagram_handle',
+          'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, is_instagram, instagram_handle',
         )
         .in('id', contactIds);
       if (contactsError) throw contactsError;
@@ -175,7 +175,6 @@ export class EventsCrudService {
           isFavorite: savedEventIds.has(Number(event.id)),
           isSeen: seenEventIds.has(Number(event.id)),
           isAttending: attendingEventIds.has(Number(event.id)),
-          venue_instagram_url: (venueTyped.instagram_url as string) ?? null,
           requires_reservation:
             (venueTyped.requires_reservation as boolean) ?? false,
           venue_contact: contact
@@ -186,6 +185,8 @@ export class EventsCrudService {
                 is_phone: (contact as Record<string, unknown>).is_phone,
                 is_sms: (contact as Record<string, unknown>).is_sms,
                 is_whatsapp: (contact as Record<string, unknown>).is_whatsapp,
+                is_instagram:
+                  (contact as Record<string, unknown>).is_instagram ?? false,
                 instagram_handle:
                   (contact as Record<string, unknown>).instagram_handle ?? null,
               }

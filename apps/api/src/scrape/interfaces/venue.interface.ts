@@ -16,6 +16,7 @@ export interface VenueContact {
   is_phone: boolean;
   is_sms: boolean;
   is_whatsapp: boolean;
+  is_instagram?: boolean;
   instagram_handle?: string | null;
 }
 
@@ -32,7 +33,6 @@ export interface Venue {
   picture?: string;
   picture_urls?: string[];
   scraper?: string;
-  instagram_url?: string;
   contact?: VenueContact | null;
   created_at?: string;
   updated_at?: string;

@@ -115,6 +115,7 @@ export class SupabaseService implements OnModuleInit {
             is_viber: venue.contact.is_viber,
             is_sms: venue.contact.is_sms,
             is_whatsapp: venue.contact.is_whatsapp,
+            is_instagram: venue.contact.is_instagram ?? false,
             instagram_handle: venue.contact.instagram_handle ?? null,
             updated_at: new Date().toISOString(),
           })
@@ -134,6 +135,7 @@ export class SupabaseService implements OnModuleInit {
             is_viber: venue.contact.is_viber,
             is_sms: venue.contact.is_sms,
             is_whatsapp: venue.contact.is_whatsapp,
+            is_instagram: venue.contact.is_instagram ?? false,
             instagram_handle: venue.contact.instagram_handle ?? null,
           })
           .select('id')
@@ -229,7 +231,6 @@ export class SupabaseService implements OnModuleInit {
       description: venue.description,
       picture_url: venue.picture,
       scraper: venue.scraper,
-      instagram_url: venue.instagram_url,
     };
     // Remove undefined values so they don't overwrite existing data as null
     return Object.fromEntries(
@@ -289,11 +290,13 @@ export class SupabaseService implements OnModuleInit {
   }
 
   async fetchAllVenues(): Promise<
-    { id: number; name: string; instagram_url?: string }[]
+    { id: number; name: string; instagram_handle?: string }[]
   > {
     const { data, error } = await this.supabase
       .from(VENUES_TABLE)
-      .select('id, name, instagram_url');
+      .select(
+        'id, name, venue_contacts!venues_contact_id_fkey(instagram_handle)',
+      );
 
     if (error) {
       this.logger.error('Error fetching venues:', error.message);
@@ -301,8 +304,16 @@ export class SupabaseService implements OnModuleInit {
     }
 
     return (
-      (data as { id: number; name: string; instagram_url?: string }[]) ?? []
-    );
+      (data as {
+        id: number;
+        name: string;
+        venue_contacts: { instagram_handle?: string } | null;
+      }[]) ?? []
+    ).map((v) => ({
+      id: v.id,
+      name: v.name,
+      instagram_handle: v.venue_contacts?.instagram_handle ?? undefined,
+    }));
   }
 
   async createVenue(venue: Omit<Venue, 'id'>): Promise<number> {
@@ -347,6 +358,7 @@ export class SupabaseService implements OnModuleInit {
           is_viber: contact.is_viber,
           is_sms: contact.is_sms,
           is_whatsapp: contact.is_whatsapp,
+          is_instagram: contact.is_instagram ?? false,
           instagram_handle: contact.instagram_handle ?? null,
           updated_at: new Date().toISOString(),
         })
@@ -366,6 +378,7 @@ export class SupabaseService implements OnModuleInit {
           is_viber: contact.is_viber,
           is_sms: contact.is_sms,
           is_whatsapp: contact.is_whatsapp,
+          is_instagram: contact.is_instagram ?? false,
           instagram_handle: contact.instagram_handle ?? null,
         })
         .select('id')

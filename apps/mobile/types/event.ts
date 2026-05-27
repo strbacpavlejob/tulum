@@ -5,6 +5,7 @@ export interface VenueContact {
   isPhone: boolean;
   isSms: boolean;
   isWhatsapp: boolean;
+  isInstagram: boolean;
   instagramHandle: string | null;
 }
 

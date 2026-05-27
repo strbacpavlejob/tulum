@@ -152,13 +152,8 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     // Build a map from instagram handle → venue id
     const handleToVenueId = new Map<string, number>();
     for (const venue of allVenues) {
-      if (!venue.instagram_url) continue;
-      const handle = venue.instagram_url
-        .replace(/\/+$/, '')
-        .split('/')
-        .pop()
-        ?.toLowerCase();
-      if (handle) handleToVenueId.set(handle, venue.id);
+      if (!venue.instagram_handle) continue;
+      handleToVenueId.set(venue.instagram_handle.toLowerCase(), venue.id);
     }
 
     const stats = {
@@ -190,6 +185,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
               is_viber: false,
               is_sms: false,
               is_whatsapp: profile.isWhatsappLinked,
+              is_instagram: true,
               instagram_handle: profile.username ?? null,
             }
           : profile.username
@@ -199,6 +195,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
                 is_viber: false,
                 is_sms: false,
                 is_whatsapp: profile.isWhatsappLinked,
+                is_instagram: true,
                 instagram_handle: profile.username,
               }
             : null;
@@ -296,8 +293,6 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       description: profile.biography ?? undefined,
       picture: profilePicR2 ?? undefined,
       picture_urls: profilePicR2 ? [profilePicR2] : [],
-      instagram_url: `https://www.instagram.com/${profile.username}/`,
-      scraper: 'instagram',
       contact: profile.phoneNumber
         ? {
             phone_number: profile.phoneNumber,
@@ -305,6 +300,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
             is_viber: false,
             is_sms: false,
             is_whatsapp: profile.isWhatsappLinked,
+            is_instagram: true,
             instagram_handle: profile.username ?? null,
           }
         : profile.username
@@ -314,9 +310,11 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
               is_viber: false,
               is_sms: false,
               is_whatsapp: profile.isWhatsappLinked,
+              is_instagram: true,
               instagram_handle: profile.username,
             }
           : null,
+      scraper: 'instagram',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
