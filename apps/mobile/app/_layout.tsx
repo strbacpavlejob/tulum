@@ -70,6 +70,10 @@ const MainStack = () => {
                 options={{ headerShown: false }}
               />
               <Stack.Screen
+                name="event-details/[id]"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
                 name="+not-found"
                 options={{ headerShown: false }}
               />

@@ -2,7 +2,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { Event } from "@/types/event";
+import { EventSummary } from "@/types/event";
 import { format } from "date-fns";
 import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, Image, View, StyleProp, ViewStyle } from "react-native";
 
 interface DiscoverCardProps {
-  event: Event;
+  event: EventSummary;
   isSelected: boolean;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
@@ -41,7 +41,7 @@ export const DiscoverCard = ({
     locale: getDateLocale(),
   });
 
-  const goingCount = event.guests?.length ?? 0;
+  const goingCount = event.guestCount ?? 0;
 
   return (
     <Pressable

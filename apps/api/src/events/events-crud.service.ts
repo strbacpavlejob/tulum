@@ -30,9 +30,7 @@ export class EventsCrudService {
 
     let eventsQuery = this.db
       .from(EVENTS_TABLE)
-      .select(
-        'id, title, description, picture_url, venue_id, status, start_date_time, end_date_time, tags, created_at',
-      )
+      .select('id, title, picture_url, venue_id, start_date_time, tags')
       .eq('status', 'active')
       .gte('end_date_time', now);
 
@@ -52,33 +50,19 @@ export class EventsCrudService {
     if (eventsError) throw eventsError;
     if (!events || events.length === 0) return [];
 
-    // Fetch saved and seen event IDs for the current user
+    // Fetch saved event IDs for the current user
     const effectiveUserId = userId ?? filters.user_id;
     let savedEventIds: Set<string> = new Set();
-    let seenEventIds: Set<string> = new Set();
-    let attendingEventIds: Set<string> = new Set();
     if (effectiveUserId) {
       const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
-        .select('event_id, engagement_type')
+        .select('event_id')
         .eq('user_id', effectiveUserId)
-        .in('engagement_type', ['saved', 'seen']);
+        .eq('engagement_type', 'saved');
       if (engagementsError) throw engagementsError;
       for (const e of engagements ?? []) {
-        if (e.engagement_type === 'saved')
-          savedEventIds.add(e.event_id as string);
-        if (e.engagement_type === 'seen')
-          seenEventIds.add(e.event_id as string);
+        savedEventIds.add(e.event_id as string);
       }
-
-      const { data: tickets, error: ticketsError } = await this.db
-        .from('tickets')
-        .select('event_id')
-        .eq('guest_id', effectiveUserId);
-      if (ticketsError) throw ticketsError;
-      attendingEventIds = new Set(
-        (tickets ?? []).map((t) => t.event_id as string),
-      );
     }
     const favoriteEventIds: Set<string> | null =
       filters.only_favorites === 'true' && effectiveUserId
@@ -102,9 +86,7 @@ export class EventsCrudService {
     ];
     let venuesQuery = this.db
       .from('venues')
-      .select(
-        'id, name, latitude, longitude, address, capacity, venue_type, picture_url, contact_id, requires_reservation',
-      )
+      .select('id, name, latitude, longitude, address, capacity, venue_type')
       .in('id', venueIds);
 
     // Venue type filter
@@ -122,31 +104,17 @@ export class EventsCrudService {
     const { data: venues, error: venuesError } = await venuesQuery;
     if (venuesError) throw venuesError;
 
-    // Fetch contacts for venues that have one
-    const contactIds = [
-      ...new Set(
-        (venues ?? [])
-          .map(
-            (v) => (v as Record<string, unknown>).contact_id as string | null,
-          )
-          .filter(Boolean) as string[],
-      ),
-    ];
-    const contactMap = new Map<string, Record<string, unknown>>();
-    if (contactIds.length > 0) {
-      const { data: contacts, error: contactsError } = await this.db
-        .from('venue_contacts')
-        .select(
-          'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, is_instagram, instagram_handle',
-        )
-        .in('id', contactIds);
-      if (contactsError) throw contactsError;
-      for (const c of contacts ?? []) {
-        contactMap.set(
-          (c as Record<string, unknown>).id as string,
-          c as Record<string, unknown>,
-        );
-      }
+    // Fetch guest counts per event
+    const eventIds = uniqueEvents.map((e) => e.id as string);
+    const { data: ticketCounts, error: ticketCountsError } = await this.db
+      .from('tickets')
+      .select('event_id')
+      .in('event_id', eventIds);
+    if (ticketCountsError) throw ticketCountsError;
+    const guestCountMap = new Map<string, number>();
+    for (const t of ticketCounts ?? []) {
+      const id = t.event_id as string;
+      guestCountMap.set(id, (guestCountMap.get(id) ?? 0) + 1);
     }
 
     const venueMap = new Map(venues?.map((v) => [v.id as string, v]) ?? []);
@@ -155,46 +123,114 @@ export class EventsCrudService {
       .map((event) => {
         const venue = venueMap.get(event.venue_id as string);
         if (!venue) return null;
-        const venueTyped = venue as Record<string, unknown>;
-        const contact = venueTyped.contact_id
-          ? (contactMap.get(venueTyped.contact_id as string) ?? null)
-          : null;
         return {
           id: event.id as string,
           name: event.title,
-          longitude: venue.longitude,
-          latitude: venue.latitude,
-          type: venue.venue_type,
-          capacity: venue.capacity,
-          address: venue.address,
-          description: event.description,
           picture: event.picture_url,
-          venue_picture: venue.picture_url ?? null,
-          picture_urls: venue.picture_url ? [venue.picture_url] : [],
+          venue_name: venue.name,
+          address: venue.address,
+          latitude: venue.latitude,
+          longitude: venue.longitude,
           date: event.start_date_time,
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(event.id as string),
-          isSeen: seenEventIds.has(event.id as string),
-          isAttending: attendingEventIds.has(event.id as string),
-          requires_reservation:
-            (venueTyped.requires_reservation as boolean) ?? false,
-          venue_contact: contact
-            ? {
-                id: (contact as Record<string, unknown>).id,
-                phone_number: (contact as Record<string, unknown>).phone_number,
-                is_viber: (contact as Record<string, unknown>).is_viber,
-                is_phone: (contact as Record<string, unknown>).is_phone,
-                is_sms: (contact as Record<string, unknown>).is_sms,
-                is_whatsapp: (contact as Record<string, unknown>).is_whatsapp,
-                is_instagram:
-                  (contact as Record<string, unknown>).is_instagram ?? false,
-                instagram_handle:
-                  (contact as Record<string, unknown>).instagram_handle ?? null,
-              }
-            : null,
+          guest_count: guestCountMap.get(event.id as string) ?? 0,
         };
       })
       .filter(Boolean);
+  }
+
+  /** GET /events/active/:id — full event details for a single event */
+  async getActiveEventById(eventId: string, userId?: string) {
+    const { data: event, error: eventError } = await this.db
+      .from(EVENTS_TABLE)
+      .select(
+        'id, title, description, picture_url, venue_id, start_date_time, tags',
+      )
+      .eq('id', eventId)
+      .eq('status', 'active')
+      .single();
+    if (eventError || !event) throw new NotFoundException('Event not found');
+
+    // Fetch venue with contact info
+    const { data: venue, error: venueError } = await this.db
+      .from('venues')
+      .select(
+        'id, name, latitude, longitude, address, picture_url, contact_id, requires_reservation',
+      )
+      .eq('id', (event as Record<string, unknown>).venue_id as string)
+      .single();
+    if (venueError || !venue) throw new NotFoundException('Venue not found');
+
+    const venueTyped = venue as Record<string, unknown>;
+
+    // Fetch contact if present
+    let contact: Record<string, unknown> | null = null;
+    if (venueTyped.contact_id) {
+      const { data: c } = await this.db
+        .from('venue_contacts')
+        .select(
+          'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, is_instagram, instagram_handle',
+        )
+        .eq('id', venueTyped.contact_id as string)
+        .single();
+      contact = (c as Record<string, unknown> | null) ?? null;
+    }
+
+    // Fetch user engagement
+    let isFavorite = false;
+    let isSeen = false;
+    let isAttending = false;
+    if (userId) {
+      const { data: engagements } = await this.db
+        .from('event_engagements')
+        .select('engagement_type')
+        .eq('user_id', userId)
+        .eq('event_id', eventId)
+        .in('engagement_type', ['saved', 'seen']);
+      for (const e of engagements ?? []) {
+        if (e.engagement_type === 'saved') isFavorite = true;
+        if (e.engagement_type === 'seen') isSeen = true;
+      }
+      const { data: ticket } = await this.db
+        .from('tickets')
+        .select('id')
+        .eq('guest_id', userId)
+        .eq('event_id', eventId)
+        .maybeSingle();
+      isAttending = !!ticket;
+    }
+
+    return {
+      id: (event as Record<string, unknown>).id as string,
+      name: (event as Record<string, unknown>).title,
+      address: venueTyped.address,
+      latitude: venueTyped.latitude,
+      longitude: venueTyped.longitude,
+      description: (event as Record<string, unknown>).description,
+      picture: (event as Record<string, unknown>).picture_url,
+      venue_name: venueTyped.name,
+      venue_picture: venueTyped.picture_url ?? null,
+      date: (event as Record<string, unknown>).start_date_time,
+      tags: ((event as Record<string, unknown>).tags as string[]) ?? [],
+      isFavorite,
+      isSeen,
+      isAttending,
+      requires_reservation:
+        (venueTyped.requires_reservation as boolean) ?? false,
+      venue_contact: contact
+        ? {
+            id: contact.id,
+            phone_number: contact.phone_number,
+            is_viber: contact.is_viber,
+            is_phone: contact.is_phone,
+            is_sms: contact.is_sms,
+            is_whatsapp: contact.is_whatsapp,
+            is_instagram: contact.is_instagram ?? false,
+            instagram_handle: contact.instagram_handle ?? null,
+          }
+        : null,
+    };
   }
 
   /** GET /events — user's events */

@@ -37,6 +37,17 @@ export class EventsCrudController {
     return this.eventsCrudService.getActiveEvents(query, userId);
   }
 
+  /** Public — full details for a single active event */
+  @Get('active/:id')
+  @Public()
+  @ApiSecurity({})
+  async getActiveEventById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UserId() userId?: string,
+  ) {
+    return this.eventsCrudService.getActiveEventById(id, userId);
+  }
+
   @Post('upload')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))

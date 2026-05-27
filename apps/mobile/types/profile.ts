@@ -1,4 +1,4 @@
-import { Event } from "./event";
+import { EventSummary } from "./event";
 
 export interface Profile {
   id: string;
@@ -8,5 +8,5 @@ export interface Profile {
   images: string[];
   distance?: number;
   hobbies: string[];
-  event: Event;
+  event: EventSummary;
 }

@@ -36,20 +36,26 @@ export interface EventComment {
   rating: number;
 }
 
-export interface Event {
+/** Lightweight event data used in lists, maps, and cards */
+export interface EventSummary {
   id: string;
   image: string;
-  venue_picture: string | null;
   title: string;
-  description: string;
+  venueName: string;
+  address: string;
+  isFavorite: boolean;
   date: string;
+  guestCount: number;
   tags: string[];
   location: EventLocation;
-  isFavorite: boolean;
+}
+
+/** Full event details fetched from the detail endpoint */
+export interface Event extends EventSummary {
+  venue_picture: string | null;
+  description: string;
   isSeen: boolean;
   isAttending: boolean;
-  guests: EventGuests[];
-  comment?: EventComment[];
   price: number;
   venueContact: VenueContact | null;
   requiresReservation: boolean;

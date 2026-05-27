@@ -6,7 +6,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { fetchMyTickets } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { Ticket } from "@/types/ticket";
-import { Event } from "@/types/event";
+import { EventSummary } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -22,23 +22,18 @@ import { useRouter } from "expo-router";
 const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours before start = still "live"
 const SOON_WINDOW_MS = 3 * 60 * 60 * 1000; // within 3 hours from now = "starting soon"
 
-function ticketToEvent(ticket: Ticket): Event {
+function ticketToEvent(ticket: Ticket): EventSummary {
   return {
     id: ticket.event_id,
     image: ticket.image ?? "",
-    venue_picture: null,
     title: ticket.title,
-    description: ticket.description,
+    venueName: ticket.venue_name,
+    address: ticket.location.address ?? "",
     date: ticket.date,
     tags: ticket.tags,
     location: ticket.location,
     isFavorite: false,
-    isSeen: true,
-    isAttending: true,
-    guests: [],
-    price: 0,
-    venueContact: null,
-    requiresReservation: false,
+    guestCount: 0,
   };
 }
 
@@ -82,8 +77,8 @@ function Section({
   live,
 }: {
   title: string;
-  events: Event[];
-  onPress: (event: Event) => void;
+  events: EventSummary[];
+  onPress: (event: EventSummary) => void;
   live?: boolean;
 }) {
   const theme = useAppTheme();
@@ -113,7 +108,7 @@ function Section({
 }
 
 export default function TicketsScreen() {
-  const { tickets, setTickets, setSelectedEventId } = useStore();
+  const { tickets, setTickets } = useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
@@ -147,9 +142,9 @@ export default function TicketsScreen() {
 
   const { live, soon, rest } = useMemo(() => {
     const now = Date.now();
-    const live: Event[] = [];
-    const soon: Event[] = [];
-    const rest: Event[] = [];
+    const live: EventSummary[] = [];
+    const soon: EventSummary[] = [];
+    const rest: EventSummary[] = [];
 
     (tickets ?? []).forEach((ticket: Ticket) => {
       const start = new Date(ticket.date).getTime();
@@ -167,9 +162,8 @@ export default function TicketsScreen() {
     return { live, soon, rest };
   }, [tickets]);
 
-  const handlePress = (event: Event) => {
-    setSelectedEventId(event.id);
-    router.push("/event-details");
+  const handlePress = (event: EventSummary) => {
+    router.push(`/event-details/${event.id}`);
   };
 
   if (loading) {

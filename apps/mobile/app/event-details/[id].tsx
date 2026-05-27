@@ -11,16 +11,17 @@ import {
   EventAttendeesData,
   attendEvent,
   fetchEventAttendees,
+  fetchEventDetails,
   trackEventSeen,
   unattendEvent,
 } from "@/lib/api";
 import useStore from "@/store/useStore";
-import { VenueContact } from "@/types/event";
+import { Event, VenueContact } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { format, parseISO } from "date-fns";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
   MapPin,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Modal,
@@ -273,20 +275,17 @@ function ReservationModal({
 // ─── Main Screen ───────────────────────────────────────────────────────────
 
 const EventDetailsScreen = () => {
-  const {
-    getSelectedEvent,
-    updateEventSeen,
-    updateEventAttending,
-    addTicket,
-    removeTicketByEventId,
-  } = useStore();
-  const event = getSelectedEvent();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { addTicket, removeTicketByEventId } = useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId, getToken } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
+
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState(true);
   const [attending, setAttending] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [titleExpanded, setTitleExpanded] = useState(false);
@@ -299,35 +298,56 @@ const EventDetailsScreen = () => {
     guestList: [],
   });
 
+  // Fetch full event details on mount
   useEffect(() => {
-    if (!userId || !event?.id) return;
+    if (!id) return;
+    getToken()
+      .then((token) => fetchEventDetails(id, token ?? undefined))
+      .then((data) => {
+        setEvent(data);
+        if (data.isAttending) setAttending(true);
+      })
+      .catch(() => setLoadingEvent(false))
+      .finally(() => setLoadingEvent(false));
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch attendees
+  useEffect(() => {
+    if (!id || !userId) return;
     getToken()
       .then((token) => {
         if (!token) return;
-        return fetchEventAttendees(event.id, token);
+        return fetchEventAttendees(id, token);
       })
       .then((data) => {
         if (data) setAttendeesData(data);
       })
       .catch(() => {});
-  }, [userId, event?.id]);
+  }, [id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Track event seen
   useEffect(() => {
-    if (event?.isAttending) setAttending(true);
-  }, [event?.isAttending]);
+    if (!event || !userId || event.isSeen) return;
+    getToken()
+      .then((token) => {
+        if (!token) return;
+        return trackEventSeen(token, event.id);
+      })
+      .then(() => setEvent((e) => (e ? { ...e, isSeen: true } : e)))
+      .catch(() => {});
+  }, [event?.id, event?.isSeen, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAttend = async () => {
     if (!userId || !event?.id) return;
     const token = await getToken();
     if (!token) return;
 
-    // If already attending — just cancel (no reservation needed)
+    // If already attending — just cancel
     if (attending) {
       setAttending(false);
       try {
         await unattendEvent(token, event.id);
-        updateEventAttending(String(event.id), false);
-        removeTicketByEventId(String(event.id));
+        removeTicketByEventId(event.id);
       } catch {
         setAttending(true);
       }
@@ -340,7 +360,6 @@ const EventDetailsScreen = () => {
       return;
     }
 
-    // No contact info at all — standard attend
     await confirmAttend();
   };
 
@@ -352,10 +371,9 @@ const EventDetailsScreen = () => {
     setAttending(true);
     try {
       const { ticket: raw } = await attendEvent(token, event.id);
-      updateEventAttending(String(event.id), true);
       addTicket({
         id: String(raw.id ?? ""),
-        event_id: String(event.id),
+        event_id: event.id,
         image: event.image ?? null,
         title: event.title,
         description: event.description,
@@ -378,17 +396,16 @@ const EventDetailsScreen = () => {
     guestListRef.current?.present();
   }, []);
 
-  useEffect(() => {
-    if (userId && event?.id && !event.isSeen) {
-      getToken()
-        .then((token) => {
-          if (!token) return;
-          return trackEventSeen(token, event.id);
-        })
-        .then(() => updateEventSeen(String(event.id)))
-        .catch(() => {});
-    }
-  }, [userId, event?.id, event?.isSeen]);
+  if (loadingEvent) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: theme.background }}
+      >
+        <ActivityIndicator color={theme.color} />
+      </View>
+    );
+  }
 
   if (!event) {
     return (
@@ -407,14 +424,12 @@ const EventDetailsScreen = () => {
   const progressValue =
     maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
 
-  console.log("Event details for event ID:", event.id, JSON.stringify(event));
-
   return (
     <View className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Hero */}
       <View style={{ height: "32%" }} className="overflow-hidden">
         <Image
-          source={{ uri: event.image }}
+          source={{ uri: event.image || undefined }}
           style={{ width: "100%", height: "100%" }}
           resizeMode="cover"
         />
@@ -471,7 +486,7 @@ const EventDetailsScreen = () => {
               style={{ borderColor: "rgba(255,255,255,0.3)" }}
             >
               <Image
-                source={{ uri: event.venue_picture }}
+                source={{ uri: event.venue_picture ?? undefined }}
                 className="w-full h-full"
                 resizeMode="cover"
               />
@@ -628,7 +643,7 @@ const EventDetailsScreen = () => {
         males={males}
       />
 
-      {/* Reservation modal — always shown when attending */}
+      {/* Reservation modal — shown when attending requires reservation */}
       {event.venueContact && event.requiresReservation && (
         <ReservationModal
           visible={showReservationModal}

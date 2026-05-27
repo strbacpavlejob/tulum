@@ -9,7 +9,7 @@ import { createRoot } from "react-dom/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import useStore from "@/store/useStore";
-import { Event } from "@/types/event";
+import { EventSummary } from "@/types/event";
 import {
   ActivityIndicator,
   FlatList,
@@ -153,7 +153,7 @@ const ListingsMap = memo(() => {
   selectedIndexRef.current = selectedIndex;
 
   const onCardPress = useCallback(
-    (item: Event, index: number) => {
+    (item: EventSummary, index: number) => {
       setSelectedIndex(index);
       setSelectedEventId(item.id);
       if (mapInstanceRef.current) {
@@ -162,7 +162,7 @@ const ListingsMap = memo(() => {
           item.location.longitude,
         ]);
       }
-      router.push(`/event-details`);
+      router.push(`/event-details/${item.id}`);
     },
     [setSelectedEventId, router],
   );
@@ -193,7 +193,7 @@ const ListingsMap = memo(() => {
   }).current;
 
   const renderItem = useCallback(
-    ({ item, index }: { item: Event; index: number }) => (
+    ({ item, index }: { item: EventSummary; index: number }) => (
       <DiscoverCard
         event={item}
         isSelected={selectedIndex === index}
@@ -289,7 +289,7 @@ const ListingsMap = memo(() => {
       },
     });
 
-    listings?.forEach((item: Event, index: number) => {
+    listings?.forEach((item: EventSummary, index: number) => {
       const isSelected = selectedIndex === index;
       const markerSize = 64; // matches "md" outer + padding
 
@@ -408,7 +408,7 @@ const ListingsMap = memo(() => {
           <FlatList
             ref={flatListRef}
             data={listings}
-            keyExtractor={(item: Event) => item.id}
+            keyExtractor={(item: EventSummary) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
             snapToInterval={CARD_WIDTH + CARD_GAP}

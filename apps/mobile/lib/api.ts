@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { Event, VenueContact } from "@/types/event";
+import { Event, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { User } from "@/types/user";
 
@@ -17,18 +17,32 @@ interface ActiveEventVenueContact {
   instagram_handle: string | null;
 }
 
-interface ActiveEventResponse {
+/** Slim response shape from GET /events/active (list) */
+interface ActiveEventSummaryResponse {
   id: string;
   name: string;
-  longitude: number;
-  latitude: number;
-  type: string;
-  capacity: number;
+  picture: string | null;
+  venue_name: string;
   address: string;
+  latitude: number;
+  longitude: number;
+  date: string;
+  tags: string[];
+  isFavorite: boolean;
+  guest_count: number;
+}
+
+/** Full response shape from GET /events/active/:id (detail) */
+interface ActiveEventDetailResponse {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
   description: string;
   picture: string | null;
+  venue_name: string;
   venue_picture: string | null;
-  picture_urls: string[];
   date: string;
   tags: string[];
   isFavorite: boolean;
@@ -38,24 +52,47 @@ interface ActiveEventResponse {
   venue_contact: ActiveEventVenueContact | null;
 }
 
-function mapActiveEventToEvent(item: ActiveEventResponse): Event {
+function mapActiveEventSummaryToEventSummary(
+  item: ActiveEventSummaryResponse,
+): EventSummary {
   return {
     id: item.id,
-    image: item.picture ?? item.venue_picture ?? item.picture_urls[0] ?? "",
-    venue_picture: item.venue_picture,
+    image: item.picture ?? "",
     title: item.name,
-    description: item.description ?? "",
-    date: item.date,
-    tags: item.tags ?? [],
+    venueName: item.venue_name,
+    address: item.address,
     location: {
       latitude: item.latitude,
       longitude: item.longitude,
       address: item.address,
     },
+    date: item.date,
+    tags: item.tags ?? [],
     isFavorite: item.isFavorite ?? false,
+    guestCount: item.guest_count ?? 0,
+  };
+}
+
+function mapActiveEventDetailToEvent(item: ActiveEventDetailResponse): Event {
+  return {
+    id: item.id,
+    image: item.picture ?? "",
+    title: item.name,
+    venueName: item.venue_name,
+    address: item.address,
+    location: {
+      latitude: item.latitude,
+      longitude: item.longitude,
+      address: item.address,
+    },
+    date: item.date,
+    tags: item.tags ?? [],
+    isFavorite: item.isFavorite ?? false,
+    guestCount: 0,
+    venue_picture: item.venue_picture,
+    description: item.description ?? "",
     isSeen: item.isSeen ?? false,
     isAttending: item.isAttending ?? false,
-    guests: [],
     price: 0,
     requiresReservation: item.requires_reservation ?? false,
     venueContact: item.venue_contact
@@ -81,7 +118,7 @@ export interface FetchActiveEventsParams {
 
 export async function fetchActiveEvents(
   params?: FetchActiveEventsParams,
-): Promise<Event[]> {
+): Promise<EventSummary[]> {
   const { filter, token, userId } = params ?? {};
   const query = new URLSearchParams();
 
@@ -107,8 +144,23 @@ export async function fetchActiveEvents(
   if (!response.ok) {
     throw new Error(`Failed to fetch active events: ${response.status}`);
   }
-  const data: ActiveEventResponse[] = await response.json();
-  return data.map(mapActiveEventToEvent);
+  const data: ActiveEventSummaryResponse[] = await response.json();
+  return data.map(mapActiveEventSummaryToEventSummary);
+}
+
+export async function fetchEventDetails(
+  eventId: string,
+  token?: string,
+): Promise<Event> {
+  const url = `${TULUM_API_URL}/events/active/${encodeURIComponent(eventId)}`;
+  const response = await fetch(url, {
+    headers: token ? authHeaders(token) : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event details: ${response.status}`);
+  }
+  const data: ActiveEventDetailResponse = await response.json();
+  return mapActiveEventDetailToEvent(data);
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────

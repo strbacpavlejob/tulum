@@ -1,5 +1,5 @@
 import { fetchActiveEvents } from "@/lib/api";
-import { Event } from "@/types/event";
+import { EventSummary } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { Ticket } from "@/types/ticket";
@@ -11,8 +11,8 @@ import { create } from "zustand";
 interface MyStore {
   user: User | null;
   settings: Settings;
-  events?: Event[];
-  filteredEvents?: Event[];
+  events?: EventSummary[];
+  filteredEvents?: EventSummary[];
   tickets?: Ticket[];
   selectedEventId?: string | null;
   filter: Filter;
@@ -20,18 +20,15 @@ interface MyStore {
   // Actions (methods) to mutate the state
   setUser: (user: User | null) => void;
   setSettings: (settings: Settings) => void;
-  setEvents: (events: Event[]) => void;
+  setEvents: (events: EventSummary[]) => void;
   setTickets: (tickets: Ticket[]) => void;
   setSelectedEventId: (id: string | null) => void;
-  getSelectedEvent: () => Event | null;
   setFilter: (filter: Filter) => void;
   getFilter: () => Filter;
   applyEventsFilter: () => void;
   resetEventsFilter: () => void;
   refreshEvents: () => Promise<void>;
-  updateEventSeen: (eventId: string) => void;
   updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
-  updateEventAttending: (eventId: string, isAttending: boolean) => void;
   addTicket: (ticket: Ticket) => void;
   removeTicketByEventId: (eventId: string) => void;
 }
@@ -52,6 +49,7 @@ const useStore = create<MyStore>((set) => ({
   filter: {
     title: "",
     tags: [],
+    venueType: null,
     dateRange: {
       start: null,
       end: null,
@@ -59,6 +57,10 @@ const useStore = create<MyStore>((set) => ({
     guestsLimit: null,
     isOnlyFavorite: false,
     priceRange: {
+      min: null,
+      max: null,
+    },
+    capacityRange: {
       min: null,
       max: null,
     },
@@ -72,13 +74,9 @@ const useStore = create<MyStore>((set) => ({
   // Action implementations
   setUser: (user: User | null) => set({ user }),
   setSettings: (settings: Settings) => set({ settings }),
-  setEvents: (events: Event[]) => set({ events }),
+  setEvents: (events: EventSummary[]) => set({ events }),
   setTickets: (tickets: Ticket[]) => set({ tickets }),
   setSelectedEventId: (id: string | null) => set({ selectedEventId: id }),
-  getSelectedEvent: (): Event | null => {
-    const { events, selectedEventId } = useStore.getState();
-    return events?.find((event: Event) => event.id === selectedEventId) || null;
-  },
   setFilter: (filter: Filter) => set({ filter }),
   getFilter: (): Filter => useStore.getState().filter,
 
@@ -90,7 +88,6 @@ const useStore = create<MyStore>((set) => ({
       dateRange = { start: null, end: null },
       guestsLimit,
       isOnlyFavorite,
-      priceRange = { min: null, max: null },
     } = filter;
 
     // Detect if any filter is actually active; if not, pass all events through.
@@ -100,9 +97,7 @@ const useStore = create<MyStore>((set) => ({
       !!dateRange.start ||
       !!dateRange.end ||
       typeof guestsLimit === "number" ||
-      !!isOnlyFavorite ||
-      priceRange.min != null ||
-      priceRange.max != null;
+      !!isOnlyFavorite;
 
     if (!isActive) {
       set({ filteredEvents: events });
@@ -140,27 +135,13 @@ const useStore = create<MyStore>((set) => ({
       if (end && (!eventDate || isNaN(+eventDate) || eventDate > end))
         return false;
 
-      // Guests limit
+      // Guests limit (by guestCount)
       if (typeof guestsLimit === "number") {
-        const count = event.guests?.length ?? 0;
-        if (count > guestsLimit) return false;
+        if (event.guestCount > guestsLimit) return false;
       }
 
       // Only favorites
       if (isOnlyFavorite && !event.isFavorite) return false;
-
-      // Price range
-      const price = event.price;
-      if (
-        priceRange.min != null &&
-        !(typeof price === "number" && price >= priceRange.min)
-      )
-        return false;
-      if (
-        priceRange.max != null &&
-        !(typeof price === "number" && price <= priceRange.max)
-      )
-        return false;
 
       return true;
     });
@@ -173,6 +154,7 @@ const useStore = create<MyStore>((set) => ({
       filter: {
         title: "",
         tags: [],
+        venueType: null,
         dateRange: {
           start: new Date(),
           end: addDays(new Date(), 14),
@@ -180,6 +162,10 @@ const useStore = create<MyStore>((set) => ({
         guestsLimit: null,
         isOnlyFavorite: false,
         priceRange: {
+          min: null,
+          max: null,
+        },
+        capacityRange: {
           min: null,
           max: null,
         },
@@ -194,27 +180,9 @@ const useStore = create<MyStore>((set) => ({
     set({ events: fresh, filteredEvents: fresh });
   },
 
-  updateEventSeen(eventId: string) {
-    const patch = (list: Event[] = []) =>
-      list.map((e) => (e.id === eventId ? { ...e, isSeen: true } : e));
-    set((s) => ({
-      events: patch(s.events),
-      filteredEvents: patch(s.filteredEvents),
-    }));
-  },
-
   updateEventFavorite(eventId: string, isFavorite: boolean) {
-    const patch = (list: Event[] = []) =>
+    const patch = (list: EventSummary[] = []) =>
       list.map((e) => (e.id === eventId ? { ...e, isFavorite } : e));
-    set((s) => ({
-      events: patch(s.events),
-      filteredEvents: patch(s.filteredEvents),
-    }));
-  },
-
-  updateEventAttending(eventId: string, isAttending: boolean) {
-    const patch = (list: Event[] = []) =>
-      list.map((e) => (e.id === eventId ? { ...e, isAttending } : e));
     set((s) => ({
       events: patch(s.events),
       filteredEvents: patch(s.filteredEvents),
