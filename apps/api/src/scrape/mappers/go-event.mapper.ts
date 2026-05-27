@@ -5,6 +5,20 @@ import { Venue, VenueType } from '../interfaces/venue.interface';
 const DEFAULT_EVENT_DURATION_HOURS = 4;
 const DEFAULT_VENUE_CAPACITY = 100;
 
+function stripHtml(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function mapGoEventToVenue(
   goEvent: GoEvent,
   venueType: VenueType,
@@ -17,7 +31,7 @@ export function mapGoEventToVenue(
     type: venueType,
     capacity: DEFAULT_VENUE_CAPACITY,
     address: goEvent.location_name,
-    description: goEvent.description,
+    description: stripHtml(goEvent.description),
     picture: goEvent.image_url || goEvent.thumb_url,
     picture_urls: [goEvent.image_url, goEvent.thumb_url].filter(Boolean),
     created_at: new Date().toISOString(),
@@ -39,7 +53,7 @@ export function mapGoEventToEvent(
     id: goEvent.id,
     venue_id: venueId,
     title: goEvent.name,
-    description: goEvent.description,
+    description: stripHtml(goEvent.description),
     start_date_time: startDate.toISOString(),
     end_date_time: endDate.toISOString(),
     tags: (goEvent.tags?.map((tag) => tag.name) ?? []).slice(0, 3),
