@@ -1,19 +1,30 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react";
 
 interface MobileStoreButtonProps {
-  variant?: "appStore" | "googlePlay";
+  variant?: "appStore" | "googlePlay" | "web";
   link?: string;
 }
 
 function MobileStoreButton({ variant, link }: MobileStoreButtonProps) {
   const { t } = useTranslation();
-  return (
-    <a
-      href={link || "#"}
-      className="flex items-center shrink-0 gap-2.5 h-12 px-5 rounded-xl bg-background/75 backdrop-blur-sm text-foreground border border-white/15 hover:bg-background/90 hover:border-foreground/30 transition-all active:scale-[0.97] shadow-lg"
-    >
-      {variant === "appStore" ? (
+
+  const isWeb = variant === "web";
+  const isDisabled = !link;
+
+  const className = [
+    "flex items-center shrink-0 gap-2.5 h-12 px-5 rounded-xl backdrop-blur-sm border transition-all",
+    isDisabled
+      ? "bg-background/40 text-foreground/40 border-white/8 cursor-not-allowed select-none"
+      : "bg-background/75 text-foreground border-white/15 hover:bg-background/90 hover:border-foreground/30 active:scale-[0.97] shadow-lg",
+  ].join(" ");
+
+  const inner = (
+    <>
+      {isWeb ? (
+        <Globe className="w-6 h-6 shrink-0" />
+      ) : variant === "appStore" ? (
         <svg
           className="w-6 h-6 shrink-0"
           xmlns="http://www.w3.org/2000/svg"
@@ -36,14 +47,37 @@ function MobileStoreButton({ variant, link }: MobileStoreButtonProps) {
 
       <div className="flex flex-col leading-tight text-left shrink-0">
         <span className="text-[9px] font-medium opacity-60 uppercase tracking-wider whitespace-nowrap">
-          {t("landingpage.guest.hero.downloadOn")}
+          {isDisabled
+            ? t("landingpage.guest.hero.comingSoon")
+            : isWeb
+              ? t("landingpage.guest.hero.tryWebVersion")
+              : variant === "appStore"
+                ? t("landingpage.guest.hero.downloadOn")
+                : t("landingpage.guest.hero.getItOn")}
         </span>
         <span className="text-[13px] font-semibold whitespace-nowrap">
-          {variant === "appStore"
-            ? t("landingpage.guest.hero.appStore")
-            : t("landingpage.guest.hero.googlePlay")}
+          {isWeb
+            ? t("landingpage.guest.hero.openInBrowser")
+            : variant === "appStore"
+              ? t("landingpage.guest.hero.appStore")
+              : t("landingpage.guest.hero.googlePlay")}
         </span>
       </div>
+    </>
+  );
+
+  if (isDisabled) {
+    return <div className={className}>{inner}</div>;
+  }
+
+  return (
+    <a
+      href={link || "#"}
+      target={isWeb ? "_blank" : undefined}
+      rel={isWeb ? "noopener noreferrer" : undefined}
+      className={className}
+    >
+      {inner}
     </a>
   );
 }

@@ -6,7 +6,6 @@ import { faker } from "@faker-js/faker";
 import Logo from "../common/logo";
 import { Marquee } from "../ui/marquee";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const TAGS = [
   "Live Music",
@@ -102,19 +101,10 @@ const ProfileCard = ({
   );
 };
 export function Marquee3D() {
-  const isMobile = useIsMobile();
-
-  const columns = isMobile
-    ? [
-        { profiles: [...firstRow, ...thirdRow], reverse: false },
-        { profiles: [...secondRow, ...fourthRow], reverse: true },
-      ]
-    : [
-        { profiles: firstRow, reverse: false },
-        { profiles: secondRow, reverse: true },
-        { profiles: thirdRow, reverse: true },
-        { profiles: fourthRow, reverse: false },
-      ];
+  const columns = [
+    { profiles: [...firstRow, ...thirdRow], reverse: false },
+    { profiles: [...secondRow, ...fourthRow], reverse: true },
+  ];
 
   return (
     <div className="relative flex h-full w-full flex-row items-center justify-center gap-4 overflow-hidden [perspective:300px]">
@@ -122,7 +112,7 @@ export function Marquee3D() {
         className="flex flex-row items-center gap-4"
         style={{
           transform:
-            "translateX(-100px) translateY(0px) translateZ(-100px) rotateX(20deg) rotateY(-10deg) rotateZ(20deg)",
+            "translateX(0px) translateY(0px) translateZ(-100px) rotateX(20deg) rotateY(-10deg) rotateZ(20deg)",
         }}
       >
         {columns.map((col, i) => (

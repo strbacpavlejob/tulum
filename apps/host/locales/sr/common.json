@@ -12,7 +12,8 @@
       "benefits": "Benefiti",
       "howItWorks": "Kako funkcioniše",
       "pricing": "Paketi",
-      "postEvent": "Postavi događaj"
+      "postEvent": "Postavi događaj",
+      "login": "Prijavi se"
     },
     "guest": {
       "hero": {
@@ -22,7 +23,10 @@
         "appStore": "App Store",
         "getItOn": "Dostupno na",
         "googlePlay": "Google Play",
-        "socialProof": "500+ korisnika već koristi aplikaciju"
+        "socialProof": "500+ korisnika već koristi aplikaciju",
+        "comingSoon": "Uskoro",
+        "tryWebVersion": "Probaj web verziju",
+        "openInBrowser": "Otvori u pregledaču"
       }
     },
     "hero": {

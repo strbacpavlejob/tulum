@@ -12,7 +12,8 @@
       "benefits": "Benefits",
       "howItWorks": "How It Works",
       "pricing": "Pricing",
-      "postEvent": "Post Event"
+      "postEvent": "Post Event",
+      "login": "Login"
     },
     "guest": {
       "hero": {
@@ -22,7 +23,10 @@
         "appStore": "App Store",
         "getItOn": "Get it on",
         "googlePlay": "Google Play",
-        "socialProof": "500+ users already on the app"
+        "socialProof": "500+ users already on the app",
+        "comingSoon": "Coming Soon",
+        "tryWebVersion": "Try Web Version",
+        "openInBrowser": "Open in Browser"
       }
     },
     "hero": {

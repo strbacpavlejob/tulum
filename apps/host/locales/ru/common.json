@@ -12,7 +12,8 @@
       "benefits": "Преимущества",
       "howItWorks": "Как это работает",
       "pricing": "Цены",
-      "postEvent": "Создать событие"
+      "postEvent": "Создать событие",
+      "login": "Войти"
     },
     "guest": {
       "hero": {
@@ -22,7 +23,10 @@
         "appStore": "App Store",
         "getItOn": "Доступно в",
         "googlePlay": "Google Play",
-        "socialProof": "500+ пользователей уже в приложении"
+        "socialProof": "500+ пользователей уже в приложении",
+        "comingSoon": "Скоро",
+        "tryWebVersion": "Попробовать веб-версию",
+        "openInBrowser": "Открыть в браузере"
       }
     },
     "hero": {

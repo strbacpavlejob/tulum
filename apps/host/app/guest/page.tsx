@@ -42,6 +42,8 @@ export default function TulumLanding() {
     return null;
   }
 
+  const mobileUrl = process.env.NEXT_PUBLIC_TULUM_MOBILE_URL ?? "#";
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -56,7 +58,10 @@ export default function TulumLanding() {
         <div className="block w-px h-full border-l border-border absolute top-0 left-6 z-10"></div>
         <div className="block w-px h-full border-r border-border absolute top-0 right-6 z-10"></div>
 
-        <Navbar scrollToSection={scrollToSection} />
+        <Navbar
+          scrollToSection={scrollToSection}
+          cta={{ label: t("landingpage.nav.login"), href: mobileUrl }}
+        />
 
         <main className="flex flex-col items-center justify-center divide-y divide-border min-h-screen w-full">
           <HeroGuest />

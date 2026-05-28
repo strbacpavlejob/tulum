@@ -89,12 +89,24 @@ export default function HeroGuest() {
             </p>
 
             {/* App Store Download Buttons */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-              <MobileStoreButton variant="appStore" link="#" />
-              <MobileStoreButton variant="googlePlay" link="#" />
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <MobileStoreButton
+                variant="web"
+                link={process.env.NEXT_PUBLIC_TULUM_MOBILE_URL}
+              />
+              <div className="flex flex-wrap gap-2">
+                <MobileStoreButton
+                  variant="appStore"
+                  link={process.env.NEXT_PUBLIC_TULUM_APP_STORE_URL}
+                />
+                <MobileStoreButton
+                  variant="googlePlay"
+                  link={process.env.NEXT_PUBLIC_TULUM_PLAY_STORE_URL}
+                />
+              </div>
             </div>
 
-            {/* Avatar Social Proof */}
+            {/* Avatar Social Proof
             <div className="flex items-center justify-center gap-3 md:px-1 px-4">
               <div className="flex -space-x-2.5">
                 <AvatarCircles
@@ -111,7 +123,7 @@ export default function HeroGuest() {
               <p className="text-xs text-secondary">
                 {t("landingpage.guest.hero.socialProof")}
               </p>
-            </div>
+            </div> */}
           </div>
 
           {/* RIGHT SIDE (phone) */}
