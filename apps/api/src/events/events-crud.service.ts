@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { GetActiveEventsDto } from './dto/get-active-events.dto';
@@ -15,6 +16,7 @@ export class EventsCrudService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
+    private readonly favoritesService: FavoritesService,
   ) {}
 
   private get db() {
@@ -199,6 +201,9 @@ export class EventsCrudService {
         .eq('event_id', eventId)
         .maybeSingle();
       isAttending = !!ticket;
+
+      // Fire-and-forget: mark event as seen for this user
+      this.favoritesService.trackSeen(userId, eventId).catch(() => {});
     }
 
     return {

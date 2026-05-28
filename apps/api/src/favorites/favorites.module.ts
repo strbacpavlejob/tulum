@@ -7,5 +7,6 @@ import { FavoritesService } from './favorites.service';
   imports: [SupabaseModule],
   controllers: [FavoritesController],
   providers: [FavoritesService],
+  exports: [FavoritesService],
 })
 export class FavoritesModule {}

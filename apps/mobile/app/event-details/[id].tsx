@@ -12,7 +12,6 @@ import {
   attendEvent,
   fetchEventAttendees,
   fetchEventDetails,
-  trackEventSeen,
   unattendEvent,
 } from "@/lib/api";
 import useStore from "@/store/useStore";
@@ -324,18 +323,6 @@ const EventDetailsScreen = () => {
       })
       .catch(() => {});
   }, [id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Track event seen
-  useEffect(() => {
-    if (!event || !userId || event.isSeen) return;
-    getToken()
-      .then((token) => {
-        if (!token) return;
-        return trackEventSeen(token, event.id);
-      })
-      .then(() => setEvent((e) => (e ? { ...e, isSeen: true } : e)))
-      .catch(() => {});
-  }, [event?.id, event?.isSeen, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAttend = async () => {
     if (!userId || !event?.id) return;
