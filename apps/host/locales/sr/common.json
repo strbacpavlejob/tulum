@@ -725,7 +725,9 @@
     "eventsPage": {
       "title": "Događaji",
       "description": "Upravljaj događajima i kartama u tvojim lokalima",
-      "createButton": "Kreiraj događaj"
+      "createButton": "Kreiraj događaj",
+      "searchPlaceholder": "Pretraži događaje...",
+      "allVenues": "Svi lokali"
     },
     "venuesPage": {
       "title": "Lokali",

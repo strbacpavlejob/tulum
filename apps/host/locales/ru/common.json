@@ -725,7 +725,9 @@
     "eventsPage": {
       "title": "События",
       "description": "Управляйте событиями и билетами вашего заведения",
-      "createButton": "Создать событие"
+      "createButton": "Создать событие",
+      "searchPlaceholder": "Поиск событий...",
+      "allVenues": "Все заведения"
     },
     "venuesPage": {
       "title": "Заведения",

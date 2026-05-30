@@ -725,7 +725,9 @@
     "eventsPage": {
       "title": "Events",
       "description": "Manage your venue events and tickets",
-      "createButton": "Create Event"
+      "createButton": "Create Event",
+      "searchPlaceholder": "Search events...",
+      "allVenues": "All venues"
     },
     "venuesPage": {
       "title": "Venues",

@@ -4,11 +4,24 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "../../../i18n";
-import { IconPlus, IconLayoutList, IconLayoutGrid } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconLayoutList,
+  IconLayoutGrid,
+  IconSearch,
+} from "@tabler/icons-react";
 
 import { useEventsStore } from "@/store/events";
 import { useVenuesStore } from "@/store/venues";
@@ -29,15 +42,37 @@ export default function EventsPage() {
     invalidate: invalidateEvents,
     isLoading,
   } = useEventsStore();
-  const { fetchVenues } = useVenuesStore();
+  const { fetchVenues, venues } = useVenuesStore();
   const { invalidate: invalidateStatistics } = useStatisticsStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [view, setView] = useState<"table" | "grid">("table");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [venueFilter, setVenueFilter] = useState("all");
   const [editingEvent, setEditingEvent] = useState<(typeof events)[0] | null>(
     null,
   );
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => {
+      const matchesSearch =
+        !searchQuery ||
+        e.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesVenue = venueFilter === "all" || e.venue_id === venueFilter;
+      return matchesSearch && matchesVenue;
+    });
+  }, [events, searchQuery, venueFilter]);
+
+  const venuesSortedByEvents = useMemo(() => {
+    const countMap = events.reduce<Record<string, number>>((acc, e) => {
+      acc[e.venue_id] = (acc[e.venue_id] ?? 0) + 1;
+      return acc;
+    }, {});
+    return [...venues].sort(
+      (a, b) => (countMap[b.id] ?? 0) - (countMap[a.id] ?? 0),
+    );
+  }, [venues, events]);
 
   // Fetch events and venues from store cache (only fetches from API on first load)
   useEffect(() => {
@@ -135,9 +170,49 @@ export default function EventsPage() {
               </div>
             </div>
 
+            {/* Search and filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-48">
+                <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder={t("dashboard.eventsPage.searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={venueFilter} onValueChange={setVenueFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue
+                    placeholder={t("dashboard.eventsPage.allVenues")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {t("dashboard.eventsPage.allVenues")}
+                  </SelectItem>
+                  {venuesSortedByEvents.map((venue) => {
+                    const count = events.filter(
+                      (e) => e.venue_id === venue.id,
+                    ).length;
+                    return (
+                      <SelectItem key={venue.id} value={venue.id}>
+                        <span className="flex items-center justify-between gap-3 w-full">
+                          <span>{venue.name}</span>
+                          <span className="text-muted-foreground text-xs tabular-nums">
+                            {count}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
             {view === "table" ? (
               <EventsTable
-                events={events}
+                events={filteredEvents}
                 onView={handleView}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
@@ -145,7 +220,7 @@ export default function EventsPage() {
               />
             ) : (
               <EventsGrid
-                events={events}
+                events={filteredEvents}
                 onView={handleView}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
