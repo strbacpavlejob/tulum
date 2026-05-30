@@ -31,6 +31,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { enUS, ru, srLatn } from "date-fns/locale";
 import { ChevronDownIcon, Sparkles, Copy, Check } from "lucide-react";
@@ -161,6 +167,7 @@ export function CreateEventDialog({
   });
 
   const startDateTime = watch("start_date_time");
+  const watchedStatus = watch("status") as "draft" | "active" | "cancelled";
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
   const watchedTags = watch("tags");
@@ -645,36 +652,6 @@ Return ONLY the JSON object, no explanations or extra text.`;
               </div>
             </div>
 
-            {/* Status */}
-            <div className="grid gap-2">
-              <Label htmlFor="status">{t("eventDialog.fields.status")} *</Label>
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">
-                        {t("eventDialog.statuses.draft")}
-                      </SelectItem>
-                      <SelectItem value="active">
-                        {t("eventDialog.statuses.active")}
-                      </SelectItem>
-                      <SelectItem value="cancelled">
-                        {t("eventDialog.statuses.cancelled")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.status && (
-                <p className="text-sm text-red-500">{errors.status.message}</p>
-              )}
-            </div>
-
             {/* Tags */}
             <div className="grid gap-2">
               <Label htmlFor="tags">{t("eventDialog.fields.tags")} *</Label>
@@ -752,11 +729,58 @@ Return ONLY the JSON object, no explanations or extra text.`;
             <Button type="button" variant="outline" onClick={handleCancel}>
               {t("eventDialog.buttons.cancel")}
             </Button>
-            <Button type="submit">
-              {isEditing
-                ? t("eventDialog.buttons.update")
-                : t("eventDialog.buttons.create")}
-            </Button>
+            <div className="flex">
+              <Button
+                type="submit"
+                variant={
+                  watchedStatus === "active"
+                    ? "default"
+                    : watchedStatus === "cancelled"
+                      ? "destructive"
+                      : "secondary"
+                }
+                className="rounded-r-none border-r-0"
+              >
+                {t(`eventDialog.buttons.saveAs.${watchedStatus}`)}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={
+                      watchedStatus === "active"
+                        ? "default"
+                        : watchedStatus === "cancelled"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                    className="rounded-l-none px-2"
+                  >
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  {(["draft", "active", "cancelled"] as const).map((s) => (
+                    <DropdownMenuItem
+                      key={s}
+                      onClick={() => setValue("status", s)}
+                      className="flex-col items-start gap-0.5 py-2"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        {watchedStatus === s && (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                        {watchedStatus !== s && <span className="w-3.5" />}
+                        {t(`eventDialog.statuses.${s}`)}
+                      </span>
+                      <span className="pl-5 text-xs text-muted-foreground">
+                        {t(`eventDialog.statuses.descriptions.${s}`)}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

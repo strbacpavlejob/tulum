@@ -846,7 +846,12 @@
     "statuses": {
       "draft": "Draft",
       "active": "Active",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "descriptions": {
+        "draft": "Hidden from guests, not published yet",
+        "active": "Visible and accepting guests",
+        "cancelled": "Event will be marked as cancelled"
+      }
     },
     "validation": {
       "venueRequired": "Venue is required",
@@ -862,7 +867,12 @@
       "cancel": "Cancel",
       "create": "Create Event",
       "update": "Update Event",
-      "add": "Add"
+      "add": "Add",
+      "saveAs": {
+        "draft": "Save as Draft",
+        "active": "Save as Active",
+        "cancelled": "Save as Cancelled"
+      }
     },
     "ai": {
       "title": "AI Enhancement",

@@ -846,7 +846,12 @@
     "statuses": {
       "draft": "Nacrt",
       "active": "Aktivno",
-      "cancelled": "Otkazano"
+      "cancelled": "Otkazano",
+      "descriptions": {
+        "draft": "Skriveno od gostiju, još nije objavljeno",
+        "active": "Vidljivo i prihvata goste",
+        "cancelled": "Događaj će biti označen kao otkazan"
+      }
     },
     "validation": {
       "venueRequired": "Lokal je obavezan",
@@ -862,7 +867,12 @@
       "cancel": "Otkaži",
       "create": "Kreiraj Događaj",
       "update": "Ažuriraj Događaj",
-      "add": "Dodaj"
+      "add": "Dodaj",
+      "saveAs": {
+        "draft": "Sačuvaj kao nacrt",
+        "active": "Sačuvaj kao aktivno",
+        "cancelled": "Sačuvaj kao otkazano"
+      }
     },
     "ai": {
       "title": "AI Poboljšanje",
