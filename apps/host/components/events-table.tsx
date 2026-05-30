@@ -29,7 +29,9 @@ import { useTranslation } from "react-i18next";
 import { Event } from "@/store/events";
 import { formatDate, formatTime } from "@/lib/locale";
 import EventStatusChip, { EventStatus } from "./event-status-chip";
+import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
+import { IconBrandInstagram } from "@tabler/icons-react";
 
 const PAGE_SIZE = 20;
 
@@ -50,7 +52,15 @@ export function EventsTable({
 }: EventsTableProps) {
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
-  const columns = ["eventName", "venue", "date", "time", "tickets", "status"];
+  const columns = [
+    "eventName",
+    "venue",
+    "date",
+    "time",
+    "tickets",
+    "status",
+    "source",
+  ];
 
   const totalPages = Math.max(1, Math.ceil(events.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -112,6 +122,19 @@ export function EventsTable({
                     <TableCell>{event.tickets_sold || 0}</TableCell>
                     <TableCell>
                       <EventStatusChip status={event.status as EventStatus} />
+                    </TableCell>
+                    <TableCell>
+                      {event.scraper && (
+                        <Badge
+                          variant="outline"
+                          className="inline-flex items-center gap-1 border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300"
+                        >
+                          {event.scraper === "instagram" && (
+                            <IconBrandInstagram className="size-3" />
+                          )}
+                          {event.scraper}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

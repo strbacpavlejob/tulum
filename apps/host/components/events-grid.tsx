@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 import { Event } from "@/store/events";
 import { DateCard } from "@/components/common/date-card";
 import EventStatusChip, { EventStatus } from "@/components/event-status-chip";
+import { Badge } from "@/components/ui/badge";
+import { IconBrandInstagram } from "@tabler/icons-react";
 
 const PAGE_SIZE = 20;
 
@@ -80,8 +82,19 @@ export function EventsGrid({
                   No image
                 </div>
               )}
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                 <EventStatusChip status={event.status as EventStatus} />
+                {event.scraper && (
+                  <Badge
+                    variant="outline"
+                    className="inline-flex items-center gap-1 border-purple-200 bg-purple-50/90 text-purple-700 dark:border-purple-800 dark:bg-purple-950/70 dark:text-purple-300"
+                  >
+                    {event.scraper === "instagram" && (
+                      <IconBrandInstagram className="size-3" />
+                    )}
+                    {event.scraper}
+                  </Badge>
+                )}
               </div>
             </div>
 

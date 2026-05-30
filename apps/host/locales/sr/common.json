@@ -708,6 +708,7 @@
         "time": "Vreme",
         "tickets": "Karte",
         "status": "Status",
+        "source": "Izvor",
         "actions": "Akcije"
       },
       "status": {

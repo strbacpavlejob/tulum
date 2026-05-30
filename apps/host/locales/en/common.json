@@ -708,6 +708,7 @@
         "time": "Time",
         "tickets": "Tickets",
         "status": "Status",
+        "source": "Source",
         "actions": "Actions"
       },
       "status": {

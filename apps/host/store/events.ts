@@ -14,6 +14,7 @@ export interface Event {
   tags: string[];
   picture?: string; // Data URL or blob URL
   status: "draft" | "active" | "cancelled";
+  scraper?: string | null;
   tickets_sold?: number;
   venue_name?: string;
   created_at?: string;
