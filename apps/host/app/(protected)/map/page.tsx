@@ -3,7 +3,8 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { EventsMap, type EventWithLocation } from "@/components/events-map";
+import { type EventWithLocation } from "@/components/events-map";
+import { StyledMapWithHandle } from "@/components/styled-map";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
@@ -12,12 +13,14 @@ import {
   IconMapPin,
   IconFilter,
   IconX,
+  IconSearch,
 } from "@tabler/icons-react";
 import type { Event } from "@/store/events";
 import type { Venue } from "@/store/venues";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
@@ -66,7 +69,8 @@ export default function MapPage() {
   const [isLoading, setIsLoading] = useState(true);
   const hasFetched = useRef(false);
 
-  // Filters
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [venueTypeFilter, setVenueTypeFilter] = useState<VenueType | "all">(
     "all",
@@ -90,6 +94,8 @@ export default function MapPage() {
     setDateTo(undefined);
     setCapacityRange([0, 1000]);
   };
+
+  const hasSearch = searchQuery.trim().length > 0;
 
   // Fetch discovery data (other users' events)
   useEffect(() => {
@@ -175,7 +181,14 @@ export default function MapPage() {
   }, [events, venues]);
 
   const filteredEvents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return eventsWithLocation.filter((event) => {
+      if (
+        q &&
+        !event.title.toLowerCase().includes(q) &&
+        !event.venue.name.toLowerCase().includes(q)
+      )
+        return false;
       if (venueTypeFilter !== "all" && event.venue.type !== venueTypeFilter)
         return false;
       if (dateFrom && new Date(event.start_date_time) < dateFrom) return false;
@@ -188,7 +201,31 @@ export default function MapPage() {
       if (cap < capacityRange[0] || cap > capacityRange[1]) return false;
       return true;
     });
-  }, [eventsWithLocation, venueTypeFilter, dateFrom, dateTo, capacityRange]);
+  }, [
+    eventsWithLocation,
+    searchQuery,
+    venueTypeFilter,
+    dateFrom,
+    dateTo,
+    capacityRange,
+  ]);
+
+  const filteredLocations = useMemo(
+    () =>
+      filteredEvents.map((event) => ({
+        id: event.id,
+        name: event.title,
+        longitude: event.longitude,
+        latitude: event.latitude,
+        type: event.venue.type,
+        capacity: event.venue.capacity ?? 0,
+        address: event.venue.address,
+        description: event.venue.description,
+        picture: event.picture ?? undefined,
+        picture_urls: event.venue.picture_urls,
+      })),
+    [filteredEvents],
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -235,7 +272,27 @@ export default function MapPage() {
                 </div>
               </div>
 
-              {/* Filters */}
+              {/* Search & Filters */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 max-w-sm">
+                  <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Search events or venues…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                  {hasSearch && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <IconX className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
                 <div className="flex items-center gap-2">
                   <CollapsibleTrigger asChild>
@@ -382,7 +439,11 @@ export default function MapPage() {
                 <div className="flex gap-4 h-[calc(100vh-320px)]">
                   {/* Left Column - Map */}
                   <div className="flex-1 rounded-lg border overflow-hidden">
-                    <EventsMap events={filteredEvents} />
+                    <StyledMapWithHandle
+                      locations={filteredLocations}
+                      selectedLocation={selectedEvent}
+                      onLocationSelect={setSelectedEvent}
+                    />
                   </div>
 
                   {/* Right Column - Event Cards */}
