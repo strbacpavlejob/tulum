@@ -57,10 +57,17 @@ export function NavMain({
                   tooltip={item.title}
                   asChild
                   isActive={isActive}
+                  className={
+                    isActive
+                      ? "border-l-2 border-primary rounded-l-none bg-primary/10 text-primary [&>svg]:text-primary hover:bg-primary/15 hover:text-primary"
+                      : ""
+                  }
                 >
                   <Link href={item.url}>
                     {item.icon && <item.icon />}
-                    <span>{item.title}</span>
+                    <span className={isActive ? "text-primary" : ""}>
+                      {item.title}
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
