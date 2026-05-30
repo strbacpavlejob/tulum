@@ -733,6 +733,11 @@
       "title": "Заведения",
       "description": "Управляйте своими заведениями и локациями",
       "createButton": "Создать заведение",
+      "searchPlaceholder": "Поиск заведений...",
+      "emptyState": {
+        "noResults": "Ни одно заведение не соответствует поиску",
+        "noResultsDescription": "Попробуйте другой запрос"
+      },
       "card": {
         "type": "Тип",
         "capacity": "Вместимость",

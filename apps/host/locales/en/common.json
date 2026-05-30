@@ -733,6 +733,11 @@
       "title": "Venues",
       "description": "Manage your venues and locations",
       "createButton": "Create Venue",
+      "searchPlaceholder": "Search venues...",
+      "emptyState": {
+        "noResults": "No venues match your search",
+        "noResultsDescription": "Try a different search term"
+      },
       "card": {
         "type": "Type",
         "capacity": "Capacity",

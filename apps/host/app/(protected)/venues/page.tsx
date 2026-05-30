@@ -3,12 +3,13 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import { StyledMapWithHandle } from "@/components/styled-map";
 import { Button } from "@/components/ui/button";
-import { IconPlus, IconMapPin } from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
+import { IconPlus, IconMapPin, IconSearch } from "@tabler/icons-react";
 import { useVenuesStore } from "@/store/venues";
 import { useEventsStore } from "@/store/events";
 import { useStatisticsStore } from "@/store/statistics";
@@ -37,10 +38,22 @@ export default function MapsPage() {
   const { invalidate: invalidateStatistics } = useStatisticsStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingVenue, setEditingVenue] = useState<(typeof venues)[0] | null>(
     null,
   );
   const [venueToDelete, setVenueToDelete] = useState<string | null>(null);
+
+  const filteredVenues = useMemo(() => {
+    if (!searchQuery) return venues;
+    const q = searchQuery.toLowerCase();
+    return venues.filter(
+      (v) =>
+        v.name.toLowerCase().includes(q) ||
+        v.type.toLowerCase().includes(q) ||
+        (v.address ?? "").toLowerCase().includes(q),
+    );
+  }, [venues, searchQuery]);
 
   // Load venues from store cache (only fetches from API on first load)
   useEffect(() => {
@@ -148,6 +161,17 @@ export default function MapsPage() {
                 </Button>
               </div>
 
+              {/* Search */}
+              <div className="relative">
+                <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder={t("dashboard.venuesPage.searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 max-w-sm"
+                />
+              </div>
+
               {/* Loading State */}
               {isLoading ? (
                 <div className="flex items-center justify-center h-[calc(100vh-280px)]">
@@ -164,7 +188,7 @@ export default function MapsPage() {
                   {/* Left Column - Map */}
                   <div className="flex-1 rounded-lg border overflow-hidden">
                     <StyledMapWithHandle
-                      locations={venues}
+                      locations={filteredVenues}
                       selectedLocation={selectedLocation}
                       onLocationSelect={setSelectedLocation}
                     />
@@ -172,27 +196,38 @@ export default function MapsPage() {
 
                   {/* Right Column - Venue Cards */}
                   <div className="w-[400px] flex flex-col gap-4 overflow-y-auto pr-2">
-                    {venues.length === 0 ? (
+                    {filteredVenues.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center p-8">
                         <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
                           <IconMapPin className="w-10 h-10 text-muted-foreground/40" />
                         </div>
                         <h3 className="text-lg font-semibold mb-2">
-                          {t("dashboard.venuesPage.emptyState.title") ||
-                            "No venues yet"}
+                          {venues.length === 0
+                            ? t("dashboard.venuesPage.emptyState.title") ||
+                              "No venues yet"
+                            : t("dashboard.venuesPage.emptyState.noResults") ||
+                              "No venues match your search"}
                         </h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                          {t("dashboard.venuesPage.emptyState.description") ||
-                            "Create your first venue to get started"}
+                          {venues.length === 0
+                            ? t(
+                                "dashboard.venuesPage.emptyState.description",
+                              ) || "Create your first venue to get started"
+                            : t(
+                                "dashboard.venuesPage.emptyState.noResultsDescription",
+                              ) || "Try a different search term"}
                         </p>
-                        <Button onClick={handleCreate} className="gap-2">
-                          <IconPlus className="h-4 w-4" />
-                          {t("dashboard.venuesPage.emptyState.createButton") ||
-                            "Create Venue"}
-                        </Button>
+                        {venues.length === 0 && (
+                          <Button onClick={handleCreate} className="gap-2">
+                            <IconPlus className="h-4 w-4" />
+                            {t(
+                              "dashboard.venuesPage.emptyState.createButton",
+                            ) || "Create Venue"}
+                          </Button>
+                        )}
                       </div>
                     ) : (
-                      venues.map((location) => (
+                      filteredVenues.map((location) => (
                         <div
                           key={location.id}
                           className={`rounded-lg border transition-all ${

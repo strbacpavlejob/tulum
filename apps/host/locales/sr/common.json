@@ -733,6 +733,11 @@
       "title": "Lokali",
       "description": "Upravljaj svojim lokalima i lokacijama",
       "createButton": "Kreiraj lokal",
+      "searchPlaceholder": "Pretraži lokale...",
+      "emptyState": {
+        "noResults": "Nijedan lokal ne odgovara pretrazi",
+        "noResultsDescription": "Pokušaj drugi pojam za pretragu"
+      },
       "card": {
         "type": "Tip",
         "capacity": "Kapacitet",
