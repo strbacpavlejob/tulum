@@ -260,6 +260,7 @@ export class SupabaseService implements OnModuleInit {
       ),
       picture_url: event.picture,
       status: event.status,
+      scraper: event.scraper ?? null,
     };
   }
 

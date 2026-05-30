@@ -130,6 +130,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
         tags: extracted.tags,
         picture: postImageR2 ?? undefined,
         status,
+        scraper: 'instagram',
       });
     }
 
@@ -348,6 +349,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
         tags: extracted.tags,
         picture: postImageR2 ?? undefined,
         status,
+        scraper: 'instagram',
       });
     }
 

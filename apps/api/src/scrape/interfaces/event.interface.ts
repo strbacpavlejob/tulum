@@ -8,6 +8,7 @@ export interface Event {
   tags: string[];
   picture?: string;
   status: 'draft' | 'active' | 'cancelled';
+  scraper?: string;
   tickets_sold?: number;
   venue_name?: string;
   created_at?: string;

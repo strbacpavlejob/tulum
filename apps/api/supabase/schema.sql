@@ -295,7 +295,8 @@ CREATE TABLE IF NOT EXISTS "public"."events" (
     "status" "public"."event_status_enum" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
-    "picture_url" "text"
+    "picture_url" "text",
+    "scraper" "text"
 );
 
 

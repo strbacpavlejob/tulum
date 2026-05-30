@@ -58,6 +58,7 @@ export function mapGoEventToEvent(
     tags: (goEvent.tags?.map((tag) => tag.name) ?? []).slice(0, 3),
     picture: goEvent.image_url || goEvent.thumb_url,
     status: 'active',
+    scraper: 'goout',
     tickets_sold: 0,
     venue_name: goEvent.host,
     created_at: new Date().toISOString(),
