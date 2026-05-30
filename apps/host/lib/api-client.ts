@@ -118,6 +118,29 @@ export async function deleteVenue(venueId: string): Promise<void> {
   if (!response.ok) throw new Error("Failed to delete venue");
 }
 
+export async function getVenueContact(venueId: string): Promise<unknown> {
+  const response = await fetch(`/api/venues/${venueId}/contact`);
+  if (!response.ok) throw new Error("Failed to fetch venue contact");
+  return response.json();
+}
+
+export async function refreshVenueInstagramPicture(
+  venueId: string,
+): Promise<Venue> {
+  const response = await fetch(
+    `/api/venues/${venueId}/refresh-instagram-picture`,
+    { method: "POST" },
+  );
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(
+      (err as { message?: string }).message ??
+        "Failed to refresh Instagram picture",
+    );
+  }
+  return response.json();
+}
+
 // ============================================
 // EVENTS
 // ============================================

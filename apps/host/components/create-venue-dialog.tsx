@@ -32,6 +32,7 @@ import { validateVenueImage, processVenueImage } from "@/lib/image-utils";
 import { getNewDarkMapStyle } from "@/public/map-styles/dark";
 import { getNewLightMapStyle } from "@/public/map-styles/light";
 import type MapLibreGL from "maplibre-gl";
+import { Instagram, RefreshCw } from "lucide-react";
 import * as api from "@/lib/api-client";
 import type { VenueType } from "@/lib/types/database";
 import "../i18n";
@@ -121,6 +122,8 @@ export function CreateVenueDialog({
   const { userId } = useAuth();
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [instagramHandle, setInstagramHandle] = useState<string | null>(null);
+  const [isRefreshingInstagram, setIsRefreshingInstagram] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     20.4489, 44.8125,
   ]);
@@ -184,6 +187,30 @@ export function CreateVenueDialog({
     });
     return () => observer.disconnect();
   }, []);
+
+  // Fetch venue contact when editing, to check for instagram handle
+  useEffect(() => {
+    if (!isOpen || !venue?.id) return;
+
+    let cancelled = false;
+    api
+      .getVenueContact(venue.id)
+      .then((contact: unknown) => {
+        if (cancelled) return;
+        setInstagramHandle(
+          (contact as { instagram_handle?: string } | null)?.instagram_handle ??
+            null,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setInstagramHandle(null);
+      });
+
+    return () => {
+      cancelled = true;
+      setInstagramHandle(null);
+    };
+  }, [isOpen, venue?.id]);
 
   // Reset form when venue changes or dialog opens
   useEffect(() => {
@@ -365,6 +392,30 @@ export function CreateVenueDialog({
     }
   };
 
+  const handleRefreshInstagramPicture = async () => {
+    if (!venue?.id) return;
+    setIsRefreshingInstagram(true);
+    try {
+      const updated = await api.refreshVenueInstagramPicture(venue.id);
+      const newUrl = (updated as { picture_url?: string }).picture_url ?? null;
+      setPicturePreview(newUrl);
+      setValue("picture_url", newUrl ?? "");
+      setImageFile(null);
+      toast.success(
+        t("venueDialog.toast.instagramRefreshed") ??
+          "Picture updated from Instagram",
+      );
+    } catch (err) {
+      toast.error(
+        (err as Error).message ??
+          t("venueDialog.toast.instagramRefreshError") ??
+          "Failed to refresh Instagram picture",
+      );
+    } finally {
+      setIsRefreshingInstagram(false);
+    }
+  };
+
   const handleCancel = () => {
     onClose();
   };
@@ -402,6 +453,29 @@ export function CreateVenueDialog({
               onFileChange={handleFileChange}
               preview={picturePreview}
             />
+
+            {/* Refresh picture from Instagram (only when venue has instagram contact) */}
+            {isEditing && instagramHandle && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit gap-2"
+                disabled={isRefreshingInstagram}
+                onClick={handleRefreshInstagramPicture}
+              >
+                {isRefreshingInstagram ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Instagram className="h-4 w-4" />
+                )}
+                {isRefreshingInstagram
+                  ? (t("venueDialog.buttons.refreshingInstagram") ??
+                    "Refreshing…")
+                  : (t("venueDialog.buttons.refreshInstagram") ??
+                    `Refresh picture from @${instagramHandle}`)}
+              </Button>
+            )}
 
             {/* Name and Venue Type Row */}
             <div className="flex gap-3">

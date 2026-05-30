@@ -78,6 +78,47 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
   }
 
   /**
+   * Downloads an image using Puppeteer's browser fetch() context.
+   * This bypasses network restrictions that prevent Node.js/axios from
+   * reaching Instagram CDN hosts directly.
+   */
+  async downloadImageViaPage(imageUrl: string): Promise<Buffer | null> {
+    const browser = await this.getBrowser();
+    const page = await browser.newPage();
+    try {
+      // Use page.goto() — direct navigation avoids CORS restrictions that
+      // block cross-origin fetch() calls to Instagram CDN
+      const response = await page.goto(imageUrl, {
+        waitUntil: 'load',
+        timeout: 30000,
+      });
+      if (!response?.ok()) {
+        this.logger.warn(
+          `Browser image navigation got status ${response?.status()} for ${imageUrl.substring(0, 80)}`,
+        );
+        return null;
+      }
+      return Buffer.from(await response.buffer());
+    } catch (err) {
+      this.logger.warn(
+        `Browser image download failed for ${imageUrl.substring(0, 80)}: ${(err as Error).message}`,
+      );
+      return null;
+    } finally {
+      await page.close();
+    }
+  }
+
+  /**
+   * Forces a fresh scrape for the given username, bypassing the Redis cache.
+   */
+  async scrapeVenueFresh(username: string): Promise<InstagramVenueData> {
+    const cacheKey = `instagram:venue:${username}`;
+    await this.redisService.del(cacheKey);
+    return this.scrapeVenue(username);
+  }
+
+  /**
    * Scrapes a new venue's full profile (including profile picture upload to R2)
    * and extracts events from its posts. Intended for venues that don't yet exist in DB.
    */

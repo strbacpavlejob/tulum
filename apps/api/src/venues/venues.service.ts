@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InstagramVenueScraperService } from '../instagram/instagram-venue-scraper.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -14,6 +15,7 @@ export class VenuesService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
+    private readonly instagramScraperService: InstagramVenueScraperService,
   ) {}
 
   private get db() {
@@ -244,6 +246,64 @@ export class VenuesService {
       .eq('id', venueId);
 
     await this.db.from('venue_contacts').delete().eq('id', contactId);
+  }
+
+  async refreshInstagramPicture(venueId: string, userId: string) {
+    const venue = await this.assertOwnership(venueId, userId);
+
+    // Fetch instagram handle from venue contact
+    const contact = await this.getVenueContact(venueId);
+    const instagramHandle = (contact as Record<string, unknown> | null)
+      ?.instagram_handle as string | null;
+    if (!instagramHandle) {
+      throw new NotFoundException(
+        'This venue has no Instagram handle configured',
+      );
+    }
+
+    // Scrape fresh profile picture URL from Instagram (bypass cache)
+    const { profile } =
+      await this.instagramScraperService.scrapeVenueFresh(instagramHandle);
+    if (!profile.profilePictureUrl) {
+      throw new NotFoundException(
+        'Could not retrieve a profile picture from Instagram',
+      );
+    }
+
+    // Delete old picture from R2 if exists
+    if (venue.picture_url) {
+      const oldKey = this.r2Service.extractKeyFromUrl(
+        venue.picture_url as string,
+      );
+      if (oldKey) await this.r2Service.deleteObject(oldKey).catch(() => null);
+    }
+
+    // Download via Puppeteer browser context (bypasses CDN network restrictions)
+    const imageBuffer = await this.instagramScraperService.downloadImageViaPage(
+      profile.profilePictureUrl,
+    );
+    if (!imageBuffer || imageBuffer.length === 0) {
+      throw new Error('Failed to download the Instagram profile picture');
+    }
+
+    // Process and upload to R2
+    const newKey = `venue-images/${userId}/${venueId}/instagram-profile.webp`;
+    const newUrl = await this.r2Service.uploadAndProcessImage(
+      imageBuffer,
+      newKey,
+      200,
+      200,
+    );
+
+    // Persist the new picture URL
+    const { data, error } = await this.db
+      .from(VENUES_TABLE)
+      .update({ picture_url: newUrl })
+      .eq('id', venueId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   }
 
   private async assertOwnership(venueId: string, userId: string) {

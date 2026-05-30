@@ -112,4 +112,14 @@ export class VenuesController {
     await this.venuesService.deleteVenueContact(id, userId);
     return { success: true };
   }
+
+  // ─── Instagram Picture Refresh ───────────────────────────────────────────────
+
+  @Post(':id/refresh-instagram-picture')
+  async refreshInstagramPicture(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UserId() userId: string,
+  ) {
+    return this.venuesService.refreshInstagramPicture(id, userId);
+  }
 }
