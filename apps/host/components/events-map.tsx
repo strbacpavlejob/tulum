@@ -11,15 +11,31 @@ import {
 import { useEventsStore } from "@/store/events";
 import { useVenuesStore } from "@/store/venues";
 import Marker from "@/components/common/marker";
+import type { Event } from "@/store/events";
+import type { Venue } from "@/store/venues";
 
-export function EventsMap() {
-  const events = useEventsStore((state) => state.events);
-  const venues = useVenuesStore((state) => state.venues);
+export type EventWithLocation = Event & {
+  longitude: number;
+  latitude: number;
+  venue_name?: string;
+  venue_picture?: string;
+  venue: Venue;
+};
 
-  const eventsWithLocation = useMemo(() => {
-    return events
+interface EventsMapProps {
+  /** When provided, these events (already joined with venue location) are rendered instead of the store. */
+  events?: EventWithLocation[];
+}
+
+export function EventsMap({ events: eventsOverride }: EventsMapProps = {}) {
+  const storeEvents = useEventsStore((state) => state.events);
+  const storeVenues = useVenuesStore((state) => state.venues);
+
+  const eventsFromStore = useMemo(() => {
+    if (eventsOverride) return null;
+    return storeEvents
       .map((event) => {
-        const venue = venues.find((v) => v.id === event.venue_id);
+        const venue = storeVenues.find((v) => v.id === event.venue_id);
         if (!venue) return null;
         return {
           ...event,
@@ -27,19 +43,21 @@ export function EventsMap() {
           latitude: venue.latitude,
           venue_name: venue.name,
           venue_picture: venue.picture,
+          venue,
         };
       })
-      .filter((event) => event !== null);
-  }, [events, venues]);
+      .filter((e): e is EventWithLocation => e !== null);
+  }, [eventsOverride, storeEvents, storeVenues]);
 
-  const [selectedEvent, setSelectedEvent] = useState<
-    (typeof eventsWithLocation)[number] | null
-  >(null);
+  const eventsWithLocation = eventsOverride ?? eventsFromStore ?? [];
+
+  const [selectedEvent, setSelectedEvent] = useState<EventWithLocation | null>(
+    null,
+  );
 
   return (
     <div className="h-[400px] w-full">
       <Map center={[20.45, 44.8]} zoom={10} fadeDuration={0}>
-        {/* Individual markers for each event */}
         {eventsWithLocation.map((event) => (
           <MapMarker
             key={event.id}
