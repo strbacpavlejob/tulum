@@ -32,7 +32,9 @@ export class EventsCrudService {
 
     let eventsQuery = this.db
       .from(EVENTS_TABLE)
-      .select('id, title, picture_url, venue_id, start_date_time, tags')
+      .select(
+        'id, title, picture_url, scraper, venue_id, start_date_time, tags',
+      )
       .eq('status', 'active')
       .gte('end_date_time', now);
 
@@ -88,7 +90,9 @@ export class EventsCrudService {
     ];
     let venuesQuery = this.db
       .from('venues')
-      .select('id, name, latitude, longitude, address, capacity, venue_type')
+      .select(
+        'id, name, latitude, longitude, address, capacity, venue_type, picture_url',
+      )
       .in('id', venueIds);
 
     // Venue type filter
@@ -128,7 +132,11 @@ export class EventsCrudService {
         return {
           id: event.id as string,
           name: event.title,
-          picture: event.picture_url,
+          picture:
+            (event.scraper as string) === 'goout'
+              ? ((venue as Record<string, unknown>).picture_url ??
+                event.picture_url)
+              : event.picture_url,
           venue_name: venue.name,
           address: venue.address,
           latitude: venue.latitude,
@@ -147,7 +155,7 @@ export class EventsCrudService {
     const { data: event, error: eventError } = await this.db
       .from(EVENTS_TABLE)
       .select(
-        'id, title, description, picture_url, venue_id, start_date_time, tags',
+        'id, title, description, picture_url, scraper, venue_id, start_date_time, tags',
       )
       .eq('id', eventId)
       .eq('status', 'active')
@@ -213,7 +221,11 @@ export class EventsCrudService {
       latitude: venueTyped.latitude,
       longitude: venueTyped.longitude,
       description: (event as Record<string, unknown>).description,
-      picture: (event as Record<string, unknown>).picture_url,
+      picture:
+        (event as Record<string, unknown>).scraper === 'goout'
+          ? (venueTyped.picture_url ??
+            (event as Record<string, unknown>).picture_url)
+          : (event as Record<string, unknown>).picture_url,
       venue_name: venueTyped.name,
       venue_picture: venueTyped.picture_url ?? null,
       date: (event as Record<string, unknown>).start_date_time,
