@@ -105,11 +105,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
 
       const extracted = extractEventData(post.description);
 
-      const status: Event['status'] = !extracted.startDateTime
-        ? 'draft'
-        : extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
-          ? 'active'
-          : 'draft';
+      const status: Event['status'] = 'draft';
 
       const postImageR2 = post.imageUrl
         ? await this.r2Service.downloadAndUpload(
@@ -326,11 +322,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
 
       const extracted = extractEventData(post.description);
 
-      const status: Event['status'] = !extracted.startDateTime
-        ? 'draft'
-        : extracted.confidence.date >= 0.7 && extracted.confidence.title >= 0.65
-          ? 'active'
-          : 'draft';
+      const status: Event['status'] = 'draft';
 
       // Mirror post image to R2
       const postImageR2 = post.imageUrl
