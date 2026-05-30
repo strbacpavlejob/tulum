@@ -863,6 +863,16 @@
       "create": "Create Event",
       "update": "Update Event",
       "add": "Add"
+    },
+    "ai": {
+      "title": "AI Enhancement",
+      "description": "Generate a prompt from the current fields, paste it into ChatGPT, then apply the improved result back here.",
+      "generate": "Copy Prompt & Open ChatGPT",
+      "copied": "Prompt copied — paste it in ChatGPT!",
+      "pasteLabel": "Paste ChatGPT response (JSON)",
+      "apply": "Apply to Form",
+      "applied": "AI suggestions applied!",
+      "invalidJson": "Invalid JSON — make sure to paste only the JSON object"
     }
   },
   "inputTags": {

@@ -863,6 +863,16 @@
       "create": "Kreiraj Događaj",
       "update": "Ažuriraj Događaj",
       "add": "Dodaj"
+    },
+    "ai": {
+      "title": "AI Poboljšanje",
+      "description": "Generiši prompt iz trenutnih polja, nalepi ga u ChatGPT, pa primeni poboljšani rezultat ovde.",
+      "generate": "Kopiraj prompt i otvori ChatGPT",
+      "copied": "Prompt kopiran — nalepi ga u ChatGPT!",
+      "pasteLabel": "Nalepi ChatGPT odgovor (JSON)",
+      "apply": "Primeni na formu",
+      "applied": "AI predlozi primenjeni!",
+      "invalidJson": "Nevažeći JSON — uverite se da ste nalepili samo JSON objekat"
     }
   },
   "inputTags": {
