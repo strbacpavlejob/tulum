@@ -9,6 +9,7 @@ export interface EventStatistics {
 
 export interface EventTableRow {
   id: number;
+  eventId: string;
   header: string;
   venue: string;
   status: string;

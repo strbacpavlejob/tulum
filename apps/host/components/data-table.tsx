@@ -29,7 +29,6 @@ import {
   IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
-  IconTrendingUp,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -46,30 +45,12 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -78,7 +59,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -87,7 +67,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -99,9 +78,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import "../i18n";
 import EventStatusChip, { EventStatus } from "./event-status-chip";
+import { EventStatsDialog } from "./event-stats-dialog";
 
 export const schema = z.object({
   id: z.number(),
+  eventId: z.string(),
   header: z.string(),
   venue: z.string(),
   status: z.enum(EventStatus),
@@ -621,173 +602,26 @@ export function DataTable({
   );
 }
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
-
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
-  const isMobile = useIsMobile();
-  const { t } = useTranslation();
-
-  const chartConfig = {
-    desktop: {
-      label: t("dashboard.chart.desktop"),
-      color: "var(--primary)",
-    },
-    mobile: {
-      label: t("dashboard.chart.mobile"),
-      color: "var(--primary)",
-    },
-  } satisfies ChartConfig;
+  const [statsOpen, setStatsOpen] = React.useState(false);
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "left"}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.header}
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.header}</DrawerTitle>
-          <DrawerDescription>
-            {t("dashboard.drawer.showingVisitors")}
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 0,
-                    right: 10,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    hide
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Area
-                    dataKey="mobile"
-                    type="natural"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-mobile)"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="desktop"
-                    type="natural"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-desktop)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-              <Separator />
-              <div className="grid gap-2">
-                <div className="flex gap-2 leading-none font-medium">
-                  {t("dashboard.drawer.trendingUpBy")}{" "}
-                  <IconTrendingUp className="size-4" />
-                </div>
-                <div className="text-muted-foreground">
-                  {t("dashboard.drawer.randomText")}
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
-          <form className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="header">{t("dashboard.table.header")}</Label>
-              <Input id="header" defaultValue={item.header} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="venue">{t("dashboard.table.venue")}</Label>
-                <Input id="venue" defaultValue={item.venue} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="status">{t("dashboard.table.status")}</Label>
-                <Select defaultValue={item.status}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue
-                      placeholder={t("dashboard.drawer.selectStatus")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Draft">
-                      {t("dashboard.statuses.draft")}
-                    </SelectItem>
-                    <SelectItem value="Live">
-                      {t("dashboard.statuses.live")}
-                    </SelectItem>
-                    <SelectItem value="Active">
-                      {t("dashboard.statuses.published")}
-                    </SelectItem>
-                    <SelectItem value="Completed">
-                      {t("dashboard.statuses.completed")}
-                    </SelectItem>
-                    <SelectItem value="Canceled">
-                      {t("dashboard.statuses.canceled")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="views">{t("dashboard.table.views")}</Label>
-                <Input id="views" type="number" defaultValue={item.views} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="bookmarks">
-                  {t("dashboard.table.bookmarks")}
-                </Label>
-                <Input
-                  id="bookmarks"
-                  type="number"
-                  defaultValue={item.bookmarks}
-                />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="attendees">
-                  {t("dashboard.table.attendees")}
-                </Label>
-                <Input
-                  id="attendees"
-                  type="number"
-                  defaultValue={item.tickets}
-                />
-              </div>
-            </div>
-          </form>
-        </div>
-        <DrawerFooter>
-          <Button>{t("dashboard.buttons.submit")}</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">{t("dashboard.buttons.done")}</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <>
+      <Button
+        variant="link"
+        className="text-foreground w-fit px-0 text-left"
+        onClick={() => setStatsOpen(true)}
+      >
+        {item.header}
+      </Button>
+      <EventStatsDialog
+        isOpen={statsOpen}
+        onClose={() => setStatsOpen(false)}
+        eventId={item.eventId}
+        eventTitle={item.header}
+        eventVenue={item.venue}
+        eventStatus={item.status}
+      />
+    </>
   );
 }

@@ -278,6 +278,7 @@ export class StatisticsService {
 
       return {
         id: e.id,
+        eventId: e.id,
         header: e.title,
         venue: venueName,
         status: this.getDisplayStatus(e),
