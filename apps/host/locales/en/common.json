@@ -266,6 +266,13 @@
       "trialBadge": "7-day free trial",
       "getStarted": "Get Started",
       "startTrial": "Start Free Trial",
+      "comingSoon": "Coming Soon",
+      "notifyMe": "Notify Me",
+      "earlyAccessTitle": "Premium is coming soon",
+      "earlyAccessSubtitle": "Sign up now and get your first month of Premium free when it drops.",
+      "earlyAccessEmailPlaceholder": "your@email.com",
+      "earlyAccessCta": "Get Early Access",
+      "earlyAccessSuccess": "You're on the list! We'll reach out when Premium launches.",
       "free": {
         "name": "FREE",
         "description": "For the basic event experience",

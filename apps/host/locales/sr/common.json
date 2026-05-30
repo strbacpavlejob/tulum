@@ -266,6 +266,13 @@
       "trialBadge": "7 dana besplatno",
       "getStarted": "Započni",
       "startTrial": "Počni besplatni period",
+      "comingSoon": "Uskoro",
+      "notifyMe": "Obavesti me",
+      "earlyAccessTitle": "Premium uskoro stiže",
+      "earlyAccessSubtitle": "Prijavi se i dobij prvi mesec Premiuma besplatno kada bude dostupan.",
+      "earlyAccessEmailPlaceholder": "tvoj@email.com",
+      "earlyAccessCta": "Dobij rani pristup",
+      "earlyAccessSuccess": "Na listi si! Javićemo ti kada Premium bude dostupan.",
       "free": {
         "name": "BESPLATNO",
         "description": "Za odlično iskustvo na događajima",

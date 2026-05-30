@@ -266,6 +266,13 @@
       "trialBadge": "7 дней бесплатно",
       "getStarted": "Начать",
       "startTrial": "Начать бесплатный период",
+      "comingSoon": "Скоро",
+      "notifyMe": "Уведомить меня",
+      "earlyAccessTitle": "Премиум скоро будет",
+      "earlyAccessSubtitle": "Зарегистрируйтесь сейчас и получите первый месяц Премиума бесплатно.",
+      "earlyAccessEmailPlaceholder": "your@email.com",
+      "earlyAccessCta": "Получить ранний доступ",
+      "earlyAccessSuccess": "Вы в списке! Мы свяжемся когда Премиум запустится.",
       "free": {
         "name": "БЕСПЛАТНО",
         "description": "Для базового знакомства с мероприятиями",
