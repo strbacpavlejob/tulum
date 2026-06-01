@@ -266,6 +266,79 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     return stats;
   }
 
+  async refreshVenueLogosByScraper(scraper: string): Promise<{
+    total: number;
+    updated: number;
+    skipped: number;
+    errors: { venueId: string; name: string; reason: string }[];
+  }> {
+    const venues =
+      await this.supabaseService.fetchVenuesWithInstagramByScraper(scraper);
+
+    const stats = {
+      total: venues.length,
+      updated: 0,
+      skipped: 0,
+      errors: [] as { venueId: string; name: string; reason: string }[],
+    };
+
+    for (const venue of venues) {
+      this.logger.log(
+        `Refreshing logo for "${venue.name}" (@${venue.instagram_handle})…`,
+      );
+
+      try {
+        const { profile } = await this.scrapeVenueFresh(venue.instagram_handle);
+
+        if (!profile.profilePictureUrl) {
+          this.logger.warn(
+            `"${venue.name}": no profile picture found — skipping`,
+          );
+          stats.skipped++;
+          continue;
+        }
+
+        const imageBuffer = await this.downloadImageViaPage(
+          profile.profilePictureUrl,
+        );
+        if (!imageBuffer || imageBuffer.length === 0) {
+          throw new Error('Downloaded image buffer is empty');
+        }
+
+        // Delete old R2 image if it was previously uploaded
+        if (venue.picture_url) {
+          const oldKey = this.r2Service.extractKeyFromUrl(venue.picture_url);
+          if (oldKey)
+            await this.r2Service.deleteObject(oldKey).catch(() => null);
+        }
+
+        const key = `venue-images/scraped/${venue.id}/instagram-profile.webp`;
+        const newUrl = await this.r2Service.uploadAndProcessImage(
+          imageBuffer,
+          key,
+          200,
+          200,
+        );
+
+        await this.supabaseService
+          .getClient()
+          .from('venues')
+          .update({ picture_url: newUrl })
+          .eq('id', venue.id);
+
+        this.logger.log(`"${venue.name}": logo updated`);
+        stats.updated++;
+      } catch (err) {
+        const reason = (err as Error).message;
+        this.logger.error(`"${venue.name}" (${venue.id}): failed — ${reason}`);
+        stats.errors.push({ venueId: venue.id, name: venue.name, reason });
+        stats.skipped++;
+      }
+    }
+
+    return stats;
+  }
+
   async scrapeAllVenues(): Promise<{
     scraped: number;
     saved: { venues: number; events: number };

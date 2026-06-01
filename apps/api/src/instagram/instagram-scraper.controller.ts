@@ -29,4 +29,14 @@ export class InstagramScraperController {
     this.logger.log('Starting Instagram contact sync for all listed venues...');
     return this.instagramVenueScraperService.syncInstagramContacts();
   }
+
+  @Post('refresh-logos/:scraper')
+  async refreshVenueLogos(@Param('scraper') scraper: string) {
+    this.logger.log(
+      `Starting Instagram logo refresh for all venues scraped by "${scraper}"...`,
+    );
+    return this.instagramVenueScraperService.refreshVenueLogosByScraper(
+      scraper,
+    );
+  }
 }

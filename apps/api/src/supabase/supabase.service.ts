@@ -317,6 +317,46 @@ export class SupabaseService implements OnModuleInit {
     }));
   }
 
+  async fetchVenuesWithInstagramByScraper(scraper: string): Promise<
+    {
+      id: string;
+      name: string;
+      picture_url: string | null;
+      instagram_handle: string;
+    }[]
+  > {
+    const { data, error } = await this.supabase
+      .from(VENUES_TABLE)
+      .select(
+        'id, name, picture_url, venue_contacts!venues_contact_id_fkey(instagram_handle)',
+      )
+      .eq('scraper', scraper);
+
+    if (error) {
+      this.logger.error(
+        `Error fetching venues for scraper "${scraper}":`,
+        error.message,
+      );
+      throw new Error(`Failed to fetch venues: ${error.message}`);
+    }
+
+    return (
+      (data as {
+        id: string;
+        name: string;
+        picture_url: string | null;
+        venue_contacts: { instagram_handle?: string } | null;
+      }[]) ?? []
+    )
+      .filter((v) => !!v.venue_contacts?.instagram_handle)
+      .map((v) => ({
+        id: v.id,
+        name: v.name,
+        picture_url: v.picture_url,
+        instagram_handle: v.venue_contacts!.instagram_handle!,
+      }));
+  }
+
   async createVenue(venue: Omit<Venue, 'id'>): Promise<string> {
     const row = this.mapVenueToDbRow(venue);
 
