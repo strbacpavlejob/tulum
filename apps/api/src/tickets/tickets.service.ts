@@ -25,7 +25,7 @@ export class TicketsService {
     let query = this.db
       .from(TICKETS_TABLE)
       .select(
-        'id, event_id, guest_id, created_at, events(id, title, description, start_date_time, tags, picture_url, venues(name, picture_url, address, latitude, longitude))',
+        'id, event_id, guest_id, created_at, events(id, title, description, start_date_time, end_date_time, tags, picture_url, venues(name, picture_url, address, latitude, longitude))',
       );
     if (guestId) query = query.eq('guest_id', guestId);
     if (eventId) query = query.eq('event_id', eventId);
@@ -37,6 +37,7 @@ export class TicketsService {
       title: t.events?.title ?? '',
       description: t.events?.description ?? '',
       date: t.events?.start_date_time ?? t.created_at,
+      end_date_time: t.events?.end_date_time ?? null,
       tags: t.events?.tags ?? [],
       image: t.events?.picture_url ?? t.events?.venues?.picture_url ?? null,
       venue_name: t.events?.venues?.name ?? '',

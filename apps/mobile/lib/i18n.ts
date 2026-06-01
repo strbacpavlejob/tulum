@@ -68,6 +68,15 @@ const resources = {
       // Matches
       noMatchesTitle: "No swipes yet!",
       noMatchesSubtitle: "Check back after attending an event.",
+      matchesLocked: "Matching is locked",
+      matchesLockedSubtitle:
+        "Swiping is only available while a live event is in progress and you have a ticket.",
+      matchesAlmostThere: "Almost there! 📍",
+      matchesArriveAtVenue:
+        "Arrive at the event venue to unlock matching. Once you're within range, swiping will be enabled automatically.",
+      matchesCheckLocation: "Check my location",
+      matchesYourLocation: "Your location",
+      matchesEventVenue: "Event venue",
 
       // Inbox
       newMatches: "New Matches",
@@ -328,6 +337,15 @@ const resources = {
       // Matches
       noMatchesTitle: "Nema mečeva!",
       noMatchesSubtitle: "Proveri ponovo posle prisustvovanja događaju.",
+      matchesLocked: "Mečevi su zaključani",
+      matchesLockedSubtitle:
+        "Prevlačenje je dostupno samo dok je event aktivan i imaš ulaznicu.",
+      matchesAlmostThere: "Skoro si tu! 📍",
+      matchesArriveAtVenue:
+        "Stigi do mesta događaja da otključaš mečeve. Čim budeš u blizini, prevlačenje će biti automatski omogućeno.",
+      matchesCheckLocation: "Proveri moju lokaciju",
+      matchesYourLocation: "Tvoja lokacija",
+      matchesEventVenue: "Mesto događaja",
 
       // Inbox
       newMatches: "Novi mečevi",
@@ -588,6 +606,15 @@ const resources = {
       // Matches
       noMatchesTitle: "Нет свайпов!",
       noMatchesSubtitle: "Вернитесь после посещения мероприятия.",
+      matchesLocked: "Знакомства заблокированы",
+      matchesLockedSubtitle:
+        "Свайпы доступны только во время активного мероприятия при наличии билета.",
+      matchesAlmostThere: "Почти на месте! 📍",
+      matchesArriveAtVenue:
+        "Приходите на место проведения мероприятия, чтобы разблокировать знакомства. Как только вы окажетесь в радиусе, свайпы включатся автоматически.",
+      matchesCheckLocation: "Проверить мою геолокацию",
+      matchesYourLocation: "Ваше местоположение",
+      matchesEventVenue: "Место проведения",
 
       // Inbox
       newMatches: "Новые совпадения",

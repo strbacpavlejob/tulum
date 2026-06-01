@@ -613,6 +613,7 @@ export async function fetchMyTickets(token: string, userId: string) {
   const data = await response.json();
   return data.map((t: any) => ({
     ...t,
+    end_date_time: t.end_date_time ?? null,
     location: {
       latitude: t.latitude,
       longitude: t.longitude,
