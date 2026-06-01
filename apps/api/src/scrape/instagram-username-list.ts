@@ -226,4 +226,5 @@ export const instagramUsernameList: string[] = [
   'null.sociallab',
   'april_bar_',
   'kpradionica',
+  'dc.loza',
 ];

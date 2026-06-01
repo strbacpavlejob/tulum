@@ -277,12 +277,23 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                       sideOffset={4}
                       className="w-56"
                       align="start"
+                      style={{
+                        backgroundColor: theme.backgroundStrong,
+                        width: "100%",
+                      }}
                     >
                       <DropdownMenuGroup>
                         {VENUE_TYPE_OPTIONS.map((opt) => (
                           <DropdownMenuItem
                             key={opt.value}
                             onPress={() => patch("venueType", opt.value)}
+                            style={{
+                              backgroundColor:
+                                filters.venueType === opt.value
+                                  ? theme.accentBackground
+                                  : "transparent",
+                              width: "100%",
+                            }}
                           >
                             <Text
                               style={{
@@ -290,13 +301,11 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                                   filters.venueType === opt.value
                                     ? "700"
                                     : "400",
+                                color: theme.gray11,
                               }}
                             >
                               {opt.label}
                             </Text>
-                            {filters.venueType === opt.value && (
-                              <Text style={{ color: theme.color }}>✓</Text>
-                            )}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuGroup>
