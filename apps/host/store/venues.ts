@@ -14,6 +14,7 @@ export interface Venue {
   description?: string;
   picture?: string;
   picture_urls?: string[];
+  requires_reservation?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -31,6 +32,7 @@ function transformVenue(v: DBVenue): Venue {
     description: v.description,
     picture: v.picture_url,
     picture_urls: v.picture_urls || (v.picture_url ? [v.picture_url] : []),
+    requires_reservation: v.requires_reservation,
     created_at: v.created_at,
     updated_at: v.updated_at,
   };

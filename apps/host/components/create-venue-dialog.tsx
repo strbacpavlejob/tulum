@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
 import { ImageUpload } from "@/components/common/image-upload";
 import { LocationPicker } from "@/components/common/location-picker";
@@ -105,6 +106,7 @@ interface Venue {
   description?: string;
   picture_url?: string;
   picture_urls?: string[];
+  requires_reservation?: boolean;
 }
 
 interface CreateVenueDialogProps {
@@ -124,6 +126,18 @@ export function CreateVenueDialog({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [instagramHandle, setInstagramHandle] = useState<string | null>(null);
   const [isRefreshingInstagram, setIsRefreshingInstagram] = useState(false);
+  const [requiresReservation, setRequiresReservation] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    phone_number: "",
+    is_phone: false,
+    is_viber: false,
+    is_sms: false,
+    is_whatsapp: false,
+    instagram_handle: "",
+    is_instagram: false,
+  });
+  const [hasExistingContact, setHasExistingContact] = useState(false);
+  const [isDeletingContact, setIsDeletingContact] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     20.4489, 44.8125,
   ]);
@@ -188,7 +202,7 @@ export function CreateVenueDialog({
     return () => observer.disconnect();
   }, []);
 
-  // Fetch venue contact when editing, to check for instagram handle
+  // Fetch venue contact when editing
   useEffect(() => {
     if (!isOpen || !venue?.id) return;
 
@@ -197,18 +211,52 @@ export function CreateVenueDialog({
       .getVenueContact(venue.id)
       .then((contact: unknown) => {
         if (cancelled) return;
-        setInstagramHandle(
-          (contact as { instagram_handle?: string } | null)?.instagram_handle ??
-            null,
-        );
+        const c = contact as {
+          instagram_handle?: string | null;
+          phone_number?: string;
+          is_phone?: boolean;
+          is_viber?: boolean;
+          is_sms?: boolean;
+          is_whatsapp?: boolean;
+          is_instagram?: boolean;
+        } | null;
+        if (c) {
+          setHasExistingContact(true);
+          setInstagramHandle(c.instagram_handle ?? null);
+          setContactForm({
+            phone_number: c.phone_number ?? "",
+            is_phone: c.is_phone ?? false,
+            is_viber: c.is_viber ?? false,
+            is_sms: c.is_sms ?? false,
+            is_whatsapp: c.is_whatsapp ?? false,
+            instagram_handle: c.instagram_handle ?? "",
+            is_instagram: c.is_instagram ?? !!c.instagram_handle,
+          });
+        } else {
+          setHasExistingContact(false);
+          setInstagramHandle(null);
+          setContactForm({
+            phone_number: "",
+            is_phone: false,
+            is_viber: false,
+            is_sms: false,
+            is_whatsapp: false,
+            instagram_handle: "",
+            is_instagram: false,
+          });
+        }
       })
       .catch(() => {
-        if (!cancelled) setInstagramHandle(null);
+        if (!cancelled) {
+          setInstagramHandle(null);
+          setHasExistingContact(false);
+        }
       });
 
     return () => {
       cancelled = true;
       setInstagramHandle(null);
+      setHasExistingContact(false);
     };
   }, [isOpen, venue?.id]);
 
@@ -263,9 +311,24 @@ export function CreateVenueDialog({
 
         setPicturePreview(pictureUrl);
         setMapPosition([lng, lat]);
+        setRequiresReservation(
+          (venue as { requires_reservation?: boolean }).requires_reservation ??
+            false,
+        );
       } else {
         setPicturePreview(null);
         setMapPosition([20.4489, 44.8125]);
+        setRequiresReservation(false);
+        setContactForm({
+          phone_number: "",
+          is_phone: false,
+          is_viber: false,
+          is_sms: false,
+          is_whatsapp: false,
+          instagram_handle: "",
+          is_instagram: false,
+        });
+        setHasExistingContact(false);
       }
     });
   }, [isOpen, venue]);
@@ -327,9 +390,25 @@ export function CreateVenueDialog({
           address: data.address,
           capacity: parseInt(data.capacity),
           picture_url: data.picture_url,
+          requires_reservation: requiresReservation,
         };
 
         await api.updateVenue(venue.id, updates, processedFile);
+
+        // Save contact if phone number provided
+        if (contactForm.phone_number.trim()) {
+          await api.upsertVenueContact(venue.id, {
+            phone_number: contactForm.phone_number.trim(),
+            is_phone: contactForm.is_phone,
+            is_viber: contactForm.is_viber,
+            is_sms: contactForm.is_sms,
+            is_whatsapp: contactForm.is_whatsapp,
+            instagram_handle: contactForm.is_instagram
+              ? contactForm.instagram_handle || null
+              : null,
+            is_instagram: contactForm.is_instagram,
+          });
+        }
 
         toast.success(
           t("dashboard.venuesPage.toast.updated") ||
@@ -346,6 +425,7 @@ export function CreateVenueDialog({
           longitude: parseFloat(data.longitude),
           address: data.address,
           capacity: parseInt(data.capacity),
+          requires_reservation: requiresReservation,
         };
 
         await api.createVenue(newVenueData, processedFile);
@@ -418,6 +498,30 @@ export function CreateVenueDialog({
 
   const handleCancel = () => {
     onClose();
+  };
+
+  const handleDeleteContact = async () => {
+    if (!venue?.id) return;
+    setIsDeletingContact(true);
+    try {
+      await api.deleteVenueContact(venue.id);
+      setHasExistingContact(false);
+      setInstagramHandle(null);
+      setContactForm({
+        phone_number: "",
+        is_phone: false,
+        is_viber: false,
+        is_sms: false,
+        is_whatsapp: false,
+        instagram_handle: "",
+        is_instagram: false,
+      });
+      toast.success("Contact removed");
+    } catch {
+      toast.error("Failed to remove contact");
+    } finally {
+      setIsDeletingContact(false);
+    }
   };
 
   return (
@@ -585,6 +689,127 @@ export function CreateVenueDialog({
                 </p>
               )}
             </div>
+
+            {/* Requires Reservation */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="grid gap-0.5">
+                <Label htmlFor="requires_reservation">
+                  {t("venueDialog.fields.requiresReservation") ||
+                    "Requires Reservation"}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("venueDialog.fields.requiresReservationDescription") ||
+                    "Guests must make a reservation to attend"}
+                </p>
+              </div>
+              <Switch
+                id="requires_reservation"
+                checked={requiresReservation}
+                onCheckedChange={setRequiresReservation}
+              />
+            </div>
+
+            {/* Contact Information (edit mode only) */}
+            {isEditing && (
+              <div className="grid gap-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">
+                    {t("venueDialog.fields.contact") || "Contact Information"}
+                  </Label>
+                  {hasExistingContact && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteContact}
+                      disabled={isDeletingContact}
+                    >
+                      {isDeletingContact
+                        ? (t("venueDialog.buttons.removingContact") ??
+                          "Removing…")
+                        : (t("venueDialog.buttons.removeContact") ??
+                          "Remove Contact")}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="grid gap-2">
+                  <Label htmlFor="contact_phone">
+                    {t("venueDialog.fields.phoneNumber") || "Phone Number"}
+                  </Label>
+                  <Input
+                    id="contact_phone"
+                    placeholder="+1234567890"
+                    value={contactForm.phone_number}
+                    onChange={(e) =>
+                      setContactForm((prev) => ({
+                        ...prev,
+                        phone_number: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Contact Method Toggles */}
+                <div className="grid grid-cols-2 gap-3">
+                  {(
+                    [
+                      { key: "is_phone", label: "Phone" },
+                      { key: "is_viber", label: "Viber" },
+                      { key: "is_sms", label: "SMS" },
+                      { key: "is_whatsapp", label: "WhatsApp" },
+                    ] as const
+                  ).map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <Switch
+                        id={`contact_${key}`}
+                        size="sm"
+                        checked={contactForm[key]}
+                        onCheckedChange={(v) =>
+                          setContactForm((prev) => ({ ...prev, [key]: v }))
+                        }
+                      />
+                      <Label htmlFor={`contact_${key}`}>{label}</Label>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Instagram */}
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="contact_is_instagram"
+                      size="sm"
+                      checked={contactForm.is_instagram}
+                      onCheckedChange={(v) =>
+                        setContactForm((prev) => ({
+                          ...prev,
+                          is_instagram: v,
+                          instagram_handle: v ? prev.instagram_handle : "",
+                        }))
+                      }
+                    />
+                    <Label htmlFor="contact_is_instagram">Instagram</Label>
+                  </div>
+                  {contactForm.is_instagram && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground text-sm">@</span>
+                      <Input
+                        placeholder="instagram_handle"
+                        value={contactForm.instagram_handle}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            instagram_handle: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="pt-4">

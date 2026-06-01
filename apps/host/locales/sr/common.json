@@ -778,7 +778,11 @@
       "picture": "Slika",
       "pictureDescription": "Otpremi sliku lokala (opciono)",
       "chooseFile": "Izaberi fajl",
-      "noFileChosen": "Nije izabran fajl"
+      "noFileChosen": "Nije izabran fajl",
+      "requiresReservation": "Zahteva rezervaciju",
+      "requiresReservationDescription": "Gosti moraju napraviti rezervaciju za prisustvo",
+      "contact": "Kontakt informacije",
+      "phoneNumber": "Broj telefona"
     },
     "placeholders": {
       "name": "Unesi naziv lokala",
@@ -812,7 +816,15 @@
     "buttons": {
       "cancel": "Otkaži",
       "create": "Kreiraj lokal",
-      "update": "Ažuriraj lokal"
+      "update": "Ažuriraj lokal",
+      "refreshInstagram": "Osveži sliku od @{{handle}}",
+      "refreshingInstagram": "Osvežava se…",
+      "removeContact": "Ukloni kontakt",
+      "removingContact": "Uklanjanje…"
+    },
+    "toast": {
+      "instagramRefreshed": "Slika ažurirana sa Instagrama",
+      "instagramRefreshError": "Nije uspelo osvežavanje slike sa Instagrama"
     }
   },
   "eventDialog": {

@@ -124,6 +124,34 @@ export async function getVenueContact(venueId: string): Promise<unknown> {
   return response.json();
 }
 
+export async function upsertVenueContact(
+  venueId: string,
+  contact: {
+    phone_number: string;
+    is_phone: boolean;
+    is_viber: boolean;
+    is_sms: boolean;
+    is_whatsapp: boolean;
+    instagram_handle: string | null;
+    is_instagram: boolean;
+  },
+): Promise<unknown> {
+  const response = await fetch(`/api/venues/${venueId}/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(contact),
+  });
+  if (!response.ok) throw new Error("Failed to save venue contact");
+  return response.json();
+}
+
+export async function deleteVenueContact(venueId: string): Promise<void> {
+  const response = await fetch(`/api/venues/${venueId}/contact`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error("Failed to delete venue contact");
+}
+
 export async function refreshVenueInstagramPicture(
   venueId: string,
 ): Promise<Venue> {

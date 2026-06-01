@@ -63,6 +63,21 @@ export interface Venue {
   capacity?: number;
   picture_url?: string;
   picture_urls?: string[]; // Legacy field for backward compatibility
+  requires_reservation?: boolean;
+  contact_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VenueContact {
+  id?: string;
+  phone_number: string;
+  is_phone: boolean;
+  is_viber: boolean;
+  is_sms: boolean;
+  is_whatsapp: boolean;
+  instagram_handle?: string | null;
+  is_instagram: boolean;
   created_at?: string;
   updated_at?: string;
 }

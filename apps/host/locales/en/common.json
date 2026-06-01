@@ -778,7 +778,11 @@
       "picture": "Picture",
       "pictureDescription": "Upload a picture of the venue (optional)",
       "chooseFile": "Choose file",
-      "noFileChosen": "No file chosen"
+      "noFileChosen": "No file chosen",
+      "requiresReservation": "Requires Reservation",
+      "requiresReservationDescription": "Guests must make a reservation to attend",
+      "contact": "Contact Information",
+      "phoneNumber": "Phone Number"
     },
     "placeholders": {
       "name": "Enter venue name",
@@ -812,7 +816,15 @@
     "buttons": {
       "cancel": "Cancel",
       "create": "Create Venue",
-      "update": "Update Venue"
+      "update": "Update Venue",
+      "refreshInstagram": "Refresh picture from @{{handle}}",
+      "refreshingInstagram": "Refreshing…",
+      "removeContact": "Remove Contact",
+      "removingContact": "Removing…"
+    },
+    "toast": {
+      "instagramRefreshed": "Picture updated from Instagram",
+      "instagramRefreshError": "Failed to refresh Instagram picture"
     }
   },
   "eventDialog": {

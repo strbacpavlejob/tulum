@@ -163,7 +163,7 @@ export class VenuesService {
     const { data: contact, error: contactError } = await this.db
       .from('venue_contacts')
       .select(
-        'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, instagram_handle',
+        'id, phone_number, is_viber, is_phone, is_sms, is_whatsapp, is_instagram, instagram_handle',
       )
       .eq('id', (venue as Record<string, unknown>).contact_id)
       .single();
@@ -194,6 +194,7 @@ export class VenuesService {
       is_sms: data.is_sms ?? false,
       is_whatsapp: data.is_whatsapp ?? false,
       instagram_handle: data.instagram_handle ?? null,
+      is_instagram: data.is_instagram ?? !!data.instagram_handle,
       updated_at: new Date().toISOString(),
     };
 
