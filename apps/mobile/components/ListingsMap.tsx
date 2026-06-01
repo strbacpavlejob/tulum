@@ -126,6 +126,7 @@ const ListingsMap = memo(() => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const [activeTag, setActiveTag] = useState("All");
   const [mapReady, setMapReady] = useState(false);
+  const prevSelectedIndexRef = useRef<number | null>(0);
 
   const filterTags = useMemo(() => {
     const counts = new Map<string, number>();
@@ -290,11 +291,11 @@ const ListingsMap = memo(() => {
     });
 
     listings?.forEach((item: EventSummary, index: number) => {
-      const isSelected = selectedIndex === index;
-      const markerSize = 64; // matches "md" outer + padding
+      // All markers start unselected; the selection effect updates the active one
+      const markerSize = 64;
 
       const el = renderToDiv(
-        <MapMarkerIcon image={item.image} size="md" isSelected={isSelected} />,
+        <MapMarkerIcon image={item.image} size="md" isSelected={false} />,
         markerSize,
       );
 
@@ -325,7 +326,61 @@ const ListingsMap = memo(() => {
 
     map.addLayer(clusterGroup);
     clusterGroupRef.current = clusterGroup;
-  }, [listings, selectedIndex, theme, setSelectedEventId]);
+
+    // After rebuilding, re-apply the current selection
+    const cur = selectedIndexRef.current;
+    if (cur !== null && listings?.[cur]) {
+      const markerSize = 64;
+      const el = renderToDiv(
+        <MapMarkerIcon
+          image={listings[cur].image}
+          size="md"
+          isSelected={true}
+        />,
+        markerSize,
+      );
+      markersRef.current[cur]?.setIcon(
+        L.divIcon({
+          html: el,
+          className: "",
+          iconSize: [markerSize, markerSize],
+          iconAnchor: [markerSize / 2, markerSize / 2],
+        }),
+      );
+    }
+  }, [listings, theme, mapReady, setSelectedEventId]);
+
+  /* ── Swap only the two affected marker icons on selection change ── */
+  useEffect(() => {
+    const L = (window as any).L;
+    if (!L || !markersRef.current.length) return;
+
+    const updateIcon = (index: number | null, isSelected: boolean) => {
+      if (index === null || !markersRef.current[index] || !listings?.[index])
+        return;
+      const markerSize = 64;
+      const el = renderToDiv(
+        <MapMarkerIcon
+          image={listings[index].image}
+          size="md"
+          isSelected={isSelected}
+        />,
+        markerSize,
+      );
+      markersRef.current[index].setIcon(
+        L.divIcon({
+          html: el,
+          className: "",
+          iconSize: [markerSize, markerSize],
+          iconAnchor: [markerSize / 2, markerSize / 2],
+        }),
+      );
+    };
+
+    updateIcon(prevSelectedIndexRef.current, false);
+    updateIcon(selectedIndex, true);
+    prevSelectedIndexRef.current = selectedIndex;
+  }, [selectedIndex, listings]);
 
   if (events === undefined)
     return (

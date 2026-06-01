@@ -30,7 +30,7 @@ const MapMarkerIcon = ({
   isSelected = false,
 }: MapMarkerProps) => {
   const theme = useAppTheme();
-  const config = sizeConfig[size];
+  const config = sizeConfig[isSelected ? "xl" : size];
 
   // Pulse ring 1
   const pulse1Scale = useSharedValue(1);
