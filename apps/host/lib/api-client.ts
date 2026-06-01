@@ -152,6 +152,30 @@ export async function deleteVenueContact(venueId: string): Promise<void> {
   if (!response.ok) throw new Error("Failed to delete venue contact");
 }
 
+export async function importContactFromInstagram(
+  venueId: string,
+  instagramHandle: string,
+): Promise<{
+  phone_number: string;
+  is_phone: boolean;
+  is_viber: boolean;
+  is_sms: boolean;
+  is_whatsapp: boolean;
+  instagram_handle: string | null;
+  is_instagram: boolean;
+}> {
+  const response = await fetch(
+    `/api/venues/${venueId}/contact/import-from-instagram`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ instagram_handle: instagramHandle }),
+    },
+  );
+  if (!response.ok) throw new Error("Failed to import contact from Instagram");
+  return response.json();
+}
+
 export async function refreshVenueInstagramPicture(
   venueId: string,
 ): Promise<Venue> {

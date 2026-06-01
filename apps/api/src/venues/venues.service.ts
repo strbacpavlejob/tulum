@@ -249,6 +249,29 @@ export class VenuesService {
     await this.db.from('venue_contacts').delete().eq('id', contactId);
   }
 
+  async importContactFromInstagram(
+    venueId: string,
+    userId: string,
+    instagramHandle: string,
+  ) {
+    await this.assertOwnership(venueId, userId);
+
+    const { profile } =
+      await this.instagramScraperService.scrapeVenue(instagramHandle);
+
+    const contactData = {
+      phone_number: profile.phoneNumber ?? '',
+      is_phone: !!profile.phoneNumber,
+      is_viber: false,
+      is_sms: false,
+      is_whatsapp: profile.isWhatsappLinked,
+      is_instagram: true,
+      instagram_handle: profile.username ?? instagramHandle,
+    };
+
+    return this.upsertVenueContact(venueId, userId, contactData);
+  }
+
   async refreshInstagramPicture(venueId: string, userId: string) {
     const venue = await this.assertOwnership(venueId, userId);
 

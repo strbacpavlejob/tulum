@@ -820,11 +820,15 @@
       "refreshInstagram": "Refresh picture from @{{handle}}",
       "refreshingInstagram": "Refreshing…",
       "removeContact": "Remove Contact",
-      "removingContact": "Removing…"
+      "removingContact": "Removing…",
+      "importContact": "Import",
+      "importingContact": "Importing…"
     },
     "toast": {
       "instagramRefreshed": "Picture updated from Instagram",
-      "instagramRefreshError": "Failed to refresh Instagram picture"
+      "instagramRefreshError": "Failed to refresh Instagram picture",
+      "contactImported": "Contact imported from Instagram",
+      "contactImportError": "Failed to import contact from Instagram"
     }
   },
   "eventDialog": {

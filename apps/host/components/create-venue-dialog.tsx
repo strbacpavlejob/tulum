@@ -33,7 +33,7 @@ import { validateVenueImage, processVenueImage } from "@/lib/image-utils";
 import { getNewDarkMapStyle } from "@/public/map-styles/dark";
 import { getNewLightMapStyle } from "@/public/map-styles/light";
 import type MapLibreGL from "maplibre-gl";
-import { Instagram, RefreshCw } from "lucide-react";
+import { Instagram, RefreshCw, Download } from "lucide-react";
 import * as api from "@/lib/api-client";
 import type { VenueType } from "@/lib/types/database";
 import "../i18n";
@@ -138,6 +138,7 @@ export function CreateVenueDialog({
   });
   const [hasExistingContact, setHasExistingContact] = useState(false);
   const [isDeletingContact, setIsDeletingContact] = useState(false);
+  const [isImportingContact, setIsImportingContact] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
     20.4489, 44.8125,
   ]);
@@ -496,6 +497,43 @@ export function CreateVenueDialog({
     }
   };
 
+  const handleImportContactFromInstagram = async () => {
+    if (!venue?.id || !contactForm.instagram_handle.trim()) return;
+    setIsImportingContact(true);
+    try {
+      const contact = await api.importContactFromInstagram(
+        venue.id,
+        contactForm.instagram_handle.trim(),
+      );
+      setContactForm({
+        phone_number: contact.phone_number ?? "",
+        is_phone: contact.is_phone ?? false,
+        is_viber: contact.is_viber ?? false,
+        is_sms: contact.is_sms ?? false,
+        is_whatsapp: contact.is_whatsapp ?? false,
+        instagram_handle:
+          contact.instagram_handle ?? contactForm.instagram_handle,
+        is_instagram: contact.is_instagram ?? true,
+      });
+      setHasExistingContact(true);
+      setInstagramHandle(
+        contact.instagram_handle ?? contactForm.instagram_handle,
+      );
+      toast.success(
+        t("venueDialog.toast.contactImported") ??
+          "Contact imported from Instagram",
+      );
+    } catch (err) {
+      toast.error(
+        (err as Error).message ??
+          t("venueDialog.toast.contactImportError") ??
+          "Failed to import contact from Instagram",
+      );
+    } finally {
+      setIsImportingContact(false);
+    }
+  };
+
   const handleCancel = () => {
     onClose();
   };
@@ -805,6 +843,28 @@ export function CreateVenueDialog({
                           }))
                         }
                       />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="shrink-0"
+                        disabled={
+                          isImportingContact ||
+                          !contactForm.instagram_handle.trim()
+                        }
+                        onClick={handleImportContactFromInstagram}
+                      >
+                        {isImportingContact ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        {isImportingContact
+                          ? (t("venueDialog.buttons.importingContact") ??
+                            "Importing…")
+                          : (t("venueDialog.buttons.importContact") ??
+                            "Import")}
+                      </Button>
                     </div>
                   )}
                 </div>

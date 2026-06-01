@@ -113,6 +113,19 @@ export class VenuesController {
     return { success: true };
   }
 
+  @Post(':id/contact/import-from-instagram')
+  async importContactFromInstagram(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UserId() userId: string,
+    @Body('instagram_handle') instagramHandle: string,
+  ) {
+    return this.venuesService.importContactFromInstagram(
+      id,
+      userId,
+      instagramHandle,
+    );
+  }
+
   // ─── Instagram Picture Refresh ───────────────────────────────────────────────
 
   @Post(':id/refresh-instagram-picture')
