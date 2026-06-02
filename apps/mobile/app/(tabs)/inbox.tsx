@@ -1,16 +1,19 @@
 import ChatModal from "@/components/ChatModal";
+import { MatchLocationMap } from "@/components/MatchLocationMap";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTranslation } from "react-i18next";
 import {
   fetchMyMatches,
+  fetchMyTickets,
   fetchOrCreateChat,
   type ChatMessage,
   type MatchListItem,
 } from "@/lib/api";
 import type { Match, Message, NewMatch } from "@/types/chat";
 import { useAuth } from "@clerk/expo";
-import React, { useCallback, useEffect, useState } from "react";
+import * as Location from "expo-location";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import {
   ActivityIndicator,
@@ -18,9 +21,11 @@ import {
   FlatList,
   Pressable,
   ScrollView,
+  TouchableOpacity,
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +36,29 @@ const MATCH_RING_SIZE = 66;
 const STROKE_WIDTH = 3;
 const TOTAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
+/** Metres within which the user is considered "at the venue" for chat access */
+const PROXIMITY_RADIUS_M = 300;
+
+/** How often (ms) to re-check position on the location verification screen */
+const LOCATION_POLL_INTERVAL_MS = 5_000;
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+function haversineMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function ringColor(expiresAt: Date): string {
   const ms = expiresAt.getTime() - Date.now();
@@ -76,6 +103,9 @@ function mapToMatch(item: MatchListItem): Match {
   return {
     id: String(item.id),
     chatId: item.chat_id ?? undefined,
+    eventId: item.event?.id ?? undefined,
+    venueLat: item.event?.venue_lat ?? null,
+    venueLng: item.event?.venue_lng ?? null,
     name: firstName,
     age,
     photo,
@@ -172,6 +202,159 @@ function NewMatchBubble({
   );
 }
 
+// ── LocationGateScreen ─────────────────────────────────────────────────────────
+
+function LocationGateScreen({
+  venueLat,
+  venueLng,
+  userLat,
+  userLng,
+  venueName,
+  onCheckLocation,
+  onBack,
+}: {
+  venueLat: number;
+  venueLng: number;
+  userLat: number;
+  userLng: number;
+  venueName: string;
+  onCheckLocation: () => void;
+  onBack: () => void;
+}) {
+  const theme = useAppTheme();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Full-screen map */}
+      <MatchLocationMap
+        venueLat={venueLat}
+        venueLng={venueLng}
+        userLat={userLat}
+        userLng={userLng}
+      />
+
+      {/* Overlay card */}
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + 16,
+          left: 16,
+          right: 16,
+          backgroundColor: theme.backgroundStrong,
+          borderRadius: 20,
+          padding: 20,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 8,
+          gap: 8,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: "700",
+            color: theme.color,
+            lineHeight: 26,
+          }}
+        >
+          {t("chatLocationRequired")}
+        </Text>
+        <Text style={{ fontSize: 13, color: theme.gray10, lineHeight: 20 }}>
+          {t("chatLocationRequiredSubtitle")}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+          <TouchableOpacity
+            onPress={onCheckLocation}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 99,
+              backgroundColor: theme.color,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: theme.background,
+              }}
+            >
+              {t("matchesCheckLocation")}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onBack}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 99,
+              backgroundColor: theme.gray3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: theme.gray10,
+              }}
+            >
+              {t("back")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Legend */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: insets.bottom + 24,
+          left: 16,
+          right: 16,
+          flexDirection: "row",
+          gap: 16,
+          backgroundColor: theme.backgroundStrong,
+          borderRadius: 14,
+          padding: 14,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: "#3b82f6",
+              borderWidth: 2,
+              borderColor: "white",
+            }}
+          />
+          <Text style={{ fontSize: 12, color: theme.gray10 }}>
+            {t("matchesYourLocation")}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: theme.color,
+            }}
+          />
+          <Text style={{ fontSize: 12, color: theme.gray10 }}>
+            {venueName || t("matchesEventVenue")}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ── Main Screen ────────────────────────────────────────────────────────────────
 
 export default function InboxScreen() {
@@ -188,6 +371,25 @@ export default function InboxScreen() {
     Message[]
   >([]);
   const [, setCurrentTime] = useState(new Date());
+
+  // ── Location gate state ────────────────────────────────────────────────────
+  const [locationPendingMatch, setLocationPendingMatch] =
+    useState<Match | null>(null);
+  const [locationVenueCoords, setLocationVenueCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [userCoords, setUserCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "required">(
+    "idle",
+  );
+  const locationPendingMatchRef = useRef<Match | null>(null);
+  const locationVenueCoordsRef = useRef<{ lat: number; lng: number } | null>(
+    null,
+  );
 
   const loadMatches = useCallback(async () => {
     if (!userId) return;
@@ -258,6 +460,126 @@ export default function InboxScreen() {
     }
   };
 
+  // ── GPS proximity check for chat access ────────────────────────────────────
+  const checkChatLocation = useCallback(
+    async (match: Match) => {
+      const venueLat = match.venueLat;
+      const venueLng = match.venueLng;
+
+      // No coordinates → skip location check
+      if (venueLat == null || venueLng == null) {
+        await openMatch(match);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        if (!token) {
+          await openMatch(match);
+          return;
+        }
+
+        // Check if the event is currently live via tickets
+        const tickets = await fetchMyTickets(token, userId!);
+        const now = Date.now();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const liveTicket = tickets.find((tk: any) => {
+          const start = tk.date ? new Date(tk.date).getTime() : null;
+          const end = tk.end_date_time
+            ? new Date(tk.end_date_time).getTime()
+            : null;
+          return (
+            String(tk.event_id) === String(match.eventId) &&
+            start !== null &&
+            end !== null &&
+            now >= start &&
+            now <= end
+          );
+        });
+
+        if (!liveTicket) {
+          // Event not currently live — allow chat without location check
+          await openMatch(match);
+          return;
+        }
+
+        // Event is live — verify GPS proximity
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          // No permission — block with location map
+          setLocationPendingMatch(match);
+          locationPendingMatchRef.current = match;
+          setLocationVenueCoords({ lat: venueLat, lng: venueLng });
+          locationVenueCoordsRef.current = { lat: venueLat, lng: venueLng };
+          setLocationStatus("required");
+          return;
+        }
+
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const { latitude, longitude } = pos.coords;
+        setUserCoords({ lat: latitude, lng: longitude });
+
+        const dist = haversineMeters(latitude, longitude, venueLat, venueLng);
+        if (dist <= PROXIMITY_RADIUS_M) {
+          // Close enough — open chat
+          setLocationStatus("idle");
+          setLocationPendingMatch(null);
+          locationPendingMatchRef.current = null;
+          await openMatch(match);
+        } else {
+          // Too far — show location map
+          setLocationPendingMatch(match);
+          locationPendingMatchRef.current = match;
+          setLocationVenueCoords({ lat: venueLat, lng: venueLng });
+          locationVenueCoordsRef.current = { lat: venueLat, lng: venueLng };
+          setLocationStatus("required");
+        }
+      } catch {
+        // Fallback: allow chat on any error
+        await openMatch(match);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId],
+  );
+
+  // Re-check location automatically while on location_required screen
+  useEffect(() => {
+    if (locationStatus !== "required") return;
+    const id = setInterval(async () => {
+      const pending = locationPendingMatchRef.current;
+      const venueCoords = locationVenueCoordsRef.current;
+      if (!pending || !venueCoords) return;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const { latitude, longitude } = pos.coords;
+        setUserCoords({ lat: latitude, lng: longitude });
+        const dist = haversineMeters(
+          latitude,
+          longitude,
+          venueCoords.lat,
+          venueCoords.lng,
+        );
+        if (dist <= PROXIMITY_RADIUS_M) {
+          setLocationStatus("idle");
+          setLocationPendingMatch(null);
+          locationPendingMatchRef.current = null;
+          await openMatch(pending);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, LOCATION_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationStatus]);
+
   const openNewMatch = (nm: NewMatch) => {
     const asMatch: Match = {
       id: nm.id,
@@ -272,7 +594,7 @@ export default function InboxScreen() {
     };
     setNewMatches((prev) => prev.filter((m) => m.id !== nm.id));
     setMatches((prev) => [asMatch, ...prev]);
-    openMatch(asMatch);
+    checkChatLocation(asMatch);
   };
 
   if (loading || openingChat) {
@@ -300,7 +622,7 @@ export default function InboxScreen() {
             Alert.alert(t("chatExpiredTitle"), t("chatExpiredDescription"));
             return;
           }
-          openMatch(item);
+          checkChatLocation(item);
         }}
       >
         <View
@@ -373,6 +695,29 @@ export default function InboxScreen() {
         onBack={() => {
           setSelectedMatch(null);
           setSelectedInitialMessages([]);
+        }}
+      />
+    );
+  }
+
+  // ── Location gate — shown when user tries to open a chat but is not at the venue ──
+  if (
+    locationStatus === "required" &&
+    locationPendingMatch &&
+    locationVenueCoords
+  ) {
+    return (
+      <LocationGateScreen
+        venueLat={locationVenueCoords.lat}
+        venueLng={locationVenueCoords.lng}
+        userLat={userCoords?.lat ?? locationVenueCoords.lat + 0.003}
+        userLng={userCoords?.lng ?? locationVenueCoords.lng + 0.003}
+        venueName={locationPendingMatch.venue}
+        onCheckLocation={() => checkChatLocation(locationPendingMatch)}
+        onBack={() => {
+          setLocationStatus("idle");
+          setLocationPendingMatch(null);
+          locationPendingMatchRef.current = null;
         }}
       />
     );

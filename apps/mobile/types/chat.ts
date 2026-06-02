@@ -10,6 +10,9 @@ export interface Message {
 export interface Match {
   id: string;
   chatId?: string;
+  eventId?: string;
+  venueLat?: number | null;
+  venueLng?: number | null;
   name: string;
   age: number;
   photo: string;

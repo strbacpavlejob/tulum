@@ -57,7 +57,7 @@ export class MatchesService {
         event:events!matches_event_id_fkey(
           id,
           title,
-          venue:venues!events_venue_id_fkey(name)
+          venue:venues!events_venue_id_fkey(name, latitude, longitude)
         ),
         chats!chats_match_id_fkey(
           id,
@@ -115,6 +115,10 @@ export class MatchesService {
               id: match.event.id as string,
               title: match.event.title as string,
               venue_name: (match.event.venue?.name ?? null) as string | null,
+              venue_lat: (match.event.venue?.latitude ?? null) as number | null,
+              venue_lng: (match.event.venue?.longitude ?? null) as
+                | number
+                | null,
             }
           : null,
       };

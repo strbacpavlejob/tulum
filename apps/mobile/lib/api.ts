@@ -500,6 +500,8 @@ export interface MatchListItem {
     id: string;
     title: string;
     venue_name: string | null;
+    venue_lat: number | null;
+    venue_lng: number | null;
   } | null;
 }
 
