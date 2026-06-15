@@ -10,16 +10,26 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const allowedOrigins = [
-    process.env.HOST_URL ?? 'http://localhost:3000',
-    'http://localhost:3001',
-    ...(process.env.MOBILE_URL ? [process.env.MOBILE_URL] : []),
-  ];
+  const normalizeOrigin = (value: string) => value.replace(/\/$/, '');
+
+  const allowedOrigins = new Set(
+    [
+      process.env.HOST_URL,
+      process.env.MOBILE_URL,
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://tulum-mobile.vercel.app',
+      'https://tulum-nu.vercel.app',
+    ]
+      .filter((origin): origin is string => Boolean(origin))
+      .map(normalizeOrigin),
+  );
 
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (allowedOrigins.has(normalizeOrigin(origin)))
+        return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" not allowed`));
     },
     credentials: true,
