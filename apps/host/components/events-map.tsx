@@ -34,7 +34,7 @@ export function EventsMap({ events: eventsOverride }: EventsMapProps = {}) {
   const eventsFromStore = useMemo(() => {
     if (eventsOverride) return null;
     return storeEvents
-      .map((event) => {
+      .map((event): EventWithLocation | null => {
         const venue = storeVenues.find((v) => v.id === event.venue_id);
         if (!venue) return null;
         return {
