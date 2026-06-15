@@ -14,8 +14,11 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.33.4",
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "2.9.9"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
