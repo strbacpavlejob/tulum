@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "node dist/main"
+startCommand = "node apps/api/dist/main.js"
