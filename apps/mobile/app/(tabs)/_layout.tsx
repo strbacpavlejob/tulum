@@ -69,7 +69,7 @@ export default function TabLayout() {
   }, [userId]);
 
   if (!isLoaded) return null;
-  if (!isSignedIn) return <Redirect href="/(auth)/login" />;
+  if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
   return (
     <Tabs
       screenOptions={{
