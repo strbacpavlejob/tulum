@@ -3,8 +3,14 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useClerk } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const Captcha = () => {
+  if (Platform.OS !== "web") return null;
+
+  return <div id="clerk-captcha" style={{ marginTop: 12 }} />;
+};
 
 export default function SsoCallbackScreen() {
   const theme = useAppTheme();
@@ -15,27 +21,27 @@ export default function SsoCallbackScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    const completeRedirect = async () => {
-      try {
-        await clerk.handleRedirectCallback({
-          signInUrl: "/sign-in",
-          signUpUrl: "/sign-up",
-          signInFallbackRedirectUrl: "/(auth)/onboarding",
-          signUpFallbackRedirectUrl: "/(auth)/onboarding",
-        });
-        if (!cancelled) {
-          router.replace("/(auth)/onboarding");
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to complete sign in.",
-          );
-        }
-      }
-    };
+    // const completeRedirect = async () => {
+    //   try {
+    //     await clerk.handleRedirectCallback({
+    //       signInUrl: "/sign-in",
+    //       signUpUrl: "/sign-up",
+    //       signInFallbackRedirectUrl: "/(auth)/onboarding",
+    //       signUpFallbackRedirectUrl: "/(auth)/onboarding",
+    //     });
+    //     if (!cancelled) {
+    //       router.replace("/(auth)/onboarding");
+    //     }
+    //   } catch (err) {
+    //     if (!cancelled) {
+    //       setError(
+    //         err instanceof Error ? err.message : "Failed to complete sign in.",
+    //       );
+    //     }
+    //   }
+    // };
 
-    void completeRedirect();
+    // void completeRedirect();
 
     return () => {
       cancelled = true;
@@ -47,6 +53,7 @@ export default function SsoCallbackScreen() {
       edges={["top", "bottom"]}
       style={{ flex: 1, backgroundColor: theme.background }}
     >
+      <Captcha />
       <View className="flex-1 items-center justify-center px-6">
         <ActivityIndicator color={theme.primary} />
         <Text

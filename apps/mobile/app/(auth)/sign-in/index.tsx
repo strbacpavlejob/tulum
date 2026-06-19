@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import * as WebBrowser from "expo-web-browser";
-import { Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useClerk, useSSO } from "@clerk/expo";
@@ -18,6 +18,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function SignInScreen() {
   const theme = useAppTheme();
   const router = useRouter();
+
   const [identifier, setIdentifier] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [isOtpStep, setIsOtpStep] = useState(false);
@@ -27,31 +28,94 @@ export default function SignInScreen() {
   const clerk = useClerk();
   const { startSSOFlow } = useSSO();
 
-  const handleAppleSignIn = async () => {
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_apple",
-      });
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/(auth)/onboarding");
-      }
-    } catch (err) {
-      console.error("Apple sign-in error:", err);
+  const completeSsoSignUpIfNeeded = async (result: {
+    setActive?: ((params: { session: string }) => Promise<void>) | null;
+    signUp?: {
+      status?: string | null;
+      missingFields?: string[];
+      emailAddress?: string | null;
+      update?: (params: {
+        username?: string;
+        lastName?: string;
+        password?: string;
+      }) => Promise<{
+        status?: string | null;
+        createdSessionId?: string | null;
+      }>;
+      createdSessionId?: string | null;
+    } | null;
+  }) => {
+    const signUp = result.signUp;
+
+    if (!signUp || !result.setActive) return false;
+    if (signUp.status !== "missing_requirements") return false;
+
+    const missing = signUp.missingFields ?? [];
+    if (!missing.length || !signUp.update) return false;
+
+    const emailPrefix =
+      signUp.emailAddress?.split("@")[0]?.replace(/[^a-zA-Z0-9_]/g, "") ??
+      "user";
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+
+    const updatePayload: {
+      username?: string;
+      lastName?: string;
+      password?: string;
+    } = {};
+
+    if (missing.includes("username")) {
+      updatePayload.username = `${emailPrefix}${suffix}`.toLowerCase();
     }
+    if (missing.includes("last_name")) {
+      updatePayload.lastName = "User";
+    }
+    if (missing.includes("password")) {
+      updatePayload.password = `Sso!${suffix}Tmp#${Date.now()}`;
+    }
+
+    const updatedSignUp = await signUp.update(updatePayload);
+    const sessionId = updatedSignUp.createdSessionId ?? signUp.createdSessionId;
+
+    if (sessionId) {
+      await result.setActive({ session: sessionId });
+      return true;
+    }
+
+    return false;
   };
 
-  const handleGoogleSignIn = async () => {
+  // const redirectUrl =
+  //   Platform.OS === "web"
+  //     ? `${window.location.origin}/onboarding`
+  //     : Linking.createURL("/onboarding");
+
+  const handleSSOSignIn = async (strategy: "oauth_apple" | "oauth_google") => {
     try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
+      setFormError(null);
+
+      const result = await startSSOFlow({
+        strategy,
+        // redirectUrl,
       });
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/(auth)/onboarding");
+
+      if (result.createdSessionId && result.setActive) {
+        await result.setActive({ session: result.createdSessionId });
+        router.replace("/onboarding");
+        return;
+      }
+
+      const didCompleteSignUp = await completeSsoSignUpIfNeeded(result);
+      if (didCompleteSignUp) {
+        router.replace("/onboarding");
+      } else {
+        setFormError(
+          "We could not complete social sign in automatically. Continue with email or try sign up.",
+        );
       }
     } catch (err) {
-      console.error("Google sign-in error:", err);
+      console.error(`${strategy} sign-in error:`, err);
+      setFormError(err instanceof Error ? err.message : "SSO sign in failed.");
     }
   };
 
@@ -95,7 +159,7 @@ export default function SignInScreen() {
 
       if (signInAttempt.createdSessionId) {
         await clerk.setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/(auth)/onboarding");
+        router.replace("/onboarding");
         return;
       }
 
@@ -113,7 +177,6 @@ export default function SignInScreen() {
             emailAddressId,
           });
           setIsOtpStep(true);
-          setFormError(null);
           return;
         }
       }
@@ -157,7 +220,7 @@ export default function SignInScreen() {
 
       if (result.createdSessionId) {
         await clerk.setActive({ session: result.createdSessionId });
-        router.replace("/(auth)/onboarding");
+        router.replace("/onboarding");
         return;
       }
 
@@ -176,19 +239,22 @@ export default function SignInScreen() {
     }
   };
 
+  const Captcha = () => {
+    if (Platform.OS !== "web") return null;
+
+    return <div id="clerk-captcha" style={{ marginTop: 12 }} />;
+  };
+
   return (
     <SafeAreaView
       edges={["top", "bottom"]}
       style={{ flex: 1, backgroundColor: theme.backgroundFocus }}
     >
-      {/* ── Brand section ─────────────────────────────────────────────── */}
       <View className="flex-1 items-center justify-center px-6">
-        {/* Blob decoration */}
         <View className="absolute inset-0" pointerEvents="none">
           <Blob width="100%" color="rgba(255,255,255,0.10)" />
         </View>
 
-        {/* Logo circle */}
         <View
           className="w-20 h-20 p-4 rounded-[28px] items-center justify-center mb-5"
           style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
@@ -206,6 +272,7 @@ export default function SignInScreen() {
         >
           Tulum
         </Text>
+
         <Text
           style={{
             fontSize: 16,
@@ -218,7 +285,6 @@ export default function SignInScreen() {
         </Text>
       </View>
 
-      {/* ── Sign-in card ──────────────────────────────────────────────── */}
       <View
         className="rounded-t-[32px] px-6 pt-8 pb-6"
         style={{ backgroundColor: theme.background }}
@@ -233,6 +299,7 @@ export default function SignInScreen() {
         >
           Sign in to continue
         </Text>
+
         <Text
           style={{
             fontSize: 14,
@@ -243,9 +310,8 @@ export default function SignInScreen() {
           {"Choose how you'd like to join"}
         </Text>
 
-        {/* Apple */}
         <Pressable
-          onPress={handleAppleSignIn}
+          onPress={() => handleSSOSignIn("oauth_apple")}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
             backgroundColor: theme.backgroundMuted,
@@ -253,7 +319,7 @@ export default function SignInScreen() {
             borderColor: theme.backgroundMuted,
           }}
         >
-          <AppleIcon />
+          <AppleIcon fill={theme.gray10} />
           <Text
             style={{
               fontSize: 16,
@@ -265,9 +331,8 @@ export default function SignInScreen() {
           </Text>
         </Pressable>
 
-        {/* Google */}
         <Pressable
-          onPress={handleGoogleSignIn}
+          onPress={() => handleSSOSignIn("oauth_google")}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
             backgroundColor: theme.backgroundMuted,
@@ -288,13 +353,7 @@ export default function SignInScreen() {
         </Pressable>
 
         <View className="flex-row items-center my-4">
-          <View
-            style={{
-              flex: 1,
-              height: 1,
-              backgroundColor: theme.border,
-            }}
-          />
+          <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
           <Text
             style={{
               marginHorizontal: 12,
@@ -304,17 +363,12 @@ export default function SignInScreen() {
           >
             or
           </Text>
-          <View
-            style={{
-              flex: 1,
-              height: 1,
-              backgroundColor: theme.border,
-            }}
-          />
+          <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
         </View>
 
-        {/* Identifier / OTP step */}
         <View className="mb-3">
+          <Captcha />
+
           <Text
             style={{
               fontSize: 13,
@@ -325,6 +379,7 @@ export default function SignInScreen() {
           >
             {isOtpStep ? "One-time password" : "Email or username"}
           </Text>
+
           <Input
             value={isOtpStep ? otpCode : identifier}
             onChangeText={isOtpStep ? setOtpCode : setIdentifier}
@@ -348,13 +403,12 @@ export default function SignInScreen() {
               color: theme.colorStrong,
             }}
           />
+
           <Button
             onPress={isOtpStep ? handleOtpContinue : handleIdentifierContinue}
             disabled={isSubmitting || !clerk.loaded}
             className="rounded-2xl h-[54px] mt-3"
-            style={{
-              backgroundColor: theme.primary,
-            }}
+            style={{ backgroundColor: theme.primary }}
           >
             <Text
               style={{
@@ -366,6 +420,7 @@ export default function SignInScreen() {
               {isSubmitting ? "Continuing..." : "Continue"}
             </Text>
           </Button>
+
           {isOtpStep ? (
             <Pressable
               onPress={() => {
@@ -380,6 +435,7 @@ export default function SignInScreen() {
               </Text>
             </Pressable>
           ) : null}
+
           {formError ? (
             <Text
               style={{
