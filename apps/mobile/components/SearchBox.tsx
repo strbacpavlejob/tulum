@@ -1,7 +1,7 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
 import { CircleX, Search, SlidersHorizontal } from "lucide-react-native";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, TextInput, View } from "react-native";
 import {
@@ -20,6 +20,15 @@ const SearchBox: React.FC = () => {
   const theme = useAppTheme();
   const { t } = useTranslation();
   const ref = useRef<FiltersBottomSheetRef>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -36,6 +45,9 @@ const SearchBox: React.FC = () => {
           {filter.title.length > 0 ? (
             <Pressable
               onPress={() => {
+                if (debounceRef.current) {
+                  clearTimeout(debounceRef.current);
+                }
                 setFilter({ ...filter, title: "" });
                 applyEventsFilter();
               }}
@@ -50,8 +62,23 @@ const SearchBox: React.FC = () => {
             placeholder={t("searchEvents")}
             placeholderTextColor={theme.gray10}
             value={filter.title}
-            onChangeText={(text) => setFilter({ ...filter, title: text })}
-            onSubmitEditing={() => applyEventsFilter()}
+            onChangeText={(text) => {
+              setFilter({ ...filter, title: text });
+
+              if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+              }
+
+              debounceRef.current = setTimeout(() => {
+                applyEventsFilter();
+              }, 300);
+            }}
+            onSubmitEditing={() => {
+              if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+              }
+              applyEventsFilter();
+            }}
             returnKeyType="search"
             style={{ flex: 1, fontSize: 14, color: theme.gray12 }}
           />

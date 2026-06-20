@@ -115,9 +115,22 @@ const useStore = create<MyStore>((set) => ({
     if (end) end.setHours(23, 59, 59, 999);
 
     const filtered = events.filter((event) => {
-      // Title match (case-insensitive, substring)
-      const titleOk = q ? (event.title ?? "").toLowerCase().includes(q) : true;
-      if (!titleOk) return false;
+      // Search match (case-insensitive, substring) across event title + venue fields
+      const titleText = (event.title ?? "").toLowerCase();
+      const venueText = (event.venueName ?? "").toLowerCase();
+      const addressText = (
+        event.address ??
+        event.location?.address ??
+        ""
+      ).toLowerCase();
+      const tagsText = (event.tags ?? []).map((tag) => tag.toLowerCase());
+      const searchOk = q
+        ? titleText.includes(q) ||
+          venueText.includes(q) ||
+          addressText.includes(q) ||
+          tagsText.some((tag) => tag.includes(q))
+        : true;
+      if (!searchOk) return false;
 
       // Tags overlap (case-insensitive)
       if (tagSet.size) {
