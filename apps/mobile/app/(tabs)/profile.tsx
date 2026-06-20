@@ -717,7 +717,7 @@ export default function ProfileScreen() {
                   onPress={async () => {
                     await signOut();
                     setUser(null);
-                    router.replace("/(auth)/login");
+                    router.replace("/(auth)/sign-in");
                   }}
                   className="w-full gap-2"
                   style={{ borderColor: theme.border }}

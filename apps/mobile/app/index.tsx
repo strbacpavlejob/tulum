@@ -47,7 +47,7 @@ export default function Index() {
   }
 
   if (!isSignedIn) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href="/(auth)/sign-in" />;
   }
 
   if (!onboardingChecked) {

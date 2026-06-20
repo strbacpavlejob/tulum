@@ -1,20 +1,20 @@
 import Blob from "@/components/Blob";
-import AppleIcon from "@/components/illustrations/apple-logo";
-import GoogleIcon from "@/components/illustrations/google-icon";
 import Logo from "@/components/illustrations/logo";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { useSSO } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
-import { useRouter } from "expo-router";
-import { Mail } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useSSO } from "@clerk/expo";
+import AppleIcon from "@/components/illustrations/apple-logo";
+import GoogleIcon from "@/components/illustrations/google-icon";
+import { Mail } from "lucide-react-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export default function LoginScreen() {
+export default function SignUpScreen() {
   const theme = useAppTheme();
   const router = useRouter();
 
@@ -90,7 +90,7 @@ export default function LoginScreen() {
         </Text>
       </View>
 
-      {/* ── Sign-in card ──────────────────────────────────────────────── */}
+      {/* ── Sign-up card ──────────────────────────────────────────────── */}
       <View
         className="rounded-t-[32px] px-6 pt-8 pb-6"
         style={{ backgroundColor: theme.background }}
@@ -103,7 +103,7 @@ export default function LoginScreen() {
             marginBottom: 6,
           }}
         >
-          Sign in to continue
+          Sign up to continue
         </Text>
         <Text
           style={{
@@ -120,14 +120,19 @@ export default function LoginScreen() {
           onPress={handleAppleSignIn}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
-            flexDirection: "row",
-            backgroundColor: "#fff",
-            alignItems: "center",
-            justifyContent: "center",
+            backgroundColor: theme.backgroundMuted,
+            borderWidth: 1.5,
+            borderColor: theme.backgroundMuted,
           }}
         >
           <AppleIcon />
-          <Text style={{ fontSize: 16, fontWeight: "600", color: "#000" }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: theme.colorStrong,
+            }}
+          >
             Continue with Apple
           </Text>
         </Pressable>
@@ -137,9 +142,9 @@ export default function LoginScreen() {
           onPress={handleGoogleSignIn}
           className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
           style={{
-            backgroundColor: theme.background,
+            backgroundColor: theme.backgroundMuted,
             borderWidth: 1.5,
-            borderColor: theme.border,
+            borderColor: theme.backgroundMuted,
           }}
         >
           <GoogleIcon />
@@ -158,9 +163,14 @@ export default function LoginScreen() {
         <Button
           variant="outline"
           onPress={() => router.push("/(auth)/sign-in" as any)}
-          className="h-[54px] rounded-2xl gap-3"
+          className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
+          style={{
+            backgroundColor: theme.backgroundMuted,
+            borderWidth: 1.5,
+            borderColor: theme.backgroundMuted,
+          }}
         >
-          <Mail size={18} color={theme.color} />
+          <Mail size={20} color={theme.color} />
           <Text
             style={{
               fontSize: 16,
@@ -174,7 +184,6 @@ export default function LoginScreen() {
 
         <Text
           style={{
-            fontSize: 12,
             color: theme.colorMuted,
             textAlign: "center",
             marginTop: 20,

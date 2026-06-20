@@ -1,6 +1,6 @@
 import * as React from "react";
 import Svg, { Path, SvgProps } from "react-native-svg";
-const GoogleIcon = (props: SvgProps) => {
+const GoogleIcon = ({ fill = "#fff", ...props }: SvgProps) => {
   return (
     <Svg
       fill="none"
