@@ -8,7 +8,7 @@ import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
-import { Pressable, View, StyleProp, ViewStyle } from "react-native";
+import { Pressable, StyleProp, View, ViewStyle } from "react-native";
 
 interface DiscoverCardProps {
   event: EventSummary;
@@ -43,6 +43,8 @@ export const DiscoverCard = ({
   });
 
   const goingCount = event.guestCount ?? 0;
+  const goingLabel =
+    goingCount === 0 ? t("beTheFirst") : `${goingCount} ${t("going")}`;
 
   return (
     <Pressable
@@ -72,16 +74,9 @@ export const DiscoverCard = ({
       </View>
 
       {/* Content */}
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "space-between",
-          padding: 10,
-          paddingRight: 38,
-        }}
-      >
-        {/* Top info */}
-        <View>
+
+      <View className="flex-1 justify-center gap-1 p-2 mt-4">
+        <View className="flex-row ">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -89,21 +84,23 @@ export const DiscoverCard = ({
           >
             {event.title}
           </Text>
+        </View>
+        <View className="flex-row flex-wrap">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontSize: 12, color: theme.gray10, marginTop: 1 }}
+            style={{ fontSize: 12, color: theme.gray10 }}
           >
             {event.location.address ?? ""}
           </Text>
-          <Text style={{ fontSize: 11, color: theme.gray10, marginTop: 1 }}>
-            {dateLabel} · {goingCount} {t("going")}
+          <Text style={{ fontSize: 11, color: theme.gray10 }}>
+            {dateLabel} · {goingLabel}
           </Text>
+        </View>
 
-          {/* Tags */}
-          <View className="flex-row flex-wrap ">
-            <Tags tags={event.tags} size="ssm" />
-          </View>
+        {/* Tags */}
+        <View className="flex-row flex-wrap" style={{ overflow: "hidden" }}>
+          <Tags tags={event.tags} size="ssm" />
         </View>
       </View>
 

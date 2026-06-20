@@ -126,6 +126,7 @@ const resources = {
 
       // Discover card
       going: "going",
+      beTheFirst: "Be the first",
 
       // Not found / Error screens
       screenNotFound: "This screen does not exist.",
@@ -395,6 +396,7 @@ const resources = {
 
       // Discover card
       going: "ide",
+      beTheFirst: "Budi prvi",
 
       // Not found / Error screens
       screenNotFound: "Ovaj ekran ne postoji.",
@@ -663,6 +665,7 @@ const resources = {
 
       // Discover card
       going: "идут",
+      beTheFirst: "Будь первым",
 
       // Not found / Error screens
       screenNotFound: "Этот экран не существует.",

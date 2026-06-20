@@ -9,7 +9,7 @@ interface TagsProps {
 
 const Tags = ({ tags, size }: TagsProps) => {
   return (
-    <View className="flex-row gap-2 mt-2 flex-nowrap">
+    <View className="flex-row gap-2 flex-nowrap">
       {tags.map((tag, index) => (
         <Tag key={tag + index} title={tag} size={size} />
       ))}
