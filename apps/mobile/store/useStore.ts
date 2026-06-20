@@ -49,7 +49,7 @@ const useStore = create<MyStore>((set) => ({
   filter: {
     title: "",
     tags: [],
-    venueType: null,
+    venueType: [],
     dateRange: {
       start: null,
       end: null,
@@ -167,7 +167,7 @@ const useStore = create<MyStore>((set) => ({
       filter: {
         title: "",
         tags: [],
-        venueType: null,
+        venueType: [],
         dateRange: {
           start: new Date(),
           end: addDays(new Date(), 14),

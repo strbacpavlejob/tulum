@@ -122,7 +122,9 @@ export async function fetchActiveEvents(
   const { filter, token, userId } = params ?? {};
   const query = new URLSearchParams();
 
-  if (filter?.venueType) query.set("venue_type", filter.venueType);
+  if (filter?.venueType?.length) {
+    query.set("venue_type", filter.venueType.join(","));
+  }
   if (filter?.capacityRange?.min != null)
     query.set("capacity_min", String(filter.capacityRange.min));
   if (filter?.capacityRange?.max != null)

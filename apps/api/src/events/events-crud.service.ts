@@ -25,6 +25,13 @@ export class EventsCrudService {
 
   /** GET /events/active — public, no auth required */
   async getActiveEvents(filters: GetActiveEventsDto = {}, userId?: string) {
+    const venueTypes = filters.venue_type
+      ? filters.venue_type
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : [];
+
     const now = new Date().toISOString();
     const tenDaysFromNow = new Date(
       Date.now() + 10 * 24 * 60 * 60 * 1000,
@@ -96,8 +103,10 @@ export class EventsCrudService {
       .in('id', venueIds);
 
     // Venue type filter
-    if (filters.venue_type) {
-      venuesQuery = venuesQuery.eq('venue_type', filters.venue_type);
+    if (venueTypes.length === 1) {
+      venuesQuery = venuesQuery.eq('venue_type', venueTypes[0]);
+    } else if (venueTypes.length > 1) {
+      venuesQuery = venuesQuery.in('venue_type', venueTypes);
     }
     // Capacity filter
     if (filters.capacity_min !== undefined) {

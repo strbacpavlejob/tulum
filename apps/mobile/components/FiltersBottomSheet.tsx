@@ -62,7 +62,7 @@ const VENUE_TYPE_OPTIONS: { value: VenueType; label: string }[] = [
 const defaultFilters: Filter = {
   title: "",
   tags: [],
-  venueType: null,
+  venueType: [],
   dateRange: { start: null, end: null },
   guestsLimit: null,
   isOnlyFavorite: false,
@@ -90,6 +90,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
     const [filters, setFilters] = useState<Filter>(() => ({
       ...defaultFilters,
       ...getFilterFromStore(),
+      venueType: getFilterFromStore()?.venueType ?? [],
       dateRange: {
         ...defaultFilters.dateRange,
         ...(getFilterFromStore()?.dateRange ?? {}),
@@ -109,6 +110,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
       const merged: Filter = {
         ...defaultFilters,
         ...current,
+        venueType: current?.venueType ?? [],
         dateRange: {
           ...defaultFilters.dateRange,
           ...(current?.dateRange ?? {}),
@@ -163,6 +165,18 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
         let r: any = next;
         for (let i = 0; i < path.length - 1; i++) r = r[path[i]];
         r[path[path.length - 1]] = value;
+        onChange?.(next);
+        return next;
+      });
+    };
+
+    const toggleVenueType = (value: VenueType) => {
+      setFilters((prev) => {
+        const alreadySelected = prev.venueType.includes(value);
+        const nextVenueTypes = alreadySelected
+          ? prev.venueType.filter((v) => v !== value)
+          : [...prev.venueType, value];
+        const next = { ...prev, venueType: nextVenueTypes };
         onChange?.(next);
         return next;
       });
@@ -258,15 +272,17 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                         <Text
                           className="text-sm"
                           style={{
-                            color: filters.venueType
+                            color: filters.venueType.length
                               ? theme.gray11
                               : theme.gray9,
                           }}
                         >
-                          {filters.venueType
-                            ? VENUE_TYPE_OPTIONS.find(
-                                (o) => o.value === filters.venueType,
-                              )?.label
+                          {filters.venueType.length
+                            ? VENUE_TYPE_OPTIONS.filter((o) =>
+                                filters.venueType.includes(o.value),
+                              )
+                                .map((o) => o.label)
+                                .join(", ")
                             : t("selectVenueType")}
                         </Text>
                         <Text style={{ color: theme.gray9 }}>▾</Text>
@@ -286,21 +302,23 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                         {VENUE_TYPE_OPTIONS.map((opt) => (
                           <DropdownMenuItem
                             key={opt.value}
-                            onPress={() => patch("venueType", opt.value)}
+                            onPress={() => toggleVenueType(opt.value)}
                             style={{
-                              backgroundColor:
-                                filters.venueType === opt.value
-                                  ? theme.accentBackground
-                                  : "transparent",
+                              backgroundColor: filters.venueType.includes(
+                                opt.value,
+                              )
+                                ? theme.accentBackground
+                                : "transparent",
                               width: "100%",
                             }}
                           >
                             <Text
                               style={{
-                                fontWeight:
-                                  filters.venueType === opt.value
-                                    ? "700"
-                                    : "400",
+                                fontWeight: filters.venueType.includes(
+                                  opt.value,
+                                )
+                                  ? "700"
+                                  : "400",
                                 color: theme.gray11,
                               }}
                             >

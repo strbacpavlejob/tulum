@@ -13,7 +13,7 @@ export type VenueType =
 export interface Filter {
   title: string;
   tags: string[];
-  venueType: VenueType | null;
+  venueType: VenueType[];
   dateRange: {
     start: Date | null;
     end: Date | null;
