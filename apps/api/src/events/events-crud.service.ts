@@ -80,13 +80,10 @@ export class EventsCrudService {
         ? savedEventIds
         : null;
 
-    // Keep only the earliest event per venue, optionally filtering by favorites
-    const seenVenues = new Set<string>();
+    // Optionally filter by favorites
     const uniqueEvents = events.filter((event) => {
       if (favoriteEventIds && !favoriteEventIds.has(event.id as string))
         return false;
-      if (seenVenues.has(event.venue_id as string)) return false;
-      seenVenues.add(event.venue_id as string);
       return true;
     });
 
