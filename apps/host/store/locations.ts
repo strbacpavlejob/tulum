@@ -1,5 +1,9 @@
 import { create } from "zustand";
 
+export interface Listings {
+  events: Location[];
+}
+
 export interface Location {
   id: string;
   name: string;
@@ -54,8 +58,8 @@ export const useLocationsStore = create<LocationsState>((set, get) => ({
       if (!response.ok) {
         throw new Error("Failed to fetch active events");
       }
-      const locations: Location[] = await response.json();
-      set({ locations, lastFetched: Date.now() });
+      const listings: Listings = await response.json();
+      set({ locations: listings.events, lastFetched: Date.now() });
     } catch (error) {
       set({ error: (error as Error).message });
     } finally {
