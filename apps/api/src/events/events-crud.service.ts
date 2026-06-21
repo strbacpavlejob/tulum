@@ -131,11 +131,11 @@ export class EventsCrudService {
 
     const venueMap = new Map(venues?.map((v) => [v.id as string, v]) ?? []);
 
-    return uniqueEvents
-      .map((event) => {
-        const venue = venueMap.get(event.venue_id as string);
-        if (!venue) return null;
-        return {
+    const eventsListing = uniqueEvents.flatMap((event) => {
+      const venue = venueMap.get(event.venue_id as string);
+      if (!venue) return [];
+      return [
+        {
           id: event.id as string,
           name: event.title,
           picture:
@@ -144,6 +144,7 @@ export class EventsCrudService {
                 event.picture_url)
               : event.picture_url,
           venue_name: venue.name,
+          venue_id: venue.id,
           address: venue.address,
           latitude: venue.latitude,
           longitude: venue.longitude,
@@ -151,9 +152,36 @@ export class EventsCrudService {
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(event.id as string),
           guest_count: guestCountMap.get(event.id as string) ?? 0,
-        };
+        },
+      ];
+    });
+    const mapPinListing = uniqueEvents
+      .flatMap((event) => {
+        const venue = venueMap.get(event.venue_id as string);
+        if (!venue) return [];
+        return [
+          {
+            id: venue.id as string,
+            name: venue.name,
+            picture: venue.picture_url,
+            venue_name: venue.name,
+            venue_id: venue.id,
+            address: venue.address,
+            latitude: venue.latitude,
+            longitude: venue.longitude,
+          },
+        ];
       })
-      .filter(Boolean);
+      .map((pin) => ({
+        ...pin,
+        instances: eventsListing.filter((e) => e.venue_id === pin.venue_id)
+          .length,
+      }));
+
+    return {
+      events: eventsListing,
+      pins: mapPinListing,
+    };
   }
 
   /** GET /events/active/:id — full event details for a single event */

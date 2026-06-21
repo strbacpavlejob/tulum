@@ -11,11 +11,13 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
+import { Text } from "./ui/text";
 
 interface MapMarkerProps {
   image?: string;
   size?: "sm" | "md" | "xl";
   isSelected?: boolean;
+  instances?: number;
 }
 
 const sizeConfig = {
@@ -28,6 +30,7 @@ const MapMarkerIcon = ({
   image,
   size = "md",
   isSelected = false,
+  instances = 1,
 }: MapMarkerProps) => {
   const theme = useAppTheme();
   const config = sizeConfig[isSelected ? "xl" : size];
@@ -122,6 +125,7 @@ const MapMarkerIcon = ({
             borderColor: isSelected ? theme.color : theme.color075,
             overflow: "hidden",
             backgroundColor: theme.background,
+            position: "relative",
           }}
         >
           <Image
@@ -130,6 +134,29 @@ const MapMarkerIcon = ({
             contentFit="cover"
             cachePolicy="disk"
           />
+
+          {instances > 1 && (
+            <View
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: theme.color050,
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.colorStrong,
+                  fontSize: isSelected ? 22 : 16,
+                  fontWeight: "800",
+                }}
+              >
+                {instances}
+              </Text>
+            </View>
+          )}
         </View>
       ) : (
         <View

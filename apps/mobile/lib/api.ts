@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { Event, EventSummary, VenueContact } from "@/types/event";
+import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { User } from "@/types/user";
 
@@ -20,6 +20,7 @@ interface ActiveEventVenueContact {
 /** Slim response shape from GET /events/active (list) */
 interface ActiveEventSummaryResponse {
   id: string;
+  venue_id?: string;
   name: string;
   picture: string | null;
   venue_name: string;
@@ -30,6 +31,23 @@ interface ActiveEventSummaryResponse {
   tags: string[];
   isFavorite: boolean;
   guest_count: number;
+}
+
+interface ActiveEventPinResponse {
+  id: string;
+  venue_id: string;
+  name: string;
+  picture: string | null;
+  venue_name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  instances: number;
+}
+
+interface ActiveEventsResponse {
+  events: ActiveEventSummaryResponse[];
+  pins: ActiveEventPinResponse[];
 }
 
 /** Full response shape from GET /events/active/:id (detail) */
@@ -57,6 +75,7 @@ function mapActiveEventSummaryToEventSummary(
 ): EventSummary {
   return {
     id: item.id,
+    venueId: item.venue_id,
     image: item.picture ?? "",
     title: item.name,
     venueName: item.venue_name,
@@ -70,6 +89,23 @@ function mapActiveEventSummaryToEventSummary(
     tags: item.tags ?? [],
     isFavorite: item.isFavorite ?? false,
     guestCount: item.guest_count ?? 0,
+  };
+}
+
+function mapActiveEventPinToEventPin(item: ActiveEventPinResponse): EventPin {
+  return {
+    id: item.id,
+    venueId: item.venue_id,
+    image: item.picture ?? "",
+    title: item.name,
+    venueName: item.venue_name,
+    address: item.address,
+    location: {
+      latitude: item.latitude,
+      longitude: item.longitude,
+      address: item.address,
+    },
+    instances: item.instances ?? 1,
   };
 }
 
@@ -118,7 +154,7 @@ export interface FetchActiveEventsParams {
 
 export async function fetchActiveEvents(
   params?: FetchActiveEventsParams,
-): Promise<EventSummary[]> {
+): Promise<{ events: EventSummary[]; pins: EventPin[] }> {
   const { filter, token, userId } = params ?? {};
   const query = new URLSearchParams();
 
@@ -146,8 +182,28 @@ export async function fetchActiveEvents(
   if (!response.ok) {
     throw new Error(`Failed to fetch active events: ${response.status}`);
   }
-  const data: ActiveEventSummaryResponse[] = await response.json();
-  return data.map(mapActiveEventSummaryToEventSummary);
+  const data: ActiveEventsResponse | ActiveEventSummaryResponse[] =
+    await response.json();
+
+  if (Array.isArray(data)) {
+    const events = data.map(mapActiveEventSummaryToEventSummary);
+    const pins: EventPin[] = events.map((event) => ({
+      id: event.venueId ?? event.id,
+      venueId: event.venueId ?? event.id,
+      image: event.image,
+      title: event.venueName,
+      venueName: event.venueName,
+      address: event.address,
+      location: event.location,
+      instances: 1,
+    }));
+    return { events, pins };
+  }
+
+  return {
+    events: (data.events ?? []).map(mapActiveEventSummaryToEventSummary),
+    pins: (data.pins ?? []).map(mapActiveEventPinToEventPin),
+  };
 }
 
 export async function fetchEventDetails(

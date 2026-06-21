@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/expo";
 import { useEffect, useState } from "react";
 
 const useStoreSetup = () => {
-  const { setEvents, setTickets, applyEventsFilter } = useStore();
+  const { setEvents, setPins, applyEventsFilter } = useStore();
   const [isLoadingStore, setIsLoadingStore] = useState(true);
   const { userId, getToken } = useAuth();
 
@@ -12,8 +12,9 @@ const useStoreSetup = () => {
     const setupStore = async () => {
       // Load events and settings but NOT user — auth flow handles login
       const token = await getToken();
-      const events = await fetchActiveEvents({ token: token ?? undefined });
-      setEvents(events);
+      const response = await fetchActiveEvents({ token: token ?? undefined });
+      setEvents(response.events);
+      setPins(response.pins);
       applyEventsFilter();
 
       setIsLoadingStore(false);

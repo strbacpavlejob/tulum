@@ -9,7 +9,7 @@ import { createRoot } from "react-dom/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import useStore from "@/store/useStore";
-import { EventSummary } from "@/types/event";
+import { EventPin, EventSummary } from "@/types/event";
 import {
   ActivityIndicator,
   FlatList,
@@ -103,6 +103,7 @@ const INITIAL_REGION = {
 const ListingsMap = memo(() => {
   const {
     filteredEvents: listings,
+    filteredPins: mapPins,
     events,
     setSelectedEventId,
     filter,
@@ -193,6 +194,16 @@ const ListingsMap = memo(() => {
     itemVisiblePercentThreshold: 50,
   }).current;
 
+  const firstEventIndexByVenueId = useMemo(() => {
+    const indices = new Map<string, number>();
+    (listings ?? []).forEach((event, index) => {
+      if (event.venueId && !indices.has(event.venueId)) {
+        indices.set(event.venueId, index);
+      }
+    });
+    return indices;
+  }, [listings]);
+
   const renderItem = useCallback(
     ({ item, index }: { item: EventSummary; index: number }) => (
       <DiscoverCard
@@ -241,7 +252,6 @@ const ListingsMap = memo(() => {
         setMapReady(false);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Apply / swap tile layer when map is ready or theme changes ── */
@@ -290,12 +300,17 @@ const ListingsMap = memo(() => {
       },
     });
 
-    listings?.forEach((item: EventSummary, index: number) => {
+    (mapPins ?? []).forEach((pin: EventPin, index: number) => {
       // All markers start unselected; the selection effect updates the active one
       const markerSize = 64;
 
       const el = renderToDiv(
-        <MapMarkerIcon image={item.image} size="md" isSelected={false} />,
+        <MapMarkerIcon
+          image={pin.image}
+          size="md"
+          isSelected={false}
+          instances={pin.instances}
+        />,
         markerSize,
       );
 
@@ -306,17 +321,24 @@ const ListingsMap = memo(() => {
         iconAnchor: [markerSize / 2, markerSize / 2],
       });
 
-      const marker = L.marker(
-        [item.location.latitude, item.location.longitude],
-        { icon },
-      );
+      const marker = L.marker([pin.location.latitude, pin.location.longitude], {
+        icon,
+      });
 
       marker.on("click", () => {
+        const eventIndex = firstEventIndexByVenueId.get(pin.venueId);
         const currentListings = listingsRef.current;
-        if (currentListings && currentListings[index]) {
-          setSelectedIndex(index);
-          setSelectedEventId(currentListings[index].id);
-          flatListRef.current?.scrollToIndex({ index, animated: true });
+        if (
+          eventIndex !== undefined &&
+          currentListings &&
+          currentListings[eventIndex]
+        ) {
+          setSelectedIndex(eventIndex);
+          setSelectedEventId(currentListings[eventIndex].id);
+          flatListRef.current?.scrollToIndex({
+            index: eventIndex,
+            animated: true,
+          });
         }
       });
 
@@ -329,17 +351,25 @@ const ListingsMap = memo(() => {
 
     // After rebuilding, re-apply the current selection
     const cur = selectedIndexRef.current;
-    if (cur !== null && listings?.[cur]) {
+    const selectedVenueId =
+      cur !== null ? (listings?.[cur]?.venueId ?? null) : null;
+    const selectedPinIndex =
+      selectedVenueId == null
+        ? -1
+        : (mapPins ?? []).findIndex((pin) => pin.venueId === selectedVenueId);
+
+    if (selectedPinIndex >= 0 && mapPins?.[selectedPinIndex]) {
       const markerSize = 64;
       const el = renderToDiv(
         <MapMarkerIcon
-          image={listings[cur].image}
+          image={mapPins[selectedPinIndex].image}
           size="md"
           isSelected={true}
+          instances={mapPins[selectedPinIndex].instances}
         />,
         markerSize,
       );
-      markersRef.current[cur]?.setIcon(
+      markersRef.current[selectedPinIndex]?.setIcon(
         L.divIcon({
           html: el,
           className: "",
@@ -348,22 +378,53 @@ const ListingsMap = memo(() => {
         }),
       );
     }
-  }, [listings, theme, mapReady, setSelectedEventId]);
+  }, [
+    mapPins,
+    listings,
+    firstEventIndexByVenueId,
+    theme,
+    mapReady,
+    setSelectedEventId,
+  ]);
 
   /* ── Swap only the two affected marker icons on selection change ── */
   useEffect(() => {
     const L = (window as any).L;
     if (!L || !markersRef.current.length) return;
 
+    const selectedVenueId =
+      selectedIndex !== null
+        ? (listings?.[selectedIndex]?.venueId ?? null)
+        : null;
+    const prevVenueId =
+      prevSelectedIndexRef.current !== null
+        ? (listings?.[prevSelectedIndexRef.current]?.venueId ?? null)
+        : null;
+
+    const selectedPinIndex =
+      selectedVenueId == null
+        ? null
+        : (mapPins ?? []).findIndex((pin) => pin.venueId === selectedVenueId);
+    const prevPinIndex =
+      prevVenueId == null
+        ? null
+        : (mapPins ?? []).findIndex((pin) => pin.venueId === prevVenueId);
+
     const updateIcon = (index: number | null, isSelected: boolean) => {
-      if (index === null || !markersRef.current[index] || !listings?.[index])
+      if (
+        index === null ||
+        index < 0 ||
+        !markersRef.current[index] ||
+        !mapPins?.[index]
+      )
         return;
       const markerSize = 64;
       const el = renderToDiv(
         <MapMarkerIcon
-          image={listings[index].image}
+          image={mapPins[index].image}
           size="md"
           isSelected={isSelected}
+          instances={mapPins[index].instances}
         />,
         markerSize,
       );
@@ -377,10 +438,10 @@ const ListingsMap = memo(() => {
       );
     };
 
-    updateIcon(prevSelectedIndexRef.current, false);
-    updateIcon(selectedIndex, true);
+    updateIcon(prevPinIndex, false);
+    updateIcon(selectedPinIndex, true);
     prevSelectedIndexRef.current = selectedIndex;
-  }, [selectedIndex, listings]);
+  }, [selectedIndex, listings, mapPins]);
 
   if (events === undefined)
     return (

@@ -39,6 +39,7 @@ export interface EventComment {
 /** Lightweight event data used in lists, maps, and cards */
 export interface EventSummary {
   id: string;
+  venueId?: string;
   image: string;
   title: string;
   venueName: string;
@@ -48,6 +49,17 @@ export interface EventSummary {
   guestCount: number;
   tags: string[];
   location: EventLocation;
+}
+
+export interface EventPin {
+  id: string;
+  venueId: string;
+  image: string;
+  title: string;
+  venueName: string;
+  address: string;
+  location: EventLocation;
+  instances: number;
 }
 
 /** Full event details fetched from the detail endpoint */

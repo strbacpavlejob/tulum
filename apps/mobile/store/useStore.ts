@@ -1,5 +1,5 @@
 import { fetchActiveEvents } from "@/lib/api";
-import { EventSummary } from "@/types/event";
+import { EventPin, EventSummary } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { Ticket } from "@/types/ticket";
@@ -13,6 +13,8 @@ interface MyStore {
   settings: Settings;
   events?: EventSummary[];
   filteredEvents?: EventSummary[];
+  pins?: EventPin[];
+  filteredPins?: EventPin[];
   tickets?: Ticket[];
   selectedEventId?: string | null;
   filter: Filter;
@@ -21,6 +23,7 @@ interface MyStore {
   setUser: (user: User | null) => void;
   setSettings: (settings: Settings) => void;
   setEvents: (events: EventSummary[]) => void;
+  setPins: (pins: EventPin[]) => void;
   setTickets: (tickets: Ticket[]) => void;
   setSelectedEventId: (id: string | null) => void;
   setFilter: (filter: Filter) => void;
@@ -44,6 +47,8 @@ const useStore = create<MyStore>((set) => ({
   },
   events: [],
   filteredEvents: [],
+  pins: [],
+  filteredPins: [],
   tickets: [],
   selectedEventId: null,
   filter: {
@@ -75,13 +80,14 @@ const useStore = create<MyStore>((set) => ({
   setUser: (user: User | null) => set({ user }),
   setSettings: (settings: Settings) => set({ settings }),
   setEvents: (events: EventSummary[]) => set({ events }),
+  setPins: (pins: EventPin[]) => set({ pins }),
   setTickets: (tickets: Ticket[]) => set({ tickets }),
   setSelectedEventId: (id: string | null) => set({ selectedEventId: id }),
   setFilter: (filter: Filter) => set({ filter }),
   getFilter: (): Filter => useStore.getState().filter,
 
   applyEventsFilter() {
-    const { events = [], filter } = useStore.getState();
+    const { events = [], pins = [], filter } = useStore.getState();
     const {
       title,
       tags = [],
@@ -100,7 +106,7 @@ const useStore = create<MyStore>((set) => ({
       !!isOnlyFavorite;
 
     if (!isActive) {
-      set({ filteredEvents: events });
+      set({ filteredEvents: events, filteredPins: pins });
       return;
     }
 
@@ -158,11 +164,20 @@ const useStore = create<MyStore>((set) => ({
 
       return true;
     });
-    set({ filteredEvents: filtered });
+    const filteredVenueIds = new Set(
+      filtered
+        .map((event) => event.venueId)
+        .filter((venueId): venueId is string => Boolean(venueId)),
+    );
+    const filteredPins = pins.filter((pin) =>
+      filteredVenueIds.has(pin.venueId),
+    );
+
+    set({ filteredEvents: filtered, filteredPins });
   },
 
   resetEventsFilter() {
-    const { events } = useStore.getState();
+    const { events, pins } = useStore.getState();
     set({
       filter: {
         title: "",
@@ -184,13 +199,18 @@ const useStore = create<MyStore>((set) => ({
         },
       },
     });
-    set({ filteredEvents: events });
+    set({ filteredEvents: events, filteredPins: pins });
   },
 
   async refreshEvents() {
     const { filter, user } = useStore.getState();
     const fresh = await fetchActiveEvents({ filter, userId: user?.id });
-    set({ events: fresh, filteredEvents: fresh });
+    set({
+      events: fresh.events,
+      filteredEvents: fresh.events,
+      pins: fresh.pins,
+      filteredPins: fresh.pins,
+    });
   },
 
   updateEventFavorite(eventId: string, isFavorite: boolean) {
