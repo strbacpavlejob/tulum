@@ -18,8 +18,8 @@ async function bootstrap() {
       process.env.MOBILE_URL,
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://tulum-mobile.vercel.app',
-      'https://tulum-nu.vercel.app',
+      'https://mobile.tulum-app.com',
+      'https://tulum-app.com',
     ]
       .filter((origin): origin is string => Boolean(origin))
       .map(normalizeOrigin),
