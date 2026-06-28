@@ -27,10 +27,12 @@ import {
   MessageCircle,
   Phone,
   Send,
+  UserMinus,
   UserPlus,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
+import { toast } from "sonner-native";
 import {
   ActivityIndicator,
   Alert,
@@ -325,9 +327,15 @@ const EventDetailsScreen = () => {
   }, [id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAttend = async () => {
-    if (!userId || !event?.id) return;
+    if (!userId || !event?.id) {
+      toast.error("Unable to attend this event right now.");
+      return;
+    }
     const token = await getToken();
-    if (!token) return;
+    if (!token) {
+      toast.error("Sign in again to continue.", { duration: 4000 });
+      return;
+    }
 
     // If already attending — just cancel
     if (attending) {
@@ -337,6 +345,7 @@ const EventDetailsScreen = () => {
         removeTicketByEventId(event.id);
       } catch {
         setAttending(true);
+        toast.error("Could not cancel attendance. Please try again.");
       }
       return;
     }
@@ -351,9 +360,15 @@ const EventDetailsScreen = () => {
   };
 
   const confirmAttend = async () => {
-    if (!userId || !event?.id) return;
+    if (!userId || !event?.id) {
+      toast.error("Unable to attend this event right now.");
+      return;
+    }
     const token = await getToken();
-    if (!token) return;
+    if (!token) {
+      toast.error("Sign in again to continue.");
+      return;
+    }
     setShowReservationModal(false);
     setAttending(true);
     try {
@@ -376,6 +391,7 @@ const EventDetailsScreen = () => {
           ? err.message
           : "Something went wrong. Please try again.";
       Alert.alert("Can't attend", message);
+      toast.error(message);
     }
   };
 
@@ -601,23 +617,26 @@ const EventDetailsScreen = () => {
         <Pressable
           className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
           style={{
-            backgroundColor: attending ? theme.gray3 : theme.color,
+            backgroundColor: attending
+              ? theme.destructiveForeground
+              : theme.color,
           }}
           onPress={handleAttend}
         >
           <Text
             style={{
-              color: attending ? theme.gray6 : theme.background,
+              color: attending ? theme.destructive : theme.background,
               fontWeight: "600",
               fontSize: 18,
             }}
           >
             {attending ? t("cancelAttendance") : t("attend")}
           </Text>
-          <UserPlus
-            size={20}
-            color={attending ? theme.gray6 : theme.background}
-          />
+          {attending ? (
+            <UserMinus size={20} color={theme.destructive} />
+          ) : (
+            <UserPlus size={20} color={theme.background} />
+          )}
         </Pressable>
       </View>
 

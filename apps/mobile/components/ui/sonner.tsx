@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -5,38 +6,38 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react-native";
-import { useColorScheme } from "react-native";
 import { Toaster as Sonner, type ToasterProps } from "sonner-native";
 
 const ICON_SIZE = 16;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const colorScheme = useColorScheme();
-  const iconColor = colorScheme === "dark" ? "#FAFAFA" : "#09090B";
+  const theme = useAppTheme();
+
+  const iconColor = theme.colorStrong;
 
   return (
     <Sonner
       icons={{
-        success: <CircleCheckIcon size={ICON_SIZE} color={iconColor} />,
-        info: <InfoIcon size={ICON_SIZE} color={iconColor} />,
-        warning: <TriangleAlertIcon size={ICON_SIZE} color={iconColor} />,
-        error: <OctagonXIcon size={ICON_SIZE} color={iconColor} />,
+        success: <CircleCheckIcon size={ICON_SIZE} color={"green"} />,
+        info: <InfoIcon size={ICON_SIZE} color={"yellow"} />,
+        warning: <TriangleAlertIcon size={ICON_SIZE} color={"orange"} />,
+        error: <OctagonXIcon size={ICON_SIZE} color={theme.destructive} />,
         loading: <Loader2Icon size={ICON_SIZE} color={iconColor} />,
       }}
       toastOptions={{
         style: {
-          backgroundColor: colorScheme === "dark" ? "#18181B" : "#FFFFFF",
-          borderColor: colorScheme === "dark" ? "#27272A" : "#E4E4E7",
+          backgroundColor: theme.background,
+          borderColor: theme.border,
           borderWidth: 1,
           borderRadius: 12,
         },
         titleStyle: {
-          color: colorScheme === "dark" ? "#FAFAFA" : "#09090B",
+          color: theme.colorStrong,
           fontSize: 14,
           fontWeight: "600",
         },
         descriptionStyle: {
-          color: colorScheme === "dark" ? "#A1A1AA" : "#71717A",
+          color: theme.colorMuted,
           fontSize: 13,
         },
       }}
