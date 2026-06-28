@@ -10,8 +10,9 @@ import { useRouter } from "expo-router";
 import { useClerk, useSSO } from "@clerk/expo";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner-native";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -352,7 +353,7 @@ export default function SignInScreen() {
           </Text>
         </Pressable>
 
-        <View className="flex-row items-center my-4">
+        {/* <View className="flex-row items-center my-4">
           <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
           <Text
             style={{
@@ -364,12 +365,12 @@ export default function SignInScreen() {
             or
           </Text>
           <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
-        </View>
+        </View> */}
+        <Captcha />
 
-        <View className="mb-3">
-          <Captcha />
+        {/* <View className="mb-3"> */}
 
-          <Text
+        {/* <Text
             style={{
               fontSize: 13,
               fontWeight: "600",
@@ -447,7 +448,7 @@ export default function SignInScreen() {
               {formError}
             </Text>
           ) : null}
-        </View>
+        </View> */}
 
         <Text
           style={{

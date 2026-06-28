@@ -4,6 +4,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useLanguageSync } from "@/hooks/useLanguageSync";
 import useStoreSetup from "@/hooks/useStoreSetup";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -106,6 +107,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <MainStack />
+          <Toaster />
         </SafeAreaProvider>
       </ThemeProvider>
     </ClerkProvider>
