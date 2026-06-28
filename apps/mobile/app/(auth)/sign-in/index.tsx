@@ -7,7 +7,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Platform, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useClerk, useSSO } from "@clerk/expo";
+import { useAuth, useClerk, useSSO } from "@clerk/expo";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
 import { useEffect, useState } from "react";
@@ -27,7 +27,17 @@ export default function SignInScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const clerk = useClerk();
+  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { startSSOFlow } = useSSO();
+
+  const setErrorWithToast = (message: string) => {
+    toast.error(message);
+  };
+
+  useEffect(() => {
+    if (!isAuthLoaded || !isSignedIn) return;
+    router.replace("/");
+  }, [isAuthLoaded, isSignedIn, router]);
 
   const completeSsoSignUpIfNeeded = async (result: {
     setActive?: ((params: { session: string }) => Promise<void>) | null;
@@ -93,8 +103,6 @@ export default function SignInScreen() {
 
   const handleSSOSignIn = async (strategy: "oauth_apple" | "oauth_google") => {
     try {
-      setFormError(null);
-
       const result = await startSSOFlow({
         strategy,
         // redirectUrl,
@@ -110,13 +118,15 @@ export default function SignInScreen() {
       if (didCompleteSignUp) {
         router.replace("/onboarding");
       } else {
-        setFormError(
+        setErrorWithToast(
           "We could not complete social sign in automatically. Continue with email or try sign up.",
         );
       }
     } catch (err) {
       console.error(`${strategy} sign-in error:`, err);
-      setFormError(err instanceof Error ? err.message : "SSO sign in failed.");
+      setErrorWithToast(
+        err instanceof Error ? err.message : "SSO sign in failed.",
+      );
     }
   };
 
@@ -124,12 +134,12 @@ export default function SignInScreen() {
     const cleanedIdentifier = identifier.trim();
 
     if (!cleanedIdentifier) {
-      setFormError("Enter your email or username.");
+      setErrorWithToast("Enter your email or username.");
       return;
     }
 
     if (!clerk.loaded || !clerk.client?.signIn) {
-      setFormError("Sign in is still loading. Please try again.");
+      setErrorWithToast("Sign in is still loading. Please try again.");
       return;
     }
 
@@ -182,11 +192,11 @@ export default function SignInScreen() {
         }
       }
 
-      setFormError(
+      setErrorWithToast(
         "Continue with your next verification step to finish sign in.",
       );
     } catch (err) {
-      setFormError(
+      setErrorWithToast(
         err instanceof Error ? err.message : "Failed to continue sign in.",
       );
     } finally {
@@ -198,18 +208,17 @@ export default function SignInScreen() {
     const cleanedCode = otpCode.trim();
 
     if (!cleanedCode) {
-      setFormError("Enter the one-time password sent to your email.");
+      setErrorWithToast("Enter the one-time password sent to your email.");
       return;
     }
 
     if (!clerk.loaded || !clerk.client?.signIn) {
-      setFormError("Sign in is still loading. Please try again.");
+      setErrorWithToast("Sign in is still loading. Please try again.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      setFormError(null);
 
       const result = (await clerk.client.signIn.attemptFirstFactor({
         strategy: "email_code",
@@ -226,13 +235,13 @@ export default function SignInScreen() {
       }
 
       if (result.status === "needs_second_factor") {
-        setFormError("A second verification step is required.");
+        setErrorWithToast("A second verification step is required.");
         return;
       }
 
-      setFormError("Invalid code. Please try again.");
+      setErrorWithToast("Invalid code. Please try again.");
     } catch (err) {
-      setFormError(
+      setErrorWithToast(
         err instanceof Error ? err.message : "Failed to verify code.",
       );
     } finally {
@@ -245,6 +254,10 @@ export default function SignInScreen() {
 
     return <div id="clerk-captcha" style={{ marginTop: 12 }} />;
   };
+
+  if (!isAuthLoaded || isSignedIn) {
+    return null;
+  }
 
   return (
     <SafeAreaView
