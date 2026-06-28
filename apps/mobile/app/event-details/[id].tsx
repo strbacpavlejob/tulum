@@ -173,7 +173,7 @@ function ReservationModal({
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.6)",
+          backgroundColor: theme.gray5 + "99",
           justifyContent: "flex-end",
         }}
         onPress={onClose}
@@ -458,12 +458,12 @@ const EventDetailsScreen = () => {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "rgba(0,0,0,0.45)",
+            backgroundColor: theme.background075,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <ArrowLeft size={20} color="#fff" />
+          <ArrowLeft size={20} color={theme.colorStrong} />
         </Pressable>
 
         {/* Favorite button — top right */}
@@ -475,7 +475,7 @@ const EventDetailsScreen = () => {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "rgba(0,0,0,0.45)",
+            backgroundColor: theme.background075,
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -485,10 +485,7 @@ const EventDetailsScreen = () => {
 
         <View className="absolute bottom-0 left-0 right-0 p-4">
           <View className="flex-row items-center gap-4">
-            <View
-              className="w-16 h-16 rounded-full overflow-hidden border-2"
-              style={{ borderColor: "rgba(255,255,255,0.3)" }}
-            >
+            <View className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500/30">
               <Image
                 source={{ uri: event.venue_picture ?? undefined }}
                 className="w-full h-full"
