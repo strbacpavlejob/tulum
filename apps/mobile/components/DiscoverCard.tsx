@@ -75,31 +75,37 @@ export const DiscoverCard = ({
 
       {/* Content */}
 
-      <View className="flex-1 justify-center gap-1 p-2 mt-4">
+      <View className="flex-1 justify-between gap-1 p-2">
         <View className="flex-row ">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontSize: 14, fontWeight: "600", color: theme.gray12 }}
+            className="font-bold text-sm "
+            style={{
+              color: theme.gray12,
+            }}
           >
             {event.title}
           </Text>
         </View>
-        <View className="flex-row flex-wrap">
+        <View className="flex-row ">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={{ fontSize: 12, color: theme.gray10 }}
+            className="font-normal text-xs"
+            style={{ color: theme.gray10 }}
           >
             {event.venueName ?? ""}
           </Text>
-          <Text style={{ fontSize: 11, color: theme.gray10 }}>
+        </View>
+        <View className="flex-row flex-wrap">
+          <Text className="font-normal text-xs" style={{ color: theme.gray10 }}>
             {dateLabel} · {goingLabel}
           </Text>
         </View>
 
         {/* Tags */}
-        <View className="flex-row flex-wrap" style={{ overflow: "hidden" }}>
+        <View className="flex-row flex-wrap " style={{ overflow: "hidden" }}>
           <Tags tags={event.tags} size="ssm" />
         </View>
       </View>
