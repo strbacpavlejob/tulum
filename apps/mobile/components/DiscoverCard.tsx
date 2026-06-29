@@ -91,7 +91,7 @@ export const DiscoverCard = ({
             ellipsizeMode="tail"
             style={{ fontSize: 12, color: theme.gray10 }}
           >
-            {event.location.address ?? ""}
+            {event.venueName ?? ""}
           </Text>
           <Text style={{ fontSize: 11, color: theme.gray10 }}>
             {dateLabel} · {goingLabel}
