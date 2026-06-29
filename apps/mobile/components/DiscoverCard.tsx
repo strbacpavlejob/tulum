@@ -9,6 +9,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
 import { Pressable, StyleProp, View, ViewStyle } from "react-native";
+import { Marquee } from "./ui/marquee";
+import { TagsMarquee } from "./ui/tags-marquee";
 
 interface DiscoverCardProps {
   event: EventSummary;
@@ -63,7 +65,6 @@ export const DiscoverCard = ({
         style,
       ]}
     >
-      {/* Image */}
       <View style={{ width: 100, height: "100%" }}>
         <Image
           source={{ uri: event.image }}
@@ -73,22 +74,21 @@ export const DiscoverCard = ({
         />
       </View>
 
-      {/* Content */}
-
-      <View className="flex-1 justify-between gap-1 p-2">
-        <View className="flex-row ">
+      <View
+        className="flex-1 justify-between gap-1 p-2"
+        style={{ overflow: "hidden" }}
+      >
+        <Marquee active={isSelected}>
           <Text
             numberOfLines={1}
-            ellipsizeMode="tail"
-            className="font-bold text-sm "
-            style={{
-              color: theme.gray12,
-            }}
+            className="font-bold text-sm"
+            style={{ color: theme.gray12, flexShrink: 0 }}
           >
             {event.title}
           </Text>
-        </View>
-        <View className="flex-row ">
+        </Marquee>
+
+        <View className="flex-row">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -98,19 +98,20 @@ export const DiscoverCard = ({
             {event.venueName ?? ""}
           </Text>
         </View>
+
         <View className="flex-row flex-wrap">
           <Text className="font-normal text-xs" style={{ color: theme.gray10 }}>
             {dateLabel} · {goingLabel}
           </Text>
         </View>
 
-        {/* Tags */}
-        <View className="flex-row flex-wrap " style={{ overflow: "hidden" }}>
-          <Tags tags={event.tags} size="ssm" />
+        <View className="flex-row" style={{ flexShrink: 0 }}>
+          <TagsMarquee active={isSelected}>
+            <Tags tags={event.tags} size="ssm" />
+          </TagsMarquee>
         </View>
       </View>
 
-      {/* Heart — View captures touch to prevent bubbling to card Pressable */}
       <View
         className="absolute top-3 right-3 w-8 h-8 rounded-full items-center justify-center"
         style={{ backgroundColor: theme.background075 }}
