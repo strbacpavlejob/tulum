@@ -10,23 +10,61 @@ import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
 import { Pressable, StyleProp, View, ViewStyle } from "react-native";
 import { Marquee } from "./ui/marquee";
+import { Skeleton } from "./ui/skeleton";
 import { TagsMarquee } from "./ui/tags-marquee";
 
 interface DiscoverCardProps {
-  event: EventSummary;
-  isSelected: boolean;
-  onPress: () => void;
+  event?: EventSummary;
+  isSelected?: boolean;
+  onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  isLoading?: boolean;
 }
 
 export const DiscoverCard = ({
   event,
-  isSelected,
+  isSelected = false,
   onPress,
   style,
+  isLoading = false,
 }: DiscoverCardProps) => {
   const theme = useAppTheme();
   const { t, i18n } = useTranslation();
+
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          {
+            height: 112,
+            width: 300,
+            flexDirection: "row",
+            borderRadius: 16,
+            overflow: "hidden",
+            backgroundColor: theme.background075,
+            borderWidth: 1,
+            borderColor: theme.gray4,
+          },
+          style,
+        ]}
+      >
+        <Skeleton className="h-full w-[100px] rounded-none" />
+
+        <View className="flex-1 justify-between p-2">
+          <Skeleton className="h-4 w-[85%]" />
+          <Skeleton className="h-3 w-[60%]" />
+          <Skeleton className="h-3 w-[75%]" />
+          <Skeleton className="h-4 w-[90%]" />
+        </View>
+
+        <View className="absolute top-3 right-3 w-8 h-8 rounded-full overflow-hidden">
+          <Skeleton className="h-full w-full rounded-full" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!event) return null;
 
   const getDateLocale = () => {
     switch (i18n.language) {

@@ -24,6 +24,7 @@ import { DiscoverCard } from "./DiscoverCard";
 import MapClusterIcon from "./MapClusterIcon";
 import MapMarkerIcon from "./MapMarkerIcon";
 import SearchBox from "./SearchBox";
+import { Skeleton } from "./ui/skeleton";
 
 /* ── Render a React component into a DOM element for Leaflet ── */
 function renderToDiv(
@@ -123,6 +124,8 @@ const ListingsMap = memo(() => {
 
   const CARD_WIDTH = 300;
   const CARD_GAP = 12;
+  const SKELETON_COUNT = 5;
+  const TAG_SKELETON_WIDTHS = [72, 88, 64, 96, 76];
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const [activeTag, setActiveTag] = useState("All");
@@ -214,6 +217,18 @@ const ListingsMap = memo(() => {
     ),
     [selectedIndex, onCardPress],
   );
+
+  const skeletonItems = useMemo(
+    () => Array.from({ length: SKELETON_COUNT }, (_, i) => i),
+    [SKELETON_COUNT],
+  );
+
+  const renderSkeletonItem = useCallback(
+    () => <DiscoverCard isLoading isSelected={false} />,
+    [],
+  );
+
+  const showLoadingCards = !mapReady || events === undefined;
 
   const handleTagPress = useCallback(
     (tag: string) => {
@@ -443,13 +458,6 @@ const ListingsMap = memo(() => {
     prevSelectedIndexRef.current = selectedIndex;
   }, [selectedIndex, listings, mapPins]);
 
-  if (events === undefined)
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="small" />
-      </View>
-    );
-
   // OpenStreetMap via Leaflet
 
   return (
@@ -473,42 +481,76 @@ const ListingsMap = memo(() => {
         className="absolute top-0 left-0 right-0 z-10 px-4 pb-3"
         pointerEvents="box-none"
       >
-        <View pointerEvents="auto">
-          <SearchBox />
-        </View>
+        {showLoadingCards ? (
+          <View pointerEvents="none">
+            <View className="flex-row items-center gap-3">
+              <Skeleton className="h-12 flex-1 rounded-full" />
+              <Skeleton className="h-12 w-12 rounded-full" />
+            </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingTop: 12, paddingBottom: 4 }}
-          pointerEvents="auto"
-        >
-          {filterTags.map((tag) => (
-            <Pressable
-              key={tag}
-              onPress={() => handleTagPress(tag)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 6,
-                borderRadius: 99,
-                borderWidth: 1,
-                borderColor: activeTag === tag ? theme.color : theme.gray4,
-                backgroundColor:
-                  activeTag === tag ? theme.color : theme.background075,
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 8,
+                paddingTop: 12,
+                paddingBottom: 4,
               }}
+              pointerEvents="none"
             >
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "500",
-                  color: activeTag === tag ? theme.background : theme.gray10,
-                }}
-              >
-                {tag === "All" ? t("all") : tag}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              {TAG_SKELETON_WIDTHS.map((width, index) => (
+                <Skeleton
+                  key={`tag-skeleton-${index}`}
+                  style={{ width, height: 32, borderRadius: 99 }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          <>
+            <View pointerEvents="auto">
+              <SearchBox />
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 8,
+                paddingTop: 12,
+                paddingBottom: 4,
+              }}
+              pointerEvents="auto"
+            >
+              {filterTags.map((tag) => (
+                <Pressable
+                  key={tag}
+                  onPress={() => handleTagPress(tag)}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 6,
+                    borderRadius: 99,
+                    borderWidth: 1,
+                    borderColor: activeTag === tag ? theme.color : theme.gray4,
+                    backgroundColor:
+                      activeTag === tag ? theme.color : theme.background075,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color:
+                        activeTag === tag ? theme.background : theme.gray10,
+                    }}
+                  >
+                    {tag === "All" ? t("all") : tag}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </View>
 
       {/* Bottom gradient + cards */}
@@ -521,30 +563,67 @@ const ListingsMap = memo(() => {
           style={{ paddingBottom: insets.bottom + 4, paddingTop: 48 }}
           pointerEvents="box-none"
         >
-          <FlatList
-            ref={flatListRef}
-            data={listings}
-            keyExtractor={(item: EventSummary) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + CARD_GAP}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: 16, gap: CARD_GAP }}
-            getItemLayout={(_, index) => ({
-              length: CARD_WIDTH,
-              offset: 16 + index * (CARD_WIDTH + CARD_GAP),
-              index,
-            })}
-            renderItem={renderItem}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            initialNumToRender={5}
-            maxToRenderPerBatch={5}
-            windowSize={5}
-            pointerEvents="auto"
-          />
+          {showLoadingCards ? (
+            <FlatList
+              key="listings-skeleton"
+              data={skeletonItems}
+              keyExtractor={(item) => `skeleton-${item}`}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH + CARD_GAP}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: 16, gap: CARD_GAP }}
+              getItemLayout={(_, index) => ({
+                length: CARD_WIDTH,
+                offset: 16 + index * (CARD_WIDTH + CARD_GAP),
+                index,
+              })}
+              renderItem={renderSkeletonItem}
+              pointerEvents="none"
+            />
+          ) : (
+            <FlatList
+              key="listings-data"
+              ref={flatListRef}
+              data={listings ?? []}
+              keyExtractor={(item: EventSummary) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH + CARD_GAP}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: 16, gap: CARD_GAP }}
+              getItemLayout={(_, index) => ({
+                length: CARD_WIDTH,
+                offset: 16 + index * (CARD_WIDTH + CARD_GAP),
+                index,
+              })}
+              renderItem={renderItem}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              windowSize={5}
+              pointerEvents="auto"
+            />
+          )}
         </LinearGradient>
       </View>
+
+      {events === undefined && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            alignItems: "center",
+            paddingTop: insets.top + 64,
+          }}
+          pointerEvents="none"
+        >
+          <ActivityIndicator size="small" />
+        </View>
+      )}
     </View>
   );
 });
