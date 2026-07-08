@@ -128,6 +128,11 @@ export class VenuesController {
 
   // ─── Instagram Picture Refresh ───────────────────────────────────────────────
 
+  @Post('refresh-instagram-picture')
+  async refreshAllGoOutInstagramPictures() {
+    return this.venuesService.refreshAllGoOutInstagramPictures();
+  }
+
   @Post(':id/refresh-instagram-picture')
   async refreshInstagramPicture(
     @Param('id', ParseUUIDPipe) id: string,

@@ -166,9 +166,59 @@ export class SupabaseService implements OnModuleInit {
   ): Promise<Map<string, string>> {
     const dbRows = venues.map((venue) => this.mapVenueToDbRow(venue));
 
+    // For goout venues, keep existing DB picture_url values intact.
+    const gooutVenueNames = Array.from(
+      new Set(
+        venues
+          .filter((venue) => venue.scraper === 'goout')
+          .map((venue) => venue.name),
+      ),
+    );
+
+    const existingGooutVenueNames = new Set<string>();
+    if (gooutVenueNames.length > 0) {
+      const { data: existingVenues, error: existingVenuesError } =
+        await this.supabase
+          .from(VENUES_TABLE)
+          .select('name')
+          .in('name', gooutVenueNames);
+
+      if (existingVenuesError) {
+        this.logger.error(
+          'Error fetching existing goout venues:',
+          existingVenuesError.message,
+        );
+        throw new Error(
+          `Failed to fetch existing goout venues: ${existingVenuesError.message}`,
+        );
+      }
+
+      (existingVenues as { name: string }[] | null)?.forEach((venue) =>
+        existingGooutVenueNames.add(venue.name),
+      );
+    }
+
+    const upsertRows = dbRows.map((row) => {
+      const name = row.name as string | undefined;
+      const scraper = row.scraper as string | undefined;
+
+      if (
+        name &&
+        scraper === 'goout' &&
+        existingGooutVenueNames.has(name) &&
+        'picture_url' in row
+      ) {
+        const withoutPicture = { ...row };
+        delete withoutPicture.picture_url;
+        return withoutPicture;
+      }
+
+      return row;
+    });
+
     const { data, error } = await this.supabase
       .from(VENUES_TABLE)
-      .upsert(dbRows, { onConflict: 'name' })
+      .upsert(upsertRows, { onConflict: 'name' })
       .select('id, name');
 
     if (error) {

@@ -330,6 +330,10 @@ export class VenuesService {
     return data;
   }
 
+  async refreshAllGoOutInstagramPictures() {
+    return this.instagramScraperService.refreshVenueLogosByScraper('goout');
+  }
+
   private async assertOwnership(venueId: string, userId: string) {
     const { data: venue } = await this.db
       .from(VENUES_TABLE)
