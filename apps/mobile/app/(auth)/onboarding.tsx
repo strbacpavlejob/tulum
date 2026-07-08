@@ -642,12 +642,14 @@ export default function OnboardingScreen() {
       case "name":
         return (
           <Input
+            inputMode="text"
             value={firstName}
             onChangeText={setFirstName}
             placeholder="First name"
             autoFocus
             autoCapitalize="words"
-            style={{ height: 56, fontSize: 18, borderRadius: 16 }}
+            className="px-4 py-3 rounded-xl text-xl"
+            style={{ color: theme.colorStrong }}
           />
         );
 
