@@ -1,4 +1,5 @@
 import Blob from "@/components/Blob";
+import LanguageSelector from "@/components/LanguageSelector";
 import Logo from "@/components/illustrations/logo";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
@@ -13,12 +14,14 @@ import GoogleIcon from "@/components/illustrations/google-icon";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner-native";
+import { useTranslation } from "react-i18next";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
   const theme = useAppTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [identifier, setIdentifier] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -118,14 +121,12 @@ export default function SignInScreen() {
       if (didCompleteSignUp) {
         router.replace("/onboarding");
       } else {
-        setErrorWithToast(
-          "We could not complete social sign in automatically. Continue with email or try sign up.",
-        );
+        setErrorWithToast(t("authSocialAutoSignInFailed"));
       }
     } catch (err) {
       console.error(`${strategy} sign-in error:`, err);
       setErrorWithToast(
-        err instanceof Error ? err.message : "SSO sign in failed.",
+        err instanceof Error ? err.message : t("authSsoSignInFailed"),
       );
     }
   };
@@ -134,12 +135,12 @@ export default function SignInScreen() {
     const cleanedIdentifier = identifier.trim();
 
     if (!cleanedIdentifier) {
-      setErrorWithToast("Enter your email or username.");
+      setErrorWithToast(t("authEnterEmailOrUsername"));
       return;
     }
 
     if (!clerk.loaded || !clerk.client?.signIn) {
-      setErrorWithToast("Sign in is still loading. Please try again.");
+      setErrorWithToast(t("authSignInLoading"));
       return;
     }
 
@@ -192,12 +193,10 @@ export default function SignInScreen() {
         }
       }
 
-      setErrorWithToast(
-        "Continue with your next verification step to finish sign in.",
-      );
+      setErrorWithToast(t("authContinueVerification"));
     } catch (err) {
       setErrorWithToast(
-        err instanceof Error ? err.message : "Failed to continue sign in.",
+        err instanceof Error ? err.message : t("authContinueSignInFailed"),
       );
     } finally {
       setIsSubmitting(false);
@@ -208,12 +207,12 @@ export default function SignInScreen() {
     const cleanedCode = otpCode.trim();
 
     if (!cleanedCode) {
-      setErrorWithToast("Enter the one-time password sent to your email.");
+      setErrorWithToast(t("authEnterOtp"));
       return;
     }
 
     if (!clerk.loaded || !clerk.client?.signIn) {
-      setErrorWithToast("Sign in is still loading. Please try again.");
+      setErrorWithToast(t("authSignInLoading"));
       return;
     }
 
@@ -235,14 +234,14 @@ export default function SignInScreen() {
       }
 
       if (result.status === "needs_second_factor") {
-        setErrorWithToast("A second verification step is required.");
+        setErrorWithToast(t("authSecondFactorRequired"));
         return;
       }
 
-      setErrorWithToast("Invalid code. Please try again.");
+      setErrorWithToast(t("authInvalidCode"));
     } catch (err) {
       setErrorWithToast(
-        err instanceof Error ? err.message : "Failed to verify code.",
+        err instanceof Error ? err.message : t("authVerifyCodeFailed"),
       );
     } finally {
       setIsSubmitting(false);
@@ -264,6 +263,10 @@ export default function SignInScreen() {
       edges={["top", "bottom"]}
       style={{ flex: 1, backgroundColor: theme.backgroundFocus }}
     >
+      <View className="absolute top-4 right-4 z-20">
+        <LanguageSelector />
+      </View>
+
       <View className="flex-1 items-center justify-center px-6">
         <View className="absolute inset-0" pointerEvents="none">
           <Blob width="100%" color="rgba(255,255,255,0.10)" />
@@ -295,7 +298,7 @@ export default function SignInScreen() {
             textAlign: "center",
           }}
         >
-          Meet people at events near you
+          {t("authMeetPeopleTagline")}
         </Text>
       </View>
 
@@ -311,7 +314,7 @@ export default function SignInScreen() {
             marginBottom: 6,
           }}
         >
-          Sign in to continue
+          {t("authSignInTitle")}
         </Text>
 
         <Text
@@ -321,7 +324,7 @@ export default function SignInScreen() {
             marginBottom: 24,
           }}
         >
-          {"Choose how you'd like to join"}
+          {t("authSignInSubtitle")}
         </Text>
 
         <Pressable
@@ -341,7 +344,7 @@ export default function SignInScreen() {
               color: theme.colorStrong,
             }}
           >
-            Continue with Apple
+            {t("authContinueWithApple")}
           </Text>
         </Pressable>
 
@@ -362,7 +365,7 @@ export default function SignInScreen() {
               color: theme.colorStrong,
             }}
           >
-            Continue with Google
+            {t("authContinueWithGoogle")}
           </Text>
         </Pressable>
 
@@ -471,9 +474,10 @@ export default function SignInScreen() {
             lineHeight: 18,
           }}
         >
-          By continuing, you agree to our{" "}
-          <Text style={{ color: theme.color }}>Terms of Service</Text> and{" "}
-          <Text style={{ color: theme.color }}>Privacy Policy</Text>
+          {t("authTermsPrefix")}{" "}
+          <Text style={{ color: theme.color }}>{t("authTermsOfService")}</Text>{" "}
+          {t("authTermsAnd")}{" "}
+          <Text style={{ color: theme.color }}>{t("authPrivacyPolicy")}</Text>
         </Text>
       </View>
     </SafeAreaView>

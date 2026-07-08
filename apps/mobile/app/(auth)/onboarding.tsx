@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
+import LanguageSelector from "@/components/LanguageSelector";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   deleteGuestPhoto,
@@ -18,6 +19,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import { Image } from "expo-image";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -32,110 +34,76 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TAGS_OPTIONS = [
-  "Photography",
-  "Travel",
-  "Yoga",
-  "Music",
-  "Coffee",
-  "Art",
-  "Dancing",
-  "Hiking",
-  "Food",
-  "Tech",
-  "Fitness",
-  "Reading",
-  "Movies",
-  "Gaming",
-  "Fashion",
+  { value: "Photography", labelKey: "photography" },
+  { value: "Travel", labelKey: "travel" },
+  { value: "Yoga", labelKey: "yoga" },
+  { value: "Music", labelKey: "music" },
+  { value: "Coffee", labelKey: "coffee" },
+  { value: "Art", labelKey: "art" },
+  { value: "Dancing", labelKey: "dancing" },
+  { value: "Hiking", labelKey: "hiking" },
+  { value: "Food", labelKey: "food" },
+  { value: "Tech", labelKey: "tech" },
+  { value: "Fitness", labelKey: "fitness" },
+  { value: "Reading", labelKey: "reading" },
+  { value: "Movies", labelKey: "movies" },
+  { value: "Gaming", labelKey: "gaming" },
+  { value: "Fashion", labelKey: "fashion" },
 ];
 
-const LOOKING_FOR_OPTIONS: { label: string; value: SeekingValue }[] = [
-  { label: "Casual", value: "casual" },
-  { label: "Relationship", value: "relationship" },
-  { label: "Friendship", value: "friendship" },
-  { label: "Party", value: "party" },
+const LOOKING_FOR_OPTIONS: { labelKey: string; value: SeekingValue }[] = [
+  { labelKey: "onboardingSeekingCasual", value: "casual" },
+  { labelKey: "onboardingSeekingRelationship", value: "relationship" },
+  { labelKey: "onboardingSeekingFriendship", value: "friendship" },
+  { labelKey: "onboardingSeekingParty", value: "party" },
 ];
 
-const VENUE_OPTIONS: { label: string; value: string }[] = [
-  { label: "🍺 Bar", value: "bar" },
-  { label: "🍻 Pub", value: "pub" },
-  { label: "🕺 Nightclub", value: "nightclub" },
-  { label: "🍽️ Restaurant", value: "restaurant" },
-  { label: "☕ Cafe", value: "cafe" },
-  { label: "🍸 Cocktail Bar", value: "cocktail_bar" },
-  { label: "🍷 Wine Bar", value: "wine_bar" },
-  { label: "🍺 Brewery", value: "brewery" },
-  { label: "🏮 Tavern", value: "tavern" },
-  { label: "⛵ Raft", value: "raft" },
+const VENUE_OPTIONS: { emoji: string; labelKey: string; value: string }[] = [
+  { emoji: "🍺", labelKey: "bar", value: "bar" },
+  { emoji: "🍻", labelKey: "pub", value: "pub" },
+  { emoji: "🕺", labelKey: "nightclub", value: "nightclub" },
+  { emoji: "🍽️", labelKey: "restaurant", value: "restaurant" },
+  { emoji: "☕", labelKey: "cafe", value: "cafe" },
+  { emoji: "🍸", labelKey: "cocktailBar", value: "cocktail_bar" },
+  { emoji: "🍷", labelKey: "wineBar", value: "wine_bar" },
+  { emoji: "🍺", labelKey: "brewery", value: "brewery" },
+  { emoji: "🏮", labelKey: "tavern", value: "tavern" },
+  { emoji: "⛵", labelKey: "raft", value: "raft" },
 ];
 
-const GENDER_OPTIONS: { label: string; value: "male" | "female" | "other" }[] =
-  [
-    { label: "Man", value: "male" },
-    { label: "Woman", value: "female" },
-    { label: "Other", value: "other" },
-  ];
+const GENDER_OPTIONS: {
+  labelKey: string;
+  value: "male" | "female" | "other";
+}[] = [
+  { labelKey: "onboardingGenderMan", value: "male" },
+  { labelKey: "onboardingGenderWoman", value: "female" },
+  { labelKey: "onboardingGenderOther", value: "other" },
+];
 
 const LOOKING_FOR_GENDER_OPTIONS: {
-  label: string;
+  labelKey: string;
   value: LookingForGender;
 }[] = [
-  { label: "Men", value: "male" },
-  { label: "Women", value: "female" },
-  { label: "Everyone", value: "everyone" },
+  { labelKey: "onboardingInterestedMen", value: "male" },
+  { labelKey: "onboardingInterestedWomen", value: "female" },
+  { labelKey: "onboardingInterestedEveryone", value: "everyone" },
 ];
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-const STEPS = [
-  {
-    id: "name",
-    title: "What's your name?",
-    subtitle: "This is how you'll appear to others",
-  },
-  {
-    id: "birthday",
-    title: "When were you born?",
-    subtitle: "Your age will be visible on your profile",
-  },
-  {
-    id: "gender",
-    title: "How do you identify?",
-    subtitle: "This helps us show you relevant people",
-  },
-  {
-    id: "lookingForGender",
-    title: "Who are you interested in?",
-    subtitle: "We'll tailor your matches accordingly",
-  },
-  {
-    id: "lookingFor",
-    title: "Why are you here?",
-    subtitle: "Select everything that applies",
-  },
-  {
-    id: "tags",
-    title: "What are your interests?",
-    subtitle: "Pick things you enjoy to find your crowd",
-  },
-  {
-    id: "venueTypes",
-    title: "What venues do you love?",
-    subtitle: "We'll surface events you'll actually enjoy",
-  },
-  {
-    id: "photo",
-    title: "Add a profile photo",
-    subtitle: "A photo helps others recognize you",
-  },
-  {
-    id: "bio",
-    title: "Tell us about yourself",
-    subtitle: "A short bio goes a long way",
-  },
+const STEP_IDS = [
+  "name",
+  "birthday",
+  "gender",
+  "lookingForGender",
+  "lookingFor",
+  "tags",
+  "venueTypes",
+  "photo",
+  "bio",
 ] as const;
 
-const TOTAL_STEPS = STEPS.length;
+const TOTAL_STEPS = STEP_IDS.length;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -236,9 +204,13 @@ function CardOption({
 function BirthdayInput({
   value,
   onChange,
+  placeholder,
+  formatLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
+  placeholder: string;
+  formatLabel: string;
 }) {
   const theme = useAppTheme();
 
@@ -259,7 +231,7 @@ function BirthdayInput({
       <Input
         value={value}
         onChangeText={handleChange}
-        placeholder="DD / MM / YYYY"
+        placeholder={placeholder}
         keyboardType="numeric"
         maxLength={10}
         style={{
@@ -279,7 +251,7 @@ function BirthdayInput({
           marginTop: 8,
         }}
       >
-        Format: DD / MM / YYYY
+        {formatLabel}
       </Text>
     </View>
   );
@@ -292,11 +264,23 @@ function PhotoPickerStep({
   onPhotosChange,
   uploading,
   onUploadingChange,
+  permissionTitle,
+  permissionMessage,
+  uploadFailedTitle,
+  removeFailedTitle,
+  addPhotoLabel,
+  photosCounter,
 }: {
   photos: string[];
   onPhotosChange: (urls: string[]) => void;
   uploading: boolean;
   onUploadingChange: (v: boolean) => void;
+  permissionTitle: string;
+  permissionMessage: string;
+  uploadFailedTitle: string;
+  removeFailedTitle: string;
+  addPhotoLabel: string;
+  photosCounter: (count: number) => string;
 }) {
   const theme = useAppTheme();
   const { getToken } = useAuth();
@@ -304,10 +288,7 @@ function PhotoPickerStep({
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Please allow access to your photo library.",
-      );
+      Alert.alert(permissionTitle, permissionMessage);
       return;
     }
 
@@ -333,7 +314,7 @@ function PhotoPickerStep({
       onPhotosChange(updatedUrls);
     } catch (err) {
       Alert.alert(
-        "Upload failed",
+        uploadFailedTitle,
         err instanceof Error ? err.message : String(err),
       );
     } finally {
@@ -350,7 +331,7 @@ function PhotoPickerStep({
       onPhotosChange(updatedUrls);
     } catch (err) {
       Alert.alert(
-        "Remove failed",
+        removeFailedTitle,
         err instanceof Error ? err.message : String(err),
       );
     } finally {
@@ -414,7 +395,7 @@ function PhotoPickerStep({
                             textAlign: "center",
                           }}
                         >
-                          Add photo
+                          {addPhotoLabel}
                         </Text>
                       )}
                     </>
@@ -433,9 +414,7 @@ function PhotoPickerStep({
           marginTop: 16,
         }}
       >
-        {photos.length === 0
-          ? "Add up to 3 photos"
-          : `${photos.length}/3 photo${photos.length > 1 ? "s" : ""} added`}
+        {photosCounter(photos.length)}
       </Text>
     </View>
   );
@@ -445,9 +424,58 @@ function PhotoPickerStep({
 
 export default function OnboardingScreen() {
   const theme = useAppTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const { setUser } = useStore();
   const { userId, getToken } = useAuth();
+
+  const steps = [
+    {
+      id: "name",
+      title: t("onboardingStepNameTitle"),
+      subtitle: t("onboardingStepNameSubtitle"),
+    },
+    {
+      id: "birthday",
+      title: t("onboardingStepBirthdayTitle"),
+      subtitle: t("onboardingStepBirthdaySubtitle"),
+    },
+    {
+      id: "gender",
+      title: t("onboardingStepGenderTitle"),
+      subtitle: t("onboardingStepGenderSubtitle"),
+    },
+    {
+      id: "lookingForGender",
+      title: t("onboardingStepInterestedTitle"),
+      subtitle: t("onboardingStepInterestedSubtitle"),
+    },
+    {
+      id: "lookingFor",
+      title: t("onboardingStepLookingForTitle"),
+      subtitle: t("onboardingStepLookingForSubtitle"),
+    },
+    {
+      id: "tags",
+      title: t("onboardingStepTagsTitle"),
+      subtitle: t("onboardingStepTagsSubtitle"),
+    },
+    {
+      id: "venueTypes",
+      title: t("onboardingStepVenuesTitle"),
+      subtitle: t("onboardingStepVenuesSubtitle"),
+    },
+    {
+      id: "photo",
+      title: t("onboardingStepPhotoTitle"),
+      subtitle: t("onboardingStepPhotoSubtitle"),
+    },
+    {
+      id: "bio",
+      title: t("onboardingStepBioTitle"),
+      subtitle: t("onboardingStepBioSubtitle"),
+    },
+  ] as const;
 
   // Check if onboarding is already complete
   const [checking, setChecking] = useState(true);
@@ -504,7 +532,7 @@ export default function OnboardingScreen() {
   // ── Validation ────────────────────────────────────────────────────────────
 
   const canProceed = (): boolean => {
-    switch (STEPS[step].id) {
+    switch (steps[step].id) {
       case "name":
         return firstName.trim().length > 0;
       case "birthday": {
@@ -573,7 +601,7 @@ export default function OnboardingScreen() {
   const finishOnboarding = async () => {
     if (!userId || !gender || !seeking || !lookingForGender) {
       Alert.alert(
-        "Missing required fields",
+        t("onboardingMissingRequiredFields"),
         `Debug: userId=${userId}, gender=${gender}, seeking=${seeking}, lookingForGender=${lookingForGender}`,
       );
       return;
@@ -596,7 +624,7 @@ export default function OnboardingScreen() {
     try {
       const token = await getToken();
       if (!token) {
-        setSubmitError("Authentication error. Please sign in again.");
+        setSubmitError(t("onboardingAuthError"));
         setSubmitting(false);
         return;
       }
@@ -626,7 +654,7 @@ export default function OnboardingScreen() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[onboarding] submitOnboarding failed:", msg);
-      Alert.alert("Save failed", msg);
+      Alert.alert(t("onboardingSaveFailed"), msg);
       setSubmitError(msg);
     } finally {
       setSubmitting(false);
@@ -636,7 +664,7 @@ export default function OnboardingScreen() {
   // ── Step content ──────────────────────────────────────────────────────────
 
   const renderStepContent = () => {
-    const currentStep = STEPS[step];
+    const currentStep = steps[step];
 
     switch (currentStep.id) {
       case "name":
@@ -645,7 +673,7 @@ export default function OnboardingScreen() {
             inputMode="text"
             value={firstName}
             onChangeText={setFirstName}
-            placeholder="First name"
+            placeholder={t("onboardingFirstNamePlaceholder")}
             autoFocus
             autoCapitalize="words"
             className="px-4 py-3 rounded-xl text-xl"
@@ -654,7 +682,14 @@ export default function OnboardingScreen() {
         );
 
       case "birthday":
-        return <BirthdayInput value={birthday} onChange={setBirthday} />;
+        return (
+          <BirthdayInput
+            value={birthday}
+            onChange={setBirthday}
+            placeholder={t("onboardingBirthdayPlaceholder")}
+            formatLabel={t("onboardingBirthdayFormat")}
+          />
+        );
 
       case "gender":
         return (
@@ -662,7 +697,7 @@ export default function OnboardingScreen() {
             {GENDER_OPTIONS.map((opt) => (
               <CardOption
                 key={opt.value}
-                label={opt.label}
+                label={t(opt.labelKey)}
                 selected={gender === opt.value}
                 onPress={() => setGender(opt.value)}
               />
@@ -676,7 +711,7 @@ export default function OnboardingScreen() {
             {LOOKING_FOR_GENDER_OPTIONS.map((opt) => (
               <CardOption
                 key={opt.value}
-                label={opt.label}
+                label={t(opt.labelKey)}
                 selected={lookingForGender === opt.value}
                 onPress={() => setLookingForGender(opt.value)}
               />
@@ -690,7 +725,7 @@ export default function OnboardingScreen() {
             {LOOKING_FOR_OPTIONS.map((opt) => (
               <CardOption
                 key={opt.value}
-                label={opt.label}
+                label={t(opt.labelKey)}
                 selected={seeking === opt.value}
                 onPress={() => setSeeking(opt.value)}
               />
@@ -703,10 +738,10 @@ export default function OnboardingScreen() {
           <View className="flex-row flex-wrap">
             {TAGS_OPTIONS.map((tag) => (
               <ChipOption
-                key={tag}
-                label={tag}
-                selected={tags.includes(tag)}
-                onPress={() => toggleItem(setTags, tag)}
+                key={tag.value}
+                label={t(tag.labelKey)}
+                selected={tags.includes(tag.value)}
+                onPress={() => toggleItem(setTags, tag.value)}
               />
             ))}
           </View>
@@ -718,7 +753,7 @@ export default function OnboardingScreen() {
             {VENUE_OPTIONS.map((opt) => (
               <ChipOption
                 key={opt.value}
-                label={opt.label}
+                label={`${opt.emoji} ${t(opt.labelKey)}`}
                 selected={venueTypes.includes(opt.value)}
                 onPress={() => toggleItem(setVenueTypes, opt.value)}
               />
@@ -733,6 +768,16 @@ export default function OnboardingScreen() {
             onPhotosChange={setPhotos}
             uploading={photoUploading}
             onUploadingChange={setPhotoUploading}
+            permissionTitle={t("onboardingPermissionRequired")}
+            permissionMessage={t("onboardingPhotoPermissionMessage")}
+            uploadFailedTitle={t("onboardingUploadFailed")}
+            removeFailedTitle={t("onboardingRemoveFailed")}
+            addPhotoLabel={t("onboardingAddPhoto")}
+            photosCounter={(count) =>
+              count === 0
+                ? t("onboardingAddUpToPhotos")
+                : t("onboardingPhotosAdded", { count })
+            }
           />
         );
 
@@ -741,7 +786,7 @@ export default function OnboardingScreen() {
           <Textarea
             value={bio}
             onChangeText={setBio}
-            placeholder="Tell others a little about yourself…"
+            placeholder={t("onboardingBioPlaceholder")}
             autoFocus
             className="min-h-[140px]"
           />
@@ -778,6 +823,10 @@ export default function OnboardingScreen() {
       edges={["top", "bottom"]}
       style={{ flex: 1, backgroundColor: theme.background }}
     >
+      <View className="absolute top-4 right-4 z-20">
+        <LanguageSelector />
+      </View>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -830,13 +879,13 @@ export default function OnboardingScreen() {
               letterSpacing: -0.3,
             }}
           >
-            {STEPS[step].title}
+            {steps[step].title}
           </Text>
-          {STEPS[step].subtitle && (
+          {steps[step].subtitle && (
             <Text
               style={{ fontSize: 15, color: theme.colorMuted, marginTop: 4 }}
             >
-              {STEPS[step].subtitle}
+              {steps[step].subtitle}
             </Text>
           )}
         </View>
@@ -883,7 +932,9 @@ export default function OnboardingScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-                {isLastStep ? "Complete Profile" : "Continue"}
+                {isLastStep
+                  ? t("onboardingCompleteProfile")
+                  : t("onboardingContinue")}
               </Text>
             )}
           </Button>
