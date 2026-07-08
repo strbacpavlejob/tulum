@@ -101,6 +101,14 @@ const INITIAL_REGION = {
   longitudeDelta: LONGITUDE_DELTA,
 };
 
+const ACTIVE_PIN_ZOOM = 16;
+const DEFAULT_MARKER_ICON_SIZE = 64;
+const SELECTED_MARKER_ICON_SIZE = 88;
+
+function getMarkerIconSize(isSelected: boolean) {
+  return isSelected ? SELECTED_MARKER_ICON_SIZE : DEFAULT_MARKER_ICON_SIZE;
+}
+
 const ListingsMap = memo(() => {
   const {
     filteredEvents: listings,
@@ -162,10 +170,13 @@ const ListingsMap = memo(() => {
       setSelectedIndex(index);
       setSelectedEventId(item.id);
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.panTo([
-          item.location.latitude,
-          item.location.longitude,
-        ]);
+        mapInstanceRef.current.flyTo(
+          [item.location.latitude, item.location.longitude],
+          ACTIVE_PIN_ZOOM,
+          {
+            duration: 0.35,
+          },
+        );
       }
       router.push(`/event-details/${item.id}`);
     },
@@ -315,9 +326,9 @@ const ListingsMap = memo(() => {
       },
     });
 
-    (mapPins ?? []).forEach((pin: EventPin, index: number) => {
+    (mapPins ?? []).forEach((pin: EventPin) => {
       // All markers start unselected; the selection effect updates the active one
-      const markerSize = 64;
+      const markerSize = getMarkerIconSize(false);
 
       const el = renderToDiv(
         <MapMarkerIcon
@@ -374,7 +385,7 @@ const ListingsMap = memo(() => {
         : (mapPins ?? []).findIndex((pin) => pin.venueId === selectedVenueId);
 
     if (selectedPinIndex >= 0 && mapPins?.[selectedPinIndex]) {
-      const markerSize = 64;
+      const markerSize = getMarkerIconSize(true);
       const el = renderToDiv(
         <MapMarkerIcon
           image={mapPins[selectedPinIndex].image}
@@ -433,7 +444,7 @@ const ListingsMap = memo(() => {
         !mapPins?.[index]
       )
         return;
-      const markerSize = 64;
+      const markerSize = getMarkerIconSize(isSelected);
       const el = renderToDiv(
         <MapMarkerIcon
           image={mapPins[index].image}
@@ -457,6 +468,23 @@ const ListingsMap = memo(() => {
     updateIcon(selectedPinIndex, true);
     prevSelectedIndexRef.current = selectedIndex;
   }, [selectedIndex, listings, mapPins]);
+
+  /* ── Keep selected pin centered and zoomed in ── */
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || selectedIndex === null) return;
+
+    const selectedEvent = listings?.[selectedIndex];
+    if (!selectedEvent) return;
+
+    map.flyTo(
+      [selectedEvent.location.latitude, selectedEvent.location.longitude],
+      ACTIVE_PIN_ZOOM,
+      {
+        duration: 0.35,
+      },
+    );
+  }, [selectedIndex, listings]);
 
   // OpenStreetMap via Leaflet
 

@@ -23,7 +23,7 @@ interface MapMarkerProps {
 const sizeConfig = {
   sm: { outer: 32, inner: 24, border: 2, icon: 12 },
   md: { outer: 48, inner: 40, border: 2, icon: 20 },
-  xl: { outer: 64, inner: 52, border: 3, icon: 28 },
+  xl: { outer: 72, inner: 58, border: 3, icon: 32 },
 };
 
 const MapMarkerIcon = ({
