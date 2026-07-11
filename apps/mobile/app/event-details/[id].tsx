@@ -23,6 +23,8 @@ import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   MapPin,
   MessageCircle,
   Phone,
@@ -530,12 +532,21 @@ const EventDetailsScreen = () => {
         <View className="flex-row items-start gap-4">
           <View className="flex-1">
             <Pressable onPress={() => setDescExpanded((v) => !v)}>
-              <Text
-                style={{ fontSize: 14, lineHeight: 22, color: theme.gray6 }}
-                numberOfLines={descExpanded ? undefined : 3}
-              >
-                {event.description}
-              </Text>
+              <View>
+                <Text
+                  style={{ fontSize: 14, lineHeight: 22, color: theme.gray6 }}
+                  numberOfLines={descExpanded ? undefined : 3}
+                >
+                  {event.description}
+                </Text>
+                <View className="flex-row items-center justify-center mt-2">
+                  {descExpanded ? (
+                    <ChevronUp size={14} color={theme.gray5} />
+                  ) : (
+                    <ChevronDown size={14} color={theme.gray5} />
+                  )}
+                </View>
+              </View>
             </Pressable>
           </View>
           <View className="shrink-0">
@@ -565,7 +576,7 @@ const EventDetailsScreen = () => {
         <View className="flex-row items-center gap-2">
           <MapPin size={16} color={theme.gray12} />
           <Text style={{ fontSize: 14, color: theme.gray6 }}>
-            {event.location.address || "Tulum, Mexico"}
+            {`${event.venueName}, ${event.location.address}`}
           </Text>
         </View>
 

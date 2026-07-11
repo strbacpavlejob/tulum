@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Text } from "@/components/ui/text";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { Linking, useColorScheme, View } from "react-native";
+import { ArrowUpRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import useStore from "@/store/useStore";
 import MapMarkerIcon from "./MapMarkerIcon";
 
@@ -45,6 +49,8 @@ export const MiniMap = ({
   longitude,
   height = 150,
 }: MiniMapProps) => {
+  const theme = useAppTheme();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const storeTheme = useStore((s) => s.settings.theme);
   const isDark =
@@ -89,6 +95,8 @@ export const MiniMap = ({
       });
 
       const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+      map.on("click", () => Linking.openURL(mapsUrl));
       L.marker([latitude, longitude], { icon })
         .addTo(map)
         .on("click", () => Linking.openURL(mapsUrl));
@@ -124,7 +132,7 @@ export const MiniMap = ({
   }, [isDark, mapReady]);
 
   return (
-    <View className="w-full" style={{ height }}>
+    <View className="w-full" style={{ height, position: "relative" }}>
       <div
         ref={mapContainerRef}
         style={{
@@ -133,8 +141,42 @@ export const MiniMap = ({
           borderRadius: 16,
           overflow: "hidden",
           cursor: "pointer",
+          position: "relative",
+          zIndex: 1,
         }}
       />
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 999,
+          backgroundColor: "rgba(0, 0, 0, 0.72)",
+          zIndex: 1000,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 6,
+          elevation: 3,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "600",
+            color: "#fff",
+          }}
+        >
+          {t("openInMaps")}
+        </Text>
+        <ArrowUpRight size={12} color="#fff" />
+      </View>
     </View>
   );
 };

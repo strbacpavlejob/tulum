@@ -221,6 +221,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Search events...",
+      openInMaps: "Open in Maps",
 
       // Profile info sections
       photos: "Photos",
@@ -573,6 +574,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Traži događaje...",
+      openInMaps: "Otvori u mapama",
 
       // Profile info sections
       photos: "Fotografije",
@@ -922,6 +924,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Поиск мероприятий...",
+      openInMaps: "Открыть в картах",
 
       // Profile info sections
       photos: "Фотографии",

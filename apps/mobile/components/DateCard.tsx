@@ -52,7 +52,7 @@ export const DateCard = ({ dateString }: DateCardProps) => {
           textAlign: "center",
         }}
       >
-        {dayName}
+        {monthDay}
       </Text>
       <Text
         style={{
@@ -63,7 +63,7 @@ export const DateCard = ({ dateString }: DateCardProps) => {
           marginTop: 8,
         }}
       >
-        {monthDay}
+        {dayName}
       </Text>
       <Text
         style={{
