@@ -1,11 +1,14 @@
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, View } from "react-native";
 import CalendarPicker, { ChangedDate } from "react-native-calendar-picker";
+import { Button } from "./ui/button";
+import { enUS, ru, srLatn } from "date-fns/locale";
 
 interface CalendarRangePickerProps {
   startDate?: Date | null;
@@ -23,7 +26,7 @@ const CalendarRangePicker = ({
   minDate,
 }: CalendarRangePickerProps) => {
   const theme = useAppTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [tempStart, setTempStart] = useState<Date | null>(startDate);
@@ -52,12 +55,49 @@ const CalendarRangePicker = ({
     }
   };
 
+  const dateLocale = useMemo<Locale>(() => {
+    switch (i18n.language) {
+      case "RU":
+        return ru;
+      case "RS":
+        return srLatn;
+      default:
+        return enUS;
+    }
+  }, [i18n.language]);
+
+  const weekdays = useMemo(
+    () =>
+      Array.from(
+        { length: 7 },
+        (_, dayIndex) =>
+          dateLocale.localize?.day(dayIndex as 0 | 1 | 2 | 3 | 4 | 5 | 6, {
+            width: "abbreviated",
+          }) ?? "",
+      ),
+    [dateLocale],
+  );
+
   const label = useMemo(() => {
     const s = tempStart ?? startDate;
     const e = tempEnd ?? endDate;
-    const fmt = (d?: Date | null) => (d ? format(d, "iii - MMM d ") : "—");
+    const fmt = (d?: Date | null) =>
+      d ? format(d, "iii - MMM d", { locale: dateLocale }) : "—";
     return `${fmt(s)} - ${fmt(e)}`;
-  }, [tempStart, tempEnd, startDate, endDate]);
+  }, [tempStart, tempEnd, startDate, endDate, dateLocale]);
+
+  const months = useMemo(
+    () =>
+      Array.from(
+        { length: 12 },
+        (_, monthIndex) =>
+          dateLocale.localize?.month(
+            monthIndex as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11,
+            { width: "abbreviated" },
+          ) ?? "",
+      ),
+    [dateLocale],
+  );
 
   return (
     <View className="flex-row gap-3 justify-between items-center">
@@ -85,25 +125,43 @@ const CalendarRangePicker = ({
                 height={320}
                 startFromMonday
                 allowRangeSelection
-                previousComponent={<ArrowLeft size={20} color={theme.gray11} />}
-                nextComponent={<ArrowRight size={20} color={theme.gray11} />}
+                previousComponent={
+                  <ArrowLeft size={20} color={theme.gray11} className="ml-8" />
+                }
+                nextComponent={
+                  <ArrowRight size={20} color={theme.gray11} className="mr-8" />
+                }
                 minDate={minDate ?? new Date()}
                 todayBackgroundColor={theme.backgroundStrong}
                 selectedDayColor={theme.color}
-                selectedDayTextColor={theme.accentBackground}
+                selectedDayTextColor={theme.colorStrong}
                 textStyle={{ color: theme.gray11 }}
+                monthTitleStyle={{
+                  color: theme.gray11,
+                  textTransform: "capitalize",
+                }}
                 onDateChange={onDateChange}
+                weekdays={weekdays}
+                months={months}
               />
               <View className="flex-row gap-3 justify-end mt-2">
-                <Pressable
-                  className="px-4 py-2 border rounded-lg"
-                  style={{ borderColor: theme.gray4 }}
+                <Button
+                  variant="outline"
+                  style={{
+                    borderColor: theme.gray4,
+                    backgroundColor: theme.gray3,
+                  }}
                   onPress={handleCancel}
                 >
-                  <Text>{t("cancel")}</Text>
-                </Pressable>
-                <Pressable
-                  className="px-4 py-2 rounded-lg"
+                  <Text
+                    className="font-semibold"
+                    style={{ color: theme.gray11 }}
+                  >
+                    {t("cancel")}
+                  </Text>
+                </Button>
+                <Button
+                  variant="outline"
                   style={{
                     backgroundColor: theme.color,
                     opacity: !tempStart || !tempEnd ? 0.5 : 1,
@@ -112,7 +170,7 @@ const CalendarRangePicker = ({
                   onPress={handleApply}
                 >
                   <Text className="text-white">{t("apply")}</Text>
-                </Pressable>
+                </Button>
               </View>
             </View>
           </View>
