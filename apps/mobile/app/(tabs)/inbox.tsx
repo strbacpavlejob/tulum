@@ -24,8 +24,14 @@ import {
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
+import EmptyIndicator from "@/components/EmptyIndicator";
+import { useRouter } from "expo-router";
+import ChatIcon from "@/components/illustrations/Chat";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -361,6 +367,7 @@ export default function InboxScreen() {
   const theme = useAppTheme();
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
+  const router = useRouter();
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [newMatches, setNewMatches] = useState<NewMatch[]>([]);
@@ -720,6 +727,34 @@ export default function InboxScreen() {
           locationPendingMatchRef.current = null;
         }}
       />
+    );
+  }
+
+  if (matches.length === 0 && newMatches.length === 0) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View
+            style={{
+              flex: 1,
+              paddingTop: 5,
+              paddingBottom: 10,
+              paddingHorizontal: 24,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+            }}
+          >
+            <EmptyIndicator
+              title={t("noMessagesYet")}
+              subtitle={t("noMessagesYetSubtitle")}
+              picture={ChatIcon}
+              onPress={() => router.push("/matches")}
+              buttonText={t("noMessagesYetButton")}
+            />
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 

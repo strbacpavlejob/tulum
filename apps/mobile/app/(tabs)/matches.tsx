@@ -20,6 +20,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
+import MatchIcon from "@/components/illustrations/Match";
+import { useRouter } from "expo-router";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +102,7 @@ export default function MatchesScreen() {
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   // ── Eligibility ────────────────────────────────────────────────────────────
   const [eligibility, setEligibility] = useState<EligibilityState>("checking");
@@ -307,27 +310,13 @@ export default function MatchesScreen() {
               gap: 16,
             }}
           >
-            <Text style={{ fontSize: 48 }}>🔒</Text>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: "700",
-                color: theme.color,
-                textAlign: "center",
-              }}
-            >
-              {t("matchesLocked")}
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: theme.gray10,
-                textAlign: "center",
-                lineHeight: 22,
-              }}
-            >
-              {t("matchesLockedSubtitle")}
-            </Text>
+            <EmptyIndicator
+              title={t("matchesLocked")}
+              subtitle={t("matchesLockedSubtitle")}
+              picture={MatchIcon}
+              onPress={() => router.push("/tickets")}
+              buttonText={t("matchesUnlockButton")}
+            />
           </View>
         </SafeAreaView>
       </View>

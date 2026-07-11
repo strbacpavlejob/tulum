@@ -1,6 +1,6 @@
 import { DiscoverCard } from "@/components/DiscoverCard";
 import EmptyIndicator from "@/components/EmptyIndicator";
-import MapIcon from "@/components/illustrations/Map";
+import CalendarIcon from "@/components/illustrations/Map";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fetchMyTickets } from "@/lib/api";
@@ -182,8 +182,10 @@ export default function TicketsScreen() {
           title={t("noTicketsTitle")}
           subtitle={t("noTicketsSubtitle")}
           picture={({ color, ...rest }) => (
-            <MapIcon {...rest} color={theme.color} />
+            <CalendarIcon {...rest} color={theme.color} />
           )}
+          onPress={() => router.push("/")}
+          buttonText={t("goToMap")}
         />
       </View>
     );

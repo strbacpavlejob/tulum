@@ -134,15 +134,18 @@ const resources = {
       religion: "Religion",
 
       // Tickets
-      noTicketsTitle: "Gosh darn!",
-      noTicketsSubtitle: "No tickets available at the moment!",
+      noTicketsTitle: "No upcoming tickets yet",
+      noTicketsSubtitle:
+        "You have no upcoming tickets, so go to the map to find available events near you.",
+      goToMap: "Go to Map",
 
       // Matches
       noMatchesTitle: "No swipes yet!",
       noMatchesSubtitle: "Check back after attending an event.",
-      matchesLocked: "Matching is locked",
+      matchesLocked: "Matches are locked",
       matchesLockedSubtitle:
-        "Swiping is only available while a live event is in progress and you have a ticket.",
+        "Matching unlocks during a live event with a valid ticket, so check your upcoming tickets below.",
+      matchesUnlockButton: "View tickets",
       matchesAlmostThere: "Almost there! 📍",
       matchesArriveAtVenue:
         "Arrive at the event venue to unlock matching. Once you're within range, swiping will be enabled automatically.",
@@ -153,6 +156,10 @@ const resources = {
       // Inbox
       newMatches: "New Matches",
       messages: "Messages",
+      noMessagesYet: "No messages yet",
+      noMessagesYetSubtitle:
+        "You have no messages yet, so go to Matches and swipe to meet people at your event.",
+      noMessagesYetButton: "Go to Matches",
       chatExpiredTitle: "Chat Expired",
       chatExpiredDescription:
         "This conversation has expired and can no longer be accessed.",
@@ -479,15 +486,18 @@ const resources = {
       religion: "Vera",
 
       // Tickets
-      noTicketsTitle: "Jao!",
-      noTicketsSubtitle: "Nema dostupnih karata trenutno!",
+      noTicketsTitle: "Još nema karata za predstojeće događaje",
+      noTicketsSubtitle:
+        "Nemaš karte za predstojeće događaje, pa idi na mapu da pronađeš dostupne događaje u blizini.",
+      goToMap: "Idi na mapu",
 
       // Matches
       noMatchesTitle: "Nema mečeva!",
       noMatchesSubtitle: "Proveri ponovo posle prisustvovanja događaju.",
       matchesLocked: "Mečevi su zaključani",
       matchesLockedSubtitle:
-        "Prevlačenje je dostupno samo dok je event aktivan i imaš ulaznicu.",
+        "Mečevi se otključavaju tokom aktivnog događaja uz važeću kartu, zato proveri svoje predstojeće karte ispod.",
+      matchesUnlockButton: "Pogledaj karte",
       matchesAlmostThere: "Skoro si tu! 📍",
       matchesArriveAtVenue:
         "Stigi do mesta događaja da otključaš mečeve. Čim budeš u blizini, prevlačenje će biti automatski omogućeno.",
@@ -498,6 +508,10 @@ const resources = {
       // Inbox
       newMatches: "Novi mečevi",
       messages: "Poruke",
+      noMessagesYet: "Još nema poruka",
+      noMessagesYetSubtitle:
+        "Još nemaš poruke, zato idi na Mečeve i prevlači da upoznaš ljude na događaju.",
+      noMessagesYetButton: "Idi na mečeve",
       chatExpiredTitle: "Razgovor istekao",
       chatExpiredDescription:
         "Ovaj razgovor je istekao i više mu nije moguće pristupiti.",
@@ -822,15 +836,18 @@ const resources = {
       religion: "Религия",
 
       // Tickets
-      noTicketsTitle: "Ой-ой!",
-      noTicketsSubtitle: "Билеты пока недоступны!",
+      noTicketsTitle: "Пока нет билетов на предстоящие события",
+      noTicketsSubtitle:
+        "У вас нет билетов на ближайшие события, поэтому перейдите на карту и найдите доступные мероприятия рядом.",
+      goToMap: "Перейти к карте",
 
       // Matches
       noMatchesTitle: "Нет свайпов!",
       noMatchesSubtitle: "Вернитесь после посещения мероприятия.",
-      matchesLocked: "Знакомства заблокированы",
+      matchesLocked: "Матчи заблокированы",
       matchesLockedSubtitle:
-        "Свайпы доступны только во время активного мероприятия при наличии билета.",
+        "Матчи открываются только во время активного события с действительным билетом, поэтому проверьте билеты ниже.",
+      matchesUnlockButton: "Перейти к билетам",
       matchesAlmostThere: "Почти на месте! 📍",
       matchesArriveAtVenue:
         "Приходите на место проведения мероприятия, чтобы разблокировать знакомства. Как только вы окажетесь в радиусе, свайпы включатся автоматически.",
@@ -841,6 +858,10 @@ const resources = {
       // Inbox
       newMatches: "Новые совпадения",
       messages: "Сообщения",
+      noMessagesYet: "Сообщений пока нет",
+      noMessagesYetSubtitle:
+        "Сообщений пока нет, поэтому перейдите в Matches и свайпайте людей на вашем мероприятии.",
+      noMessagesYetButton: "Перейти к матчам",
       chatExpiredTitle: "Чат истёк",
       chatExpiredDescription: "Этот разговор истёк и больше недоступен.",
       sayHello: "Поздоровайтесь!",
