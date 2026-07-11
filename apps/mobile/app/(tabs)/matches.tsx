@@ -17,14 +17,9 @@ import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  SafeAreaView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingIndicator from "@/components/loading-indicator";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -292,7 +287,7 @@ export default function MatchesScreen() {
           backgroundColor: theme.background,
         }}
       >
-        <ActivityIndicator color={theme.color} />
+        <LoadingIndicator />
       </View>
     );
   }
@@ -463,7 +458,7 @@ export default function MatchesScreen() {
           backgroundColor: theme.background,
         }}
       >
-        <ActivityIndicator color={theme.color} />
+        <LoadingIndicator />
       </View>
     );
   }

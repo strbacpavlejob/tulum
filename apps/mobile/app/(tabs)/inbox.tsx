@@ -16,7 +16,6 @@ import * as Location from "expo-location";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -26,6 +25,7 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingIndicator from "@/components/loading-indicator";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -603,7 +603,7 @@ export default function InboxScreen() {
         className="flex-1 items-center justify-center"
         style={{ backgroundColor: theme.background }}
       >
-        <ActivityIndicator color={theme.color} />
+        <LoadingIndicator />
       </View>
     );
   }

@@ -1,9 +1,10 @@
+import LoadingIndicator from "@/components/loading-indicator";
 import { fetchGuestMe } from "@/lib/api";
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 export default function Index() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
@@ -41,7 +42,7 @@ export default function Index() {
   if (!isLoaded) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
+        <LoadingIndicator />
       </View>
     );
   }
@@ -53,7 +54,7 @@ export default function Index() {
   if (!onboardingChecked) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
+        <LoadingIndicator />
       </View>
     );
   }

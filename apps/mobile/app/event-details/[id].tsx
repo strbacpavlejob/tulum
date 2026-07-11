@@ -34,7 +34,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { toast } from "sonner-native";
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -43,6 +42,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingIndicator from "@/components/loading-indicator";
 
 // ─── Helpers for deep-linking to contact apps ────────────────────────────
 
@@ -405,7 +405,7 @@ const EventDetailsScreen = () => {
         className="flex-1 justify-center items-center"
         style={{ backgroundColor: theme.background }}
       >
-        <ActivityIndicator color={theme.color} />
+        <LoadingIndicator />
       </View>
     );
   }

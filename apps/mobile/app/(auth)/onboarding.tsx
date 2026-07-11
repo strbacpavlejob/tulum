@@ -21,7 +21,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -30,6 +29,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import LoadingIndicator from "@/components/loading-indicator";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -376,7 +376,7 @@ function PhotoPickerStep({
                   className="flex-1 items-center justify-center gap-1"
                 >
                   {uploading && idx === photos.length ? (
-                    <ActivityIndicator color={theme.color} />
+                    <LoadingIndicator />
                   ) : (
                     <>
                       <Camera
@@ -813,7 +813,7 @@ export default function OnboardingScreen() {
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator size="large" color={theme.color} />
+        <LoadingIndicator />
       </SafeAreaView>
     );
   }
@@ -929,7 +929,7 @@ export default function OnboardingScreen() {
             style={!canProceed() || submitting ? { opacity: 0.45 } : {}}
           >
             {submitting ? (
-              <ActivityIndicator color="#fff" />
+              <LoadingIndicator />
             ) : (
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
                 {isLastStep

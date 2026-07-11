@@ -11,7 +11,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useStore from "@/store/useStore";
 import { EventPin, EventSummary } from "@/types/event";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   ScrollView,
@@ -25,6 +24,7 @@ import MapClusterIcon from "./MapClusterIcon";
 import MapMarkerIcon from "./MapMarkerIcon";
 import SearchBox from "./SearchBox";
 import { Skeleton } from "./ui/skeleton";
+import LoadingIndicator from "./loading-indicator";
 
 /* ── Render a React component into a DOM element for Leaflet ── */
 function renderToDiv(
@@ -649,7 +649,7 @@ const ListingsMap = memo(() => {
           }}
           pointerEvents="none"
         >
-          <ActivityIndicator size="small" />
+          <LoadingIndicator />
         </View>
       )}
     </View>

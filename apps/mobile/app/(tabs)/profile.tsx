@@ -47,17 +47,12 @@ import {
   Trash2,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import LoadingIndicator from "@/components/loading-indicator";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -364,7 +359,7 @@ export default function ProfileScreen() {
           backgroundColor: theme.background,
         }}
       >
-        <ActivityIndicator color={theme.color} size="large" />
+        <LoadingIndicator />
       </View>
     );
 

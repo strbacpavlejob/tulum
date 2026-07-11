@@ -9,15 +9,10 @@ import { Ticket } from "@/types/ticket";
 import { EventSummary } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { Animated, RefreshControl, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
+import LoadingIndicator from "@/components/loading-indicator";
 
 const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours before start = still "live"
 const SOON_WINDOW_MS = 3 * 60 * 60 * 1000; // within 3 hours from now = "starting soon"
@@ -172,7 +167,7 @@ export default function TicketsScreen() {
         className="flex-1 justify-center items-center"
         style={{ backgroundColor: theme.background }}
       >
-        <ActivityIndicator color={theme.color} />
+        <LoadingIndicator />
       </View>
     );
   }

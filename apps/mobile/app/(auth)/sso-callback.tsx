@@ -1,9 +1,10 @@
+import LoadingIndicator from "@/components/loading-indicator";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useClerk } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Captcha = () => {
@@ -55,7 +56,7 @@ export default function SsoCallbackScreen() {
     >
       <Captcha />
       <View className="flex-1 items-center justify-center px-6">
-        <ActivityIndicator color={theme.primary} />
+        <LoadingIndicator />
         <Text
           style={{
             marginTop: 14,
