@@ -45,6 +45,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
+import { TagsMarquee } from "@/components/ui/tags-marquee";
+import { Marquee } from "@/components/ui/marquee";
 
 // ─── Helpers for deep-linking to contact apps ────────────────────────────
 
@@ -291,7 +293,6 @@ const EventDetailsScreen = () => {
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [attending, setAttending] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
-  const [titleExpanded, setTitleExpanded] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
     maxSpots: 0,
@@ -497,20 +498,23 @@ const EventDetailsScreen = () => {
             </View>
 
             <View className="flex-1 pb-1">
-              <Pressable onPress={() => setTitleExpanded((v) => !v)}>
+              <Marquee active>
                 <Text
                   style={{
                     fontSize: 22,
                     fontWeight: "700",
                     color: theme.colorStrong,
                   }}
-                  numberOfLines={titleExpanded ? undefined : 1}
+                  numberOfLines={1}
                 >
                   {event.title}
                 </Text>
-              </Pressable>
+              </Marquee>
+
               <View className="flex-row flex-wrap gap-2 mt-2">
-                <Tags tags={event.tags} />
+                <TagsMarquee active>
+                  <Tags tags={event.tags} />
+                </TagsMarquee>
               </View>
             </View>
           </View>

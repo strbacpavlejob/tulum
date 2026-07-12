@@ -33,45 +33,27 @@ export const DateCard = ({ dateString }: DateCardProps) => {
 
   return (
     <View
-      className="items-center justify-center rounded-lg"
+      className={`flex flex-col gap-2 items-center justify-center rounded-lg border p-4 w-24 min-h-[128px] `}
       style={{
-        padding: 16,
-        width: 96,
-        minHeight: 128,
-        borderWidth: 1,
         borderColor: theme.gray3,
         backgroundColor: theme.backgroundStrong,
       }}
     >
       <Text
-        style={{
-          fontSize: 10,
-          fontWeight: "500",
-          color: theme.gray6,
-          textTransform: "uppercase",
-          textAlign: "center",
-        }}
+        className={`flex uppercase font-medium text-center text-sm`}
+        style={{ color: theme.gray12 }}
       >
         {monthDay}
       </Text>
       <Text
-        style={{
-          textAlign: "center",
-          fontSize: 20,
-          fontWeight: "700",
-          color: theme.gray12,
-          marginTop: 8,
-        }}
+        className={`mt-2 w-full text-center text-md font-semibold uppercase `}
+        style={{ color: theme.gray12 }}
       >
         {dayName}
       </Text>
       <Text
-        style={{
-          fontSize: 18,
-          color: theme.gray6,
-          marginTop: 8,
-          textAlign: "center",
-        }}
+        className={`uppercase font-medium text-center text-sm `}
+        style={{ color: theme.gray12 }}
       >
         {time}
       </Text>
