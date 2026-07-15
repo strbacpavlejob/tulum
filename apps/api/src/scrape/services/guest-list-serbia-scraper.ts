@@ -34,6 +34,8 @@ type ExistingVenue = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  min_age_male: number | null;
+  min_age_female: number | null;
 };
 
 type ExistingEvent = {
@@ -94,6 +96,10 @@ export class GuestListSerbiaScraperService implements OnModuleDestroy {
     const venuesByKey = new Map<string, Omit<Venue, 'id'>>();
     const events: (Omit<Event, 'id'> & { id?: string })[] = [];
     const existingEventsCache = new Map<string, ExistingEvent[]>();
+    const existingVenueAgeUpdates = new Map<
+      string,
+      { male: number; female: number }
+    >();
 
     for (const category of VENUE_CATEGORIES) {
       const listUrl = `${BASE_URL}?venue-type-2=${encodeURIComponent(category.queryValue)}`;
@@ -157,6 +163,21 @@ export class GuestListSerbiaScraperService implements OnModuleDestroy {
           if (!existingVenue.picture && parsed.imageUrl) {
             existingVenue.picture = parsed.imageUrl;
           }
+        } else if (venueMatch) {
+          const previous = existingVenueAgeUpdates.get(venueMatch.venue.id);
+          const maleBaseline = Math.max(
+            venueMatch.venue.min_age_male ?? DEFAULT_MIN_AGE,
+            previous?.male ?? DEFAULT_MIN_AGE,
+          );
+          const femaleBaseline = Math.max(
+            venueMatch.venue.min_age_female ?? DEFAULT_MIN_AGE,
+            previous?.female ?? DEFAULT_MIN_AGE,
+          );
+
+          existingVenueAgeUpdates.set(venueMatch.venue.id, {
+            male: Math.max(maleBaseline, parsed.minAgeMale),
+            female: Math.max(femaleBaseline, parsed.minAgeFemale),
+          });
         }
 
         const startDate = new Date(parsed.startDateTime);
@@ -212,6 +233,10 @@ export class GuestListSerbiaScraperService implements OnModuleDestroy {
       }
     }
 
+    if (existingVenueAgeUpdates.size > 0) {
+      await this.applyExistingVenueAgeUpdates(existingVenueAgeUpdates);
+    }
+
     const venues = Array.from(venuesByKey.values());
 
     this.logger.log(
@@ -225,7 +250,9 @@ export class GuestListSerbiaScraperService implements OnModuleDestroy {
     const { data, error } = await this.supabaseService
       .getClient()
       .from('venues')
-      .select('id, name, address, latitude, longitude');
+      .select(
+        'id, name, address, latitude, longitude, min_age_male, min_age_female',
+      );
 
     if (error) {
       this.logger.warn(
@@ -235,6 +262,28 @@ export class GuestListSerbiaScraperService implements OnModuleDestroy {
     }
 
     return ((data as ExistingVenue[] | null) ?? []).filter((v) => !!v.name);
+  }
+
+  private async applyExistingVenueAgeUpdates(
+    updates: Map<string, { male: number; female: number }>,
+  ): Promise<void> {
+    for (const [venueId, ages] of updates.entries()) {
+      const { error } = await this.supabaseService
+        .getClient()
+        .from('venues')
+        .update({
+          min_age_male: ages.male,
+          min_age_female: ages.female,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', venueId);
+
+      if (error) {
+        this.logger.warn(
+          `Failed to update age limits for existing venue ${venueId}: ${error.message}`,
+        );
+      }
+    }
   }
 
   private async fetchExistingEventsForVenueAndDay(
