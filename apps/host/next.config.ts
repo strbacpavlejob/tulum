@@ -36,6 +36,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "assets.tickets.rs",
       },
+      {
+        protocol: "https",
+        hostname: "framerusercontent.com",
+      },
     ],
   },
 };

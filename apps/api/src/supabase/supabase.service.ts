@@ -59,9 +59,11 @@ export class SupabaseService implements OnModuleInit {
     // 2. Map events to use real DB venue IDs (scraped data uses temporary IDs)
     const mappedEvents: Record<string, unknown>[] = [];
     for (const event of data.events) {
-      const dbVenueId = event.venue_name
-        ? venueNameToId.get(event.venue_name)
-        : undefined;
+      const dbVenueId = this.isUuid(event.venue_id)
+        ? event.venue_id
+        : event.venue_name
+          ? venueNameToId.get(event.venue_name)
+          : undefined;
       if (!dbVenueId) {
         this.logger.warn(
           `Skipping event "${event.title}" - no matching venue found (venue_name: ${event.venue_name})`,
@@ -281,6 +283,8 @@ export class SupabaseService implements OnModuleInit {
       description: venue.description,
       picture_url: venue.picture,
       scraper: venue.scraper,
+      min_age_male: venue.min_age_male,
+      min_age_female: venue.min_age_female,
     };
     // Remove undefined values so they don't overwrite existing data as null
     return Object.fromEntries(
@@ -292,6 +296,13 @@ export class SupabaseService implements OnModuleInit {
     if (value == null) return null;
     // Remove null bytes which PostgreSQL rejects in json/jsonb columns
     return value.replace(/\u0000/g, '');
+  }
+
+  private isUuid(value: string | undefined): value is string {
+    if (!value) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
   }
 
   private mapEventToDbRow(

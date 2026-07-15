@@ -1,6 +1,7 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { scrapers } from './scrapers.config';
 import { GoOutScraperService } from './services/go-out-scraper.service';
+import { GuestListSerbiaScraperService } from './services/guest-list-serbia-scraper.service';
 import { UnitedScraperService } from './services/united-scraper.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -8,6 +9,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 export class ScrapeController {
   constructor(
     private readonly goOutScraperService: GoOutScraperService,
+    private readonly guestListSerbiaScraperService: GuestListSerbiaScraperService,
     private readonly unitedScraperService: UnitedScraperService,
     private readonly supabaseService: SupabaseService,
   ) {}
@@ -23,6 +25,14 @@ export class ScrapeController {
 
     if (id === scrapers.goOut) {
       const data = await this.goOutScraperService.scrape();
+      const result = await this.supabaseService.saveScrapedData(data);
+      const deletedOldEvents = await this.supabaseService.deleteOldEvents();
+
+      return { ...result, deletedOldEvents };
+    }
+
+    if (id === scrapers.guestListSerbia) {
+      const data = await this.guestListSerbiaScraperService.scrape();
       const result = await this.supabaseService.saveScrapedData(data);
       const deletedOldEvents = await this.supabaseService.deleteOldEvents();
 

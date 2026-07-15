@@ -33,6 +33,8 @@ export interface Venue {
   picture?: string;
   picture_urls?: string[];
   scraper?: string;
+  min_age_male?: number;
+  min_age_female?: number;
   contact?: VenueContact | null;
   created_at?: string;
   updated_at?: string;

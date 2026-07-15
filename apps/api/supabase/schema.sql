@@ -455,7 +455,9 @@ CREATE TABLE IF NOT EXISTS "public"."venues" (
     "picture_url" "text",
     "scraper" "text",
     "contact_id" uuid,
-    "requires_reservation" boolean DEFAULT false NOT NULL
+    "requires_reservation" boolean DEFAULT false NOT NULL,
+    "min_age_male" integer DEFAULT 18 NOT NULL,
+    "min_age_female" integer DEFAULT 18 NOT NULL
 );
 
 
