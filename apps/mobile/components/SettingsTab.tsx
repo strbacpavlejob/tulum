@@ -13,6 +13,7 @@ import {
   Globe,
   LogOut,
   MapPin,
+  MapPinPlus,
   Sun,
   Trash2,
 } from "lucide-react-native";
@@ -135,7 +136,7 @@ export default function SettingsTab({
           <Separator />
 
           <SettingsRow
-            icon={MapPin}
+            icon={MapPinPlus}
             title={t("suggestVenue")}
             onPress={onSuggestVenuePress}
           />
