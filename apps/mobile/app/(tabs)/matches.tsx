@@ -17,11 +17,18 @@ import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import {
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+  Linking,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import MatchIcon from "@/components/illustrations/Match";
 import { useRouter } from "expo-router";
+import { CarTaxiFront } from "lucide-react-native";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -183,6 +190,7 @@ export default function MatchesScreen() {
         event_title: live.title ?? "",
       };
       setLiveTicket(ticket);
+
       await checkLocation(ticket.venue_lat, ticket.venue_lng);
     } catch {
       setEligibility("locked");
@@ -390,48 +398,79 @@ export default function MatchesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Legend */}
+        {/* Call Yandex Taxi button */}
         <View
           style={{
             position: "absolute",
             bottom: insets.bottom + 24,
             left: 16,
             right: 16,
-            flexDirection: "row",
-            gap: 16,
-            backgroundColor: theme.backgroundStrong,
-            borderRadius: 14,
-            padding: 14,
+            alignItems: "center",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: "#3b82f6",
-                borderWidth: 2,
-                borderColor: "white",
-              }}
-            />
-            <Text style={{ fontSize: 12, color: theme.gray10 }}>
-              {t("matchesYourLocation")}
+          <TouchableOpacity
+            onPress={async () => {
+              if (!liveTicket) return;
+
+              let startLatNum = userCoords?.lat;
+              let startLonNum = userCoords?.lng;
+
+              if (startLatNum == null || startLonNum == null) {
+                try {
+                  const { status } =
+                    await Location.requestForegroundPermissionsAsync();
+                  if (status === "granted") {
+                    const pos = await Location.getCurrentPositionAsync({
+                      accuracy: Location.Accuracy.Balanced,
+                    });
+                    startLatNum = pos.coords.latitude;
+                    startLonNum = pos.coords.longitude;
+                    setUserCoords({ lat: startLatNum, lng: startLonNum });
+                  } else {
+                    // permission denied — don't open
+                    return;
+                  }
+                } catch {
+                  return;
+                }
+              }
+
+              const startLat = (startLatNum ?? liveTicket.venue_lat).toFixed(6);
+              const startLon = (startLonNum ?? liveTicket.venue_lng).toFixed(6);
+              const endLat = liveTicket.venue_lat.toFixed(6);
+              const endLon = liveTicket.venue_lng.toFixed(6);
+
+              const url =
+                `https://3.redirect.appmetrica.yandex.com/route` +
+                `?start-lat=${startLat}` +
+                `&start-lon=${startLon}` +
+                `&end-lat=${endLat}` +
+                `&end-lon=${endLon}` +
+                `&ref=${encodeURIComponent(`tulum_${liveTicket.event_id}`)}` +
+                `&appmetrica_tracking_id=25395763362139037`;
+
+              try {
+                await Linking.openURL(url);
+              } catch (err) {
+                console.warn("Failed to open Yandex Go link", err);
+              }
+            }}
+            className="bg-yellow-500"
+            style={{
+              width: "100%",
+              paddingVertical: 14,
+              borderRadius: 14,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <CarTaxiFront size={20} style={{ marginBottom: 2 }} />
+            <Text style={{ fontWeight: "700", fontSize: 16 }}>
+              {t("callYandexTaxi")}
             </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: theme.color,
-              }}
-            />
-            <Text style={{ fontSize: 12, color: theme.gray10 }}>
-              {liveTicket.venue_name || t("matchesEventVenue")}
-            </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     );

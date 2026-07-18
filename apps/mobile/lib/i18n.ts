@@ -157,6 +157,7 @@ const resources = {
       matchesArriveAtVenue:
         "Arrive at the event venue to unlock matching. Once you're within range, swiping will be enabled automatically.",
       matchesCheckLocation: "Check my location",
+      callYandexTaxi: "Call Yandex Taxi",
       matchesYourLocation: "Your location",
       matchesEventVenue: "Event venue",
 
@@ -517,6 +518,7 @@ const resources = {
       matchesArriveAtVenue:
         "Stigi do mesta događaja da otključaš mečeve. Čim budeš u blizini, prevlačenje će biti automatski omogućeno.",
       matchesCheckLocation: "Proveri moju lokaciju",
+      callYandexTaxi: "Pozovi Yandex Taxi",
       matchesYourLocation: "Tvoja lokacija",
       matchesEventVenue: "Mesto događaja",
 
@@ -875,6 +877,7 @@ const resources = {
       matchesArriveAtVenue:
         "Приходите на место проведения мероприятия, чтобы разблокировать знакомства. Как только вы окажетесь в радиусе, свайпы включатся автоматически.",
       matchesCheckLocation: "Проверить мою геолокацию",
+      callYandexTaxi: "Вызвать Яндекс.Такси",
       matchesYourLocation: "Ваше местоположение",
       matchesEventVenue: "Место проведения",
 
