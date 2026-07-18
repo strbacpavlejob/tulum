@@ -1,6 +1,5 @@
 import LoadingIndicator from "@/components/loading-indicator";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
 import { useClerk } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -14,7 +13,6 @@ const Captcha = () => {
 };
 
 export default function SsoCallbackScreen() {
-  const theme = useAppTheme();
   const clerk = useClerk();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -52,19 +50,12 @@ export default function SsoCallbackScreen() {
   return (
     <SafeAreaView
       edges={["top", "bottom"]}
-      style={{ flex: 1, backgroundColor: theme.background }}
+      className="flex-1 bg-light-background dark:bg-dark-background"
     >
       <Captcha />
       <View className="flex-1 items-center justify-center px-6">
         <LoadingIndicator />
-        <Text
-          style={{
-            marginTop: 14,
-            color: theme.cardForeground,
-            textAlign: "center",
-            fontSize: 16,
-          }}
-        >
+        <Text className="mt-3.5 text-center text-base text-light-cardForeground dark:text-dark-cardForeground">
           {error ?? "Completing sign in..."}
         </Text>
       </View>

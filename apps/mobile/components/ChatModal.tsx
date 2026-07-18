@@ -246,12 +246,9 @@ export default function ChatModal({
           Platform.OS === "ios" ? HEADER_HEIGHT + insets.top : 0
         }
       >
-        <View className="flex-1" style={{ backgroundColor: theme.background }}>
+        <View className="flex-1 bg-light-background dark:bg-dark-background">
           {/* Header */}
-          <View
-            className="flex-row items-center px-4 py-3"
-            style={{ borderBottomWidth: 1, borderColor: theme.gray3 }}
-          >
+          <View className="flex-row items-center border-b border-light-gray3 px-4 py-3 dark:border-dark-gray3">
             <Pressable
               className="w-8 h-8 rounded-full items-center justify-center"
               onPress={onBack}
@@ -279,22 +276,10 @@ export default function ChatModal({
                 <HeaderTimerRing expiresAt={match.expiresAt} />
               </Pressable>
               <View>
-                <Text
-                  style={{
-                    color: theme.gray12,
-                    fontWeight: "600",
-                    fontSize: 18,
-                  }}
-                >
+                <Text className="text-[18px] font-semibold text-light-gray12 dark:text-dark-gray12">
                   {match.name}
                 </Text>
-                <Text
-                  style={{
-                    color: theme.gray10,
-                    fontSize: 14,
-                    marginTop: 2,
-                  }}
-                >
+                <Text className="mt-0.5 text-sm text-light-gray10 dark:text-dark-gray10">
                   {t("atVenue", { venue: match.venue })}
                 </Text>
               </View>
@@ -306,10 +291,7 @@ export default function ChatModal({
           </View>
 
           {/* Messages */}
-          <View
-            className="flex-1"
-            style={{ backgroundColor: theme.background }}
-          >
+          <View className="flex-1 bg-light-background dark:bg-dark-background">
             <FlatList
               ref={listRef}
               data={messages}
@@ -335,24 +317,14 @@ export default function ChatModal({
 
           {/* Input */}
           <View
+            className="border-t border-light-gray3 bg-light-background dark:border-dark-gray3 dark:bg-dark-background"
             style={{
               paddingBottom: insets.bottom,
-              backgroundColor: theme.background,
-              borderTopWidth: 1,
-              borderColor: theme.gray3,
             }}
             onLayout={onInputLayout}
           >
             <View className="px-6 py-4">
-              <View
-                className="flex-row items-center"
-                style={{
-                  backgroundColor: theme.gray3,
-                  borderRadius: 999,
-                  paddingHorizontal: 18,
-                  paddingVertical: 12,
-                }}
-              >
+              <View className="flex-row items-center rounded-full bg-light-gray3 px-[18px] py-3 dark:bg-dark-gray3">
                 <Textarea
                   className="flex-1 border-0 shadow-none rounded-none min-h-0"
                   style={{

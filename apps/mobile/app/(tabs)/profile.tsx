@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { cn } from "@/lib/utils";
 import { updateSettings, uploadGuestPhoto, deleteGuestPhoto } from "@/lib/api";
 import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";
@@ -351,14 +352,7 @@ export default function ProfileScreen() {
 
   if (!user)
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.background,
-        }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -385,11 +379,11 @@ export default function ProfileScreen() {
       <View className="flex-row items-center gap-[14px] flex-1">
         <Icon size={20} color={theme.color} />
         <View>
-          <Text style={{ fontSize: 16, color: theme.colorStrong }}>
+          <Text className="text-base text-light-colorStrong dark:text-dark-colorStrong">
             {title}
           </Text>
           {subtitle && (
-            <Text style={{ fontSize: 13, color: theme.colorMuted }}>
+            <Text className="text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
               {subtitle}
             </Text>
           )}
@@ -404,8 +398,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView
       edges={["top"]}
-      className="flex-1"
-      style={{ backgroundColor: theme.backgroundFocus }}
+      className="flex-1 bg-light-backgroundFocus dark:bg-dark-backgroundFocus"
     >
       {/* ── Top 1/3: header ──────────────────────────────────────────────── */}
       <View className="flex-1 justify-center items-center px-5">
@@ -420,7 +413,7 @@ export default function ProfileScreen() {
             <AvatarImage source={{ uri: user.imgUrl }} />
           </Avatar>
           {/* Name + Age */}
-          <Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>
+          <Text className="text-[22px] font-bold text-white">
             {user.firstName}, {user.age}
           </Text>
 
@@ -437,10 +430,8 @@ export default function ProfileScreen() {
 
       {/* ── Bottom 2/3: tabs ─────────────────────────────────────────────── */}
       <View
-        className="rounded-t-[32px] overflow-hidden"
+        className="flex-[2] overflow-hidden rounded-t-[32px] bg-light-background dark:bg-dark-background"
         style={{
-          flex: 2,
-          backgroundColor: theme.background,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -8 },
           shadowOpacity: 0.15,
@@ -450,49 +441,41 @@ export default function ProfileScreen() {
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
           {/* Tab strip */}
-          <TabsList
-            className="w-full rounded-none border-b h-12 px-0 py-0"
-            style={{
-              borderBottomColor: theme.border,
-              backgroundColor: theme.background,
-            }}
-          >
+          <TabsList className="h-12 w-full rounded-none border-b border-light-border bg-light-background px-0 py-0 dark:border-dark-border dark:bg-dark-background">
             <TabsTrigger
               value="profile"
-              className="flex-1 rounded-none h-full"
-              style={
-                activeTab === "profile"
-                  ? { borderBottomWidth: 2, borderBottomColor: theme.color }
-                  : {}
-              }
+              className={cn(
+                "h-full flex-1 rounded-none",
+                activeTab === "profile" &&
+                  "border-b-2 border-light-color dark:border-dark-color",
+              )}
             >
               <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: activeTab === "profile" ? "600" : "400",
-                  color:
-                    activeTab === "profile" ? theme.color : theme.colorMuted,
-                }}
+                className={cn(
+                  "text-sm",
+                  activeTab === "profile"
+                    ? "font-semibold text-light-color dark:text-dark-color"
+                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
+                )}
               >
                 {t("profile")}
               </Text>
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="flex-1 rounded-none h-full"
-              style={
-                activeTab === "settings"
-                  ? { borderBottomWidth: 2, borderBottomColor: theme.color }
-                  : {}
-              }
+              className={cn(
+                "h-full flex-1 rounded-none",
+                activeTab === "settings" &&
+                  "border-b-2 border-light-color dark:border-dark-color",
+              )}
             >
               <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: activeTab === "settings" ? "600" : "400",
-                  color:
-                    activeTab === "settings" ? theme.color : theme.colorMuted,
-                }}
+                className={cn(
+                  "text-sm",
+                  activeTab === "settings"
+                    ? "font-semibold text-light-color dark:text-dark-color"
+                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
+                )}
               >
                 {t("settings")}
               </Text>
@@ -714,17 +697,10 @@ export default function ProfileScreen() {
                     setUser(null);
                     router.replace("/(auth)/sign-in");
                   }}
-                  className="w-full gap-2"
-                  style={{ borderColor: theme.border }}
+                  className="w-full gap-2 border-light-border dark:border-dark-border"
                 >
                   <LogOut size={18} color={theme.colorStrong} />
-                  <Text
-                    style={{
-                      fontWeight: "600",
-                      fontSize: 15,
-                      color: theme.colorStrong,
-                    }}
-                  >
+                  <Text className="text-[15px] font-semibold text-light-colorStrong dark:text-dark-colorStrong">
                     {t("logOut")}
                   </Text>
                 </Button>
@@ -732,17 +708,10 @@ export default function ProfileScreen() {
                 <Button
                   variant="outline"
                   onPress={() => setShowDeleteAlert(true)}
-                  className="w-full gap-2"
-                  style={{ borderColor: theme.destructive }}
+                  className="w-full gap-2 border-light-destructive dark:border-dark-destructive"
                 >
                   <Trash2 size={18} color={theme.destructive} />
-                  <Text
-                    style={{
-                      fontWeight: "600",
-                      fontSize: 15,
-                      color: theme.destructive,
-                    }}
-                  >
+                  <Text className="text-[15px] font-semibold text-light-destructive dark:text-dark-destructive">
                     {t("deleteAccount")}
                   </Text>
                 </Button>

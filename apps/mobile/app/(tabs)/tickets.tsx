@@ -82,10 +82,7 @@ function Section({
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
         {live && <LiveDot />}
-        <Text
-          className="text-[13px] font-bold uppercase tracking-[0.8px]"
-          style={{ color: theme.gray5 }}
-        >
+        <Text className="text-[13px] font-bold uppercase tracking-[0.8px] text-light-gray5 dark:text-dark-gray5">
           {title}
         </Text>
       </View>
@@ -163,10 +160,7 @@ export default function TicketsScreen() {
 
   if (loading) {
     return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: theme.background }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -174,10 +168,7 @@ export default function TicketsScreen() {
 
   if (live.length === 0 && soon.length === 0 && rest.length === 0) {
     return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: theme.background }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <EmptyIndicator
           title={t("noTicketsTitle")}
           subtitle={t("noTicketsSubtitle")}
@@ -192,10 +183,7 @@ export default function TicketsScreen() {
   }
 
   return (
-    <View
-      className="flex-1 justify-center items-center"
-      style={{ backgroundColor: theme.background }}
-    >
+    <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
       <ScrollView
         className="p-4 w-full"
         contentContainerStyle={{ gap: 32 }}

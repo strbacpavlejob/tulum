@@ -56,10 +56,7 @@ export default function MatchProfileSheet({ match, sheetRef }: Props) {
       handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
     >
       {/* Compact header */}
-      <View
-        className="flex-row items-center gap-3 px-4 py-3"
-        style={{ borderBottomWidth: 1, borderColor: theme.border }}
-      >
+      <View className="flex-row items-center gap-3 border-b border-light-border px-4 py-3 dark:border-dark-border">
         <Image
           source={{ uri: match.photo }}
           style={{ width: 44, height: 44, borderRadius: 22 }}
@@ -67,17 +64,11 @@ export default function MatchProfileSheet({ match, sheetRef }: Props) {
           cachePolicy="disk"
         />
         <View>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: theme.colorStrong,
-            }}
-          >
+          <Text className="text-[18px] font-bold text-light-colorStrong dark:text-dark-colorStrong">
             {match.name}
             {match.age ? `, ${match.age}` : ""}
           </Text>
-          <Text style={{ fontSize: 13, color: theme.colorMuted }}>
+          <Text className="text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
             {t("atVenue", { venue: match.venue })}
           </Text>
         </View>

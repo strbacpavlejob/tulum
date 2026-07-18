@@ -1,7 +1,7 @@
 import FavoriteButton from "@/components/FavoriteButton";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { cn } from "@/lib/utils";
 import { EventSummary } from "@/types/event";
 import { format } from "date-fns";
 import { enUS, ru, srLatn } from "date-fns/locale";
@@ -28,25 +28,13 @@ export const DiscoverCard = ({
   style,
   isLoading = false,
 }: DiscoverCardProps) => {
-  const theme = useAppTheme();
   const { t, i18n } = useTranslation();
 
   if (isLoading) {
     return (
       <View
-        style={[
-          {
-            height: 112,
-            width: 300,
-            flexDirection: "row",
-            borderRadius: 16,
-            overflow: "hidden",
-            backgroundColor: theme.background075,
-            borderWidth: 1,
-            borderColor: theme.gray4,
-          },
-          style,
-        ]}
+        className="h-28 w-[300px] flex-row overflow-hidden rounded-2xl border border-light-gray4 bg-light-background075 dark:border-dark-gray4 dark:bg-dark-background075"
+        style={style}
       >
         <Skeleton className="h-full w-[100px] rounded-none" />
 
@@ -89,21 +77,15 @@ export const DiscoverCard = ({
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        {
-          height: 112,
-          width: 300,
-          flexDirection: "row",
-          borderRadius: 16,
-          overflow: "hidden",
-          backgroundColor: theme.background075,
-          borderWidth: isSelected ? 2 : 1,
-          borderColor: isSelected ? theme.color : theme.gray4,
-        },
-        style,
-      ]}
+      className={cn(
+        "h-28 w-[300px] flex-row overflow-hidden rounded-2xl bg-light-background075 dark:bg-dark-background075",
+        isSelected
+          ? "border-2 border-light-color dark:border-dark-color"
+          : "border border-light-gray4 dark:border-dark-gray4",
+      )}
+      style={style}
     >
-      <View style={{ width: 100, height: "100%" }}>
+      <View className="h-full w-[100px]">
         <Image
           source={{ uri: event.image }}
           style={{ width: "100%", height: "100%" }}
@@ -112,15 +94,11 @@ export const DiscoverCard = ({
         />
       </View>
 
-      <View
-        className="flex-1 justify-between gap-1 p-2"
-        style={{ overflow: "hidden" }}
-      >
+      <View className="flex-1 justify-between gap-1 overflow-hidden p-2">
         <Marquee active={isSelected}>
           <Text
             numberOfLines={1}
-            className="font-bold text-sm"
-            style={{ color: theme.gray12, flexShrink: 0 }}
+            className="shrink-0 text-sm font-bold text-light-gray12 dark:text-dark-gray12"
           >
             {event.title}
           </Text>
@@ -130,20 +108,19 @@ export const DiscoverCard = ({
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            className="font-normal text-xs"
-            style={{ color: theme.gray10 }}
+            className="text-xs font-normal text-light-gray10 dark:text-dark-gray10"
           >
             {event.venueName ?? ""}
           </Text>
         </View>
 
         <View className="flex-row flex-wrap">
-          <Text className="font-normal text-xs" style={{ color: theme.gray10 }}>
+          <Text className="text-xs font-normal text-light-gray10 dark:text-dark-gray10">
             {dateLabel} · {goingLabel}
           </Text>
         </View>
 
-        <View className="flex-row" style={{ flexShrink: 0 }}>
+        <View className="flex-row shrink-0">
           <TagsMarquee active={isSelected}>
             <Tags tags={event.tags} size="ssm" />
           </TagsMarquee>
@@ -151,8 +128,7 @@ export const DiscoverCard = ({
       </View>
 
       <View
-        className="absolute top-3 right-3 w-8 h-8 rounded-full items-center justify-center"
-        style={{ backgroundColor: theme.background075 }}
+        className="absolute right-3 top-3 h-8 w-8 items-center justify-center rounded-full bg-light-background075 dark:bg-dark-background075"
         onStartShouldSetResponder={() => true}
       >
         <FavoriteButton

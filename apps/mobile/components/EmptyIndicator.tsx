@@ -27,16 +27,10 @@ const EmptyIndicator: React.FC<EmptyIndicatorProps> = ({
   return (
     <View className="items-center justify-center p-4 flex-1 w-full gap-2">
       <Picture width="100%" height={"50%"} color={theme.color} />
-      <Text
-        className="text-xl font-bold text-center"
-        style={{ color: theme.colorMuted }}
-      >
+      <Text className="text-center text-xl font-bold text-light-colorMuted dark:text-dark-colorMuted">
         {title}
       </Text>
-      <Text
-        className="text-base text-center font-light"
-        style={{ color: theme.colorMuted }}
-      >
+      <Text className="text-center text-base font-light text-light-colorMuted dark:text-dark-colorMuted">
         {subtitle}
       </Text>
       {onPress && (

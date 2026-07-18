@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { cn } from "@/lib/utils";
 import {
   deleteGuestPhoto,
   fetchGuestMe,
@@ -133,24 +134,24 @@ function ChipOption({
   selected: boolean;
   onPress: () => void;
 }) {
-  const theme = useAppTheme();
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center gap-2 rounded-2xl px-4 py-3 mb-2 mr-2"
-      style={{
-        backgroundColor: selected ? theme.color : theme.backgroundMuted,
-        borderWidth: 1.5,
-        borderColor: selected ? theme.color : "transparent",
-      }}
+      className={cn(
+        "mb-2 mr-2 flex-row items-center gap-2 rounded-2xl border-[1.5px] px-4 py-3",
+        selected
+          ? "border-light-color bg-light-color dark:border-dark-color dark:bg-dark-color"
+          : "border-transparent bg-light-backgroundMuted dark:bg-dark-backgroundMuted",
+      )}
     >
       {selected && <Check size={14} color="#fff" />}
       <Text
-        style={{
-          fontSize: 14,
-          fontWeight: selected ? "600" : "400",
-          color: selected ? "#fff" : theme.colorStrong,
-        }}
+        className={cn(
+          "text-sm",
+          selected
+            ? "font-semibold text-white"
+            : "font-normal text-light-colorStrong dark:text-dark-colorStrong",
+        )}
       >
         {label}
       </Text>
@@ -167,31 +168,28 @@ function CardOption({
   selected: boolean;
   onPress: () => void;
 }) {
-  const theme = useAppTheme();
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between rounded-2xl px-5 py-4 mb-3"
-      style={{
-        backgroundColor: selected ? theme.color025 : theme.backgroundMuted,
-        borderWidth: 1.5,
-        borderColor: selected ? theme.color : "transparent",
-      }}
+      className={cn(
+        "mb-3 flex-row items-center justify-between rounded-2xl border-[1.5px] px-5 py-4",
+        selected
+          ? "border-light-color bg-light-color025 dark:border-dark-color dark:bg-dark-color025"
+          : "border-transparent bg-light-backgroundMuted dark:bg-dark-backgroundMuted",
+      )}
     >
       <Text
-        style={{
-          fontSize: 16,
-          fontWeight: selected ? "600" : "400",
-          color: selected ? theme.color : theme.colorStrong,
-        }}
+        className={cn(
+          "text-base",
+          selected
+            ? "font-semibold text-light-color dark:text-dark-color"
+            : "font-normal text-light-colorStrong dark:text-dark-colorStrong",
+        )}
       >
         {label}
       </Text>
       {selected && (
-        <View
-          className="w-6 h-6 rounded-full items-center justify-center"
-          style={{ backgroundColor: theme.color }}
-        >
+        <View className="h-6 w-6 items-center justify-center rounded-full bg-light-color dark:bg-dark-color">
           <Check size={13} color="#fff" />
         </View>
       )}
@@ -212,8 +210,6 @@ function BirthdayInput({
   placeholder: string;
   formatLabel: string;
 }) {
-  const theme = useAppTheme();
-
   const handleChange = (text: string) => {
     // Auto-insert slashes: DD/MM/YYYY
     const digits = text.replace(/\D/g, "").slice(0, 8);
@@ -234,23 +230,9 @@ function BirthdayInput({
         placeholder={placeholder}
         keyboardType="numeric"
         maxLength={10}
-        style={{
-          height: 56,
-          fontSize: 22,
-          textAlign: "center",
-          borderRadius: 16,
-          letterSpacing: 2,
-          color: theme.colorStrong,
-        }}
+        className="h-14 rounded-2xl text-center text-[22px] tracking-[2px] text-light-colorStrong dark:text-dark-colorStrong"
       />
-      <Text
-        style={{
-          fontSize: 12,
-          color: theme.colorMuted,
-          textAlign: "center",
-          marginTop: 8,
-        }}
-      >
+      <Text className="mt-2 text-center text-xs text-light-colorMuted dark:text-dark-colorMuted">
         {formatLabel}
       </Text>
     </View>
@@ -349,8 +331,7 @@ function PhotoPickerStep({
           return (
             <View
               key={idx}
-              className="w-[30%] aspect-[3/4] rounded-2xl overflow-hidden"
-              style={{ backgroundColor: theme.backgroundMuted }}
+              className="w-[30%] aspect-[3/4] overflow-hidden rounded-2xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
             >
               {photoUrl ? (
                 <>
@@ -388,13 +369,7 @@ function PhotoPickerStep({
                         }
                       />
                       {idx === 0 && photos.length === 0 && (
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            color: theme.colorMuted,
-                            textAlign: "center",
-                          }}
-                        >
+                        <Text className="text-center text-[11px] text-light-colorMuted dark:text-dark-colorMuted">
                           {addPhotoLabel}
                         </Text>
                       )}
@@ -406,14 +381,7 @@ function PhotoPickerStep({
           );
         })}
       </View>
-      <Text
-        style={{
-          fontSize: 13,
-          color: theme.colorMuted,
-          textAlign: "center",
-          marginTop: 16,
-        }}
-      >
+      <Text className="mt-4 text-center text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
         {photosCounter(photos.length)}
       </Text>
     </View>
@@ -676,8 +644,7 @@ export default function OnboardingScreen() {
             placeholder={t("onboardingFirstNamePlaceholder")}
             autoFocus
             autoCapitalize="words"
-            className="px-4 py-3 rounded-xl text-xl"
-            style={{ color: theme.colorStrong }}
+            className="rounded-xl px-4 py-3 text-xl text-light-colorStrong dark:text-dark-colorStrong"
           />
         );
 
@@ -806,12 +773,7 @@ export default function OnboardingScreen() {
     return (
       <SafeAreaView
         edges={["top", "bottom"]}
-        style={{
-          flex: 1,
-          backgroundColor: theme.background,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background"
       >
         <LoadingIndicator />
       </SafeAreaView>
@@ -821,7 +783,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView
       edges={["top", "bottom"]}
-      style={{ flex: 1, backgroundColor: theme.background }}
+      className="flex-1 bg-light-background dark:bg-dark-background"
     >
       <View className="absolute top-4 right-4 z-20">
         <LanguageSelector />
@@ -838,53 +800,33 @@ export default function OnboardingScreen() {
             <Pressable
               onPress={handleBack}
               hitSlop={12}
-              className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: theme.backgroundMuted }}
+              className="h-9 w-9 items-center justify-center rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
             >
               <ArrowLeft size={18} color={theme.colorStrong} />
             </Pressable>
 
             {/* Progress bar */}
             <View
-              className="flex-1 rounded-full overflow-hidden"
-              style={{ height: 4, backgroundColor: theme.backgroundMuted }}
+              className="flex-1 overflow-hidden rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
+              style={{ height: 4 }}
             >
               <View
-                className="h-full rounded-full"
-                style={{
-                  width: `${progressPercent}%`,
-                  backgroundColor: theme.color,
-                }}
+                className="h-full rounded-full bg-light-color dark:bg-dark-color"
+                style={{ width: `${progressPercent}%` }}
               />
             </View>
 
-            <Text
-              style={{
-                fontSize: 13,
-                color: theme.colorMuted,
-                minWidth: 36,
-                textAlign: "right",
-              }}
-            >
+            <Text className="min-w-9 text-right text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
               {step + 1}/{TOTAL_STEPS}
             </Text>
           </View>
 
           {/* Step title */}
-          <Text
-            style={{
-              fontSize: 26,
-              fontWeight: "800",
-              color: theme.colorStrong,
-              letterSpacing: -0.3,
-            }}
-          >
+          <Text className="text-[26px] font-extrabold tracking-[-0.3px] text-light-colorStrong dark:text-dark-colorStrong">
             {steps[step].title}
           </Text>
           {steps[step].subtitle && (
-            <Text
-              style={{ fontSize: 15, color: theme.colorMuted, marginTop: 4 }}
-            >
+            <Text className="mt-1 text-[15px] text-light-colorMuted dark:text-dark-colorMuted">
               {steps[step].subtitle}
             </Text>
           )}
@@ -905,19 +847,9 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         {/* ── Continue button ───────────────────────────────────────────── */}
-        <View
-          className="px-5 pb-4 pt-3"
-          style={{ borderTopWidth: 1, borderTopColor: theme.border }}
-        >
+        <View className="border-t border-light-border px-5 pb-4 pt-3 dark:border-dark-border">
           {submitError && (
-            <Text
-              style={{
-                color: "red",
-                fontSize: 13,
-                marginBottom: 8,
-                textAlign: "center",
-              }}
-            >
+            <Text className="mb-2 text-center text-[13px] text-red-500">
               {submitError}
             </Text>
           )}
@@ -931,7 +863,7 @@ export default function OnboardingScreen() {
             {submitting ? (
               <LoadingIndicator />
             ) : (
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+              <Text className="text-base font-bold text-white">
                 {isLastStep
                   ? t("onboardingCompleteProfile")
                   : t("onboardingContinue")}

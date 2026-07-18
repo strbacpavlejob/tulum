@@ -1,5 +1,4 @@
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
 import { format, parseISO } from "date-fns";
 import { enUS, ru, srLatn } from "date-fns/locale";
 import React from "react";
@@ -11,7 +10,6 @@ interface DateCardProps {
 }
 
 export const DateCard = ({ dateString }: DateCardProps) => {
-  const theme = useAppTheme();
   const { i18n } = useTranslation();
 
   const getDateLocale = () => {
@@ -32,29 +30,14 @@ export const DateCard = ({ dateString }: DateCardProps) => {
   const time = format(date, "HH:mm");
 
   return (
-    <View
-      className={`flex flex-col gap-2 items-center justify-center rounded-lg border p-4 w-24 min-h-[128px] `}
-      style={{
-        borderColor: theme.gray3,
-        backgroundColor: theme.backgroundStrong,
-      }}
-    >
-      <Text
-        className={`flex uppercase font-medium text-center text-sm`}
-        style={{ color: theme.gray12 }}
-      >
+    <View className="flex min-h-[128px] w-24 flex-col items-center justify-center gap-2 rounded-lg border border-light-gray3 bg-light-backgroundStrong p-4 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
+      <Text className="flex text-center text-sm font-medium uppercase text-light-gray12 dark:text-dark-gray12">
         {monthDay}
       </Text>
-      <Text
-        className={`mt-2 w-full text-center text-md font-semibold uppercase `}
-        style={{ color: theme.gray12 }}
-      >
+      <Text className="mt-2 w-full text-center text-md font-semibold uppercase text-light-gray12 dark:text-dark-gray12">
         {dayName}
       </Text>
-      <Text
-        className={`uppercase font-medium text-center text-sm `}
-        style={{ color: theme.gray12 }}
-      >
+      <Text className="text-center text-sm font-medium uppercase text-light-gray12 dark:text-dark-gray12">
         {time}
       </Text>
     </View>

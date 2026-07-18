@@ -232,7 +232,7 @@ function LocationGateScreen({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View className="flex-1 bg-light-background dark:bg-dark-background">
       {/* Full-screen map */}
       <MatchLocationMap
         venueLat={venueLat}
@@ -243,71 +243,39 @@ function LocationGateScreen({
 
       {/* Overlay card */}
       <View
+        className="gap-2 rounded-[20px] bg-light-backgroundStrong p-5 dark:bg-dark-backgroundStrong"
         style={{
           position: "absolute",
           top: insets.top + 16,
           left: 16,
           right: 16,
-          backgroundColor: theme.backgroundStrong,
-          borderRadius: 20,
-          padding: 20,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.15,
           shadowRadius: 12,
           elevation: 8,
-          gap: 8,
         }}
       >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "700",
-            color: theme.color,
-            lineHeight: 26,
-          }}
-        >
+        <Text className="text-[18px] font-bold leading-[26px] text-light-color dark:text-dark-color">
           {t("chatLocationRequired")}
         </Text>
-        <Text style={{ fontSize: 13, color: theme.gray10, lineHeight: 20 }}>
+        <Text className="text-[13px] leading-5 text-light-gray10 dark:text-dark-gray10">
           {t("chatLocationRequiredSubtitle")}
         </Text>
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+        <View className="mt-1 flex-row gap-2">
           <TouchableOpacity
             onPress={onCheckLocation}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              borderRadius: 99,
-              backgroundColor: theme.color,
-            }}
+            className="rounded-full bg-light-color px-5 py-2.5 dark:bg-dark-color"
           >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: theme.background,
-              }}
-            >
+            <Text className="text-[13px] font-semibold text-light-background dark:text-dark-background">
               {t("matchesCheckLocation")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onBack}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              borderRadius: 99,
-              backgroundColor: theme.gray3,
-            }}
+            className="rounded-full bg-light-gray3 px-5 py-2.5 dark:bg-dark-gray3"
           >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: theme.gray10,
-              }}
-            >
+            <Text className="text-[13px] font-semibold text-light-gray10 dark:text-dark-gray10">
               {t("back")}
             </Text>
           </TouchableOpacity>
@@ -316,19 +284,15 @@ function LocationGateScreen({
 
       {/* Legend */}
       <View
+        className="flex-row gap-4 rounded-[14px] bg-light-backgroundStrong p-[14px] dark:bg-dark-backgroundStrong"
         style={{
           position: "absolute",
           bottom: insets.bottom + 24,
           left: 16,
           right: 16,
-          flexDirection: "row",
-          gap: 16,
-          backgroundColor: theme.backgroundStrong,
-          borderRadius: 14,
-          padding: 14,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View className="flex-row items-center gap-2">
           <View
             style={{
               width: 12,
@@ -339,20 +303,13 @@ function LocationGateScreen({
               borderColor: "white",
             }}
           />
-          <Text style={{ fontSize: 12, color: theme.gray10 }}>
+          <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
             {t("matchesYourLocation")}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: 6,
-              backgroundColor: theme.color,
-            }}
-          />
-          <Text style={{ fontSize: 12, color: theme.gray10 }}>
+        <View className="flex-row items-center gap-2">
+          <View className="h-3 w-3 rounded-full bg-light-color dark:bg-dark-color" />
+          <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
             {venueName || t("matchesEventVenue")}
           </Text>
         </View>
@@ -606,10 +563,7 @@ export default function InboxScreen() {
 
   if (loading || openingChat) {
     return (
-      <View
-        className="flex-1 items-center justify-center"
-        style={{ backgroundColor: theme.background }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -632,10 +586,7 @@ export default function InboxScreen() {
           checkChatLocation(item);
         }}
       >
-        <View
-          className="flex-row items-center gap-3 px-4 py-3"
-          style={{ borderBottomWidth: 1, borderColor: theme.gray3 }}
-        >
+        <View className="flex-row items-center gap-3 border-b border-light-gray3 px-4 py-3 dark:border-dark-gray3">
           <View style={{ width: CHAT_RING_SIZE, height: CHAT_RING_SIZE }}>
             <Image
               source={{ uri: item.photo }}
@@ -653,25 +604,21 @@ export default function InboxScreen() {
 
           <View className="flex-1 gap-0.5">
             <View className="flex-row items-center justify-between">
-              <Text
-                style={{ color: theme.gray12, fontWeight: "600", fontSize: 17 }}
-              >
+              <Text className="text-[17px] font-semibold text-light-gray12 dark:text-dark-gray12">
                 {item.name}
               </Text>
-              <Text style={{ color: theme.gray10, fontSize: 13 }}>
+              <Text className="text-[13px] text-light-gray10 dark:text-dark-gray10">
                 {formatLastMessageTime(item.lastMessageTime)}
               </Text>
             </View>
 
-            <Text
-              style={{ color: theme.gray10, fontSize: 14, marginBottom: 1 }}
-            >
+            <Text className="mb-px text-sm text-light-gray10 dark:text-dark-gray10">
               at {item.venue}
             </Text>
 
             <View className="flex-row items-center justify-between">
               <Text
-                style={{ color: theme.gray10, fontSize: 15, flex: 1 }}
+                className="flex-1 text-[15px] text-light-gray10 dark:text-dark-gray10"
                 numberOfLines={1}
               >
                 {item.lastMessage || t("sayHello")}
@@ -732,8 +679,8 @@ export default function InboxScreen() {
 
   if (matches.length === 0 && newMatches.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <SafeAreaView style={{ flex: 1 }}>
+      <View className="flex-1 bg-light-background dark:bg-dark-background">
+        <SafeAreaView className="flex-1">
           <View
             style={{
               flex: 1,
@@ -759,22 +706,11 @@ export default function InboxScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: theme.background }}>
+    <View className="flex-1 bg-light-background dark:bg-dark-background">
       {/* ── New Matches strip ─────────────────────────────────────────────── */}
       {newMatches.length > 0 && (
-        <View
-          style={{ borderBottomWidth: 1, borderColor: theme.gray3 }}
-          className="pt-3 pb-4"
-        >
-          <Text
-            className="px-4 mb-3"
-            style={{
-              fontSize: 13,
-              fontWeight: "700",
-              color: theme.gray10,
-              letterSpacing: 0.5,
-            }}
-          >
+        <View className="border-b border-light-gray3 pb-4 pt-3 dark:border-dark-gray3">
+          <Text className="mb-3 px-4 text-[13px] font-bold tracking-[0.5px] text-light-gray10 dark:text-dark-gray10">
             {t("newMatches").toUpperCase()} · {newMatches.length}
           </Text>
           <ScrollView
@@ -795,18 +731,8 @@ export default function InboxScreen() {
       )}
 
       {/* ── Messages header ───────────────────────────────────────────────── */}
-      <View
-        className="px-4 py-2"
-        style={{ borderBottomWidth: 1, borderColor: theme.gray3 }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: "700",
-            color: theme.gray10,
-            letterSpacing: 0.5,
-          }}
-        >
+      <View className="border-b border-light-gray3 px-4 py-2 dark:border-dark-gray3">
+        <Text className="text-[13px] font-bold tracking-[0.5px] text-light-gray10 dark:text-dark-gray10">
           {t("messages").toUpperCase()} · {matches.length}
         </Text>
       </View>

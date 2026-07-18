@@ -1,7 +1,7 @@
 import i18n from "@/lib/i18n";
 import useStore from "@/store/useStore";
 import type { Settings } from "@/types/settings";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { cn } from "@/lib/utils";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -36,7 +36,6 @@ const LANGUAGE_OPTIONS: {
 
 export default function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
-  const theme = useAppTheme();
   const settings = useStore((state) => state.settings);
   const setSettings = useStore((state) => state.setSettings);
 
@@ -57,7 +56,7 @@ export default function LanguageSelector() {
     LANGUAGE_OPTIONS.find((option) => option.code === "EN");
 
   return (
-    <View style={{ position: "relative" }}>
+    <View className="relative">
       {isOpen && (
         <Pressable
           onPress={() => setIsOpen(false)}
@@ -73,12 +72,7 @@ export default function LanguageSelector() {
 
       <Pressable
         onPress={() => setIsOpen((prev) => !prev)}
-        className="w-9 h-9 rounded-full items-center justify-center overflow-hidden p-1"
-        style={{
-          backgroundColor: theme.color025,
-          borderWidth: 1,
-          borderColor: theme.border,
-        }}
+        className="h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-light-border bg-light-color025 p-1 dark:border-dark-border dark:bg-dark-color025"
         accessibilityRole="button"
         accessibilityLabel="Select language"
       >
@@ -89,7 +83,7 @@ export default function LanguageSelector() {
             contentFit="cover"
           />
         ) : (
-          <Text style={{ color: theme.colorStrong, fontWeight: "700" }}>
+          <Text className="font-bold text-light-colorStrong dark:text-dark-colorStrong">
             {currentLanguage?.shortLabel}
           </Text>
         )}
@@ -97,15 +91,12 @@ export default function LanguageSelector() {
 
       {isOpen && (
         <View
-          className="rounded-xl py-1"
+          className="rounded-xl border border-light-border bg-light-background py-1 dark:border-dark-border dark:bg-dark-background"
           style={{
             position: "absolute",
             top: 44,
             right: 0,
             minWidth: 164,
-            backgroundColor: theme.background,
-            borderWidth: 1,
-            borderColor: theme.border,
             shadowColor: "#000",
             shadowOpacity: 0.15,
             shadowRadius: 8,
@@ -121,10 +112,10 @@ export default function LanguageSelector() {
               <Pressable
                 key={option.code}
                 onPress={() => handleLanguageChange(option.code)}
-                className="flex-row items-center gap-3 px-3 py-2"
-                style={{
-                  backgroundColor: isActive ? theme.color025 : "transparent",
-                }}
+                className={cn(
+                  "flex-row items-center gap-3 px-3 py-2",
+                  isActive && "bg-light-color025 dark:bg-dark-color025",
+                )}
                 accessibilityRole="button"
                 accessibilityLabel={`Switch language to ${option.label}`}
               >
@@ -134,11 +125,10 @@ export default function LanguageSelector() {
                   contentFit="cover"
                 />
                 <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isActive ? "700" : "500",
-                    color: theme.colorStrong,
-                  }}
+                  className={cn(
+                    "text-sm text-light-colorStrong dark:text-dark-colorStrong",
+                    isActive ? "font-bold" : "font-medium",
+                  )}
                 >
                   {option.label}
                 </Text>

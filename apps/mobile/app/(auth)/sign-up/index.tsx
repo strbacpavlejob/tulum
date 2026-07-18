@@ -51,7 +51,7 @@ export default function SignUpScreen() {
   return (
     <SafeAreaView
       edges={["top", "bottom"]}
-      style={{ flex: 1, backgroundColor: theme.backgroundFocus }}
+      className="flex-1 bg-light-backgroundFocus dark:bg-dark-backgroundFocus"
     >
       {/* ── Brand section ─────────────────────────────────────────────── */}
       <View className="flex-1 items-center justify-center px-6">
@@ -91,48 +91,21 @@ export default function SignUpScreen() {
       </View>
 
       {/* ── Sign-up card ──────────────────────────────────────────────── */}
-      <View
-        className="rounded-t-[32px] px-6 pt-8 pb-6"
-        style={{ backgroundColor: theme.background }}
-      >
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "700",
-            color: theme.colorStrong,
-            marginBottom: 6,
-          }}
-        >
+      <View className="rounded-t-[32px] bg-light-background px-6 pt-8 pb-6 dark:bg-dark-background">
+        <Text className="mb-1.5 text-[22px] font-bold text-light-colorStrong dark:text-dark-colorStrong">
           Sign up to continue
         </Text>
-        <Text
-          style={{
-            fontSize: 14,
-            color: theme.colorMuted,
-            marginBottom: 24,
-          }}
-        >
+        <Text className="mb-6 text-sm text-light-colorMuted dark:text-dark-colorMuted">
           {"Choose how you'd like to join"}
         </Text>
 
         {/* Apple */}
         <Pressable
           onPress={handleAppleSignIn}
-          className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
-          style={{
-            backgroundColor: theme.backgroundMuted,
-            borderWidth: 1.5,
-            borderColor: theme.backgroundMuted,
-          }}
+          className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
           <AppleIcon />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: theme.colorStrong,
-            }}
-          >
+          <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             Continue with Apple
           </Text>
         </Pressable>
@@ -140,21 +113,10 @@ export default function SignUpScreen() {
         {/* Google */}
         <Pressable
           onPress={handleGoogleSignIn}
-          className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
-          style={{
-            backgroundColor: theme.backgroundMuted,
-            borderWidth: 1.5,
-            borderColor: theme.backgroundMuted,
-          }}
+          className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
           <GoogleIcon />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: theme.colorStrong,
-            }}
-          >
+          <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             Continue with Google
           </Text>
         </Pressable>
@@ -163,36 +125,23 @@ export default function SignUpScreen() {
         <Button
           variant="outline"
           onPress={() => router.push("/(auth)/sign-in" as any)}
-          className="flex-row items-center justify-center gap-3 rounded-2xl h-[54px] mb-3"
-          style={{
-            backgroundColor: theme.backgroundMuted,
-            borderWidth: 1.5,
-            borderColor: theme.backgroundMuted,
-          }}
+          className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
           <Mail size={20} color={theme.color} />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: theme.colorStrong,
-            }}
-          >
+          <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             Continue with Email
           </Text>
         </Button>
 
-        <Text
-          style={{
-            color: theme.colorMuted,
-            textAlign: "center",
-            marginTop: 20,
-            lineHeight: 18,
-          }}
-        >
+        <Text className="mt-5 text-center leading-[18px] text-light-colorMuted dark:text-dark-colorMuted">
           By continuing, you agree to our{" "}
-          <Text style={{ color: theme.color }}>Terms of Service</Text> and{" "}
-          <Text style={{ color: theme.color }}>Privacy Policy</Text>
+          <Text className="text-light-color dark:text-dark-color">
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text className="text-light-color dark:text-dark-color">
+            Privacy Policy
+          </Text>
         </Text>
       </View>
     </SafeAreaView>

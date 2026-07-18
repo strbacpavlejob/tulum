@@ -1,5 +1,4 @@
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
 import React from "react";
 import { View } from "react-native";
 
@@ -9,25 +8,26 @@ interface TagProps {
 }
 
 const sizeClasses = {
-  ssm: "text-xs px-1.5 py-0.5 rounded-full",
-  sm: "text-xs px-2.5 py-1 rounded-full",
-  md: "text-sm px-3 py-1 rounded-full",
-  lg: "text-base px-4 py-1.5 rounded-full",
+  ssm: "px-1.5 py-0.5",
+  sm: "px-2.5 py-1",
+  md: "px-3 py-1",
+  lg: "px-4 py-1.5",
+};
+
+const textSizeClasses = {
+  ssm: "text-[10px]",
+  sm: "text-xs",
+  md: "text-sm",
+  lg: "text-base",
 };
 
 export const Tag = ({ title, size = "sm" }: TagProps) => {
-  const theme = useAppTheme();
   return (
     <View
-      className={`rounded-full ${sizeClasses[size]}`}
-      style={{ backgroundColor: theme.gray4 }}
+      className={`rounded-full bg-light-gray4 dark:bg-dark-gray4 ${sizeClasses[size]}`}
     >
       <Text
-        style={{
-          fontSize:
-            size === "ssm" ? 10 : size === "sm" ? 12 : size === "md" ? 14 : 16,
-          color: theme.gray11,
-        }}
+        className={`text-light-gray11 dark:text-dark-gray11 ${textSizeClasses[size]}`}
       >
         {title}
       </Text>

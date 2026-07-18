@@ -101,11 +101,11 @@ const CalendarRangePicker = ({
 
   return (
     <View className="flex-row gap-3 justify-between items-center">
-      <Text className="font-bold" style={{ color: theme.gray11 }}>
+      <Text className="font-bold text-light-gray11 dark:text-dark-gray11">
         {t("dateRange")}
       </Text>
       <Pressable onPress={handleOpen}>
-        <Text className="text-xs" style={{ color: theme.gray10 }}>
+        <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
           {label}
         </Text>
       </Pressable>
@@ -113,11 +113,10 @@ const CalendarRangePicker = ({
       <Modal visible={open} transparent animationType="fade">
         <View className="flex-1 justify-center items-center bg-black/50">
           <View
-            className="rounded-xl p-4 w-[90%]"
+            className="w-[90%] rounded-xl bg-light-background p-4 dark:bg-dark-background"
             style={{
               maxWidth: 520,
               elevation: 5,
-              backgroundColor: theme.background,
             }}
           >
             <View className="gap-3">
@@ -147,16 +146,10 @@ const CalendarRangePicker = ({
               <View className="flex-row gap-3 justify-end mt-2">
                 <Button
                   variant="outline"
-                  style={{
-                    borderColor: theme.gray4,
-                    backgroundColor: theme.gray3,
-                  }}
+                  className="border-light-gray4 bg-light-gray3 dark:border-dark-gray4 dark:bg-dark-gray3"
                   onPress={handleCancel}
                 >
-                  <Text
-                    className="font-semibold"
-                    style={{ color: theme.gray11 }}
-                  >
+                  <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
                     {t("cancel")}
                   </Text>
                 </Button>
