@@ -115,6 +115,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Describe the bug...",
       send: "Send",
+      suggestVenue: "Suggest a venue",
+      venueNamePlaceholder: "Venue name",
+      instagramHandlePlaceholder: "Instagram handle (without @)",
+      additionalInfoPlaceholder: "Additional info (optional)",
+      nameRequired: "Name required",
+      pleaseProvideVenueName: "Please provide a venue name",
+      sendFailed: "Failed to send",
 
       // Profile edit labels
       tags: "Tags",
@@ -468,6 +475,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Opiši grešku...",
       send: "Pošalji",
+      suggestVenue: "Predloži lokal",
+      venueNamePlaceholder: "Naziv lokala",
+      instagramHandlePlaceholder: "Instagram nalog (bez @)",
+      additionalInfoPlaceholder: "Dodatne informacije (opciono)",
+      nameRequired: "Ime je obavezno",
+      pleaseProvideVenueName: "Molimo unesite naziv lokala",
+      sendFailed: "Slanje nije uspelo",
 
       // Profile edit labels
       tags: "Oznake",
@@ -819,6 +833,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Опишите ошибку...",
       send: "Отправить",
+      suggestVenue: "Предложить заведение",
+      venueNamePlaceholder: "Название заведения",
+      instagramHandlePlaceholder: "Аккаунт в Instagram (без @)",
+      additionalInfoPlaceholder: "Дополнительная информация (необязательно)",
+      nameRequired: "Требуется имя",
+      pleaseProvideVenueName: "Пожалуйста, укажите название заведения",
+      sendFailed: "Не удалось отправить",
 
       // Profile edit labels
       tags: "Теги",

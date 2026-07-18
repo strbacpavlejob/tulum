@@ -15,6 +15,7 @@ type SettingsRowProps = {
   onPress?: PressableProps["onPress"];
   right?: React.ReactNode;
   disabled?: boolean;
+  hidden?: boolean;
 };
 
 export default function SettingsRow({
@@ -24,9 +25,13 @@ export default function SettingsRow({
   onPress,
   right,
   disabled = false,
+  hidden = false,
 }: SettingsRowProps) {
   const theme = useAppTheme();
 
+  if (hidden) {
+    return null;
+  }
   return (
     <Pressable
       onPress={onPress}

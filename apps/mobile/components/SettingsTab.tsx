@@ -11,8 +11,11 @@ import {
   Bell,
   Bug,
   Globe,
+  Languages,
+  LocateFixed,
   LogOut,
   MapPin,
+  MapPinCheck,
   MapPinPlus,
   Sun,
   Trash2,
@@ -97,12 +100,13 @@ export default function SettingsTab({
                 onCheckedChange={onNotificationsChange}
               />
             }
+            hidden
           />
 
           <Separator />
 
           <SettingsRow
-            icon={Globe}
+            icon={Languages}
             title={t("language")}
             subtitle={languageName}
             onPress={onLanguagePress}
@@ -111,15 +115,17 @@ export default function SettingsTab({
           <Separator />
 
           <SettingsRow
-            icon={MapPin}
+            icon={LocateFixed}
             title={t("location")}
             subtitle={locationName}
+            disabled
+            hidden
           />
 
           <Separator />
 
           <SettingsRow
-            icon={MapPin}
+            icon={MapPinCheck}
             title={t("defaultVenueType")}
             subtitle={selectedVenueName}
             onPress={onVenueTypePress}
