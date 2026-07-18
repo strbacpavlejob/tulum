@@ -9,6 +9,7 @@ import {
   createMatchSwipe,
   fetchMyTickets,
   fetchSwipeableProfiles,
+  createEventSession,
   type SwipeableProfile,
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -214,6 +215,14 @@ export default function MatchesScreen() {
     try {
       const token = await getToken();
       if (!token) return;
+      // Ensure the backend records this user's active event session (check-in)
+      if (liveTicket?.event_id) {
+        try {
+          await createEventSession(token, liveTicket.event_id);
+        } catch {
+          // ignore check-in failures — still try to load profiles
+        }
+      }
       const data = await fetchSwipeableProfiles(token);
       setEventId(data.event_id);
       setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
@@ -222,7 +231,7 @@ export default function MatchesScreen() {
     } finally {
       setLoadingProfiles(false);
     }
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, liveTicket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     checkTickets();

@@ -784,3 +784,19 @@ export async function createMatchSwipe(
     throw new Error(`Failed to create match: ${response.status}`);
   }
 }
+
+export async function createEventSession(
+  token: string,
+  eventId: string,
+): Promise<void> {
+  const url = `${TULUM_API_URL}/events/sessions`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ event_id: eventId }),
+  });
+  // If already checked in, server may return 409 or 4xx; ignore non-fatal errors
+  if (!response.ok && response.status !== 409) {
+    throw new Error(`Failed to create event session: ${response.status}`);
+  }
+}

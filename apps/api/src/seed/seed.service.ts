@@ -100,10 +100,10 @@ export class SeedService {
         {
           host_id: userId,
           venue_type: 'nightclub',
-          name: 'Mock Club Tulum',
+          name: 'Mock Club Tulum Home',
           description: 'A fictional venue created for testing purposes.',
-          latitude: 44.8176,
-          longitude: 20.4569,
+          latitude: 44.8418626,
+          longitude: 20.3904346,
           address: 'Knez Mihailova 1, Belgrade',
           capacity: 300,
         },
@@ -255,10 +255,10 @@ export class SeedService {
       .insert({
         host_id: userId,
         venue_type: 'nightclub',
-        name: `Tulum Swipe Club ${ts}`,
+        name: `Tulum Swipe Club Home ${ts}`,
         description: 'Mock venue for swipe-screen testing.',
-        latitude: 44.8176,
-        longitude: 20.4569,
+        latitude: 44.8418626,
+        longitude: 20.3904346,
         address: 'Test Street 1, Belgrade',
         capacity: 200,
       })
