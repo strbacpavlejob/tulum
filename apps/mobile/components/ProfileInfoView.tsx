@@ -47,21 +47,32 @@ export type ProfileInfoEditCallbacks = {
   onEditEducation(): void;
   onEditLookingFor(): void;
   onEditBio(): void;
-  onEditHeight(): void;
-  onEditChildren(): void;
-  onEditDrinking(): void;
-  onEditLanguages(): void;
-  onEditRelationship(): void;
-  onEditSexuality(): void;
-  onEditSmoking(): void;
-  onEditStarSign(): void;
-  onEditPets(): void;
-  onEditReligion(): void;
+  onEditField(fieldKey: ProfileInfoFieldKey): void;
+};
+
+export type ProfileInfoFieldKey =
+  | "height"
+  | "children"
+  | "drinking"
+  | "languages"
+  | "relationship"
+  | "sexuality"
+  | "smoking"
+  | "starSign"
+  | "pets"
+  | "religion";
+
+export type ProfileInfoField = {
+  key: ProfileInfoFieldKey;
+  icon: React.ComponentType<any>;
+  label: string;
+  value?: string;
 };
 
 type ProfileInfoViewProps = {
   user: Partial<User>;
   editCallbacks?: ProfileInfoEditCallbacks;
+  profileFields?: ProfileInfoField[];
 };
 
 // ─── ProfileRow ───────────────────────────────────────────────────────────────
@@ -122,10 +133,75 @@ function ProfileRow({
 export default function ProfileInfoView({
   user,
   editCallbacks,
+  profileFields,
 }: ProfileInfoViewProps) {
   const theme = useAppTheme();
   const { t } = useTranslation();
   const editable = !!editCallbacks;
+  const resolvedProfileFields =
+    profileFields ??
+    ([
+      {
+        key: "height",
+        icon: Ruler,
+        label: t("height"),
+        value: user.height ? `${user.height} cm` : undefined,
+      },
+      {
+        key: "children",
+        icon: Baby,
+        label: t("children"),
+        value: user.hasChildren ? capitalize(user.hasChildren) : undefined,
+      },
+      {
+        key: "drinking",
+        icon: Wine,
+        label: t("drinking"),
+        value: user.drinking ? capitalize(user.drinking) : undefined,
+      },
+      {
+        key: "languages",
+        icon: Globe,
+        label: t("languages"),
+        value: formatList(user.languages),
+      },
+      {
+        key: "relationship",
+        icon: Heart,
+        label: t("relationship"),
+        value: user.relationship ? capitalize(user.relationship) : undefined,
+      },
+      {
+        key: "sexuality",
+        icon: Users,
+        label: t("sexuality"),
+        value: user.sexuality ? capitalize(user.sexuality) : undefined,
+      },
+      {
+        key: "smoking",
+        icon: Cigarette,
+        label: t("smoking"),
+        value: user.smoking ? capitalize(user.smoking) : undefined,
+      },
+      {
+        key: "starSign",
+        icon: Star,
+        label: t("starSign"),
+        value: user.starSign,
+      },
+      {
+        key: "pets",
+        icon: PawPrint,
+        label: t("pets"),
+        value: formatList(user.pets),
+      },
+      {
+        key: "religion",
+        icon: Heart,
+        label: t("religion"),
+        value: user.religion ? capitalize(user.religion) : undefined,
+      },
+    ] satisfies ProfileInfoField[]);
 
   return (
     <View>
@@ -371,75 +447,21 @@ export default function ProfileInfoView({
 
       {/* Attribute rows */}
       <View className="mx-4 mt-1">
-        <ProfileRow
-          icon={Ruler}
-          label={t("height")}
-          value={user.height ? `${user.height} cm` : undefined}
-          onPress={editCallbacks?.onEditHeight}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Baby}
-          label={t("children")}
-          value={user.hasChildren ? capitalize(user.hasChildren) : undefined}
-          onPress={editCallbacks?.onEditChildren}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Wine}
-          label={t("drinking")}
-          value={user.drinking ? capitalize(user.drinking) : undefined}
-          onPress={editCallbacks?.onEditDrinking}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Globe}
-          label={t("languages")}
-          value={formatList(user.languages)}
-          onPress={editCallbacks?.onEditLanguages}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Heart}
-          label={t("relationship")}
-          value={user.relationship ? capitalize(user.relationship) : undefined}
-          onPress={editCallbacks?.onEditRelationship}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Users}
-          label={t("sexuality")}
-          value={user.sexuality ? capitalize(user.sexuality) : undefined}
-          onPress={editCallbacks?.onEditSexuality}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Cigarette}
-          label={t("smoking")}
-          value={user.smoking ? capitalize(user.smoking) : undefined}
-          onPress={editCallbacks?.onEditSmoking}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Star}
-          label={t("starSign")}
-          value={user.starSign}
-          onPress={editCallbacks?.onEditStarSign}
-        />
-        <Separator />
-        <ProfileRow
-          icon={PawPrint}
-          label={t("pets")}
-          value={formatList(user.pets)}
-          onPress={editCallbacks?.onEditPets}
-        />
-        <Separator />
-        <ProfileRow
-          icon={Heart}
-          label={t("religion")}
-          value={user.religion ? capitalize(user.religion) : undefined}
-          onPress={editCallbacks?.onEditReligion}
-        />
+        {resolvedProfileFields.map((field, index) => (
+          <React.Fragment key={`${field.key}-${index}`}>
+            <ProfileRow
+              icon={field.icon}
+              label={field.label}
+              value={field.value}
+              onPress={
+                editCallbacks
+                  ? () => editCallbacks.onEditField(field.key)
+                  : undefined
+              }
+            />
+            {index < resolvedProfileFields.length - 1 && <Separator />}
+          </React.Fragment>
+        ))}
       </View>
     </View>
   );

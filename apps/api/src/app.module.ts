@@ -21,6 +21,7 @@ import { RedisModule } from './redis/redis.module';
 import { GuestsModule } from './guests/guests.module';
 import { SeedModule } from './seed/seed.module';
 import { SettingsModule } from './settings/settings.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SettingsModule } from './settings/settings.module';
     GuestsModule,
     SeedModule,
     SettingsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
