@@ -644,24 +644,10 @@ export default function ProfileScreen() {
         }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList
-            className="h-12 w-full rounded-none border-b px-0 py-0"
-            style={{
-              borderBottomColor: theme.border,
-              backgroundColor: theme.background,
-            }}
-          >
+          <TabsList className="h-12 w-full rounded-none border-b px-0 py-0 bg-light-background dark:bg-dark-background border-b-light-border dark:border-b-dark-border">
             <TabsTrigger
               value="profile"
-              className="h-full flex-1 rounded-none"
-              style={
-                activeTab === "profile"
-                  ? {
-                      borderBottomWidth: 2,
-                      borderBottomColor: theme.color,
-                    }
-                  : undefined
-              }
+              className={`h-full flex-1 rounded-none ${activeTab === "profile" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
             >
               <Text
                 className={cn(
@@ -677,15 +663,7 @@ export default function ProfileScreen() {
 
             <TabsTrigger
               value="settings"
-              className="h-full flex-1 rounded-none"
-              style={
-                activeTab === "settings"
-                  ? {
-                      borderBottomWidth: 2,
-                      borderBottomColor: theme.color,
-                    }
-                  : undefined
-              }
+              className={`h-full flex-1 rounded-none ${activeTab === "settings" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
             >
               <Text
                 className={cn(

@@ -74,7 +74,7 @@ export default function SettingsTab({
   return (
     <TabsContent value="settings" className="flex-1">
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-light-background dark:bg-dark-background"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 24,
         }}

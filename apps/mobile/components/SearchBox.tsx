@@ -55,7 +55,6 @@ const SearchBox: React.FC = () => {
           )}
           <TextInput
             placeholder={t("searchEvents")}
-            placeholderTextColor={theme.gray10}
             value={filter.title}
             onChangeText={(text) => {
               setFilter({ ...filter, title: text });
@@ -75,7 +74,7 @@ const SearchBox: React.FC = () => {
               applyEventsFilter();
             }}
             returnKeyType="search"
-            className="flex-1 text-sm text-light-gray12 dark:text-dark-gray12"
+            className="flex-1 text-sm text-light-gray12 dark:text-dark-gray12 focus:border-transparent *:focus:outline-none"
           />
         </View>
 
