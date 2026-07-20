@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
-import { useAppTheme } from "@/hooks/useAppTheme";
 import { cn } from "@/lib/utils";
 import {
   deleteGuestPhoto,
@@ -264,7 +263,6 @@ function PhotoPickerStep({
   addPhotoLabel: string;
   photosCounter: (count: number) => string;
 }) {
-  const theme = useAppTheme();
   const { getToken } = useAuth();
 
   const pickAndUpload = async () => {
@@ -362,10 +360,10 @@ function PhotoPickerStep({
                     <>
                       <Camera
                         size={24}
-                        color={
+                        className={
                           photos.length >= 3
-                            ? theme.backgroundMuted
-                            : theme.colorMuted
+                            ? `color-light-backgroundMuted dark:color-dark-backgroundMuted`
+                            : "color-light-colorMuted dark:color-dark-colorMuted"
                         }
                       />
                       {idx === 0 && photos.length === 0 && (
@@ -391,7 +389,6 @@ function PhotoPickerStep({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
-  const theme = useAppTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const { setUser } = useStore();
@@ -802,7 +799,10 @@ export default function OnboardingScreen() {
               hitSlop={12}
               className="h-9 w-9 items-center justify-center rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
             >
-              <ArrowLeft size={18} color={theme.colorStrong} />
+              <ArrowLeft
+                size={18}
+                className="color-light-colorStrong dark:color-dark-colorStrong"
+              />
             </Pressable>
 
             {/* Progress bar */}

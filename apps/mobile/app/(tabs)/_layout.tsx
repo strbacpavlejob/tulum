@@ -1,7 +1,7 @@
-import { useAppTheme } from "@/hooks/useAppTheme";
 import { fetchMyProfile, fetchSettings } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { Redirect, Tabs } from "expo-router";
 import {
   HeartPulse,
@@ -26,13 +26,15 @@ const TabBarIcon: React.FC<IconProps> = ({
   size = 28,
   focused = false,
 }) => {
-  const theme = useAppTheme();
   return (
     <View style={{ opacity: focused ? 1 : 0.6 }}>
       <IconComponent
-        color={focused ? color : theme.background}
+        className={
+          focused
+            ? "text-primary fill-primary"
+            : "text-color-light-colorStrong dark:text-color-dark-colorStrong fill-gray-10"
+        }
         size={size}
-        fill={focused ? color : theme.gray10}
       />
     </View>
   );
