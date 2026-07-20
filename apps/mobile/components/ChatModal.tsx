@@ -234,7 +234,7 @@ export default function ChatModal({
     inputHeight + (keyboardVisible ? keyboardHeight : 0) + 8;
 
   if (showFind) {
-    return <FindModal onClose={() => setShowFind(false)} />;
+    return <FindModal onClose={() => setShowFind(false)} matchId={match.id} />;
   }
 
   return (

@@ -1,5 +1,6 @@
 import Blob from "@/components/Blob";
-import ProfileInfoView from "@/components/ProfileInfoView";
+import LoadingIndicator from "@/components/loading-indicator";
+
 import Tags from "@/components/Tags";
 import {
   AlertDialog,
@@ -13,205 +14,110 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { cn } from "@/lib/utils";
-import { updateSettings, uploadGuestPhoto, deleteGuestPhoto } from "@/lib/api";
-import * as ImagePicker from "expo-image-picker";
-import { useTranslation } from "react-i18next";
+import {
+  deleteGuestPhoto,
+  updateSettings,
+  uploadGuestPhoto,
+  submitBugReport,
+  submitVenueSuggestion,
+} from "@/lib/api";
 import useStore from "@/store/useStore";
-import { useAuth } from "@clerk/expo";
-import { router } from "expo-router";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { User } from "@/types/user";
+import { useAuth } from "@clerk/expo";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import {
-  Bell,
-  Bug,
+  Baby,
+  Cigarette,
   Check,
-  ChevronRight,
   Globe,
-  LogOut,
-  MapPin,
+  Heart,
+  PawPrint,
+  Ruler,
   Send,
-  Sun,
-  Trash2,
+  Star,
+  Users,
+  Wine,
 } from "lucide-react-native";
+import type {
+  ProfileInfoField,
+  ProfileInfoFieldKey,
+} from "@/components/ProfileInfoView";
+import {
+  appLanguageOptions,
+  EditConfig,
+  SelectOption,
+  childrenOptions,
+  drinkingOptions,
+  languageOptions,
+  lookingForOptions,
+  petsOptions,
+  relationshipOptions,
+  religionOptions,
+  sexualityOptions,
+  smokingOptions,
+  starSignOptions,
+  tagsOptions,
+  themeOptions,
+  venueOptions,
+} from "@/constants/options";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import LoadingIndicator from "@/components/loading-indicator";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type EditConfig = {
-  title: string;
-  type: "single" | "multi" | "text";
-  options?: { name: string; value: string }[];
-  onSave: (value: string | string[]) => void;
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function formatList(arr?: string[]) {
-  return arr && arr.length > 0 ? arr.map(capitalize).join(", ") : undefined;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+import { useTranslation } from "react-i18next";
+import SettingsTab from "@/components/SettingsTab";
+import ProfileTab from "@/components/ProfileTab";
+import { cn } from "@/lib/utils";
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
   const { t } = useTranslation();
-  const { user, settings, setUser, setSettings } = useStore();
-
-  // ─── Translated option arrays ───────────────────────────────────────────────
-  const LOOKING_FOR_OPTIONS = [
-    { name: t("toDate"), value: "to date" },
-    { name: t("toParty"), value: "to party" },
-    { name: t("openToChat"), value: "open to chat" },
-    { name: t("readyForRelationship"), value: "ready for a relationship" },
-  ];
-  const LIFESTYLE_OPTS = [
-    { name: t("never"), value: "never" },
-    { name: t("socially"), value: "socially" },
-    { name: t("regularly"), value: "regularly" },
-    { name: t("preferNotToSay"), value: "prefer not to say" },
-  ];
-  const DRINKING_OPTIONS = LIFESTYLE_OPTS;
-  const SMOKING_OPTIONS = LIFESTYLE_OPTS;
-  const CHILDREN_OPTIONS = [
-    { name: t("no"), value: "no" },
-    { name: t("yes"), value: "yes" },
-    { name: t("preferNotToSay"), value: "prefer not to say" },
-  ];
-  const RELATIONSHIP_OPTIONS = [
-    { name: t("single"), value: "single" },
-    { name: t("divorced"), value: "divorced" },
-    { name: t("separated"), value: "separated" },
-    { name: t("preferNotToSay"), value: "prefer not to say" },
-  ];
-  const SEXUALITY_OPTIONS = [
-    { name: t("straight"), value: "straight" },
-    { name: t("gay"), value: "gay" },
-    { name: t("bisexual"), value: "bisexual" },
-    { name: t("preferNotToSay"), value: "prefer not to say" },
-  ];
-  const STAR_SIGN_OPTIONS = [
-    { name: t("aries"), value: "Aries" },
-    { name: t("taurus"), value: "Taurus" },
-    { name: t("gemini"), value: "Gemini" },
-    { name: t("cancer"), value: "Cancer" },
-    { name: t("leo"), value: "Leo" },
-    { name: t("virgo"), value: "Virgo" },
-    { name: t("libra"), value: "Libra" },
-    { name: t("scorpio"), value: "Scorpio" },
-    { name: t("sagittarius"), value: "Sagittarius" },
-    { name: t("capricorn"), value: "Capricorn" },
-    { name: t("aquarius"), value: "Aquarius" },
-    { name: t("pisces"), value: "Pisces" },
-  ];
-  const RELIGION_OPTIONS = [
-    { name: t("atheist"), value: "atheist" },
-    { name: t("agnostic"), value: "agnostic" },
-    { name: t("christian"), value: "christian" },
-    { name: t("muslim"), value: "muslim" },
-    { name: t("jewish"), value: "jewish" },
-    { name: t("buddhist"), value: "buddhist" },
-    { name: t("hindu"), value: "hindu" },
-    { name: t("other"), value: "other" },
-    { name: t("preferNotToSay"), value: "prefer not to say" },
-  ];
-  const PETS_OPTIONS = [
-    { name: t("cat"), value: "cat" },
-    { name: t("dog"), value: "dog" },
-    { name: t("fish"), value: "fish" },
-    { name: t("bird"), value: "bird" },
-    { name: t("none"), value: "none" },
-  ];
-  const LANGUAGE_OPTIONS = [
-    { name: t("english"), value: "English" },
-    { name: t("serbian"), value: "Serbian" },
-    { name: t("russian"), value: "Russian" },
-    { name: t("spanish"), value: "Spanish" },
-    { name: t("french"), value: "French" },
-    { name: t("german"), value: "German" },
-  ];
-  const TAGS_OPTIONS = [
-    { name: t("photography"), value: "Photography" },
-    { name: t("travel"), value: "Travel" },
-    { name: t("yoga"), value: "Yoga" },
-    { name: t("music"), value: "Music" },
-    { name: t("coffee"), value: "Coffee" },
-    { name: t("art"), value: "Art" },
-    { name: t("dancing"), value: "Dancing" },
-    { name: t("hiking"), value: "Hiking" },
-    { name: t("food"), value: "Food" },
-    { name: t("tech"), value: "Tech" },
-    { name: t("fitness"), value: "Fitness" },
-    { name: t("reading"), value: "Reading" },
-    { name: t("movies"), value: "Movies" },
-    { name: t("gaming"), value: "Gaming" },
-    { name: t("fashion"), value: "Fashion" },
-  ];
-  const VENUE_OPTIONS: { name: string; value: VenueType }[] = [
-    { name: t("bar"), value: "bar" },
-    { name: t("pub"), value: "pub" },
-    { name: t("nightclub"), value: "nightclub" },
-    { name: t("restaurant"), value: "restaurant" },
-    { name: t("cafe"), value: "cafe" },
-    { name: t("cocktailBar"), value: "cocktail_bar" },
-    { name: t("wineBar"), value: "wine_bar" },
-    { name: t("brewery"), value: "brewery" },
-    { name: t("tavern"), value: "tavern" },
-    { name: t("raft"), value: "raft" },
-  ];
-  const THEME_OPTIONS = [
-    { name: t("light"), value: "light" },
-    { name: t("dark"), value: "dark" },
-    { name: t("system"), value: "system" },
-  ];
-  const APP_LANGUAGE_OPTIONS = [
-    { name: t("english"), value: "EN" },
-    { name: t("serbian"), value: "RS" },
-    { name: t("russian"), value: "RU" },
-  ];
-  const { userId, signOut, getToken } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const { user, settings, setUser, setSettings } = useStore();
+
+  const { userId, signOut, getToken } = useAuth();
+
   const [activeTab, setActiveTab] = useState("profile");
+
   const [editConfig, setEditConfig] = useState<EditConfig | null>(null);
+
   const [singleValue, setSingleValue] = useState("");
   const [multiValues, setMultiValues] = useState<string[]>([]);
   const [textValue, setTextValue] = useState("");
+
   const [bugText, setBugText] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [venueInstagram, setVenueInstagram] = useState("");
+  const [venueNotes, setVenueNotes] = useState("");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const editSheetRef = useRef<BottomSheetModal>(null);
   const bugSheetRef = useRef<BottomSheetModal>(null);
+  const venueSheetRef = useRef<BottomSheetModal>(null);
+
   const editSnapPoints = useMemo(() => ["50%", "85%"], []);
+
   const bugSnapPoints = useMemo(() => ["45%"], []);
+  const venueSnapPoints = useMemo(() => ["55%"], []);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}
@@ -222,233 +128,540 @@ export default function ProfileScreen() {
     [],
   );
 
-  // ── Edit helpers ────────────────────────────────────────────────────────────
-
   const openSingleSelect = (
     title: string,
-    options: { name: string; value: string }[],
+    options: SelectOption[],
     current: string,
-    onSave: (v: string) => void,
+    onSave: (value: string) => void,
   ) => {
     setSingleValue(current);
+
     setEditConfig({
       title,
       type: "single",
       options,
-      onSave: (v) => onSave(v as string),
+      onSave: (value) => {
+        onSave(value as string);
+      },
     });
+
     editSheetRef.current?.present();
   };
 
   const openMultiSelect = (
     title: string,
-    options: { name: string; value: string }[],
+    options: SelectOption[],
     current: string[],
-    onSave: (v: string[]) => void,
+    onSave: (value: string[]) => void,
   ) => {
     setMultiValues([...current]);
+
     setEditConfig({
       title,
       type: "multi",
       options,
-      onSave: (v) => onSave(v as string[]),
+      onSave: (value) => {
+        onSave(value as string[]);
+      },
     });
+
     editSheetRef.current?.present();
   };
 
   const openTextEdit = (
     title: string,
     current: string,
-    onSave: (v: string) => void,
+    onSave: (value: string) => void,
   ) => {
     setTextValue(current);
-    setEditConfig({ title, type: "text", onSave: (v) => onSave(v as string) });
+
+    setEditConfig({
+      title,
+      type: "text",
+      onSave: (value) => {
+        onSave(value as string);
+      },
+    });
+
     editSheetRef.current?.present();
   };
 
   const patchUser = (patch: Partial<User>) => {
-    if (user) setUser({ ...user, ...patch });
-  };
-
-  // ── Photo callbacks ─────────────────────────────────────────────────────────
-
-  const handleAddPhoto = async () => {
-    if (!userId) return;
-    const token = await getToken();
-    if (!token) return;
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Please allow access to your photo library.",
-      );
+    if (!user) {
       return;
     }
+
+    setUser({
+      ...user,
+      ...patch,
+    });
+  };
+
+  const patchSettings = async (patch: Partial<Settings>) => {
+    const nextSettings = {
+      ...settings,
+      ...patch,
+    };
+
+    setSettings(nextSettings);
+
+    const shouldUpdateRemote =
+      patch.language !== undefined || patch.theme !== undefined;
+
+    if (!userId || !shouldUpdateRemote) {
+      return;
+    }
+
+    const token = await getToken();
+
+    if (!token) {
+      return;
+    }
+
+    const remoteSettings: Record<string, string> = {};
+
+    if (patch.language !== undefined) {
+      remoteSettings.language = patch.language;
+    }
+
+    if (patch.theme !== undefined) {
+      remoteSettings.theme = patch.theme;
+    }
+
+    try {
+      await updateSettings(token, userId, remoteSettings);
+    } catch (error) {
+      console.error("Failed to update settings", error);
+    }
+  };
+
+  const handleAddPhoto = async () => {
+    if (!userId) {
+      return;
+    }
+
+    const token = await getToken();
+
+    if (!token) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permission.status !== "granted") {
+      Alert.alert(
+        t("permissionRequired"),
+        t("photoLibraryPermissionDescription"),
+      );
+
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.9,
     });
-    if (result.canceled || !result.assets[0]) return;
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
     const asset = result.assets[0];
+
     try {
       const updatedUrls = await uploadGuestPhoto(
         token,
         asset.uri,
         asset.mimeType ?? "image/jpeg",
       );
-      patchUser({ photos: updatedUrls, imgUrl: updatedUrls[0] });
-    } catch (err) {
+
+      patchUser({
+        photos: updatedUrls,
+        imgUrl: updatedUrls[0],
+      });
+    } catch (error) {
       Alert.alert(
-        "Upload failed",
-        err instanceof Error ? err.message : String(err),
+        t("uploadFailed"),
+        error instanceof Error ? error.message : String(error),
       );
     }
   };
 
   const handleRemovePhoto = async (url: string) => {
-    if (!userId) return;
+    if (!userId) {
+      return;
+    }
+
     const token = await getToken();
-    if (!token) return;
+
+    if (!token) {
+      return;
+    }
+
     try {
       const updatedUrls = await deleteGuestPhoto(token, url);
-      patchUser({ photos: updatedUrls, imgUrl: updatedUrls[0] });
-    } catch (err) {
+
+      patchUser({
+        photos: updatedUrls,
+        imgUrl: updatedUrls[0],
+      });
+    } catch (error) {
       Alert.alert(
-        "Remove failed",
-        err instanceof Error ? err.message : String(err),
+        t("removeFailed"),
+        error instanceof Error ? error.message : String(error),
       );
     }
   };
 
-  const patchSettings = async (patch: Partial<Settings>) => {
-    const next = { ...settings, ...patch };
-    setSettings(next);
-    if (userId && (patch.language !== undefined || patch.theme !== undefined)) {
-      const token = await getToken();
-      if (!token) return;
-      const remote: Record<string, string> = {};
-      if (patch.language !== undefined) remote.language = patch.language;
-      if (patch.theme !== undefined) remote.theme = patch.theme;
-      updateSettings(token, userId, remote).catch(console.error);
-    }
-  };
-
   const confirmEdit = () => {
-    if (!editConfig) return;
-    if (editConfig.type === "single") editConfig.onSave(singleValue);
-    else if (editConfig.type === "multi") editConfig.onSave(multiValues);
-    else if (editConfig.type === "text") editConfig.onSave(textValue);
+    if (!editConfig) {
+      return;
+    }
+
+    if (editConfig.type === "single") {
+      editConfig.onSave(singleValue);
+    }
+
+    if (editConfig.type === "multi") {
+      editConfig.onSave(multiValues);
+    }
+
+    if (editConfig.type === "text") {
+      editConfig.onSave(textValue);
+    }
+
     editSheetRef.current?.close();
     setEditConfig(null);
   };
 
-  const toggleMulti = (val: string) => {
-    setMultiValues((prev) =>
-      prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
-    );
+  const toggleMultiValue = (value: string) => {
+    setMultiValues((currentValues) => {
+      if (currentValues.includes(value)) {
+        return currentValues.filter((currentValue) => currentValue !== value);
+      }
+
+      return [...currentValues, value];
+    });
   };
 
-  if (!user)
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
+
+    router.replace("/(auth)/sign-in");
+  };
+
+  if (!user) {
     return (
       <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
+  }
 
-  // ── Sub-components ──────────────────────────────────────────────────────────
+  const profileFields: ProfileInfoField[] = [
+    {
+      key: "height",
+      icon: Ruler,
+      label: t("height"),
+      value: user.height ? `${user.height} cm` : undefined,
+    },
+    {
+      key: "children",
+      icon: Baby,
+      label: t("children"),
+      value: user.hasChildren
+        ? user.hasChildren.charAt(0).toUpperCase() + user.hasChildren.slice(1)
+        : undefined,
+    },
+    {
+      key: "drinking",
+      icon: Wine,
+      label: t("drinking"),
+      value: user.drinking
+        ? user.drinking.charAt(0).toUpperCase() + user.drinking.slice(1)
+        : undefined,
+    },
+    {
+      key: "languages",
+      icon: Globe,
+      label: t("languages"),
+      value:
+        user.languages && user.languages.length > 0
+          ? user.languages
+              .map(
+                (language) =>
+                  language.charAt(0).toUpperCase() + language.slice(1),
+              )
+              .join(", ")
+          : undefined,
+    },
+    {
+      key: "relationship",
+      icon: Heart,
+      label: t("relationship"),
+      value: user.relationship
+        ? user.relationship.charAt(0).toUpperCase() + user.relationship.slice(1)
+        : undefined,
+    },
+    {
+      key: "sexuality",
+      icon: Users,
+      label: t("sexuality"),
+      value: user.sexuality
+        ? user.sexuality.charAt(0).toUpperCase() + user.sexuality.slice(1)
+        : undefined,
+    },
+    {
+      key: "smoking",
+      icon: Cigarette,
+      label: t("smoking"),
+      value: user.smoking
+        ? user.smoking.charAt(0).toUpperCase() + user.smoking.slice(1)
+        : undefined,
+    },
+    {
+      key: "starSign",
+      icon: Star,
+      label: t("starSign"),
+      value: user.starSign,
+    },
+    {
+      key: "pets",
+      icon: PawPrint,
+      label: t("pets"),
+      value:
+        user.pets && user.pets.length > 0
+          ? user.pets
+              .map((pet) => pet.charAt(0).toUpperCase() + pet.slice(1))
+              .join(", ")
+          : undefined,
+    },
+    {
+      key: "religion",
+      icon: Heart,
+      label: t("religion"),
+      value: user.religion
+        ? user.religion.charAt(0).toUpperCase() + user.religion.slice(1)
+        : undefined,
+    },
+  ];
 
-  const SettingsRow = ({
-    icon: Icon,
-    title,
-    subtitle,
-    onPress,
-    right,
-  }: {
-    icon: React.ComponentType<any>;
-    title: string;
-    subtitle?: string;
-    onPress?: () => void;
-    right?: React.ReactNode;
-  }) => (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center justify-between py-[14px]"
-    >
-      <View className="flex-row items-center gap-[14px] flex-1">
-        <Icon size={20} color={theme.color} />
-        <View>
-          <Text className="text-base text-light-colorStrong dark:text-dark-colorStrong">
-            {title}
-          </Text>
-          {subtitle && (
-            <Text className="text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
-              {subtitle}
-            </Text>
-          )}
-        </View>
-      </View>
-      {right ?? <ChevronRight size={18} color={theme.gray5} />}
-    </Pressable>
-  );
+  const handleEditProfileField = (fieldKey: ProfileInfoFieldKey) => {
+    switch (fieldKey) {
+      case "height": {
+        openTextEdit(t("heightCm"), user.height?.toString() ?? "", (value) => {
+          const parsedHeight = Number.parseInt(value, 10);
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+          patchUser({
+            height: Number.isNaN(parsedHeight) ? undefined : parsedHeight,
+          });
+        });
+        break;
+      }
+
+      case "children": {
+        openSingleSelect(
+          t("children"),
+          childrenOptions,
+          user.hasChildren ?? "",
+          (value) => {
+            patchUser({
+              hasChildren: value as User["hasChildren"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "drinking": {
+        openSingleSelect(
+          t("drinking"),
+          drinkingOptions,
+          user.drinking ?? "",
+          (value) => {
+            patchUser({
+              drinking: value as User["drinking"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "languages": {
+        openMultiSelect(
+          t("languages"),
+          languageOptions,
+          user.languages ?? [],
+          (value) => {
+            patchUser({
+              languages: value,
+            });
+          },
+        );
+        break;
+      }
+
+      case "relationship": {
+        openSingleSelect(
+          t("relationshipStatus"),
+          relationshipOptions,
+          user.relationship ?? "",
+          (value) => {
+            patchUser({
+              relationship: value as User["relationship"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "sexuality": {
+        openSingleSelect(
+          t("sexuality"),
+          sexualityOptions,
+          user.sexuality ?? "",
+          (value) => {
+            patchUser({
+              sexuality: value as User["sexuality"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "smoking": {
+        openSingleSelect(
+          t("smoking"),
+          smokingOptions,
+          user.smoking ?? "",
+          (value) => {
+            patchUser({
+              smoking: value as User["smoking"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "starSign": {
+        openSingleSelect(
+          t("starSign"),
+          starSignOptions,
+          user.starSign ?? "",
+          (value) => {
+            patchUser({
+              starSign: value as User["starSign"],
+            });
+          },
+        );
+        break;
+      }
+
+      case "pets": {
+        openMultiSelect(t("pets"), petsOptions, user.pets ?? [], (value) => {
+          patchUser({
+            pets: value,
+          });
+        });
+        break;
+      }
+
+      case "religion": {
+        openSingleSelect(
+          t("religion"),
+          religionOptions,
+          user.religion ?? "",
+          (value) => {
+            patchUser({
+              religion: value as User["religion"],
+            });
+          },
+        );
+        break;
+      }
+    }
+  };
 
   return (
     <SafeAreaView
       edges={["top"]}
-      className="flex-1 bg-light-backgroundFocus dark:bg-dark-backgroundFocus"
+      className="flex-1"
+      style={{
+        backgroundColor: theme.backgroundFocus,
+      }}
     >
-      {/* ── Top 1/3: header ──────────────────────────────────────────────── */}
-      <View className="flex-1 justify-center items-center px-5">
-        {/* Blob decoration */}
+      <View className="flex-1 items-center justify-center px-5">
         <View className="absolute inset-0" pointerEvents="none">
           <Blob width="100%" color="rgba(255,255,255,0.12)" />
         </View>
 
         <View className="items-center gap-2.5">
-          {/* Avatar */}
-          <Avatar alt="Your avatar" className="w-20 h-20">
-            <AvatarImage source={{ uri: user.imgUrl }} />
+          <Avatar alt="Your avatar" className="h-20 w-20">
+            <AvatarImage
+              source={{
+                uri: user.imgUrl,
+              }}
+            />
           </Avatar>
-          {/* Name + Age */}
-          <Text className="text-[22px] font-bold text-white">
+
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "bold",
+              color: "#fff",
+            }}
+          >
             {user.firstName}, {user.age}
           </Text>
 
-          {/* Tags */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+            contentContainerStyle={{
+              gap: 8,
+              paddingHorizontal: 4,
+            }}
           >
             <Tags tags={user.tags ?? []} />
           </ScrollView>
         </View>
       </View>
 
-      {/* ── Bottom 2/3: tabs ─────────────────────────────────────────────── */}
       <View
-        className="flex-[2] overflow-hidden rounded-t-[32px] bg-light-background dark:bg-dark-background"
+        className="overflow-hidden rounded-t-[32px]"
         style={{
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -8 },
+          shadowOffset: {
+            width: 0,
+            height: -8,
+          },
           shadowOpacity: 0.15,
           shadowRadius: 12,
           elevation: 20,
         }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          {/* Tab strip */}
-          <TabsList className="h-12 w-full rounded-none border-b border-light-border bg-light-background px-0 py-0 dark:border-dark-border dark:bg-dark-background">
+          <TabsList
+            className="h-12 w-full rounded-none border-b px-0 py-0"
+            style={{
+              borderBottomColor: theme.border,
+              backgroundColor: theme.background,
+            }}
+          >
             <TabsTrigger
               value="profile"
-              className={cn(
-                "h-full flex-1 rounded-none",
-                activeTab === "profile" &&
-                  "border-b-2 border-light-color dark:border-dark-color",
-              )}
+              className="h-full flex-1 rounded-none"
+              style={
+                activeTab === "profile"
+                  ? {
+                      borderBottomWidth: 2,
+                      borderBottomColor: theme.color,
+                    }
+                  : undefined
+              }
             >
               <Text
                 className={cn(
@@ -461,13 +674,18 @@ export default function ProfileScreen() {
                 {t("profile")}
               </Text>
             </TabsTrigger>
+
             <TabsTrigger
               value="settings"
-              className={cn(
-                "h-full flex-1 rounded-none",
-                activeTab === "settings" &&
-                  "border-b-2 border-light-color dark:border-dark-color",
-              )}
+              className="h-full flex-1 rounded-none"
+              style={
+                activeTab === "settings"
+                  ? {
+                      borderBottomWidth: 2,
+                      borderBottomColor: theme.color,
+                    }
+                  : undefined
+              }
             >
               <Text
                 className={cn(
@@ -482,252 +700,146 @@ export default function ProfileScreen() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Profile Info tab ─────────────────────────────────────────── */}
-          <TabsContent value="profile" className="flex-1">
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-              showsVerticalScrollIndicator={false}
-            >
-              <ProfileInfoView
-                user={user}
-                editCallbacks={{
-                  onAddPhoto: () => {
-                    void handleAddPhoto();
+          <ProfileTab
+            user={user}
+            profileFields={profileFields}
+            editCallbacks={{
+              onAddPhoto: () => {
+                void handleAddPhoto();
+              },
+
+              onRemovePhoto: (url) => {
+                void handleRemovePhoto(url);
+              },
+
+              onEditTags: () => {
+                openMultiSelect(
+                  t("tags"),
+                  tagsOptions,
+                  user.tags ?? [],
+                  (value) => {
+                    patchUser({
+                      tags: value,
+                    });
                   },
-                  onRemovePhoto: (url) => {
-                    void handleRemovePhoto(url);
+                );
+              },
+
+              onEditWork: () => {
+                openTextEdit(t("work"), user.work ?? "", (value) => {
+                  patchUser({
+                    work: value,
+                  });
+                });
+              },
+
+              onEditEducation: () => {
+                openTextEdit(t("education"), user.education ?? "", (value) => {
+                  patchUser({
+                    education: value,
+                  });
+                });
+              },
+
+              onEditLookingFor: () => {
+                openMultiSelect(
+                  t("whyYoureHere"),
+                  lookingForOptions,
+                  user.lookingFor ?? [],
+                  (value) => {
+                    patchUser({
+                      lookingFor: value as User["lookingFor"],
+                    });
                   },
-                  onEditTags: () =>
-                    openMultiSelect(
-                      t("tags"),
-                      TAGS_OPTIONS,
-                      user.tags ?? [],
-                      (v) => patchUser({ tags: v as string[] }),
-                    ),
-                  onEditWork: () =>
-                    openTextEdit(t("work"), user.work ?? "", (v) =>
-                      patchUser({ work: v }),
-                    ),
-                  onEditEducation: () =>
-                    openTextEdit(t("education"), user.education ?? "", (v) =>
-                      patchUser({ education: v }),
-                    ),
-                  onEditLookingFor: () =>
-                    openMultiSelect(
-                      t("whyYoureHere"),
-                      LOOKING_FOR_OPTIONS,
-                      user.lookingFor ?? [],
-                      (v) => patchUser({ lookingFor: v as any }),
-                    ),
-                  onEditBio: () =>
-                    openTextEdit(t("bio"), user.info ?? "", (v) =>
-                      patchUser({ info: v }),
-                    ),
-                  onEditHeight: () =>
-                    openTextEdit(
-                      t("heightCm"),
-                      user.height?.toString() ?? "",
-                      (v) =>
-                        patchUser({ height: parseInt(v, 10) || undefined }),
-                    ),
-                  onEditChildren: () =>
-                    openSingleSelect(
-                      t("children"),
-                      CHILDREN_OPTIONS,
-                      user.hasChildren ?? "",
-                      (v) => patchUser({ hasChildren: v as any }),
-                    ),
-                  onEditDrinking: () =>
-                    openSingleSelect(
-                      t("drinking"),
-                      DRINKING_OPTIONS,
-                      user.drinking ?? "",
-                      (v) => patchUser({ drinking: v as any }),
-                    ),
-                  onEditLanguages: () =>
-                    openMultiSelect(
-                      t("languages"),
-                      LANGUAGE_OPTIONS,
-                      user.languages ?? [],
-                      (v) => patchUser({ languages: v as string[] }),
-                    ),
-                  onEditRelationship: () =>
-                    openSingleSelect(
-                      t("relationshipStatus"),
-                      RELATIONSHIP_OPTIONS,
-                      user.relationship ?? "",
-                      (v) => patchUser({ relationship: v as any }),
-                    ),
-                  onEditSexuality: () =>
-                    openSingleSelect(
-                      t("sexuality"),
-                      SEXUALITY_OPTIONS,
-                      user.sexuality ?? "",
-                      (v) => patchUser({ sexuality: v as any }),
-                    ),
-                  onEditSmoking: () =>
-                    openSingleSelect(
-                      t("smoking"),
-                      SMOKING_OPTIONS,
-                      user.smoking ?? "",
-                      (v) => patchUser({ smoking: v as any }),
-                    ),
-                  onEditStarSign: () =>
-                    openSingleSelect(
-                      t("starSign"),
-                      STAR_SIGN_OPTIONS,
-                      user.starSign ?? "",
-                      (v) => patchUser({ starSign: v as any }),
-                    ),
-                  onEditPets: () =>
-                    openMultiSelect(
-                      t("pets"),
-                      PETS_OPTIONS,
-                      user.pets ?? [],
-                      (v) => patchUser({ pets: v as string[] }),
-                    ),
-                  onEditReligion: () =>
-                    openSingleSelect(
-                      t("religion"),
-                      RELIGION_OPTIONS,
-                      user.religion ?? "",
-                      (v) => patchUser({ religion: v as any }),
-                    ),
-                }}
-              />
-            </ScrollView>
-          </TabsContent>
+                );
+              },
 
-          {/* ── Settings tab ─────────────────────────────────────────────── */}
-          <TabsContent value="settings" className="flex-1">
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-              showsVerticalScrollIndicator={false}
-            >
-              <View className="mx-4 mt-2">
-                <SettingsRow
-                  icon={Sun}
-                  title={t("theme")}
-                  subtitle={t(settings.theme.toLowerCase() as any)}
-                  onPress={() =>
-                    openSingleSelect(
-                      t("theme"),
-                      THEME_OPTIONS,
-                      settings.theme,
-                      (v) => patchSettings({ theme: v as any }),
-                    )
-                  }
-                />
-                <Separator />
-                <SettingsRow
-                  icon={Bell}
-                  title={t("notifications")}
-                  subtitle={settings.notificationsEnabled ? t("on") : t("off")}
-                  right={
-                    <Switch
-                      checked={settings.notificationsEnabled}
-                      onCheckedChange={(v) =>
-                        patchSettings({ notificationsEnabled: v })
-                      }
-                    />
-                  }
-                />
-                <Separator />
-                <SettingsRow
-                  icon={Globe}
-                  title={t("language")}
-                  subtitle={
-                    settings.language === "EN"
-                      ? t("english")
-                      : settings.language === "RS"
-                        ? t("serbian")
-                        : t("russian")
-                  }
-                  onPress={() =>
-                    openSingleSelect(
-                      t("language"),
-                      APP_LANGUAGE_OPTIONS,
-                      settings.language,
-                      (v) => patchSettings({ language: v as any }),
-                    )
-                  }
-                />
-                <Separator />
-                <SettingsRow
-                  icon={MapPin}
-                  title={t("location")}
-                  subtitle="Belgrade"
-                  onPress={undefined}
-                  right={<View />}
-                />
-                <Separator />
-                <SettingsRow
-                  icon={MapPin}
-                  title={t("defaultVenueType")}
-                  subtitle={
-                    VENUE_OPTIONS.find(
-                      (v) => v.value === settings.defaultVenueType,
-                    )?.name ?? t("notSet")
-                  }
-                  onPress={() =>
-                    openSingleSelect(
-                      t("defaultVenueType"),
-                      VENUE_OPTIONS,
-                      settings.defaultVenueType ?? "",
-                      (v) =>
-                        patchSettings({ defaultVenueType: v as VenueType }),
-                    )
-                  }
-                />
-                <Separator />
-                <SettingsRow
-                  icon={Bug}
-                  title={t("reportBug")}
-                  onPress={() => bugSheetRef.current?.present()}
-                />
-              </View>
+              onEditBio: () => {
+                openTextEdit(t("bio"), user.info ?? "", (value) => {
+                  patchUser({
+                    info: value,
+                  });
+                });
+              },
 
-              <View className="mx-4 mt-6 gap-3">
-                <Button
-                  variant="outline"
-                  onPress={async () => {
-                    await signOut();
-                    setUser(null);
-                    router.replace("/(auth)/sign-in");
-                  }}
-                  className="w-full gap-2 border-light-border dark:border-dark-border"
-                >
-                  <LogOut size={18} color={theme.colorStrong} />
-                  <Text className="text-[15px] font-semibold text-light-colorStrong dark:text-dark-colorStrong">
-                    {t("logOut")}
-                  </Text>
-                </Button>
+              onEditField: (fieldKey) => {
+                handleEditProfileField(fieldKey);
+              },
+            }}
+          />
 
-                <Button
-                  variant="outline"
-                  onPress={() => setShowDeleteAlert(true)}
-                  className="w-full gap-2 border-light-destructive dark:border-dark-destructive"
-                >
-                  <Trash2 size={18} color={theme.destructive} />
-                  <Text className="text-[15px] font-semibold text-light-destructive dark:text-dark-destructive">
-                    {t("deleteAccount")}
-                  </Text>
-                </Button>
-              </View>
-            </ScrollView>
-          </TabsContent>
+          <SettingsTab
+            settings={settings}
+            venueOptions={venueOptions}
+            locationName="Belgrade"
+            onThemePress={() => {
+              openSingleSelect(
+                t("theme"),
+                themeOptions,
+                settings.theme,
+                (value) => {
+                  void patchSettings({
+                    theme: value as Settings["theme"],
+                  });
+                },
+              );
+            }}
+            onNotificationsChange={(enabled) => {
+              void patchSettings({
+                notificationsEnabled: enabled,
+              });
+            }}
+            onLanguagePress={() => {
+              openSingleSelect(
+                t("language"),
+                appLanguageOptions,
+                settings.language,
+                (value) => {
+                  void patchSettings({
+                    language: value as Settings["language"],
+                  });
+                },
+              );
+            }}
+            onVenueTypePress={() => {
+              openSingleSelect(
+                t("defaultVenueType"),
+                venueOptions,
+                settings.defaultVenueType ?? "",
+                (value) => {
+                  void patchSettings({
+                    defaultVenueType: value as VenueType,
+                  });
+                },
+              );
+            }}
+            onReportBugPress={() => {
+              bugSheetRef.current?.present();
+            }}
+            onSuggestVenuePress={() => {
+              venueSheetRef.current?.present();
+            }}
+            onLogout={handleLogout}
+            onDeleteAccountPress={() => {
+              setShowDeleteAlert(true);
+            }}
+          />
         </Tabs>
       </View>
 
-      {/* ── Edit bottom sheet ─────────────────────────────────────────────── */}
       <BottomSheetModal
         ref={editSheetRef}
         snapPoints={editSnapPoints}
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: theme.backgroundPopover }}
-        handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
+        backgroundStyle={{
+          backgroundColor: theme.backgroundPopover,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: theme.gray5,
+        }}
+        onDismiss={() => {
+          setEditConfig(null);
+        }}
       >
         <BottomSheetScrollView
           contentContainerStyle={{
@@ -735,181 +847,326 @@ export default function ProfileScreen() {
             paddingBottom: insets.bottom + 20,
           }}
         >
-          {editConfig && (
+          {editConfig ? (
             <>
               <Text
                 style={{
+                  marginTop: 4,
+                  marginBottom: 16,
                   fontSize: 18,
                   fontWeight: "700",
                   color: theme.colorStrong,
-                  marginBottom: 16,
-                  marginTop: 4,
                 }}
               >
                 {editConfig.title}
               </Text>
 
-              {/* Single select */}
-              {editConfig.type === "single" &&
-                (editConfig.options ?? []).map((opt) => (
-                  <Button
-                    key={opt.value}
-                    variant="ghost"
-                    onPress={() => {
-                      setSingleValue(opt.value);
-                      editConfig.onSave(opt.value);
-                      editSheetRef.current?.close();
-                      setEditConfig(null);
-                    }}
-                    className="w-full justify-between h-auto py-3.5 px-3 rounded-xl mb-0.5"
-                    style={
-                      singleValue === opt.value
-                        ? { backgroundColor: theme.color025 }
-                        : {}
-                    }
-                  >
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        flex: 1,
-                        textAlign: "left",
-                        color:
-                          singleValue === opt.value
-                            ? theme.color
-                            : theme.colorStrong,
-                      }}
-                    >
-                      {opt.name}
-                    </Text>
-                    {singleValue === opt.value && (
-                      <Check size={18} color={theme.color} />
-                    )}
-                  </Button>
-                ))}
+              {editConfig.type === "single"
+                ? (editConfig.options ?? []).map((option) => {
+                    const selected = singleValue === option.value;
 
-              {/* Multi select */}
-              {editConfig.type === "multi" && (
-                <>
-                  {(editConfig.options ?? []).map((opt) => {
-                    const selected = multiValues.includes(opt.value);
                     return (
                       <Button
-                        key={opt.value}
+                        key={option.value}
                         variant="ghost"
-                        onPress={() => toggleMulti(opt.value)}
-                        className="w-full justify-between h-auto py-3.5 px-3 rounded-xl mb-0.5"
+                        onPress={() => {
+                          setSingleValue(option.value);
+                          editConfig.onSave(option.value);
+                          editSheetRef.current?.close();
+                          setEditConfig(null);
+                        }}
+                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5"
                         style={
-                          selected ? { backgroundColor: theme.color025 } : {}
+                          selected
+                            ? {
+                                backgroundColor: theme.color025,
+                              }
+                            : undefined
                         }
                       >
                         <Text
                           style={{
-                            fontSize: 16,
                             flex: 1,
                             textAlign: "left",
+                            fontSize: 16,
                             color: selected ? theme.color : theme.colorStrong,
                           }}
                         >
-                          {opt.name}
+                          {t(option.name)}
                         </Text>
-                        {selected && <Check size={18} color={theme.color} />}
+
+                        {selected ? (
+                          <Check size={18} color={theme.color} />
+                        ) : null}
+                      </Button>
+                    );
+                  })
+                : null}
+
+              {editConfig.type === "multi" ? (
+                <>
+                  {(editConfig.options ?? []).map((option) => {
+                    const selected = multiValues.includes(option.value);
+
+                    return (
+                      <Button
+                        key={option.value}
+                        variant="ghost"
+                        onPress={() => {
+                          toggleMultiValue(option.value);
+                        }}
+                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5"
+                        style={
+                          selected
+                            ? {
+                                backgroundColor: theme.color025,
+                              }
+                            : undefined
+                        }
+                      >
+                        <Text
+                          style={{
+                            flex: 1,
+                            textAlign: "left",
+                            fontSize: 16,
+                            color: selected ? theme.color : theme.colorStrong,
+                          }}
+                        >
+                          {t(option.name)}
+                        </Text>
+
+                        {selected ? (
+                          <Check size={18} color={theme.color} />
+                        ) : null}
                       </Button>
                     );
                   })}
-                  <Button onPress={confirmEdit} className="w-full mt-4">
+
+                  <Button onPress={confirmEdit} className="mt-4 w-full">
                     <Text
-                      style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#fff",
+                      }}
                     >
                       {t("confirm")}
                     </Text>
                   </Button>
                 </>
-              )}
+              ) : null}
 
-              {/* Text input */}
-              {editConfig.type === "text" && (
+              {editConfig.type === "text" ? (
                 <>
                   <Textarea
                     value={textValue}
                     onChangeText={setTextValue}
-                    placeholder={t("bio") + "…"}
+                    placeholder={`${editConfig.title}…`}
                     autoFocus
                     className="min-h-[100px]"
                   />
-                  <Button onPress={confirmEdit} className="w-full mt-3">
+
+                  <Button onPress={confirmEdit} className="mt-3 w-full">
                     <Text
-                      style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#fff",
+                      }}
                     >
                       {t("confirm")}
                     </Text>
                   </Button>
                 </>
-              )}
+              ) : null}
             </>
-          )}
+          ) : null}
         </BottomSheetScrollView>
       </BottomSheetModal>
 
-      {/* ── Bug report bottom sheet ───────────────────────────────────────── */}
       <BottomSheetModal
         ref={bugSheetRef}
         snapPoints={bugSnapPoints}
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: theme.backgroundPopover }}
-        handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
+        backgroundStyle={{
+          backgroundColor: theme.backgroundPopover,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: theme.gray5,
+        }}
       >
         <BottomSheetView
           style={{
+            flex: 1,
             paddingHorizontal: 20,
             paddingBottom: insets.bottom + 20,
-            flex: 1,
           }}
         >
           <Text
             style={{
+              marginTop: 4,
+              marginBottom: 12,
               fontSize: 18,
               fontWeight: "700",
               color: theme.colorStrong,
-              marginBottom: 12,
-              marginTop: 4,
             }}
           >
             {t("reportBug")}
           </Text>
+
           <Textarea
             value={bugText}
             onChangeText={setBugText}
             placeholder={t("bugReportPlaceholder")}
-            className="flex-1 max-h-[140px]"
+            className="max-h-[140px] flex-1"
           />
+
           <Button
-            onPress={() => {
-              setBugText("");
-              bugSheetRef.current?.close();
+            onPress={async () => {
+              const token = await getToken();
+
+              try {
+                await submitBugReport(token ?? undefined, {
+                  description: bugText,
+                  additional_info: null,
+                });
+
+                setBugText("");
+                bugSheetRef.current?.close();
+              } catch (error) {
+                Alert.alert(
+                  t("sendFailed"),
+                  error instanceof Error ? error.message : String(error),
+                );
+              }
             }}
-            className="w-full mt-4 gap-2"
+            className="mt-4 w-full gap-2"
           >
             <Send size={16} color="#fff" />
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#fff",
+              }}
+            >
               {t("send")}
             </Text>
           </Button>
         </BottomSheetView>
       </BottomSheetModal>
 
-      {/* ── Delete account alert ──────────────────────────────────────────── */}
+      <BottomSheetModal
+        ref={venueSheetRef}
+        snapPoints={venueSnapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{
+          backgroundColor: theme.backgroundPopover,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: theme.gray5,
+        }}
+      >
+        <BottomSheetView
+          style={{
+            flex: 1,
+            paddingHorizontal: 20,
+            paddingBottom: insets.bottom + 20,
+          }}
+        >
+          <Text
+            style={{
+              marginTop: 4,
+              marginBottom: 12,
+              fontSize: 18,
+              fontWeight: "700",
+              color: theme.colorStrong,
+            }}
+          >
+            {t("suggestVenue")}
+          </Text>
+
+          <Textarea
+            value={venueName}
+            onChangeText={setVenueName}
+            placeholder={t("venueNamePlaceholder")}
+            className="mb-2"
+          />
+
+          <Textarea
+            value={venueInstagram}
+            onChangeText={setVenueInstagram}
+            placeholder={t("instagramHandlePlaceholder")}
+            className="mb-2"
+          />
+
+          <Textarea
+            value={venueNotes}
+            onChangeText={setVenueNotes}
+            placeholder={t("additionalInfoPlaceholder")}
+            className="max-h-[140px] flex-1"
+          />
+
+          <Button
+            onPress={async () => {
+              if (!venueName.trim()) {
+                Alert.alert(t("nameRequired"), t("pleaseProvideVenueName"));
+                return;
+              }
+
+              const token = await getToken();
+
+              try {
+                await submitVenueSuggestion(token ?? undefined, {
+                  name: venueName.trim(),
+                  instagram_handle: venueInstagram.trim() || null,
+                  additionalInfo: venueNotes.trim() || null,
+                });
+
+                setVenueName("");
+                setVenueInstagram("");
+                setVenueNotes("");
+                venueSheetRef.current?.close();
+              } catch (error) {
+                Alert.alert(
+                  t("sendFailed"),
+                  error instanceof Error ? error.message : String(error),
+                );
+              }
+            }}
+            className="mt-4 w-full gap-2"
+          >
+            <Send size={16} color="#fff" />
+
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#fff",
+              }}
+            >
+              {t("send")}
+            </Text>
+          </Button>
+        </BottomSheetView>
+      </BottomSheetModal>
+
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("deleteAlertTitle")}</AlertDialogTitle>
+
             <AlertDialogDescription>
               {t("deleteAlertDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel>
               <Text>{t("cancel")}</Text>
             </AlertDialogCancel>
+
             <AlertDialogAction
               onPress={() => {
                 setShowDeleteAlert(false);

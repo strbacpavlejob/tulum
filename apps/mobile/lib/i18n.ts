@@ -115,6 +115,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Describe the bug...",
       send: "Send",
+      suggestVenue: "Suggest a venue",
+      venueNamePlaceholder: "Venue name",
+      instagramHandlePlaceholder: "Instagram handle (without @)",
+      additionalInfoPlaceholder: "Additional info (optional)",
+      nameRequired: "Name required",
+      pleaseProvideVenueName: "Please provide a venue name",
+      sendFailed: "Failed to send",
 
       // Profile edit labels
       tags: "Tags",
@@ -150,6 +157,7 @@ const resources = {
       matchesArriveAtVenue:
         "Arrive at the event venue to unlock matching. Once you're within range, swiping will be enabled automatically.",
       matchesCheckLocation: "Check my location",
+      callYandexTaxi: "Call Yandex Taxi",
       matchesYourLocation: "Your location",
       matchesEventVenue: "Event venue",
 
@@ -468,6 +476,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Opiši grešku...",
       send: "Pošalji",
+      suggestVenue: "Predloži lokal",
+      venueNamePlaceholder: "Naziv lokala",
+      instagramHandlePlaceholder: "Instagram nalog (bez @)",
+      additionalInfoPlaceholder: "Dodatne informacije (opciono)",
+      nameRequired: "Ime je obavezno",
+      pleaseProvideVenueName: "Molimo unesite naziv lokala",
+      sendFailed: "Slanje nije uspelo",
 
       // Profile edit labels
       tags: "Oznake",
@@ -503,6 +518,7 @@ const resources = {
       matchesArriveAtVenue:
         "Stigi do mesta događaja da otključaš mečeve. Čim budeš u blizini, prevlačenje će biti automatski omogućeno.",
       matchesCheckLocation: "Proveri moju lokaciju",
+      callYandexTaxi: "Pozovi Yandex Taxi",
       matchesYourLocation: "Tvoja lokacija",
       matchesEventVenue: "Mesto događaja",
 
@@ -819,6 +835,13 @@ const resources = {
       // Bug report
       bugReportPlaceholder: "Опишите ошибку...",
       send: "Отправить",
+      suggestVenue: "Предложить заведение",
+      venueNamePlaceholder: "Название заведения",
+      instagramHandlePlaceholder: "Аккаунт в Instagram (без @)",
+      additionalInfoPlaceholder: "Дополнительная информация (необязательно)",
+      nameRequired: "Требуется имя",
+      pleaseProvideVenueName: "Пожалуйста, укажите название заведения",
+      sendFailed: "Не удалось отправить",
 
       // Profile edit labels
       tags: "Теги",
@@ -854,6 +877,7 @@ const resources = {
       matchesArriveAtVenue:
         "Приходите на место проведения мероприятия, чтобы разблокировать знакомства. Как только вы окажетесь в радиусе, свайпы включатся автоматически.",
       matchesCheckLocation: "Проверить мою геолокацию",
+      callYandexTaxi: "Вызвать Яндекс.Такси",
       matchesYourLocation: "Ваше местоположение",
       matchesEventVenue: "Место проведения",
 

@@ -112,8 +112,12 @@ export const MatchLocationMap = ({
         box-shadow: 0 0 0 4px rgba(59,130,246,0.3);
         position: relative;
       `;
+      const userEl = renderToDiv(
+        <MapMarkerIcon size="md" isSelected={true} isUser />,
+        venueSize,
+      );
       const userIcon = L.divIcon({
-        html: userDot,
+        html: userEl,
         className: "",
         iconSize: [20, 20],
         iconAnchor: [10, 10],

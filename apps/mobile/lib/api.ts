@@ -500,6 +500,56 @@ export async function updateSettings(
   return response.json() as Promise<RemoteSettings>;
 }
 
+// ─── Reports ─────────────────────────────────────────────────────────────────
+
+export async function submitBugReport(
+  token: string | undefined,
+  payload: { description: string; additional_info?: string | null },
+) {
+  const url = `${TULUM_API_URL}/reports/bugs`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: token
+      ? authHeaders(token)
+      : { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to submit bug: ${response.status} ${text}`);
+  }
+  return response.json();
+}
+
+export async function submitVenueSuggestion(
+  token: string | undefined,
+  payload: {
+    name: string;
+    instagram_handle?: string | null;
+    additionalInfo?: string | null;
+  },
+) {
+  const url = `${TULUM_API_URL}/reports/venue-suggestions`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: token
+      ? authHeaders(token)
+      : { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: payload.name,
+      instagram_handle: payload.instagram_handle ?? null,
+      additionalInfo: payload.additionalInfo ?? null,
+    }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to submit venue suggestion: ${response.status} ${text}`,
+    );
+  }
+  return response.json();
+}
+
 // ─── Chats ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
@@ -732,5 +782,21 @@ export async function createMatchSwipe(
   // 409 / 23505 means the match already exists — ignore
   if (!response.ok && response.status !== 409) {
     throw new Error(`Failed to create match: ${response.status}`);
+  }
+}
+
+export async function createEventSession(
+  token: string,
+  eventId: string,
+): Promise<void> {
+  const url = `${TULUM_API_URL}/events/sessions`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ event_id: eventId }),
+  });
+  // If already checked in, server may return 409 or 4xx; ignore non-fatal errors
+  if (!response.ok && response.status !== 409) {
+    throw new Error(`Failed to create event session: ${response.status}`);
   }
 }

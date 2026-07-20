@@ -44,7 +44,7 @@ export class GuestsService {
     };
   }
 
-  async getSwipeableGuests(userId: string, eventId?: number) {
+  async getSwipeableGuests(userId: string, eventId?: string) {
     let targetEventId = eventId;
 
     if (!targetEventId) {
@@ -64,7 +64,26 @@ export class GuestsService {
           event_venue: '',
           profiles: [],
         };
-      targetEventId = session.event_id as number;
+      targetEventId = session.event_id as string;
+    } else {
+      // If an explicit eventId was provided, ensure the requesting user
+      // is actually attending that event. If they're not attending, return
+      // an empty result — we should only return guests who are at the same
+      // event as the requester.
+      const { data: userSession } = await this.db
+        .from('event_sessions')
+        .select('id')
+        .eq('event_id', targetEventId)
+        .eq('user_id', userId)
+        .is('exited_at', null)
+        .maybeSingle();
+      if (!userSession)
+        return {
+          event_id: null,
+          event_title: '',
+          event_venue: '',
+          profiles: [],
+        };
     }
 
     // Find guests already matched with the current user at this event
@@ -132,7 +151,7 @@ export class GuestsService {
       .maybeSingle();
 
     return {
-      event_id: targetEventId as number,
+      event_id: targetEventId as string | null,
       event_title: (event?.title ?? '') as string,
       event_venue: ((event?.venues as unknown as Record<string, unknown> | null)
         ?.name ?? '') as string,

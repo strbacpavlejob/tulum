@@ -1,5 +1,5 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { MapPin } from "lucide-react-native";
+import { MapPin, User2 } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Image } from "expo-image";
 import { View } from "react-native";
@@ -18,6 +18,7 @@ interface MapMarkerProps {
   size?: "sm" | "md" | "xl";
   isSelected?: boolean;
   instances?: number;
+  isUser?: boolean;
 }
 
 const sizeConfig = {
@@ -31,6 +32,7 @@ const MapMarkerIcon = ({
   size = "md",
   isSelected = false,
   instances = 1,
+  isUser = false,
 }: MapMarkerProps) => {
   const theme = useAppTheme();
   const config = sizeConfig[isSelected ? "xl" : size];
@@ -169,7 +171,11 @@ const MapMarkerIcon = ({
             justifyContent: "center",
           }}
         >
-          <MapPin size={config.icon} color={theme.gray10} />
+          {isUser ? (
+            <User2 size={config.icon} color={theme.gray10} />
+          ) : (
+            <MapPin size={config.icon} color={theme.gray10} />
+          )}
         </View>
       )}
     </View>

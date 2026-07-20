@@ -8,6 +8,7 @@ import {
   createMatchSwipe,
   fetchMyTickets,
   fetchSwipeableProfiles,
+  createEventSession,
   type SwipeableProfile,
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -16,11 +17,18 @@ import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import {
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+  Linking,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import MatchIcon from "@/components/illustrations/Match";
 import { useRouter } from "expo-router";
+import { CarTaxiFront } from "lucide-react-native";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -181,6 +189,7 @@ export default function MatchesScreen() {
         event_title: live.title ?? "",
       };
       setLiveTicket(ticket);
+
       await checkLocation(ticket.venue_lat, ticket.venue_lng);
     } catch {
       setEligibility("locked");
@@ -204,6 +213,14 @@ export default function MatchesScreen() {
     try {
       const token = await getToken();
       if (!token) return;
+      // Ensure the backend records this user's active event session (check-in)
+      if (liveTicket?.event_id) {
+        try {
+          await createEventSession(token, liveTicket.event_id);
+        } catch {
+          // ignore check-in failures — still try to load profiles
+        }
+      }
       const data = await fetchSwipeableProfiles(token);
       setEventId(data.event_id);
       setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
@@ -212,7 +229,7 @@ export default function MatchesScreen() {
     } finally {
       setLoadingProfiles(false);
     }
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, liveTicket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     checkTickets();
@@ -358,7 +375,7 @@ export default function MatchesScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Legend */}
+        {/* Call Yandex Taxi button */}
         <View
           className="flex-row gap-4 rounded-[14px] bg-light-backgroundStrong p-[14px] dark:bg-dark-backgroundStrong"
           style={{
@@ -366,29 +383,72 @@ export default function MatchesScreen() {
             bottom: insets.bottom + 24,
             left: 16,
             right: 16,
+            alignItems: "center",
           }}
         >
-          <View className="flex-row items-center gap-2">
-            <View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: "#3b82f6",
-                borderWidth: 2,
-                borderColor: "white",
-              }}
-            />
-            <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
-              {t("matchesYourLocation")}
+          <TouchableOpacity
+            onPress={async () => {
+              if (!liveTicket) return;
+
+              let startLatNum = userCoords?.lat;
+              let startLonNum = userCoords?.lng;
+
+              if (startLatNum == null || startLonNum == null) {
+                try {
+                  const { status } =
+                    await Location.requestForegroundPermissionsAsync();
+                  if (status === "granted") {
+                    const pos = await Location.getCurrentPositionAsync({
+                      accuracy: Location.Accuracy.Balanced,
+                    });
+                    startLatNum = pos.coords.latitude;
+                    startLonNum = pos.coords.longitude;
+                    setUserCoords({ lat: startLatNum, lng: startLonNum });
+                  } else {
+                    // permission denied — don't open
+                    return;
+                  }
+                } catch {
+                  return;
+                }
+              }
+
+              const startLat = (startLatNum ?? liveTicket.venue_lat).toFixed(6);
+              const startLon = (startLonNum ?? liveTicket.venue_lng).toFixed(6);
+              const endLat = liveTicket.venue_lat.toFixed(6);
+              const endLon = liveTicket.venue_lng.toFixed(6);
+
+              const url =
+                `https://3.redirect.appmetrica.yandex.com/route` +
+                `?start-lat=${startLat}` +
+                `&start-lon=${startLon}` +
+                `&end-lat=${endLat}` +
+                `&end-lon=${endLon}` +
+                `&ref=${encodeURIComponent(`tulum_${liveTicket.event_id}`)}` +
+                `&appmetrica_tracking_id=25395763362139037`;
+
+              try {
+                await Linking.openURL(url);
+              } catch (err) {
+                console.warn("Failed to open Yandex Go link", err);
+              }
+            }}
+            className="bg-yellow-500"
+            style={{
+              width: "100%",
+              paddingVertical: 14,
+              borderRadius: 14,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <CarTaxiFront size={20} style={{ marginBottom: 2 }} />
+            <Text style={{ fontWeight: "700", fontSize: 16 }}>
+              {t("callYandexTaxi")}
             </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <View className="h-3 w-3 rounded-full bg-light-color dark:bg-dark-color" />
-            <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
-              {liveTicket.venue_name || t("matchesEventVenue")}
-            </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     );

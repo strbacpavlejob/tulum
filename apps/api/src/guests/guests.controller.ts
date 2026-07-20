@@ -44,10 +44,7 @@ export class GuestsController {
   ) {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
-    return this.guestsService.getSwipeableGuests(
-      userId,
-      eventId ? parseInt(eventId, 10) : undefined,
-    );
+    return this.guestsService.getSwipeableGuests(userId, eventId);
   }
 
   @Post('onboarding')
