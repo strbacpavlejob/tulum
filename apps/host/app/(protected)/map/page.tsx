@@ -280,7 +280,7 @@ export default function MapPage() {
                     placeholder="Search events or venues…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9"
+                    className="pl-9 h-9 focus:border-0 focus:border-transparent"
                   />
                   {hasSearch && (
                     <button

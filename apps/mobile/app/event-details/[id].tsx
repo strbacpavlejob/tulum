@@ -267,7 +267,7 @@ function ReservationModal({
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onClose} style={{ alignItems: "center" }}>
-            <Text style={{ fontSize: 14, color: theme.gray6 }}>
+            <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
               {t("cancel")}
             </Text>
           </TouchableOpacity>
@@ -404,10 +404,7 @@ const EventDetailsScreen = () => {
 
   if (loadingEvent) {
     return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: theme.background }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -415,11 +412,10 @@ const EventDetailsScreen = () => {
 
   if (!event) {
     return (
-      <View
-        className="flex-1 justify-center items-center"
-        style={{ backgroundColor: theme.background }}
-      >
-        <Text style={{ color: theme.gray10 }}>{t("noEventSelected")}</Text>
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
+        <Text className="text-light-gray10 dark:text-dark-gray10">
+          {t("noEventSelected")}
+        </Text>
       </View>
     );
   }
@@ -431,7 +427,7 @@ const EventDetailsScreen = () => {
     maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: theme.background }}>
+    <View className="flex-1 bg-light-background dark:bg-dark-background">
       {/* Hero */}
       <View style={{ height: "32%" }} className="overflow-hidden">
         <Image
@@ -538,7 +534,7 @@ const EventDetailsScreen = () => {
             <Pressable onPress={() => setDescExpanded((v) => !v)}>
               <View>
                 <Text
-                  style={{ fontSize: 14, lineHeight: 22, color: theme.gray6 }}
+                  className="text-sm leading-[22px] text-light-gray6 dark:text-dark-gray6"
                   numberOfLines={descExpanded ? undefined : 3}
                 >
                   {event.description}
@@ -560,12 +556,9 @@ const EventDetailsScreen = () => {
 
         {/* Map */}
         <View
-          className="w-full overflow-hidden rounded-2xl"
+          className="w-full overflow-hidden rounded-2xl border border-light-gray3 bg-light-backgroundStrong dark:border-dark-gray3 dark:bg-dark-backgroundStrong"
           style={{
             height: 160,
-            borderWidth: 1,
-            borderColor: theme.gray3,
-            backgroundColor: theme.backgroundStrong,
           }}
         >
           <MiniMap
@@ -579,7 +572,7 @@ const EventDetailsScreen = () => {
         {/* Address */}
         <View className="flex-row items-center gap-2">
           <MapPin size={16} color={theme.gray12} />
-          <Text style={{ fontSize: 14, color: theme.gray6 }}>
+          <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
             {`${event.venueName}, ${event.location.address}`}
           </Text>
         </View>
@@ -588,10 +581,10 @@ const EventDetailsScreen = () => {
         <Pressable onPress={openGuestList}>
           <View>
             <View className="flex-row items-center justify-between mb-2">
-              <Text style={{ fontSize: 12, color: theme.gray5 }}>
+              <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
                 {t("goingLabel")}
               </Text>
-              <Text style={{ fontSize: 12, color: theme.gray5 }}>
+              <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
                 {goingCount}/{maxSpots}
               </Text>
             </View>
@@ -601,21 +594,17 @@ const EventDetailsScreen = () => {
             </View>
 
             {/* Progress bar */}
-            <View
-              className="w-full rounded-full overflow-hidden"
-              style={{ height: 6, backgroundColor: theme.gray3 }}
-            >
+            <View className="h-1.5 w-full overflow-hidden rounded-full bg-light-gray3 dark:bg-dark-gray3">
               <View
                 style={{
                   width: `${progressValue}%`,
                   height: "100%",
                   backgroundColor: theme.color,
-                  borderRadius: 999,
                 }}
               />
             </View>
 
-            <Text style={{ fontSize: 12, color: theme.gray5, marginTop: 4 }}>
+            <Text className="mt-1 text-xs text-light-gray5 dark:text-dark-gray5">
               {freeSpots > 0
                 ? t("spotsLeft", { count: freeSpots })
                 : t("eventIsFull")}

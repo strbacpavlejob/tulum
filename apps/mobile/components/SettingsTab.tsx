@@ -74,7 +74,7 @@ export default function SettingsTab({
   return (
     <TabsContent value="settings" className="flex-1">
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-light-background dark:bg-dark-background"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 24,
         }}
@@ -154,7 +154,7 @@ export default function SettingsTab({
             onPress={() => {
               void onLogout();
             }}
-            className="w-full gap-2"
+            className="w-full gap-2 border-red-50"
             style={{
               borderColor: theme.border,
             }}

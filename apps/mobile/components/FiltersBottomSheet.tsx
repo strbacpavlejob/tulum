@@ -287,17 +287,15 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
         <BottomSheetFooter {...props} bottomInset={8}>
           <View className="flex-row gap-3 p-3">
             <Pressable
-              className="flex-1 h-12 rounded-xl items-center justify-center"
-              style={{ backgroundColor: theme.gray3 }}
+              className="flex-1 h-12 items-center justify-center rounded-xl bg-light-gray3 dark:bg-dark-gray3"
               onPress={reset}
             >
-              <Text className="font-semibold" style={{ color: theme.gray11 }}>
+              <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
                 {t("reset")}
               </Text>
             </Pressable>
             <Pressable
-              className="flex-1 h-12 rounded-xl items-center justify-center"
-              style={{ backgroundColor: theme.color }}
+              className="flex-1 h-12 items-center justify-center rounded-xl bg-light-color dark:bg-dark-color"
               onPress={apply}
             >
               <Text className="font-semibold text-white">{t("apply")}</Text>
@@ -323,7 +321,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
           style={{ flex: 1, paddingHorizontal: 20, paddingVertical: 10 }}
         >
           <View className="flex-1 gap-3">
-            <Text className="text-xl font-bold" style={{ color: theme.gray12 }}>
+            <Text className="text-xl font-bold text-light-gray12 dark:text-dark-gray12">
               {t("filters")}
             </Text>
 
@@ -332,14 +330,8 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
             >
               <View className="gap-4 w-full">
                 {/* Venue Type */}
-                <View
-                  className="gap-3 rounded-xl p-4"
-                  style={{ backgroundColor: theme.backgroundStrong }}
-                >
-                  <Text
-                    className="font-semibold"
-                    style={{ color: theme.gray11 }}
-                  >
+                <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                  <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
                     {t("filterVenueType")}
                   </Text>
                   <View className="flex-row flex-wrap">
@@ -378,27 +370,21 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                 </View>
 
                 {/* Capacity Range */}
-                <View
-                  className="gap-3 rounded-xl p-4"
-                  style={{ backgroundColor: theme.backgroundStrong }}
-                >
+                <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
                   <View className="flex-row justify-between items-center">
-                    <Text
-                      className="font-semibold"
-                      style={{ color: theme.gray11 }}
-                    >
+                    <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
                       {t("capacity")}
                     </Text>
-                    <Text className="text-xs" style={{ color: theme.gray10 }}>
+                    <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
                       {capacityMin} - {capacityMax}
                     </Text>
                   </View>
                   <View className="gap-2">
                     <View className="flex-row justify-between">
-                      <Text className="text-xs" style={{ color: theme.gray9 }}>
+                      <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
                         {t("min")}
                       </Text>
-                      <Text className="text-xs" style={{ color: theme.gray9 }}>
+                      <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
                         {t("max")}
                       </Text>
                     </View>
@@ -464,10 +450,7 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                 </View>
 
                 {/* Date Range */}
-                <View
-                  className="rounded-xl p-4"
-                  style={{ backgroundColor: theme.backgroundStrong }}
-                >
+                <View className="rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
                   <CalendarRangePicker
                     startDate={filters.dateRange.start}
                     endDate={filters.dateRange.end}
@@ -481,14 +464,8 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                 </View>
 
                 {/* Only Favorites */}
-                <View
-                  className="flex-row items-center justify-between rounded-xl p-4"
-                  style={{ backgroundColor: theme.backgroundStrong }}
-                >
-                  <Text
-                    className="font-semibold"
-                    style={{ color: theme.gray11 }}
-                  >
+                <View className="flex-row items-center justify-between rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                  <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
                     {t("onlyFavorites")}
                   </Text>
                   <Pressable

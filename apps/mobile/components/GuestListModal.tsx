@@ -62,23 +62,10 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
       >
         <BottomSheetView style={{ flex: 1, paddingHorizontal: 20 }}>
           {/* Event info */}
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: "700",
-              color: theme.gray12,
-              marginBottom: 4,
-            }}
-          >
+          <Text className="mb-1 text-[20px] font-bold text-light-gray12 dark:text-dark-gray12">
             {eventTitle}
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: theme.gray6,
-              marginBottom: 20,
-            }}
-          >
+          <Text className="mb-5 text-sm text-light-gray6 dark:text-dark-gray6">
             {eventDate}
           </Text>
 
@@ -87,46 +74,28 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
             contentContainerStyle={{ paddingBottom: 16, gap: 16 }}
           >
             {/* Capacity card */}
-            <View
-              className="rounded-2xl"
-              style={{
-                padding: 16,
-                borderWidth: 1,
-                borderColor: theme.gray3,
-                backgroundColor: theme.backgroundStrong,
-              }}
-            >
+            <View className="rounded-2xl border border-light-gray3 bg-light-backgroundStrong p-4 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
               <View className="flex-row items-center justify-between mb-2">
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: theme.gray12,
-                  }}
-                >
+                <Text className="text-sm font-semibold text-light-gray12 dark:text-dark-gray12">
                   {t("freeSpaces")}
                 </Text>
-                <Text style={{ fontSize: 14, color: theme.gray6 }}>
+                <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
                   {goingCount}/{maxSpots}
                 </Text>
               </View>
 
               {/* Progress bar */}
-              <View
-                className="w-full rounded-full overflow-hidden"
-                style={{ height: 8, backgroundColor: theme.gray3 }}
-              >
+              <View className="h-2 w-full overflow-hidden rounded-full bg-light-gray3 dark:bg-dark-gray3">
                 <View
                   style={{
                     width: `${progressValue}%`,
                     height: "100%",
                     backgroundColor: theme.color,
-                    borderRadius: 999,
                   }}
                 />
               </View>
 
-              <Text style={{ fontSize: 12, color: theme.gray5, marginTop: 8 }}>
+              <Text className="mt-2 text-xs text-light-gray5 dark:text-dark-gray5">
                 {freeSpots > 0
                   ? t("spotsLeft", { count: freeSpots })
                   : t("eventIsFull")}
@@ -134,16 +103,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
             </View>
 
             {/* Gender stats */}
-            <View
-              className="flex-row items-center justify-between rounded-xl"
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                borderWidth: 1,
-                borderColor: theme.gray3,
-                backgroundColor: theme.backgroundStrong,
-              }}
-            >
+            <View className="flex-row items-center justify-between rounded-xl border border-light-gray3 bg-light-backgroundStrong px-4 py-2.5 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
               <View className="flex-row items-center gap-3">
                 <View
                   className="flex-row items-center gap-1 rounded-full"
@@ -173,37 +133,22 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                 </View>
               </View>
 
-              <Text style={{ fontSize: 14, color: theme.gray6 }}>
+              <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
                 {t("avgAge")}{" "}
-                <Text style={{ fontWeight: "500", color: theme.gray12 }}>
+                <Text className="font-medium text-light-gray12 dark:text-dark-gray12">
                   {averageAge ?? "—"}
                 </Text>
               </Text>
             </View>
 
             {/* Guest list */}
-            <View
-              className="rounded-2xl"
-              style={{
-                padding: 16,
-                borderWidth: 1,
-                borderColor: theme.gray3,
-                backgroundColor: theme.backgroundStrong,
-              }}
-            >
+            <View className="rounded-2xl border border-light-gray3 bg-light-backgroundStrong p-4 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
               <View className="flex-row items-center justify-between mb-4">
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: theme.gray5,
-                    textTransform: "uppercase",
-                    letterSpacing: 2,
-                  }}
-                >
+                <Text className="text-xs uppercase tracking-[2px] text-light-gray5 dark:text-dark-gray5">
                   {t("guestList")}
                 </Text>
                 {moreCount > 0 && (
-                  <Text style={{ fontSize: 12, color: theme.gray5 }}>
+                  <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
                     +{moreCount} more
                   </Text>
                 )}
@@ -217,11 +162,8 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                   return (
                     <View
                       key={`${guest.name}-${i}`}
-                      className="flex-row items-center gap-3 rounded-xl"
+                      className="flex-row items-center gap-3 rounded-xl bg-light-background px-3 py-2 dark:bg-dark-background"
                       style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 8,
-                        backgroundColor: theme.background,
                         opacity,
                       }}
                     >
@@ -240,19 +182,10 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
                             cachePolicy="disk"
                           />
                         ) : (
-                          <View
-                            className="w-full h-full items-center justify-center"
-                            style={{ backgroundColor: theme.gray3 }}
-                          />
+                          <View className="h-full w-full items-center justify-center bg-light-gray3 dark:bg-dark-gray3" />
                         )}
                       </View>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "500",
-                          color: theme.gray12,
-                        }}
-                      >
+                      <Text className="text-sm font-medium text-light-gray12 dark:text-dark-gray12">
                         {guest.name.split(" ")[0]}
                         {guest.age != null ? `, ${guest.age}` : ""}
                       </Text>
@@ -266,17 +199,10 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
           {/* Attend button */}
           <View style={{ paddingBottom: 20 }}>
             <Pressable
-              className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
-              style={{ backgroundColor: theme.color }}
+              className="w-full flex-row items-center justify-center gap-2 rounded-full bg-light-color py-4 dark:bg-dark-color"
               onPress={() => {}}
             >
-              <Text
-                style={{
-                  color: theme.background,
-                  fontWeight: "600",
-                  fontSize: 18,
-                }}
-              >
+              <Text className="text-[18px] font-semibold text-light-background dark:text-dark-background">
                 {t("attend")}
               </Text>
               <UserPlus size={20} color={theme.background} />

@@ -5,7 +5,7 @@ import ProfileInfoView, {
 import { TabsContent } from "@/components/ui/tabs";
 import { User } from "@/types/user";
 import React from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type ProfileEditCallbacks = ProfileInfoEditCallbacks;
@@ -26,17 +26,19 @@ export default function ProfileTab({
   return (
     <TabsContent value="profile" className="flex-1">
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-light-background dark:bg-dark-background"
         contentContainerStyle={{
           paddingBottom: insets.bottom + 24,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileInfoView
-          user={user}
-          profileFields={profileFields}
-          editCallbacks={editCallbacks}
-        />
+        <View className="mx-4 mt-2">
+          <ProfileInfoView
+            user={user}
+            profileFields={profileFields}
+            editCallbacks={editCallbacks}
+          />
+        </View>
       </ScrollView>
     </TabsContent>
   );

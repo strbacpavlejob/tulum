@@ -60,7 +60,7 @@ const MainStack = () => {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
+      <SafeAreaView className="flex-1 bg-light-color dark:bg-dark-color">
         <StatusBar
           translucent
           backgroundColor="transparent"

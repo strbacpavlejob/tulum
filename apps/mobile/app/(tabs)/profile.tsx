@@ -82,6 +82,7 @@ import {
 import { useTranslation } from "react-i18next";
 import SettingsTab from "@/components/SettingsTab";
 import ProfileTab from "@/components/ProfileTab";
+import { cn } from "@/lib/utils";
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
@@ -354,14 +355,7 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.background,
-        }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -640,7 +634,6 @@ export default function ProfileScreen() {
         className="overflow-hidden rounded-t-[32px]"
         style={{
           flex: 2,
-          backgroundColor: theme.background,
           shadowColor: "#000",
           shadowOffset: {
             width: 0,
@@ -651,33 +644,23 @@ export default function ProfileScreen() {
           elevation: 20,
         }}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList
-            className="h-12 w-full rounded-none border-b px-0 py-0"
-            style={{
-              borderBottomColor: theme.border,
-              backgroundColor: theme.background,
-            }}
-          >
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 gap-0"
+        >
+          <TabsList className="h-12 w-full rounded-none border-b px-0 py-0 bg-light-background dark:bg-dark-background border-b-light-border dark:border-b-dark-border">
             <TabsTrigger
               value="profile"
-              className="h-full flex-1 rounded-none"
-              style={
-                activeTab === "profile"
-                  ? {
-                      borderBottomWidth: 2,
-                      borderBottomColor: theme.color,
-                    }
-                  : undefined
-              }
+              className={`h-full flex-1 rounded-none ${activeTab === "profile" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
             >
               <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: activeTab === "profile" ? "600" : "400",
-                  color:
-                    activeTab === "profile" ? theme.color : theme.colorMuted,
-                }}
+                className={cn(
+                  "text-sm",
+                  activeTab === "profile"
+                    ? "font-semibold text-light-color dark:text-dark-color"
+                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
+                )}
               >
                 {t("profile")}
               </Text>
@@ -685,23 +668,15 @@ export default function ProfileScreen() {
 
             <TabsTrigger
               value="settings"
-              className="h-full flex-1 rounded-none"
-              style={
-                activeTab === "settings"
-                  ? {
-                      borderBottomWidth: 2,
-                      borderBottomColor: theme.color,
-                    }
-                  : undefined
-              }
+              className={`h-full flex-1 rounded-none ${activeTab === "settings" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
             >
               <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: activeTab === "settings" ? "600" : "400",
-                  color:
-                    activeTab === "settings" ? theme.color : theme.colorMuted,
-                }}
+                className={cn(
+                  "text-sm",
+                  activeTab === "settings"
+                    ? "font-semibold text-light-color dark:text-dark-color"
+                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
+                )}
               >
                 {t("settings")}
               </Text>

@@ -34,13 +34,8 @@ const SearchBox: React.FC = () => {
     <>
       <View className="flex-row items-center gap-3">
         <View
-          className="flex-1 flex-row items-center gap-2 rounded-full px-4"
-          style={{
-            height: 48,
-            backgroundColor: theme.background075,
-            borderWidth: 1,
-            borderColor: theme.gray4,
-          }}
+          className="h-12 flex-1 flex-row items-center gap-2 rounded-full border border-light-gray4 bg-light-background075 px-4 dark:border-dark-gray4 dark:bg-dark-background075"
+          style={{}}
         >
           {filter.title.length > 0 ? (
             <Pressable
@@ -60,7 +55,6 @@ const SearchBox: React.FC = () => {
           )}
           <TextInput
             placeholder={t("searchEvents")}
-            placeholderTextColor={theme.gray10}
             value={filter.title}
             onChangeText={(text) => {
               setFilter({ ...filter, title: text });
@@ -80,21 +74,12 @@ const SearchBox: React.FC = () => {
               applyEventsFilter();
             }}
             returnKeyType="search"
-            style={{ flex: 1, fontSize: 14, color: theme.gray12 }}
+            className="flex-1 text-sm text-light-gray12 dark:text-dark-gray12 focus:border-transparent *:focus:outline-none"
           />
         </View>
 
         <Pressable
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: theme.background075,
-            borderWidth: 1,
-            borderColor: theme.gray4,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="h-12 w-12 items-center justify-center rounded-full border border-light-gray4 bg-light-background075 dark:border-dark-gray4 dark:bg-dark-background075"
           onPress={() => ref.current?.open()}
         >
           <SlidersHorizontal size={20} color={theme.gray10} />

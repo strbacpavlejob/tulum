@@ -4,7 +4,6 @@ import HandsIcon from "@/components/illustrations/Hands";
 import { MatchLocationMap } from "@/components/MatchLocationMap";
 import MatchModal from "@/components/MatchModal";
 import SwipeCard from "@/components/SwipeCard";
-import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   createMatchSwipe,
   fetchMyTickets,
@@ -106,7 +105,6 @@ interface LiveTicket {
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
-  const theme = useAppTheme();
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
   const insets = useSafeAreaInsets();
@@ -299,14 +297,7 @@ export default function MatchesScreen() {
 
   if (eligibility === "checking") {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.background,
-        }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -314,8 +305,8 @@ export default function MatchesScreen() {
 
   if (eligibility === "locked") {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <SafeAreaView style={{ flex: 1 }}>
+      <View className="flex-1 bg-light-background dark:bg-dark-background">
+        <SafeAreaView className="flex-1">
           <View
             style={{
               flex: 1,
@@ -342,7 +333,7 @@ export default function MatchesScreen() {
 
   if (eligibility === "location_required" && liveTicket) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View className="flex-1 bg-light-background dark:bg-dark-background">
         {/* Full-screen map — user dot + venue pin */}
         <MatchLocationMap
           venueLat={liveTicket.venue_lat}
@@ -353,55 +344,32 @@ export default function MatchesScreen() {
 
         {/* Overlay card */}
         <View
+          className="gap-2 rounded-[20px] bg-light-backgroundStrong p-5 dark:bg-dark-backgroundStrong"
           style={{
             position: "absolute",
             top: insets.top + 16,
             left: 16,
             right: 16,
-            backgroundColor: theme.backgroundStrong,
-            borderRadius: 20,
-            padding: 20,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.15,
             shadowRadius: 12,
             elevation: 8,
-            gap: 8,
           }}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: theme.color,
-              lineHeight: 26,
-            }}
-          >
+          <Text className="text-[18px] font-bold leading-[26px] text-light-color dark:text-dark-color">
             {t("matchesAlmostThere")}
           </Text>
-          <Text style={{ fontSize: 13, color: theme.gray10, lineHeight: 20 }}>
+          <Text className="text-[13px] leading-5 text-light-gray10 dark:text-dark-gray10">
             {t("matchesArriveAtVenue")}
           </Text>
           <TouchableOpacity
             onPress={() =>
               checkLocation(liveTicket.venue_lat, liveTicket.venue_lng)
             }
-            style={{
-              marginTop: 4,
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              borderRadius: 99,
-              backgroundColor: theme.color,
-              alignSelf: "flex-start",
-            }}
+            className="mt-1 self-start rounded-full bg-light-color px-5 py-2.5 dark:bg-dark-color"
           >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: theme.background,
-              }}
-            >
+            <Text className="text-[13px] font-semibold text-light-background dark:text-dark-background">
               {t("matchesCheckLocation")}
             </Text>
           </TouchableOpacity>
@@ -409,6 +377,7 @@ export default function MatchesScreen() {
 
         {/* Call Yandex Taxi button */}
         <View
+          className="flex-row gap-4 rounded-[14px] bg-light-backgroundStrong p-[14px] dark:bg-dark-backgroundStrong"
           style={{
             position: "absolute",
             bottom: insets.bottom + 24,
@@ -487,14 +456,7 @@ export default function MatchesScreen() {
 
   if (eligibility === "eligible" && loadingProfiles) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.background,
-        }}
-      >
+      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
         <LoadingIndicator />
       </View>
     );
@@ -502,8 +464,8 @@ export default function MatchesScreen() {
 
   if (currentCardIndex >= profiles.length) {
     return (
-      <View className="flex-1" style={{ backgroundColor: theme.background }}>
-        <SafeAreaView style={{ flex: 1 }}>
+      <View className="flex-1 bg-light-background dark:bg-dark-background">
+        <SafeAreaView className="flex-1">
           <View
             style={{
               flex: 1,
@@ -526,8 +488,8 @@ export default function MatchesScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: theme.background }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <View className="flex-1 bg-light-background dark:bg-dark-background">
+      <SafeAreaView className="flex-1">
         <View style={{ flex: 1, paddingTop: insets.top }}>
           <View className="flex-1 justify-center items-center">
             {renderCards()}

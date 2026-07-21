@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { cn } from "@/lib/utils";
 import { User } from "@/types/user";
 import {
   Baby,
@@ -96,20 +97,20 @@ function ProfileRow({
       className="flex-row items-center justify-between py-3"
     >
       <View className="flex-row items-center gap-3 flex-1">
-        <View
-          className="w-9 h-9 rounded-xl items-center justify-center"
-          style={{ backgroundColor: theme.backgroundMuted }}
-        >
+        <View className="h-9 w-9 items-center justify-center rounded-xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted">
           <Icon size={16} color={theme.color} />
         </View>
         <View className="flex-1">
-          <Text style={{ fontSize: 12, color: theme.colorMuted }}>{label}</Text>
+          <Text className="text-xs text-light-colorMuted dark:text-dark-colorMuted">
+            {label}
+          </Text>
           <Text
-            style={{
-              fontSize: 15,
-              marginTop: 2,
-              color: value ? theme.colorStrong : theme.colorMuted,
-            }}
+            className={cn(
+              "mt-0.5 text-[15px]",
+              value
+                ? "text-light-colorStrong dark:text-dark-colorStrong"
+                : "text-light-colorMuted dark:text-dark-colorMuted",
+            )}
           >
             {value ?? "—"}
           </Text>
@@ -207,10 +208,7 @@ export default function ProfileInfoView({
     <View>
       {/* Photos */}
       <View className="px-4 pt-4">
-        <Text
-          className="text-xs font-semibold uppercase tracking-wide"
-          style={{ color: theme.colorMuted }}
-        >
+        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
           {t("photos")}
         </Text>
         <View className="flex-row h-[200px] gap-1.5 mt-2">
@@ -244,13 +242,12 @@ export default function ProfileInfoView({
                     : undefined
                 }
                 disabled={!editable}
-                className="flex-1 rounded-xl items-center justify-center"
-                style={{ backgroundColor: theme.backgroundMuted }}
+                className="flex-1 items-center justify-center rounded-xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
               >
                 {editable ? (
                   <Camera size={26} color={theme.colorMuted} />
                 ) : (
-                  <Text style={{ color: theme.colorMuted, fontSize: 28 }}>
+                  <Text className="text-[28px] text-light-colorMuted dark:text-dark-colorMuted">
                     —
                   </Text>
                 )}
@@ -290,13 +287,12 @@ export default function ProfileInfoView({
                         : undefined
                     }
                     disabled={!editable}
-                    className="flex-1 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: theme.backgroundMuted }}
+                    className="flex-1 items-center justify-center rounded-xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
                   >
                     {editable ? (
                       <Camera size={18} color={theme.colorMuted} />
                     ) : (
-                      <Text style={{ color: theme.colorMuted, fontSize: 22 }}>
+                      <Text className="text-[22px] text-light-colorMuted dark:text-dark-colorMuted">
                         —
                       </Text>
                     )}
@@ -309,17 +305,12 @@ export default function ProfileInfoView({
       </View>
 
       {/* Name / Gender / Location block */}
-      <View
-        className="mx-4 mt-4 rounded-2xl p-4"
-        style={{ backgroundColor: theme.backgroundMuted }}
-      >
-        <Text
-          style={{ fontSize: 20, fontWeight: "700", color: theme.colorStrong }}
-        >
+      <View className="mx-4 mt-4 rounded-2xl bg-light-backgroundMuted p-4 dark:bg-dark-backgroundMuted">
+        <Text className="text-[20px] font-bold text-light-colorStrong dark:text-dark-colorStrong">
           {user.firstName}
           {user.age ? `, ${user.age}` : ""}
         </Text>
-        <Text style={{ fontSize: 14, color: theme.colorMuted, marginTop: 2 }}>
+        <Text className="mt-0.5 text-sm text-light-colorMuted dark:text-dark-colorMuted">
           {capitalize(user.gender ?? "")}
           {user.gender && user.location ? ", " : ""}
           {user.location}
@@ -334,24 +325,22 @@ export default function ProfileInfoView({
         disabled={!editable}
         className="mx-4 mt-3 pb-3"
       >
-        <Text
-          className="text-xs font-semibold uppercase tracking-wide"
-          style={{ color: theme.colorMuted }}
-        >
+        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
           {t("interests")}
         </Text>
         <View className="flex-row flex-wrap gap-2 mt-2">
           {(user.tags ?? []).map((tag, i) => (
             <View
               key={i}
-              className="rounded-full px-3 py-1"
-              style={{ backgroundColor: theme.color025 }}
+              className="rounded-full bg-light-color025 px-3 py-1 dark:bg-dark-color025"
             >
-              <Text style={{ fontSize: 13, color: theme.color }}>{tag}</Text>
+              <Text className="text-[13px] text-light-color dark:text-dark-color">
+                {tag}
+              </Text>
             </View>
           ))}
           {(user.tags ?? []).length === 0 && (
-            <Text style={{ fontSize: 14, color: theme.colorMuted }}>
+            <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
               {editable ? t("addInterests") : "—"}
             </Text>
           )}
@@ -362,10 +351,7 @@ export default function ProfileInfoView({
 
       {/* Work & Education */}
       <View className="mx-4 mt-1">
-        <Text
-          className="text-xs font-semibold uppercase tracking-wide mb-1"
-          style={{ color: theme.colorMuted }}
-        >
+        <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
           {t("workAndEducation")}
         </Text>
         <ProfileRow
@@ -391,18 +377,14 @@ export default function ProfileInfoView({
         disabled={!editable}
         className="mx-4 mt-3 pb-3"
       >
-        <Text
-          className="text-xs font-semibold uppercase tracking-wide"
-          style={{ color: theme.colorMuted }}
-        >
+        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
           {t("whyYoureHere")}
         </Text>
         <View className="flex-row flex-wrap gap-2 mt-2">
           {(user.lookingFor ?? []).map((item, i) => (
             <View
               key={i}
-              className="rounded-full px-3.5 py-1.5"
-              style={{ backgroundColor: theme.color }}
+              className="rounded-full bg-light-color px-3.5 py-1.5 dark:bg-dark-color"
             >
               <Text style={{ fontSize: 13, color: "#fff" }}>
                 {capitalize(item)}
@@ -410,7 +392,7 @@ export default function ProfileInfoView({
             </View>
           ))}
           {(user.lookingFor ?? []).length === 0 && (
-            <Text style={{ fontSize: 14, color: theme.colorMuted }}>
+            <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
               {editable ? t("select") : "—"}
             </Text>
           )}
@@ -425,19 +407,16 @@ export default function ProfileInfoView({
         disabled={!editable}
         className="mx-4 mt-3 pb-3"
       >
-        <Text
-          className="text-xs font-semibold uppercase tracking-wide"
-          style={{ color: theme.colorMuted }}
-        >
+        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
           {t("bio")}
         </Text>
         <Text
-          style={{
-            fontSize: 15,
-            marginTop: 4,
-            lineHeight: 22,
-            color: user.info ? theme.colorStrong : theme.colorMuted,
-          }}
+          className={cn(
+            "mt-1 text-[15px] leading-[22px]",
+            user.info
+              ? "text-light-colorStrong dark:text-dark-colorStrong"
+              : "text-light-colorMuted dark:text-dark-colorMuted",
+          )}
         >
           {user.info ?? (editable ? t("tellOthersAboutYourself") : "—")}
         </Text>

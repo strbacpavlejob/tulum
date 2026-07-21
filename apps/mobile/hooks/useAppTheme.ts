@@ -1,5 +1,6 @@
 import useStore from "@/store/useStore";
 import { useColorScheme } from "react-native";
+import { colorScheme as nativewindColorScheme } from "nativewind";
 
 const lightTheme = {
   background: "#f9fafb",
@@ -165,6 +166,9 @@ export function useAppTheme() {
 
   const isDark =
     theme === "dark" || (theme === "system" && colorScheme === "dark");
+
+  const newTheme = isDark ? "dark" : "light";
+  nativewindColorScheme.set(newTheme);
 
   return isDark ? darkTheme : lightTheme;
 }
