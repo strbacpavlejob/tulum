@@ -633,6 +633,7 @@ export default function ProfileScreen() {
       <View
         className="overflow-hidden rounded-t-[32px]"
         style={{
+          flex: 2,
           shadowColor: "#000",
           shadowOffset: {
             width: 0,
@@ -643,7 +644,11 @@ export default function ProfileScreen() {
           elevation: 20,
         }}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 gap-0"
+        >
           <TabsList className="h-12 w-full rounded-none border-b px-0 py-0 bg-light-background dark:bg-dark-background border-b-light-border dark:border-b-dark-border">
             <TabsTrigger
               value="profile"

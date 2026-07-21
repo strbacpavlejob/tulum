@@ -680,27 +680,15 @@ export default function InboxScreen() {
 
   if (matches.length === 0 && newMatches.length === 0) {
     return (
-      <View className="flex-1 bg-light-background dark:bg-dark-background">
+      <View className="flex-1 flex-col justify-center items-center bg-light-background dark:bg-dark-background">
         <SafeAreaView className="flex-1">
-          <View
-            style={{
-              flex: 1,
-              paddingTop: 5,
-              paddingBottom: 10,
-              paddingHorizontal: 24,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-            }}
-          >
-            <EmptyIndicator
-              title={t("noMessagesYet")}
-              subtitle={t("noMessagesYetSubtitle")}
-              picture={ChatIcon}
-              onPress={() => router.push("/matches")}
-              buttonText={t("noMessagesYetButton")}
-            />
-          </View>
+          <EmptyIndicator
+            title={t("noMessagesYet")}
+            subtitle={t("noMessagesYetSubtitle")}
+            picture={ChatIcon}
+            onPress={() => router.push("/matches")}
+            buttonText={t("noMessagesYetButton")}
+          />
         </SafeAreaView>
       </View>
     );

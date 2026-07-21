@@ -154,7 +154,7 @@ export default function SettingsTab({
             onPress={() => {
               void onLogout();
             }}
-            className="w-full gap-2"
+            className="w-full gap-2 border-red-50"
             style={{
               borderColor: theme.border,
             }}
