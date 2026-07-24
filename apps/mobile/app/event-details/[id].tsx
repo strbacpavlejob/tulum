@@ -31,10 +31,12 @@ import {
   Send,
   UserMinus,
   UserPlus,
+  Share2,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { toast } from "sonner-native";
+import * as Clipboard from "expo-clipboard";
 import {
   Alert,
   Modal,
@@ -42,6 +44,7 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  Share,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
@@ -402,6 +405,22 @@ const EventDetailsScreen = () => {
     guestListRef.current?.present();
   }, []);
 
+  const handleShare = async () => {
+    if (!event) return;
+    try {
+      const url = Linking.createURL(`event/${event.id}`);
+      const message = `${event.title}\n${url}`;
+      const result = await Share.share({ message, url });
+      if (result.action === Share.sharedAction) {
+        toast.success(t("linkShared") ?? "Shared");
+      }
+    } catch (err) {
+      const url = Linking.createURL(`event/${event?.id}`);
+      await Clipboard.setStringAsync(url);
+      toast.success(t("linkCopied") ?? "Link copied");
+    }
+  };
+
   if (loadingEvent) {
     return (
       <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
@@ -465,21 +484,45 @@ const EventDetailsScreen = () => {
           <ArrowLeft size={20} color={theme.colorStrong} />
         </Pressable>
 
-        {/* Favorite button — top right */}
+        {/* Favorite + Share buttons — top right */}
         <View
           style={{
             position: "absolute",
             top: insets.top + 8,
             right: 16,
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: theme.background075,
+            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
+            gap: 8,
           }}
         >
-          <FavoriteButton isFavorite={event.isFavorite} eventId={event.id} />
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: theme.background075,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+            }}
+          >
+            <FavoriteButton isFavorite={event.isFavorite} eventId={event.id} />
+          </View>
+
+          <Pressable
+            onPress={handleShare}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: theme.background075,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            accessibilityLabel={t("share")}
+          >
+            <Share2 size={18} color={theme.colorStrong} />
+          </Pressable>
         </View>
 
         <View className="absolute bottom-0 left-0 right-0 p-4">

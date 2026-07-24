@@ -357,6 +357,10 @@ const resources = {
       viber: "Viber",
       whatsapp: "WhatsApp",
       instagramDm: "Instagram DM",
+      // Sharing
+      share: "Share",
+      linkCopied: "Link copied",
+      linkShared: "Link shared",
     },
   },
 
@@ -718,6 +722,10 @@ const resources = {
       viber: "Viber",
       whatsapp: "WhatsApp",
       instagramDm: "Instagram poruka",
+      // Sharing
+      share: "Podeli",
+      linkCopied: "Link kopiran",
+      linkShared: "Link podeljen",
     },
   },
 
@@ -1076,6 +1084,10 @@ const resources = {
       viber: "Viber",
       whatsapp: "WhatsApp",
       instagramDm: "Instagram DM",
+      // Sharing
+      share: "Поделиться",
+      linkCopied: "Ссылка скопирована",
+      linkShared: "Ссылка отправлена",
     },
   },
 };
