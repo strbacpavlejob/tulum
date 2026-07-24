@@ -30,6 +30,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
+import BirthdayInput from "@/components/birthday-input";
+import { differenceInYears, format, subYears } from "date-fns";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -105,23 +107,6 @@ const STEP_IDS = [
 
 const TOTAL_STEPS = STEP_IDS.length;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Convert DD/MM/YYYY or YYYY-MM-DD to an approximate age */
-function parseAge(birthday: string): number | undefined {
-  // Try DD/MM/YYYY
-  const parts = birthday.split("/");
-  if (parts.length === 3) {
-    const [day, month, year] = parts.map(Number);
-    if (year && month && day) {
-      const dob = new Date(year, month - 1, day);
-      const ageDiff = Date.now() - dob.getTime();
-      return Math.abs(new Date(ageDiff).getUTCFullYear() - 1970);
-    }
-  }
-  return undefined;
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ChipOption({
@@ -193,48 +178,6 @@ function CardOption({
         </View>
       )}
     </Pressable>
-  );
-}
-
-// ─── Birthday input ───────────────────────────────────────────────────────────
-
-function BirthdayInput({
-  value,
-  onChange,
-  placeholder,
-  formatLabel,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  formatLabel: string;
-}) {
-  const handleChange = (text: string) => {
-    // Auto-insert slashes: DD/MM/YYYY
-    const digits = text.replace(/\D/g, "").slice(0, 8);
-    let formatted = digits;
-    if (digits.length > 2)
-      formatted = digits.slice(0, 2) + "/" + digits.slice(2);
-    if (digits.length > 4)
-      formatted =
-        digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
-    onChange(formatted);
-  };
-
-  return (
-    <View>
-      <Input
-        value={value}
-        onChangeText={handleChange}
-        placeholder={placeholder}
-        keyboardType="numeric"
-        maxLength={10}
-        className="h-14 rounded-2xl text-center text-[22px] tracking-[2px] text-light-colorStrong dark:text-dark-colorStrong"
-      />
-      <Text className="mt-2 text-center text-xs text-light-colorMuted dark:text-dark-colorMuted">
-        {formatLabel}
-      </Text>
-    </View>
   );
 }
 
@@ -481,7 +424,7 @@ export default function OnboardingScreen() {
 
   // Form state
   const [firstName, setFirstName] = useState("");
-  const [birthday, setBirthday] = useState("");
+  const [birthday, setBirthday] = useState(new Date(subYears(new Date(), 18)));
   const [gender, setGender] = useState<"male" | "female" | "other" | "">("");
   const [lookingForGender, setLookingForGender] = useState<
     LookingForGender | ""
@@ -501,16 +444,7 @@ export default function OnboardingScreen() {
       case "name":
         return firstName.trim().length > 0;
       case "birthday": {
-        if (birthday.length !== 10) return false;
-        const [dd, mm, yyyy] = birthday.split("/").map(Number);
-        const d = new Date(yyyy, mm - 1, dd);
-        return (
-          d.getFullYear() === yyyy &&
-          d.getMonth() === mm - 1 &&
-          d.getDate() === dd &&
-          yyyy >= 1900 &&
-          yyyy <= new Date().getFullYear()
-        );
+        return differenceInYears(new Date(), birthday) >= 18;
       }
       case "gender":
         return gender !== "";
@@ -572,11 +506,8 @@ export default function OnboardingScreen() {
       return;
     }
 
-    const age = parseAge(birthday);
-
-    // Convert DD/MM/YYYY → YYYY-MM-DD
-    const [dd, mm, yyyy] = birthday.split("/");
-    const birthdayIso = `${yyyy}-${mm}-${dd}`;
+    const age = differenceInYears(new Date(), birthday);
+    const birthdayIso = format(new Date(birthday), "yyyy-MM-dd");
 
     // Map lookingForGender → interested_in array
     const interestedIn: GenderValue[] =
@@ -604,7 +535,7 @@ export default function OnboardingScreen() {
 
       setUser({
         firstName: firstName.trim(),
-        birthday,
+        birthday: format(new Date(birthdayIso), "yyyy-MM-dd"),
         age,
         gender: gender as "male" | "female" | "other",
         lookingForGender: lookingForGender as LookingForGender,
@@ -649,9 +580,13 @@ export default function OnboardingScreen() {
         return (
           <BirthdayInput
             value={birthday}
-            onChange={setBirthday}
-            placeholder={t("onboardingBirthdayPlaceholder")}
-            formatLabel={t("onboardingBirthdayFormat")}
+            minimumDate={new Date(1900, 0, 1)}
+            maximumDate={new Date(subYears(new Date(), 18))}
+            onChange={(dateString) => {
+              const [year, month, day] = dateString.split("-").map(Number);
+
+              setBirthday(new Date(year, month - 1, day, 12));
+            }}
           />
         );
 
