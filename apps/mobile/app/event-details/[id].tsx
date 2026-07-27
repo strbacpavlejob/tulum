@@ -50,6 +50,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import { TagsMarquee } from "@/components/ui/tags-marquee";
 import { Marquee } from "@/components/ui/marquee";
+import { AuthGuard } from "@/components/auth-guard";
 
 // ─── Helpers for deep-linking to contact apps ────────────────────────────
 
@@ -446,265 +447,273 @@ const EventDetailsScreen = () => {
     maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
 
   return (
-    <View className="flex-1 bg-light-background dark:bg-dark-background">
-      {/* Hero */}
-      <View style={{ height: "32%" }} className="overflow-hidden">
-        <Image
-          source={{ uri: event.image || undefined }}
-          style={{ width: "100%", height: "100%" }}
-          contentFit="cover"
-          cachePolicy="disk"
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: `${theme.background}99`,
-          }}
-        />
-
-        {/* Back button — top left */}
-        <Pressable
-          onPress={() => router.back()}
-          style={{
-            position: "absolute",
-            top: insets.top + 8,
-            left: 16,
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: theme.background075,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ArrowLeft size={20} color={theme.colorStrong} />
-        </Pressable>
-
-        {/* Favorite + Share buttons — top right */}
-        <View
-          style={{
-            position: "absolute",
-            top: insets.top + 8,
-            right: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
+    <AuthGuard
+      title="Log in to continue"
+      message="You need to be logged in to interact with this event."
+    >
+      <View className="flex-1 bg-light-background dark:bg-dark-background">
+        {/* Hero */}
+        <View style={{ height: "32%" }} className="overflow-hidden">
+          <Image
+            source={{ uri: event.image || undefined }}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            cachePolicy="disk"
+          />
           <View
             style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: `${theme.background}99`,
+            }}
+          />
+
+          {/* Back button — top left */}
+          <Pressable
+            onPress={() => router.back()}
+            style={{
+              position: "absolute",
+              top: insets.top + 8,
+              left: 16,
               width: 36,
               height: 36,
               borderRadius: 18,
               backgroundColor: theme.background075,
               alignItems: "center",
               justifyContent: "center",
-              marginRight: 8,
             }}
           >
-            <FavoriteButton isFavorite={event.isFavorite} eventId={event.id} />
+            <ArrowLeft size={20} color={theme.colorStrong} />
+          </Pressable>
+
+          {/* Favorite + Share buttons — top right */}
+          <View
+            style={{
+              position: "absolute",
+              top: insets.top + 8,
+              right: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: theme.background075,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 8,
+              }}
+            >
+              <FavoriteButton
+                isFavorite={event.isFavorite}
+                eventId={event.id}
+              />
+            </View>
+
+            <Pressable
+              onPress={handleShare}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: theme.background075,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              accessibilityLabel={t("share")}
+            >
+              <Share2 size={18} color={theme.colorStrong} />
+            </Pressable>
           </View>
 
-          <Pressable
-            onPress={handleShare}
+          <View className="absolute bottom-0 left-0 right-0 p-4">
+            <View className="flex-row items-center gap-4">
+              <View className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500/30">
+                <Image
+                  source={{ uri: event.venue_picture ?? undefined }}
+                  className="w-full h-full"
+                  contentFit="cover"
+                  cachePolicy="disk"
+                />
+              </View>
+
+              <View className="flex-1 pb-1">
+                <Marquee active>
+                  <Text
+                    style={{
+                      fontSize: 22,
+                      fontWeight: "700",
+                      color: theme.colorStrong,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {event.title}
+                  </Text>
+                </Marquee>
+
+                <View className="flex-row flex-wrap gap-2 mt-2">
+                  <TagsMarquee active>
+                    <Tags tags={event.tags} />
+                  </TagsMarquee>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Content */}
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            paddingBottom: 16,
+            gap: 20,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Description + Date */}
+          <View className="flex-row items-start gap-4">
+            <View className="flex-1">
+              <Pressable onPress={() => setDescExpanded((v) => !v)}>
+                <View>
+                  <Text
+                    className="text-sm leading-[22px] text-light-gray6 dark:text-dark-gray6"
+                    numberOfLines={descExpanded ? undefined : 3}
+                  >
+                    {event.description}
+                  </Text>
+                  <View className="flex-row items-center justify-center mt-2">
+                    {descExpanded ? (
+                      <ChevronUp size={14} color={theme.gray5} />
+                    ) : (
+                      <ChevronDown size={14} color={theme.gray5} />
+                    )}
+                  </View>
+                </View>
+              </Pressable>
+            </View>
+            <View className="shrink-0">
+              <DateCard dateString={event.date} />
+            </View>
+          </View>
+
+          {/* Map */}
+          <View
+            className="w-full overflow-hidden rounded-2xl border border-light-gray3 bg-light-backgroundStrong dark:border-dark-gray3 dark:bg-dark-backgroundStrong"
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: theme.background075,
-              alignItems: "center",
-              justifyContent: "center",
+              height: 160,
             }}
-            accessibilityLabel={t("share")}
           >
-            <Share2 size={18} color={theme.colorStrong} />
+            <MiniMap
+              latitude={event.location.latitude}
+              longitude={event.location.longitude}
+              address={event.location.address}
+              height={160}
+            />
+          </View>
+
+          {/* Address */}
+          <View className="flex-row items-center gap-2">
+            <MapPin size={16} color={theme.gray12} />
+            <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
+              {`${event.venueName}, ${event.location.address}`}
+            </Text>
+          </View>
+
+          {/* Guests */}
+          <Pressable onPress={openGuestList}>
+            <View>
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
+                  {t("goingLabel")}
+                </Text>
+                <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
+                  {goingCount}/{maxSpots}
+                </Text>
+              </View>
+
+              <View className="mb-3">
+                <AvatarList avatars={guestList} />
+              </View>
+
+              {/* Progress bar */}
+              <View className="h-1.5 w-full overflow-hidden rounded-full bg-light-gray3 dark:bg-dark-gray3">
+                <View
+                  style={{
+                    width: `${progressValue}%`,
+                    height: "100%",
+                    backgroundColor: theme.color,
+                  }}
+                />
+              </View>
+
+              <Text className="mt-1 text-xs text-light-gray5 dark:text-dark-gray5">
+                {freeSpots > 0
+                  ? t("spotsLeft", { count: freeSpots })
+                  : t("eventIsFull")}
+              </Text>
+            </View>
+          </Pressable>
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View className="px-5 pb-5">
+          <Pressable
+            className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
+            style={{
+              backgroundColor: attending
+                ? theme.destructiveForeground
+                : theme.color,
+            }}
+            onPress={handleAttend}
+          >
+            <Text
+              style={{
+                color: attending ? theme.destructive : theme.background,
+                fontWeight: "600",
+                fontSize: 18,
+              }}
+            >
+              {attending ? t("cancelAttendance") : t("attend")}
+            </Text>
+            {attending ? (
+              <UserMinus size={20} color={theme.destructive} />
+            ) : (
+              <UserPlus size={20} color={theme.background} />
+            )}
           </Pressable>
         </View>
 
-        <View className="absolute bottom-0 left-0 right-0 p-4">
-          <View className="flex-row items-center gap-4">
-            <View className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500/30">
-              <Image
-                source={{ uri: event.venue_picture ?? undefined }}
-                className="w-full h-full"
-                contentFit="cover"
-                cachePolicy="disk"
-              />
-            </View>
-
-            <View className="flex-1 pb-1">
-              <Marquee active>
-                <Text
-                  style={{
-                    fontSize: 22,
-                    fontWeight: "700",
-                    color: theme.colorStrong,
-                  }}
-                  numberOfLines={1}
-                >
-                  {event.title}
-                </Text>
-              </Marquee>
-
-              <View className="flex-row flex-wrap gap-2 mt-2">
-                <TagsMarquee active>
-                  <Tags tags={event.tags} />
-                </TagsMarquee>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Content */}
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 20,
-          paddingBottom: 16,
-          gap: 20,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Description + Date */}
-        <View className="flex-row items-start gap-4">
-          <View className="flex-1">
-            <Pressable onPress={() => setDescExpanded((v) => !v)}>
-              <View>
-                <Text
-                  className="text-sm leading-[22px] text-light-gray6 dark:text-dark-gray6"
-                  numberOfLines={descExpanded ? undefined : 3}
-                >
-                  {event.description}
-                </Text>
-                <View className="flex-row items-center justify-center mt-2">
-                  {descExpanded ? (
-                    <ChevronUp size={14} color={theme.gray5} />
-                  ) : (
-                    <ChevronDown size={14} color={theme.gray5} />
-                  )}
-                </View>
-              </View>
-            </Pressable>
-          </View>
-          <View className="shrink-0">
-            <DateCard dateString={event.date} />
-          </View>
-        </View>
-
-        {/* Map */}
-        <View
-          className="w-full overflow-hidden rounded-2xl border border-light-gray3 bg-light-backgroundStrong dark:border-dark-gray3 dark:bg-dark-backgroundStrong"
-          style={{
-            height: 160,
-          }}
-        >
-          <MiniMap
-            latitude={event.location.latitude}
-            longitude={event.location.longitude}
-            address={event.location.address}
-            height={160}
-          />
-        </View>
-
-        {/* Address */}
-        <View className="flex-row items-center gap-2">
-          <MapPin size={16} color={theme.gray12} />
-          <Text className="text-sm text-light-gray6 dark:text-dark-gray6">
-            {`${event.venueName}, ${event.location.address}`}
-          </Text>
-        </View>
-
-        {/* Guests */}
-        <Pressable onPress={openGuestList}>
-          <View>
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
-                {t("goingLabel")}
-              </Text>
-              <Text className="text-xs text-light-gray5 dark:text-dark-gray5">
-                {goingCount}/{maxSpots}
-              </Text>
-            </View>
-
-            <View className="mb-3">
-              <AvatarList avatars={guestList} />
-            </View>
-
-            {/* Progress bar */}
-            <View className="h-1.5 w-full overflow-hidden rounded-full bg-light-gray3 dark:bg-dark-gray3">
-              <View
-                style={{
-                  width: `${progressValue}%`,
-                  height: "100%",
-                  backgroundColor: theme.color,
-                }}
-              />
-            </View>
-
-            <Text className="mt-1 text-xs text-light-gray5 dark:text-dark-gray5">
-              {freeSpots > 0
-                ? t("spotsLeft", { count: freeSpots })
-                : t("eventIsFull")}
-            </Text>
-          </View>
-        </Pressable>
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-5 pb-5">
-        <Pressable
-          className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
-          style={{
-            backgroundColor: attending
-              ? theme.destructiveForeground
-              : theme.color,
-          }}
-          onPress={handleAttend}
-        >
-          <Text
-            style={{
-              color: attending ? theme.destructive : theme.background,
-              fontWeight: "600",
-              fontSize: 18,
-            }}
-          >
-            {attending ? t("cancelAttendance") : t("attend")}
-          </Text>
-          {attending ? (
-            <UserMinus size={20} color={theme.destructive} />
-          ) : (
-            <UserPlus size={20} color={theme.background} />
-          )}
-        </Pressable>
-      </View>
-
-      <GuestListModal
-        ref={guestListRef}
-        eventTitle={event.title}
-        eventDate={format(parseISO(event.date), "EEEE · h:mm a")}
-        guestList={guestList}
-        maxSpots={maxSpots}
-        averageAge={averageAge}
-        females={females}
-        males={males}
-      />
-
-      {/* Reservation modal — shown when attending requires reservation */}
-      {event.venueContact && event.requiresReservation && (
-        <ReservationModal
-          visible={showReservationModal}
-          contact={event.venueContact}
-          onClose={() => setShowReservationModal(false)}
-          onConfirm={confirmAttend}
+        <GuestListModal
+          ref={guestListRef}
+          eventTitle={event.title}
+          eventDate={format(parseISO(event.date), "EEEE · h:mm a")}
+          guestList={guestList}
+          maxSpots={maxSpots}
+          averageAge={averageAge}
+          females={females}
+          males={males}
         />
-      )}
-    </View>
+
+        {/* Reservation modal — shown when attending requires reservation */}
+        {event.venueContact && event.requiresReservation && (
+          <ReservationModal
+            visible={showReservationModal}
+            contact={event.venueContact}
+            onClose={() => setShowReservationModal(false)}
+            onConfirm={confirmAttend}
+          />
+        )}
+      </View>
+    </AuthGuard>
   );
 };
 

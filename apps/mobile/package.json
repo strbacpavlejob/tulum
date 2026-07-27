@@ -53,7 +53,7 @@
     "expo": "~55.0.23",
     "expo-apple-authentication": "~55.0.13",
     "expo-auth-session": "~55.0.15",
-    "expo-blur": "~55.0.14",
+    "expo-blur": "~55.0.16",
     "expo-clipboard": "^55.0.15",
     "expo-constants": "~55.0.16",
     "expo-crypto": "~55.0.14",
