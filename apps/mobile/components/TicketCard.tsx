@@ -1,78 +1,152 @@
+import FavoriteButton from "@/components/FavoriteButton";
+import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
-import { Heart } from "lucide-react-native";
+import { cn } from "@/lib/utils";
+import { EventSummary } from "@/types/event";
+import { format } from "date-fns";
+import { enUS, ru, srLatn } from "date-fns/locale";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
-import { View } from "react-native";
-import IndicatorIcon from "./IndicatorIcon";
-import { InfoSection } from "./InforSection";
-import Tags from "./Tags";
+import { Pressable, StyleProp, View, ViewStyle } from "react-native";
+import { Marquee } from "./ui/marquee";
+import { Skeleton } from "./ui/skeleton";
+import { TagsMarquee } from "./ui/tags-marquee";
+import { Ticket } from "lucide-react-native";
 
-interface TicketProps {
-  id: string;
-  title: string;
-  description: string;
-  date: Date;
-  tags: string[];
-  favorite: boolean;
-  imgUrl?: string;
+interface TicketCardProps {
+  event?: EventSummary;
+  isSelected?: boolean;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+  isLoading?: boolean;
 }
 
 export const TicketCard = ({
-  id,
-  title,
-  date,
-  description,
-  tags,
-  favorite,
-  imgUrl,
-}: TicketProps) => {
-  const theme = useAppTheme();
+  event,
+  isSelected = false,
+  onPress,
+  style,
+  isLoading = false,
+}: TicketCardProps) => {
+  const { t, i18n } = useTranslation();
+
+  if (isLoading) {
+    return (
+      <View
+        className="h-28 w-[300px] flex-row overflow-hidden rounded-2xl border border-light-gray4 bg-light-background075 dark:border-dark-gray4 dark:bg-dark-background075"
+        style={style}
+      >
+        <Skeleton className="h-full w-[100px] rounded-none" />
+
+        <View className="flex-1 justify-between p-2">
+          <Skeleton className="h-4 w-[85%]" />
+          <Skeleton className="h-3 w-[60%]" />
+          <Skeleton className="h-3 w-[75%]" />
+          <Skeleton className="h-4 w-[90%]" />
+        </View>
+
+        <View className="absolute top-3 right-3 w-8 h-8 rounded-full overflow-hidden">
+          <Skeleton className="h-full w-full rounded-full" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!event) return null;
+
+  const getDateLocale = () => {
+    switch (i18n.language) {
+      case "RU":
+        return ru;
+      case "RS":
+        return srLatn;
+      default:
+        return enUS;
+    }
+  };
+
+  const timeFormat = i18n.language === "EN" ? "EEEE · haa" : "EEEE · HH:mm";
+  const dateLabel = format(new Date(event.date), timeFormat, {
+    locale: getDateLocale(),
+  });
+
+  const goingCount = event.guestCount ?? 0;
+  const goingLabel =
+    goingCount === 0 ? t("beTheFirst") : `${goingCount} ${t("going")}`;
+
   return (
-    <View
-      key={id}
-      className="rounded-xl overflow-hidden bg-white shadow-sm"
-      style={{ elevation: 3 }}
+    <Pressable
+      onPress={onPress}
+      className={cn(
+        "h-28 w-[300px] flex-row overflow-hidden rounded-2xl bg-light-background075 dark:bg-dark-background075",
+        isSelected
+          ? "border-2 border-light-color dark:border-dark-color"
+          : "border border-light-gray4 dark:border-dark-gray4",
+      )}
+      style={style}
     >
-      {/* Heart icon in the top-right corner if favorite */}
-      <View className="absolute top-2.5 right-2.5 z-10">
-        <IndicatorIcon
-          icon={Heart}
-          isActive={favorite}
-          customTheme={{ color: theme.color }}
+      <View className="h-full w-[100px]">
+        <Image
+          source={{ uri: event.image }}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+          cachePolicy="disk"
+          blurRadius={2}
         />
+
+        {/* Ticket icon overlay */}
+        <View className="bg-light-background/80 dark:bg-dark-background/80 absolute inset-0 items-center justify-center">
+          <Ticket
+            className="text-light-gray12/80 dark:text-dark-gray12/80 w-full h-full p-8 rotate-12"
+            strokeWidth={2}
+          />
+        </View>
       </View>
 
-      <View className="flex-row gap-2">
-        {/* Image section */}
-        <View className="w-1/3 bg-gray-200 rounded-xl overflow-hidden">
-          {imgUrl ? (
-            <Image
-              source={{ uri: imgUrl }}
-              style={{
-                width: "100%",
-                height: "100%",
-              }}
-              contentFit="cover"
-              cachePolicy="disk"
-            />
-          ) : (
-            <Text className="text-gray-400 text-lg">Imgzz</Text>
-          )}
-        </View>
-        {/* Ticket details */}
-        <View className="gap-1 p-2 flex-1">
-          <Text className="font-bold text-lg">{title}</Text>
-          <Text className="text-gray-500 text-sm">
-            {description.length > 20
-              ? description.slice(0, 20) + "..."
-              : description}
+      <View className="flex-1 justify-between gap-1 overflow-hidden p-2">
+        <Marquee active={isSelected}>
+          <Text
+            numberOfLines={1}
+            className="shrink-0 text-sm font-bold text-light-gray12 dark:text-dark-gray12"
+          >
+            {event.title}
           </Text>
-          <View className="flex-row items-center justify-between mt-1">
-            <InfoSection date={date} capacity={100} />
-          </View>
-          <Tags tags={tags} />
+        </Marquee>
+
+        <View className="flex-row">
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            className="text-xs font-normal text-light-gray10 dark:text-dark-gray10"
+          >
+            {event.venueName ?? ""}
+          </Text>
+        </View>
+
+        <View className="flex-row flex-wrap">
+          <Text className="text-xs font-normal text-light-gray10 dark:text-dark-gray10">
+            {dateLabel} · {goingLabel}
+          </Text>
+        </View>
+
+        <View className="flex-row shrink-0">
+          <TagsMarquee active={isSelected}>
+            <Tags tags={event.tags} size="ssm" />
+          </TagsMarquee>
         </View>
       </View>
-    </View>
+
+      <View
+        className="absolute right-3 top-3 h-8 w-8 items-center justify-center rounded-full bg-light-background075 dark:bg-dark-background075"
+        onStartShouldSetResponder={() => true}
+      >
+        <FavoriteButton
+          isFavorite={event.isFavorite}
+          eventId={event.id}
+          size={16}
+        />
+      </View>
+    </Pressable>
   );
 };

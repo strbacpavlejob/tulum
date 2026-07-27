@@ -13,6 +13,7 @@ import { Animated, RefreshControl, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import LoadingIndicator from "@/components/loading-indicator";
+import { TicketCard } from "@/components/TicketCard";
 
 const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours before start = still "live"
 const SOON_WINDOW_MS = 3 * 60 * 60 * 1000; // within 3 hours from now = "starting soon"
@@ -87,7 +88,7 @@ function Section({
         </Text>
       </View>
       {events.map((event) => (
-        <DiscoverCard
+        <TicketCard
           key={event.id}
           event={event}
           isSelected={false}
