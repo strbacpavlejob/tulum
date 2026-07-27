@@ -1,4 +1,3 @@
-import { DiscoverCard } from "@/components/DiscoverCard";
 import EmptyIndicator from "@/components/EmptyIndicator";
 import CalendarIcon from "@/components/illustrations/Map";
 import { Text } from "@/components/ui/text";
@@ -77,7 +76,6 @@ function Section({
   onPress: (event: EventSummary) => void;
   live?: boolean;
 }) {
-  const theme = useAppTheme();
   if (events.length === 0) return null;
   return (
     <View className="gap-3">
@@ -200,7 +198,7 @@ export default function TicketsScreen() {
         <Section
           title={t("liveNow")}
           events={live}
-          onPress={handlePress}
+          onPress={(/* event */) => router.push("/matches")}
           live
         />
         <Section
