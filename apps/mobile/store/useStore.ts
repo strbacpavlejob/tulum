@@ -32,6 +32,7 @@ interface MyStore {
   resetEventsFilter: () => void;
   refreshEvents: () => Promise<void>;
   updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
+  updateEventAttendance: (eventId: string, isAttending: boolean) => void;
   addTicket: (ticket: Ticket) => void;
   removeTicketByEventId: (eventId: string) => void;
 }
@@ -222,6 +223,52 @@ const useStore = create<MyStore>((set) => ({
     }));
   },
 
+  updateEventAttendance(eventId: string, isAttending: boolean) {
+    const patch = (list: EventSummary[] = []) =>
+      list.map((e) =>
+        e.id === eventId
+          ? {
+              ...e,
+              isAttending,
+              guestCount:
+                typeof e.guestCount === "number"
+                  ? Math.max(0, e.guestCount + (isAttending ? 1 : -1))
+                  : e.guestCount,
+            }
+          : e,
+      );
+
+    set((s) => {
+      const updatedEvents = patch(s.events);
+      const updatedFilteredEvents = patch(s.filteredEvents);
+
+      // If we can find the event in current events, adjust the pin instances
+      const evt = (s.events ?? []).find((e) => e.id === eventId);
+      if (evt && evt.venueId) {
+        const venueId = evt.venueId;
+        const delta = isAttending ? 1 : -1;
+        const updatePinsList = (pinsList: EventPin[] | undefined) =>
+          (pinsList ?? []).map((pin) =>
+            pin.venueId === venueId
+              ? { ...pin, instances: Math.max(0, (pin.instances ?? 0) + delta) }
+              : pin,
+          );
+
+        return {
+          events: updatedEvents,
+          filteredEvents: updatedFilteredEvents,
+          pins: updatePinsList(s.pins),
+          filteredPins: updatePinsList(s.filteredPins),
+        } as any;
+      }
+
+      return {
+        events: updatedEvents,
+        filteredEvents: updatedFilteredEvents,
+      } as any;
+    });
+  },
+
   addTicket(ticket: Ticket) {
     set((s) => ({
       tickets: [
@@ -229,12 +276,16 @@ const useStore = create<MyStore>((set) => ({
         ...(s.tickets ?? []).filter((t) => t.event_id !== ticket.event_id),
       ],
     }));
+    // Keep event attendance in sync
+    useStore.getState().updateEventAttendance(ticket.event_id, true);
   },
 
   removeTicketByEventId(eventId: string) {
     set((s) => ({
       tickets: (s.tickets ?? []).filter((t) => t.event_id !== eventId),
     }));
+    // Keep event attendance in sync
+    useStore.getState().updateEventAttendance(eventId, false);
   },
 }));
 

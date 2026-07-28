@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import useStore from "@/store/useStore";
 import { Event, VenueContact } from "@/types/event";
+import { Ticket } from "@/types/ticket";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { format, parseISO } from "date-fns";
@@ -285,7 +286,8 @@ function ReservationModal({
 
 const EventDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { addTicket, removeTicketByEventId } = useStore();
+  const { addTicket, removeTicketByEventId, updateEventAttendance } =
+    useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -293,9 +295,10 @@ const EventDetailsScreen = () => {
   const { userId, getToken } = useAuth();
   const guestListRef = useRef<BottomSheetModal>(null);
 
+  const tickets = useStore((s) => s.tickets);
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
-  const [attending, setAttending] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
@@ -313,11 +316,38 @@ const EventDetailsScreen = () => {
       .then((token) => fetchEventDetails(id, token ?? undefined))
       .then((data) => {
         setEvent(data);
-        if (data.isAttending) setAttending(true);
+        // If backend reports user is attending but local store lacks the ticket,
+        // add a minimal ticket so UI stays in sync.
+        if (data.isAttending) {
+          const has = useStore
+            .getState()
+            .tickets?.some((t) => t.event_id === data.id);
+          if (!has) {
+            addTicket({
+              id: `remote-${data.id}`,
+              event_id: data.id,
+              image: data.image ?? null,
+              title: data.title,
+              description: data.description,
+              date: data.date,
+              tags: data.tags,
+              venue_name: String(data.venueName ?? ""),
+              location: data.location,
+            });
+            updateEventAttendance(data.id, true);
+          }
+        }
       })
       .catch(() => setLoadingEvent(false))
       .finally(() => setLoadingEvent(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // keep a ref to the latest event so the refresh interval doesn't have to
+  // include `event` in deps (which can cause frequent re-runs).
+  const eventRef = useRef<Event | null>(event);
+  useEffect(() => {
+    eventRef.current = event;
+  }, [event]);
 
   // Fetch attendees
   useEffect(() => {
@@ -333,6 +363,64 @@ const EventDetailsScreen = () => {
       .catch(() => {});
   }, [id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Fetch attendees once when this screen loads.
+  useEffect(() => {
+    if (!id || !userId) return;
+
+    let mounted = true;
+
+    const refresh = async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        const data = await fetchEventAttendees(id, token);
+        if (!mounted || !data) return;
+
+        setAttendeesData(data);
+
+        // If backend indicates the user is in the guest list but local tickets
+        // don't have the event, add a minimal ticket to keep UI consistent.
+        const isUserInList = data.guestList.some(
+          (g: any) => g.id === userId || g.user_id === userId,
+        );
+
+        const hasTicket = useStore
+          .getState()
+          .tickets?.some((t) => t.event_id === id);
+
+        const currentEvent = eventRef.current;
+
+        if (isUserInList && !hasTicket && currentEvent) {
+          addTicket({
+            id: `remote-${id}`,
+            event_id: currentEvent.id,
+            image: currentEvent.image ?? null,
+            title: currentEvent.title,
+            description: currentEvent.description,
+            date: currentEvent.date,
+            tags: currentEvent.tags,
+            venue_name: String(currentEvent.venueName ?? ""),
+            location: currentEvent.location,
+          });
+
+          updateEventAttendance(id, true);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    refresh();
+
+    return () => {
+      mounted = false;
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, userId]);
+  const isAttending = Boolean(tickets?.some((t) => t.event_id === event?.id));
+
   const handleAttend = async () => {
     if (!userId || !event?.id) {
       toast.error("Unable to attend this event right now.");
@@ -344,14 +432,40 @@ const EventDetailsScreen = () => {
       return;
     }
 
-    // If already attending — just cancel
-    if (attending) {
-      setAttending(false);
+    const isAttending = Boolean(
+      useStore.getState().tickets?.some((t) => t.event_id === event.id),
+    );
+
+    // If already attending — optimistic cancel
+    if (isAttending) {
+      const prevTicket =
+        useStore.getState().tickets?.find((t) => t.event_id === event.id) ??
+        null;
+      // Optimistically remove locally
+      removeTicketByEventId(event.id);
+      // remove optimistic placeholder guest if present
+      setAttendeesData((prev) => ({
+        ...prev,
+        guestList: prev.guestList.filter((g) => g.uri !== "__local_you__"),
+      }));
       try {
         await unattendEvent(token, event.id);
-        removeTicketByEventId(event.id);
       } catch {
-        setAttending(true);
+        // rollback
+        if (prevTicket) addTicket(prevTicket);
+        // rollback guest placeholder removal by re-adding a placeholder
+        setAttendeesData((prev) => ({
+          ...prev,
+          guestList: [
+            {
+              name: t("you") ?? "You",
+              age: null,
+              gender: null,
+              uri: "__local_you__",
+            },
+            ...prev.guestList,
+          ],
+        }));
         toast.error("Could not cancel attendance. Please try again.");
       }
       return;
@@ -377,26 +491,55 @@ const EventDetailsScreen = () => {
       return;
     }
     setShowReservationModal(false);
-    setAttending(true);
+    // Optimistically add a minimal ticket so UI updates immediately.
+    const tempTicket: Ticket = {
+      id: `temp-${event.id}`,
+      event_id: event.id,
+      image: event.image ?? null,
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      tags: event.tags,
+      venue_name: String(event.venueName ?? event.venueName ?? ""),
+      location: event.location,
+    };
+    // add optimistic placeholder guest so details screen updates immediately
+    const placeholderGuest = {
+      name: t("you") ?? "You",
+      age: null,
+      gender: null,
+      uri: "__local_you__",
+    };
+    setAttendeesData((prev) => ({
+      ...prev,
+      guestList: [placeholderGuest, ...prev.guestList],
+    }));
+    addTicket(tempTicket);
     try {
       const { ticket: raw } = await attendEvent(token, event.id);
+      // Replace temp with real ticket
       addTicket({
-        id: String(raw.id ?? ""),
+        id: String(raw.id ?? tempTicket.id),
         event_id: event.id,
         image: event.image ?? null,
         title: event.title,
         description: event.description,
         date: event.date,
         tags: event.tags,
-        venue_name: String(raw.venue_name ?? ""),
+        venue_name: String(
+          raw.venue_name ?? event.venueName ?? event.venueName ?? "",
+        ),
         location: event.location,
       });
-    } catch (err) {
-      setAttending(false);
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.";
+    } catch {
+      // rollback optimistic add
+      removeTicketByEventId(event.id);
+      // remove optimistic placeholder guest
+      setAttendeesData((prev) => ({
+        ...prev,
+        guestList: prev.guestList.filter((g) => g.uri !== "__local_you__"),
+      }));
+      const message = "Something went wrong. Please try again.";
       Alert.alert("Can't attend", message);
       toast.error(message);
     }
@@ -415,7 +558,7 @@ const EventDetailsScreen = () => {
       if (result.action === Share.sharedAction) {
         toast.success(t("linkShared") ?? "Shared");
       }
-    } catch (err) {
+    } catch {
       const url = Linking.createURL(`event/${event?.id}`);
       await Clipboard.setStringAsync(url);
       toast.success(t("linkCopied") ?? "Link copied");
@@ -669,7 +812,7 @@ const EventDetailsScreen = () => {
           <Pressable
             className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
             style={{
-              backgroundColor: attending
+              backgroundColor: isAttending
                 ? theme.destructiveForeground
                 : theme.color,
             }}
@@ -677,14 +820,14 @@ const EventDetailsScreen = () => {
           >
             <Text
               style={{
-                color: attending ? theme.destructive : theme.background,
+                color: isAttending ? theme.destructive : theme.background,
                 fontWeight: "600",
                 fontSize: 18,
               }}
             >
-              {attending ? t("cancelAttendance") : t("attend")}
+              {isAttending ? t("cancelAttendance") : t("attend")}
             </Text>
-            {attending ? (
+            {isAttending ? (
               <UserMinus size={20} color={theme.destructive} />
             ) : (
               <UserPlus size={20} color={theme.background} />
