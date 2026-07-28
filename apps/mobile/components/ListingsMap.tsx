@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { LATITUDE_DELTA, LONGITUDE_DELTA } from "@/constants/map";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { LinearGradient } from "expo-linear-gradient";
@@ -170,13 +171,13 @@ const ListingsMap = memo(() => {
       setSelectedIndex(index);
       setSelectedEventId(item.id);
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.flyTo(
-          [item.location.latitude, item.location.longitude],
-          ACTIVE_PIN_ZOOM,
-          {
+        const lat = item?.location?.latitude;
+        const lng = item?.location?.longitude;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          mapInstanceRef.current.flyTo([lat, lng], ACTIVE_PIN_ZOOM, {
             duration: 0.35,
-          },
-        );
+          });
+        }
       }
       router.push(`/event-details/${item.id}`);
     },
@@ -193,10 +194,11 @@ const ListingsMap = memo(() => {
           if (currentListings && currentListings[index]) {
             const item = currentListings[index];
             if (mapInstanceRef.current) {
-              mapInstanceRef.current.panTo([
-                item.location.latitude,
-                item.location.longitude,
-              ]);
+              const lat = item?.location?.latitude;
+              const lng = item?.location?.longitude;
+              if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                mapInstanceRef.current.panTo([lat, lng]);
+              }
             }
           }
         }
@@ -253,6 +255,10 @@ const ListingsMap = memo(() => {
     },
     [filter, setFilter, applyEventsFilter],
   );
+
+  const isValidCoord = useCallback((lat: any, lng: any) => {
+    return Number.isFinite(lat) && Number.isFinite(lng);
+  }, []);
 
   /* ── Initialize Leaflet map ──────────────────────── */
   useEffect(() => {
@@ -327,6 +333,22 @@ const ListingsMap = memo(() => {
     });
 
     (mapPins ?? []).forEach((pin: EventPin) => {
+      const lat = pin?.location?.latitude;
+      const lng = pin?.location?.longitude;
+
+      // Keep markersRef aligned with mapPins by pushing null for invalid pins
+      if (!isValidCoord(lat, lng)) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "Skipping pin with invalid coordinates:",
+          pin?.venueId,
+          lat,
+          lng,
+        );
+        markersRef.current.push(null);
+        return;
+      }
+
       // All markers start unselected; the selection effect updates the active one
       const markerSize = getMarkerIconSize(false);
 
@@ -347,7 +369,7 @@ const ListingsMap = memo(() => {
         iconAnchor: [markerSize / 2, markerSize / 2],
       });
 
-      const marker = L.marker([pin.location.latitude, pin.location.longitude], {
+      const marker = L.marker([lat, lng], {
         icon,
       });
 
@@ -395,14 +417,17 @@ const ListingsMap = memo(() => {
         />,
         markerSize,
       );
-      markersRef.current[selectedPinIndex]?.setIcon(
-        L.divIcon({
-          html: el,
-          className: "",
-          iconSize: [markerSize, markerSize],
-          iconAnchor: [markerSize / 2, markerSize / 2],
-        }),
-      );
+      // Only set icon if the corresponding marker exists
+      if (markersRef.current[selectedPinIndex]) {
+        markersRef.current[selectedPinIndex].setIcon(
+          L.divIcon({
+            html: el,
+            className: "",
+            iconSize: [markerSize, markerSize],
+            iconAnchor: [markerSize / 2, markerSize / 2],
+          }),
+        );
+      }
     }
   }, [
     mapPins,
@@ -476,14 +501,13 @@ const ListingsMap = memo(() => {
 
     const selectedEvent = listings?.[selectedIndex];
     if (!selectedEvent) return;
+    const lat = selectedEvent?.location?.latitude;
+    const lng = selectedEvent?.location?.longitude;
+    if (!isValidCoord(lat, lng)) return;
 
-    map.flyTo(
-      [selectedEvent.location.latitude, selectedEvent.location.longitude],
-      ACTIVE_PIN_ZOOM,
-      {
-        duration: 0.35,
-      },
-    );
+    map.flyTo([lat, lng], ACTIVE_PIN_ZOOM, {
+      duration: 0.35,
+    });
   }, [selectedIndex, listings]);
 
   // OpenStreetMap via Leaflet
