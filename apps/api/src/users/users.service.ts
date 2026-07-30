@@ -36,6 +36,13 @@ export class UsersService {
   }
 
   async createUser(user: Record<string, unknown>) {
+    // Normalize camelCase `isAdmin` to DB snake_case `is_admin`.
+    if ('isAdmin' in user && !('is_admin' in user)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (user as any).is_admin = (user as any).isAdmin;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (user as any).isAdmin;
+    }
     const { data, error } = await this.db
       .from(USERS_TABLE)
       .insert(user)
@@ -46,6 +53,13 @@ export class UsersService {
   }
 
   async updateUser(id: string, updates: Record<string, unknown>) {
+    // Normalize camelCase `isAdmin` to DB snake_case `is_admin`.
+    if ('isAdmin' in updates && !('is_admin' in updates)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (updates as any).is_admin = (updates as any).isAdmin;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (updates as any).isAdmin;
+    }
     const { data, error } = await this.db
       .from(USERS_TABLE)
       .update(updates)

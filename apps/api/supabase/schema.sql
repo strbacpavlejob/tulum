@@ -406,6 +406,7 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "first_name" "text",
     "last_name" "text",
     "avatar_url" "text",
+    "is_admin" boolean DEFAULT false NOT NULL,
     "push_token" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone

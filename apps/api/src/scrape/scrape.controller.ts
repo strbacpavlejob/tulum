@@ -1,10 +1,18 @@
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import { scrapers } from './scrapers.config';
 import { GoOutScraperService } from './services/go-out-scraper.service';
 import { GuestListSerbiaScraperService } from './services/guest-list-serbia-scraper.service';
 import { UnitedScraperService } from './services/united-scraper.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AdminGuard } from '../common/guards/admin.guard';
 
+@UseGuards(AdminGuard)
 @Controller('scrape')
 export class ScrapeController {
   constructor(

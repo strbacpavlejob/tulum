@@ -1,8 +1,10 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SeedService } from './seed.service';
+import { AdminGuard } from '../common/guards/admin.guard';
 
 @ApiTags('seed')
+@UseGuards(AdminGuard)
 @Controller('seed')
 export class SeedController {
   constructor(private readonly seedService: SeedService) {}

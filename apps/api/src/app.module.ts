@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClerkAuthGuard } from './common/guards/clerk-auth.guard';
+import { AdminGuard } from './common/guards/admin.guard';
 import { CleanupModule } from './cleanup/cleanup.module';
 import { ScrapeModule } from './scrape/scrape.module';
 import { EventsModule } from './events/events.module';
@@ -48,6 +49,7 @@ import { ReportsModule } from './reports/reports.module';
   controllers: [AppController],
   providers: [
     AppService,
+    AdminGuard,
     {
       provide: APP_GUARD,
       useClass: ClerkAuthGuard,
