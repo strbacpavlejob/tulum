@@ -2,9 +2,9 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as puppeteer from 'puppeteer';
-import { SupabaseService } from '../../supabase/supabase.service';
-import { Event } from '../interfaces/event.interface';
-import { Venue, VenueType } from '../interfaces/venue.interface';
+import { SupabaseService } from '../../../supabase/supabase.service';
+import { Event } from '../../interfaces/event.interface';
+import { Venue, VenueType } from '../../interfaces/venue.interface';
 
 const BASE_URL = 'https://guestlist-serbia.com/';
 const DEFAULT_EVENT_DURATION_HOURS = 4;

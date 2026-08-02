@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { scrapers } from '../scrapers.config';
-import { GoOutScraperService } from './go-out-scraper.service';
+import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 @Injectable()
@@ -22,12 +22,12 @@ export class ScrapeCronService {
 
     try {
       const data = await this.goOutScraperService.scrape();
-      const result = await this.supabaseService.saveScrapedData(data);
-      const deletedOldEvents = await this.supabaseService.deleteOldEvents();
+      // const result = await this.supabaseService.saveScrapedData(data);
+      // const deletedOldEvents = await this.supabaseService.deleteOldEvents();
 
-      this.logger.log(
-        `Scheduled scrape finished successfully. Venues: ${result.venues}, Events: ${result.events}, Deleted old events: ${deletedOldEvents}`,
-      );
+      // this.logger.log(
+      //   `Scheduled scrape finished successfully. Venues: ${result.venues}, Events: ${result.events}, Deleted old events: ${deletedOldEvents}`,
+      // );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown scrape cron error';

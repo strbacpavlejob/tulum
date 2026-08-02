@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { intervalToDuration, formatDuration } from 'date-fns';
-import { GoOutScraperService } from './go-out-scraper.service';
+import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { InstagramVenueScraperService } from '../../instagram/instagram-venue-scraper.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { R2Service } from '../../r2/r2.service';
 import { instagramUsernameList } from '../instagram-username-list';
 import { Venue } from '../interfaces/venue.interface';
 import { Event } from '../interfaces/event.interface';
+import { Venue as DomainVenue } from '../domain/scraper-venue.interfaces';
+import { Event as DomainEvent } from '../domain/scraper-event.interfaces';
 
 export interface ScrapeStats {
   timing: {
@@ -64,8 +66,8 @@ export class UnitedScraperService {
     // Step 1: Run GO scraper
     this.logger.log('[Step 1/8] Running GO scraper...');
     let goData: {
-      venues: Omit<Venue, 'id'>[];
-      events: (Omit<Event, 'id'> & { id?: string })[];
+      venues: Omit<DomainVenue, 'id'>[];
+      events: (Omit<DomainEvent, 'id'> & { id?: string })[];
     } = { venues: [], events: [] };
 
     try {
@@ -82,7 +84,8 @@ export class UnitedScraperService {
     // Step 2: Save GO data to DB
     this.logger.log('[Step 2/8] Saving GO data to Supabase...');
     try {
-      const goSaved = await this.supabaseService.saveScrapedData(goData);
+      const legacyGoData = this.domainToLegacyScraped(goData);
+      const goSaved = await this.supabaseService.saveScrapedData(legacyGoData);
       stats.events.created += goSaved.events;
       this.logger.log(
         `[Step 2/8] GO data saved: ${goSaved.venues} venues, ${goSaved.events} events`,
@@ -320,5 +323,58 @@ export class UnitedScraperService {
     this.logger.log('=== Pipeline complete ===');
     this.logger.log(JSON.stringify(stats, null, 2));
     return stats;
+  }
+
+  private domainToLegacyScraped(data: {
+    venues: Omit<DomainVenue, 'id'>[];
+    events: (Omit<DomainEvent, 'id'> & { id?: string })[];
+  }): {
+    venues: Omit<Venue, 'id'>[];
+    events: (Omit<Event, 'id'> & { id?: string })[];
+  } {
+    const venues: Omit<Venue, 'id'>[] = data.venues.map((v) => ({
+      host_id: v.hostId,
+      name: v.name,
+      longitude: v.longitude,
+      latitude: v.latitude,
+      type: v.venueType as unknown as any,
+      capacity: v.capacity ?? 0,
+      address: v.address ?? undefined,
+      description: (v.description as unknown as string) ?? undefined,
+      picture: (v.pictureUrl as unknown as string) ?? undefined,
+      picture_urls: v.pictureUrl ? [v.pictureUrl] : undefined,
+      scraper: v.scraper ?? undefined,
+      min_age_male: v.minAgeMale ?? undefined,
+      min_age_female: v.minAgeFemale ?? undefined,
+      contact: null,
+      created_at: v.createdAt?.toISOString(),
+      updated_at: v.updatedAt?.toISOString(),
+    }));
+
+    const events: (Omit<Event, 'id'> & { id?: string })[] = data.events.map(
+      (e) => ({
+        venue_id: e.venueId.toString(),
+        title: (e.title as unknown as string) ?? '',
+        description: (e.description as unknown as string) ?? '',
+        start_date_time:
+          e.startDateTime instanceof Date
+            ? e.startDateTime.toISOString()
+            : new Date(e.startDateTime).toISOString(),
+        end_date_time:
+          e.endDateTime instanceof Date
+            ? e.endDateTime.toISOString()
+            : new Date(e.endDateTime).toISOString(),
+        tags: e.tags ?? [],
+        picture: e.pictureUrl ?? undefined,
+        status: e.status as unknown as any,
+        scraper: e.scraper ?? undefined,
+        tickets_sold: 0,
+        venue_name: undefined,
+        created_at: e.createdAt?.toISOString(),
+        updated_at: e.updatedAt?.toISOString(),
+      }),
+    );
+
+    return { venues, events };
   }
 }
