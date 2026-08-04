@@ -46,13 +46,18 @@ export interface ScraperConfig {
     defaultStatus: EventStatusEnum;
     checkDuplicates?: boolean;
     fetchDelay?: number; // Delay in milliseconds between fetches to avoid rate limiting
-    defuaultDurationHours?: 4;
+    defaultDurationHour: number;
     //updateExistingVenues?: boolean;
   };
   venues: {
-    defuaultCapacity?: 100;
+    defaultHostId: string;
+    defaultCapacity: number;
     imagePolicy: ImageStoragePolicy;
     hasAgeRestriction?: boolean;
+    defaultAgeRestriction?: {
+      male: number;
+      female: number;
+    };
     checkDuplicates?: boolean;
     scrapeContacts?: boolean;
     venueTypeMapping: VenueTypeMapping[];
@@ -69,11 +74,15 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     tokenFetchDelay: 30_000,
 
     events: {
+      defaultDurationHour: 4,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       defaultStatus: EventStatusEnum.ACTIVE,
-      fetchDelay: 2000,
+      fetchDelay: 20_000,
     },
+
     venues: {
+      defaultHostId:
+        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.UPLOAD_TO_R2,
       venueTypeMapping: [
         {
@@ -97,6 +106,11 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
           venueType: VenueTypeEnum.TAVERN,
         },
       ],
+      defaultAgeRestriction: {
+        male: 18,
+        female: 18,
+      },
+      defaultCapacity: 100,
     },
   },
 
@@ -108,8 +122,12 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     events: {
       imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
       defaultStatus: EventStatusEnum.ACTIVE,
+      defaultDurationHour: 4,
     },
     venues: {
+      defaultCapacity: 100,
+      defaultHostId:
+        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
       venueTypeMapping: [
         { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },
@@ -125,10 +143,14 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     source: ScraperSource.INSTAGRAM,
 
     events: {
+      defaultDurationHour: 4,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       defaultStatus: EventStatusEnum.DRAFT,
     },
     venues: {
+      defaultCapacity: 100,
+      defaultHostId:
+        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       venueTypeMapping: [
         { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },

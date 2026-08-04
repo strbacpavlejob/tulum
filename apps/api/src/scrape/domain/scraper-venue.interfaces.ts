@@ -1,3 +1,5 @@
+import { VenueContact } from './scraper-venue-contact.interfaces';
+
 export enum VenueTypeEnum {
   BAR = 'bar',
   PUB = 'pub',
@@ -26,7 +28,7 @@ export interface Venue {
   capacity: number | null;
   pictureUrl: string | null;
   scraper: string | null;
-  contactId: string | null; // UUID
+  contact: VenueContact | null;
   requiresReservation: boolean;
   minAgeMale: number;
   minAgeFemale: number;
