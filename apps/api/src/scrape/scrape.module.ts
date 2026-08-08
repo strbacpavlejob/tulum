@@ -5,13 +5,23 @@ import { GoOutScraperService } from './scrapers/go-out/go-out-scraper.service';
 import { UnitedScraperService } from './services/united-scraper.service';
 import { ScrapeCronService } from './services/scrape-cron.service';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { GeocoderModule } from '../geocoder/geocoder.module';
+import { DuplicateCheckerModule } from '../duplicate-checker/duplicate-checker.module';
 import { UsersModule } from '../users/users.module';
 import { InstagramModule } from '../instagram/instagram.module';
 import { R2Module } from '../r2/r2.module';
 import { GuestListSerbiaScraperService } from './scrapers/guest-list/guest-list-serbia-scraper.service';
 
 @Module({
-  imports: [HttpModule, SupabaseModule, InstagramModule, R2Module, UsersModule],
+  imports: [
+    HttpModule,
+    SupabaseModule,
+    InstagramModule,
+    R2Module,
+    UsersModule,
+    GeocoderModule,
+    DuplicateCheckerModule,
+  ],
   controllers: [ScrapeController],
   providers: [
     GoOutScraperService,

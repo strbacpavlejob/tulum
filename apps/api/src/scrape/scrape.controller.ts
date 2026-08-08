@@ -42,10 +42,11 @@ export class ScrapeController {
 
     if (id === scrapers.guestListSerbia) {
       const data = await this.guestListSerbiaScraperService.scrape();
-      const result = await this.supabaseService.saveScrapedData(data);
-      const deletedOldEvents = await this.supabaseService.deleteOldEvents();
+      console.log('Scraped data:', data);
+      // const result = await this.supabaseService.saveScrapedData(data);
+      // const deletedOldEvents = await this.supabaseService.deleteOldEvents();
 
-      return { ...result, deletedOldEvents };
+      return { data };
     }
 
     throw new NotFoundException(`Scraper with id ${id} not found`);

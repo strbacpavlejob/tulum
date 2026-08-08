@@ -123,16 +123,36 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
       imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
       defaultStatus: EventStatusEnum.ACTIVE,
       defaultDurationHour: 4,
+      checkDuplicates: true,
+      fetchDelay: 2_000,
     },
+
     venues: {
       defaultCapacity: 100,
       defaultHostId:
         process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
+      hasAgeRestriction: true,
+      defaultAgeRestriction: {
+        male: 18,
+        female: 18,
+      },
+      checkDuplicates: true,
+      scrapeContacts: false,
+      fetchDelay: 2_000,
       venueTypeMapping: [
-        { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },
-        { queryValue: 'Tavern', venueType: VenueTypeEnum.TAVERN },
-        { queryValue: 'Restaurant', venueType: VenueTypeEnum.RESTAURANT },
+        {
+          queryValue: 'Nightclub',
+          venueType: VenueTypeEnum.NIGHTCLUB,
+        },
+        {
+          queryValue: 'Tavern',
+          venueType: VenueTypeEnum.TAVERN,
+        },
+        {
+          queryValue: 'Restaurant',
+          venueType: VenueTypeEnum.RESTAURANT,
+        },
       ],
     },
   },

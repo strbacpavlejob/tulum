@@ -147,10 +147,6 @@ export class ScraperLogs {
     this.logger.error(`[${this.source}] ${message}`, trace);
   }
 
-  scrapeStarted(): void {
-    this.info('Scrape started');
-  }
-
   scrapeCompleted(venueCount: number, eventCount: number): void {
     this.info(
       `Scrape completed: ${venueCount} unique venues, ${eventCount} events`,

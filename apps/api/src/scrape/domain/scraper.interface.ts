@@ -21,13 +21,18 @@ export interface ScrapedEventsResult {
   events: ScrapedEvent[];
 }
 
+export interface ExistingData {
+  venues?: Venue[]; // DB Venues
+  events?: Event[]; // DB Events
+}
+
 export interface Scraper<
   TMapVenueArgs extends unknown[] = unknown[],
   TMapEventArgs extends unknown[] = unknown[],
 > {
   readonly config: ScraperConfig;
 
-  scrape(): Promise<ScraperResult>;
+  scrape(existingData?: ExistingData): Promise<ScraperResult>;
 
   scrapeVenues?(): Promise<ScrapedVenuesResult>;
 

@@ -175,3 +175,21 @@ export function parseScrapedDate(value: string | number | Date): Date {
 
   return date;
 }
+
+export function sanitizeString(value: string | undefined): string {
+  return value ? value.split('\u0000').join('').trim() : '';
+}
+
+export function asString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+export function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
