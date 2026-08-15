@@ -1,46 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { scrapers } from '../scrapers.config';
-import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
-import { SupabaseService } from '../../supabase/supabase.service';
+
+import { ScraperService } from './scrape.service';
 
 @Injectable()
 export class ScrapeCronService {
   private readonly logger = new Logger(ScrapeCronService.name);
 
-  constructor(
-    private readonly goOutScraperService: GoOutScraperService,
-    private readonly supabaseService: SupabaseService,
-  ) {}
+  constructor(private readonly scraperService: ScraperService) {}
 
-  // Runs every Thursday at 10:30 according to the server timezone.
-  @Cron('30 10 * * 4', { name: 'scrape-go-out-thursday-1030' })
-  async runGoOutScrape() {
-    this.logger.log(
-      `Starting scheduled scrape for /scrape/${scrapers.goOut} endpoint`,
-    );
+  // Runs every Monday and Thursday at 10:30 (server timezone).
+  @Cron('30 10 * * 1,4', { name: 'scrape-all-monday-thursday-1030' })
+  async runAllScrapers(): Promise<void> {
+    this.logger.log('Starting scheduled scrape for all scrapers');
 
     try {
-      const data = await this.goOutScraperService.scrape();
-      // const result = await this.supabaseService.saveScrapedData(data);
-      // const deletedOldEvents = await this.supabaseService.deleteOldEvents();
-
-      // this.logger.log(
-      //   `Scheduled scrape finished successfully. Venues: ${result.venues}, Events: ${result.events}, Deleted old events: ${deletedOldEvents}`,
-      // );
+      await this.scraperService.scrapeWithAll();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown scrape cron error';
-
       this.logger.error(
-        `Scheduled scrape failed for /scrape/${scrapers.goOut}: ${message}`,
+        'Scheduled scrape failed for all scrapers',
+        error instanceof Error ? error.stack : String(error),
       );
     }
-  }
-
-  // Runs every Monday at 10:30 according to the server timezone.
-  @Cron('30 10 * * 1', { name: 'scrape-go-out-monday-1030' })
-  async runGoOutScrapeMonday() {
-    await this.runGoOutScrape();
   }
 }

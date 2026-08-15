@@ -139,7 +139,12 @@ export class ScraperService {
       savedEvents += result.savedEvents;
       deletedOldEvents += result.deletedOldEvents;
     }
-
+    this.logScraperResult(
+      0, // 0 indicates all scrapers
+      savedVenues,
+      savedEvents,
+      deletedOldEvents,
+    );
     return {
       savedVenues,
       savedEvents,
