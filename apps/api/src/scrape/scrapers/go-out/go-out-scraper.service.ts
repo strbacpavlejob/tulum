@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
@@ -37,6 +37,8 @@ export class GoOutScraperService implements Scraper<
   [goEvent: GoEvent, venueId: number | string, venue: ScrapedVenue]
 > {
   public readonly config: ScraperConfig = SCRAPER_CONFIGS[ScraperSource.GOOUT];
+
+  private readonly logger = new Logger(GoOutScraperService.name);
 
   private readonly logs = new ScraperLogs(
     GoOutScraperService.name,
@@ -123,7 +125,15 @@ export class GoOutScraperService implements Scraper<
 
       this.logs.categoryScrapingStarted(numericCategoryId, venueType);
 
-      const events = await this.fetchAllEvents(accessToken, numericCategoryId);
+      let events: GoEvent[];
+      try {
+        events = await this.fetchAllEvents(accessToken, numericCategoryId);
+      } catch (error) {
+        this.logger.error(
+          `[${this.config.source}] Failed to fetch events for category ${numericCategoryId} (${venueType}), skipping. Error: ${(error as Error).message}`,
+        );
+        continue;
+      }
 
       this.logs.categoryScrapingCompleted(
         numericCategoryId,
@@ -147,27 +157,33 @@ export class GoOutScraperService implements Scraper<
   private async authenticate(): Promise<string> {
     this.logs.authenticationStarted();
 
-    const accessToken = await this.executeWithRetry(async () => {
-      const response = await firstValueFrom(
-        this.httpService.post<{
-          access_token: string;
-        }>(
-          `${this.config.baseUrl}/auth/register`,
-          {
-            auth: 'client',
-          },
-          {
-            timeout: this.config.tokenFetchDelay,
-          },
-        ),
+    try {
+      const accessToken = await this.executeWithRetry(async () => {
+        const response = await firstValueFrom(
+          this.httpService.post<{
+            access_token: string;
+          }>(
+            `${this.config.baseUrl}/auth/register`,
+            {
+              auth: 'client',
+            },
+            {
+              timeout: this.config.tokenFetchDelay,
+            },
+          ),
+        );
+
+        return response.data.access_token;
+      }, this.config.tokenFetchDelay);
+      this.logs.authenticationSuccessful();
+
+      return accessToken;
+    } catch (error) {
+      this.logger.error(
+        `[${this.config.source}] Failed to authenticate with GoOut API. Error: ${(error as Error).message}`,
       );
-
-      return response.data.access_token;
-    }, this.config.tokenFetchDelay);
-
-    this.logs.authenticationSuccessful();
-
-    return accessToken;
+      throw error;
+    }
   }
 
   private async fetchAllEvents(

@@ -71,13 +71,13 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     id: 1,
     baseUrl: 'https://appserver.goout.rs/api/v1',
     source: ScraperSource.GOOUT,
-    tokenFetchDelay: 30_000,
+    tokenFetchDelay: 20_000,
 
     events: {
       defaultDurationHour: 4,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       defaultStatus: EventStatusEnum.ACTIVE,
-      fetchDelay: 20_000,
+      fetchDelay: 10_000,
     },
 
     venues: {
