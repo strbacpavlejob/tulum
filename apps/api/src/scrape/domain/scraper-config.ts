@@ -50,7 +50,7 @@ export interface ScraperConfig {
     //updateExistingVenues?: boolean;
   };
   venues: {
-    defaultHostId: string;
+    defaultHostId?: string;
     defaultCapacity: number;
     imagePolicy: ImageStoragePolicy;
     hasAgeRestriction?: boolean;
@@ -81,8 +81,6 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     },
 
     venues: {
-      defaultHostId:
-        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.UPLOAD_TO_R2,
       venueTypeMapping: [
         {
@@ -129,8 +127,6 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
 
     venues: {
       defaultCapacity: 100,
-      defaultHostId:
-        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
       hasAgeRestriction: true,
       defaultAgeRestriction: {
@@ -169,8 +165,6 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     },
     venues: {
       defaultCapacity: 100,
-      defaultHostId:
-        process.env.DEFAULT_VENUE_HOST_ID ?? 'DEFAULT_VENUE_HOST_ID',
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       venueTypeMapping: [
         { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },

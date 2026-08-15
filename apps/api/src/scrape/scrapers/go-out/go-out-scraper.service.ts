@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -33,7 +34,7 @@ interface GoOutEventWithVenueType {
 @Injectable()
 export class GoOutScraperService implements Scraper<
   [goEvent: GoEvent, venueType: VenueTypeEnum],
-  [goEvent: GoEvent, venueId: number | string]
+  [goEvent: GoEvent, venueId: number | string, venue: ScrapedVenue]
 > {
   public readonly config: ScraperConfig = SCRAPER_CONFIGS[ScraperSource.GOOUT];
 
@@ -42,13 +43,28 @@ export class GoOutScraperService implements Scraper<
     this.config.source,
   );
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    const baseConfig = SCRAPER_CONFIGS[ScraperSource.GOOUT];
+
+    this.config = {
+      ...baseConfig,
+      venues: {
+        ...baseConfig.venues,
+        defaultHostId: this.configService.getOrThrow<string>(
+          'DEFAULT_VENUE_HOST_ID',
+        ),
+      },
+    };
+  }
 
   mapVenue(goEvent: GoEvent, venueType: VenueTypeEnum): ScrapedVenue {
     const now = new Date();
 
     return {
-      hostId: this.config.venues.defaultHostId,
+      hostId: this.config.venues.defaultHostId ?? 'DEFAULT_VENUE_HOST_ID',
       venueType,
       name: goEvent.host,
       longitude: goEvent.longitude,
@@ -67,7 +83,11 @@ export class GoOutScraperService implements Scraper<
     };
   }
 
-  mapEvent(goEvent: GoEvent, venueId: number | string): ScrapedEvent {
+  mapEvent(
+    goEvent: GoEvent,
+    venueId: number | string,
+    venue: ScrapedVenue,
+  ): ScrapedEvent {
     const { startDate, endDate } = createEventDateRange(
       goEvent.start_timestamp,
       this.config.events.defaultDurationHour,
@@ -76,6 +96,7 @@ export class GoOutScraperService implements Scraper<
     const now = new Date();
 
     return {
+      venue,
       venueId: String(venueId),
       title: goEvent.name,
       description: sanitizeScrapedText(goEvent.description),
@@ -261,7 +282,9 @@ export class GoOutScraperService implements Scraper<
         venueMap.set(goEvent.host_id, this.mapVenue(goEvent, venueType));
       }
 
-      events.push(this.mapEvent(goEvent, goEvent.host_id));
+      const venue = venueMap.get(goEvent.host_id)!;
+
+      events.push(this.mapEvent(goEvent, goEvent.host_id, venue));
     }
 
     const venues = Array.from(venueMap.values());

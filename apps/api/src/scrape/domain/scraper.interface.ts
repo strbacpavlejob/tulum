@@ -6,6 +6,7 @@ export type ScrapedVenue = Omit<Venue, 'id'>;
 
 export type ScrapedEvent = Omit<Event, 'id'> & {
   id?: string;
+  venue: ScrapedVenue;
 };
 
 export interface ScraperResult {

@@ -29,6 +29,7 @@ import {
   withRetry,
 } from '../../shared/scraper.helpers';
 import { ScraperLogs } from '../../shared/scraper-logs';
+import { ConfigService } from '@nestjs/config/dist/config.service';
 
 interface ParsedEventDetails {
   title: string;
@@ -67,7 +68,7 @@ export class GuestListSerbiaScraperService
     OnModuleDestroy,
     Scraper<
       [ParsedEventDetails, VenueTypeEnum, string?],
-      [ParsedEventDetails, string, string?]
+      [ParsedEventDetails, string, ScrapedVenue]
     >
 {
   readonly config: ScraperConfig = SCRAPER_CONFIGS[ScraperSource.GUEST_LIST];
@@ -82,7 +83,20 @@ export class GuestListSerbiaScraperService
   constructor(
     private readonly httpService: HttpService,
     private readonly geoCoder: GeocoderService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    const baseConfig = SCRAPER_CONFIGS[ScraperSource.GUEST_LIST];
+
+    this.config = {
+      ...baseConfig,
+      venues: {
+        ...baseConfig.venues,
+        defaultHostId: this.configService.getOrThrow<string>(
+          'DEFAULT_VENUE_HOST_ID',
+        ),
+      },
+    };
+  }
 
   async onModuleDestroy(): Promise<void> {
     await this.browser?.close();
@@ -98,7 +112,7 @@ export class GuestListSerbiaScraperService
     const defaultAges = this.config.venues.defaultAgeRestriction;
 
     return {
-      hostId: this.config.venues.defaultHostId,
+      hostId: this.config.venues.defaultHostId ?? 'DEFAULT_VENUE_HOST_ID',
       venueType,
       name: venueName,
       longitude: parsed.longitude,
@@ -124,7 +138,11 @@ export class GuestListSerbiaScraperService
     };
   }
 
-  mapEvent(parsed: ParsedEventDetails, venueId: string): ScrapedEvent {
+  mapEvent(
+    parsed: ParsedEventDetails,
+    venueId: string,
+    venue: ScrapedVenue,
+  ): ScrapedEvent {
     const { startDate, endDate } = createEventDateRange(
       parsed.startDateTime,
       this.config.events.defaultDurationHour,
@@ -132,6 +150,7 @@ export class GuestListSerbiaScraperService
     const now = new Date();
 
     return {
+      venue,
       venueId,
       title: parsed.title,
       description: parsed.description,
@@ -227,7 +246,7 @@ export class GuestListSerbiaScraperService
       venue.updatedAt = new Date();
     }
 
-    events.push(this.mapEvent(parsed, venueKey));
+    events.push(this.mapEvent(parsed, venueKey, venuesByKey.get(venueKey)!));
   }
 
   private fetchHtml(url: string): Promise<string> {

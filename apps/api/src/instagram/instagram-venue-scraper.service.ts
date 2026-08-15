@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as https from 'https';
 import * as puppeteer from 'puppeteer';
@@ -362,8 +363,8 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     }
 
     const saved = await this.supabaseService.saveScrapedData({
-      venues: allVenues,
-      events: allEvents,
+      venues: allVenues as any,
+      events: allEvents as any,
     });
 
     return { scraped: allVenues.length, saved };
