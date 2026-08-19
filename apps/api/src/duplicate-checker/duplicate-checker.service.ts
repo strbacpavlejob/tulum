@@ -234,10 +234,11 @@ export class DuplicateCheckerService {
       );
 
       const contactScore = this.calculateVenueContactSimilarity(
-        scrapedVenue.contact
+        scrapedVenue.venueContacts
           ? {
-              phoneNumber: scrapedVenue.contact.phoneNumber ?? null,
-              instagramHandle: scrapedVenue.contact.instagramHandle ?? null,
+              phoneNumber: scrapedVenue.venueContacts.phoneNumber ?? null,
+              instagramHandle:
+                scrapedVenue.venueContacts.instagramHandle ?? null,
             }
           : null,
         venue.contact,
@@ -425,16 +426,16 @@ export class DuplicateCheckerService {
     );
 
     const contactScore = this.calculateVenueContactSimilarity(
-      firstVenue.contact
+      firstVenue.venueContacts
         ? {
-            phoneNumber: firstVenue.contact.phoneNumber ?? null,
-            instagramHandle: firstVenue.contact.instagramHandle ?? null,
+            phoneNumber: firstVenue.venueContacts.phoneNumber ?? null,
+            instagramHandle: firstVenue.venueContacts.instagramHandle ?? null,
           }
         : null,
-      secondVenue.contact
+      secondVenue.venueContacts
         ? {
-            phoneNumber: secondVenue.contact.phoneNumber ?? null,
-            instagramHandle: secondVenue.contact.instagramHandle ?? null,
+            phoneNumber: secondVenue.venueContacts.phoneNumber ?? null,
+            instagramHandle: secondVenue.venueContacts.instagramHandle ?? null,
           }
         : null,
     );

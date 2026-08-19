@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Scraper } from '../domain/scraper.interface';
 import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { GuestListSerbiaScraperService } from '../scrapers/guest-list/guest-list-serbia-scraper.service';
+import { InstagramScraperService } from '../scrapers/instagram/instagram-scraper.service';
 import { SupabaseService } from 'src/supabase/supabase.service';
 import { DuplicateCheckerService } from 'src/duplicate-checker/duplicate-checker.service';
 
@@ -14,6 +15,7 @@ export class ScraperService {
   constructor(
     private readonly goOutScraperService: GoOutScraperService,
     private readonly guestListSerbiaScraperService: GuestListSerbiaScraperService,
+    private readonly instagramScraperService: InstagramScraperService,
     private readonly duplicateCheckerService: DuplicateCheckerService,
     private readonly supabaseService: SupabaseService,
   ) {}
@@ -25,6 +27,9 @@ export class ScraperService {
 
       case 2:
         return this.guestListSerbiaScraperService;
+
+      case 3:
+        return this.instagramScraperService;
 
       default:
         throw new Error(`Scraper with id ${scraperId} not found`);
@@ -46,7 +51,7 @@ export class ScraperService {
 
   private getExistingData() {
     return Promise.all([
-      this.supabaseService.getExistingVenues(),
+      this.supabaseService.getExistingVenuesWithContacts(),
       this.supabaseService.getExistingEvents(),
     ]).then(([venues, events]) => ({ venues, events }));
   }
@@ -88,7 +93,7 @@ export class ScraperService {
     const existingEvents = this.mapToExistingEvents(existingData.events);
 
     const { venues: scrapedVenues, events: scrapedEvents } =
-      await scraper.scrape();
+      await scraper.scrape(existingData);
 
     const filteredScrapedVenues =
       this.duplicateCheckerService.filterDuplicateVenues(
@@ -130,7 +135,7 @@ export class ScraperService {
     let savedEvents = 0;
     let deletedOldEvents = 0;
 
-    const scraperIds = [1, 2];
+    const scraperIds = [1, 2, 3];
 
     for (const scraperId of scraperIds) {
       const result = await this.scrapeWithSingleScraper(scraperId);

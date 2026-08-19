@@ -43,10 +43,10 @@ export class UnitedScraperService {
   private readonly logger = new Logger(UnitedScraperService.name);
 
   constructor(
-    private readonly goOutScraperService: GoOutScraperService,
+    // private readonly goOutScraperService: GoOutScraperService,
     private readonly instagramVenueScraperService: InstagramVenueScraperService,
-    private readonly supabaseService: SupabaseService,
-    private readonly r2Service: R2Service,
+    // private readonly supabaseService: SupabaseService,
+    // private readonly r2Service: R2Service,
   ) {}
 
   async runPipeline(): Promise<ScrapeStats> {
@@ -58,43 +58,6 @@ export class UnitedScraperService {
       events: { created: 0, duplicates: 0, deleted: 0, drafted: 0 },
       errors: [],
     };
-
-    this.logger.log(
-      `=== Pipeline started at ${pipelineStart.toISOString()} ===`,
-    );
-
-    // Step 1: Run GO scraper
-    this.logger.log('[Step 1/8] Running GO scraper...');
-    let goData: {
-      venues: Omit<DomainVenue, 'id'>[];
-      events: (Omit<DomainEvent, 'id'> & { id?: string })[];
-    } = { venues: [], events: [] };
-
-    try {
-      goData = await this.goOutScraperService.scrape();
-      this.logger.log(
-        `[Step 1/8] GO scraper done: ${goData.venues.length} venues, ${goData.events.length} events`,
-      );
-    } catch (err) {
-      const msg = `GO scraper failed: ${(err as Error).message}`;
-      this.logger.error(`[Step 1/8] ${msg}`);
-      stats.errors.push(msg);
-    }
-
-    // Step 2: Save GO data to DB
-    this.logger.log('[Step 2/8] Saving GO data to Supabase...');
-    try {
-      const legacyGoData = this.domainToLegacyScraped(goData);
-      const goSaved = await this.supabaseService.saveScrapedData(legacyGoData);
-      stats.events.created += goSaved.events;
-      this.logger.log(
-        `[Step 2/8] GO data saved: ${goSaved.venues} venues, ${goSaved.events} events`,
-      );
-    } catch (err) {
-      const msg = `Failed to save GO data: ${(err as Error).message}`;
-      this.logger.error(`[Step 2/8] ${msg}`);
-      stats.errors.push(msg);
-    }
 
     // Step 3: Fetch existing venues from Supabase and build username → id map
     this.logger.log('[Step 3/8] Fetching existing venues from Supabase...');

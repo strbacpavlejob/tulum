@@ -125,7 +125,7 @@ export class GuestListSerbiaScraperService
         this.config.venues.imagePolicy,
       ),
       scraper: this.config.source,
-      contact: null,
+      venueContacts: null,
       requiresReservation: false,
       minAgeMale: this.config.venues.hasAgeRestriction
         ? parsed.minAgeMale

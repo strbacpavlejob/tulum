@@ -28,7 +28,7 @@ export interface Venue {
   capacity: number | null;
   pictureUrl: string | null;
   scraper: string | null;
-  contact: VenueContact | null;
+  venueContacts: VenueContact | null;
   requiresReservation: boolean;
   minAgeMale: number;
   minAgeFemale: number;

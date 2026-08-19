@@ -76,7 +76,7 @@ export class GoOutScraperService implements Scraper<
       capacity: this.config.venues.defaultCapacity,
       pictureUrl: goEvent.image_url || goEvent.thumb_url || null,
       scraper: this.config.source,
-      contact: null,
+      venueContacts: null,
       requiresReservation: false,
       minAgeMale: this.config.venues.defaultAgeRestriction?.male ?? 0,
       minAgeFemale: this.config.venues.defaultAgeRestriction?.female ?? 0,

@@ -33,6 +33,22 @@ export class SupabaseService implements OnModuleInit {
     this.logger.log('Supabase client initialized');
   }
 
+  private toCamelCase<T>(value: unknown): T {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.toCamelCase(item)) as T;
+    }
+
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, val]) => [
+          key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase()),
+          this.toCamelCase(val),
+        ]),
+      ) as T;
+    }
+
+    return value as T;
+  }
   getClient(): SupabaseClient {
     return this.supabase;
   }
@@ -83,11 +99,14 @@ export class SupabaseService implements OnModuleInit {
   private async upsertScrapedVenues(
     venues: ScrapedVenue[],
   ): Promise<Map<string, string>> {
-    const dbRows = venues.map((venue) => this.mapScrapedVenueToDbRow(venue));
+    const validVenues = venues.filter((venue) => venue.name?.trim());
+    const dbRows = validVenues.map((venue) =>
+      this.mapScrapedVenueToDbRow(venue),
+    );
 
     const gooutVenueNames = Array.from(
       new Set(
-        venues
+        validVenues
           .filter((venue) => venue.scraper === 'goout')
           .map((venue) => venue.name),
       ),
@@ -157,11 +176,14 @@ export class SupabaseService implements OnModuleInit {
     venueNameToId: Map<string, string>,
   ): Promise<void> {
     for (const venue of venues) {
-      if (!venue.contact) continue;
+      if (!venue.venueContacts) continue;
       const venueId = venueNameToId.get(venue.name);
       if (!venueId) continue;
 
-      if (!venue.contact.phoneNumber && !venue.contact.instagramHandle)
+      if (
+        !venue.venueContacts.phoneNumber &&
+        !venue.venueContacts.instagramHandle
+      )
         continue;
 
       const { data: existingVenue } = await this.supabase
@@ -178,13 +200,13 @@ export class SupabaseService implements OnModuleInit {
         const { error } = await this.supabase
           .from('venue_contacts')
           .update({
-            phone_number: venue.contact.phoneNumber,
-            is_phone: venue.contact.isPhone,
-            is_viber: venue.contact.isViber,
-            is_sms: venue.contact.isSms,
-            is_whatsapp: venue.contact.isWhatsapp,
-            is_instagram: venue.contact.isInstagram ?? false,
-            instagram_handle: venue.contact.instagramHandle ?? null,
+            phone_number: venue.venueContacts.phoneNumber,
+            is_phone: venue.venueContacts.isPhone,
+            is_viber: venue.venueContacts.isViber,
+            is_sms: venue.venueContacts.isSms,
+            is_whatsapp: venue.venueContacts.isWhatsapp,
+            is_instagram: venue.venueContacts.isInstagram ?? false,
+            instagram_handle: venue.venueContacts.instagramHandle ?? null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', contactId);
@@ -197,13 +219,13 @@ export class SupabaseService implements OnModuleInit {
         const { data: newContact, error: insertError } = await this.supabase
           .from('venue_contacts')
           .insert({
-            phone_number: venue.contact.phoneNumber,
-            is_phone: venue.contact.isPhone,
-            is_viber: venue.contact.isViber,
-            is_sms: venue.contact.isSms,
-            is_whatsapp: venue.contact.isWhatsapp,
-            is_instagram: venue.contact.isInstagram ?? false,
-            instagram_handle: venue.contact.instagramHandle ?? null,
+            phone_number: venue.venueContacts.phoneNumber,
+            is_phone: venue.venueContacts.isPhone,
+            is_viber: venue.venueContacts.isViber,
+            is_sms: venue.venueContacts.isSms,
+            is_whatsapp: venue.venueContacts.isWhatsapp,
+            is_instagram: venue.venueContacts.isInstagram ?? false,
+            instagram_handle: venue.venueContacts.instagramHandle ?? null,
           })
           .select('id')
           .single();
@@ -351,12 +373,13 @@ export class SupabaseService implements OnModuleInit {
   private async upsertVenues(
     venues: Omit<Venue, 'id'>[],
   ): Promise<Map<string, string>> {
-    const dbRows = venues.map((venue) => this.mapVenueToDbRow(venue));
+    const validVenues = venues.filter((venue) => venue.name?.trim());
+    const dbRows = validVenues.map((venue) => this.mapVenueToDbRow(venue));
 
     // For goout venues, keep existing DB picture_url values intact.
     const gooutVenueNames = Array.from(
       new Set(
-        venues
+        validVenues
           .filter((venue) => venue.scraper === 'goout')
           .map((venue) => venue.name),
       ),
@@ -745,6 +768,19 @@ export class SupabaseService implements OnModuleInit {
     }
 
     return data ?? [];
+  }
+
+  async getExistingVenuesWithContacts(): Promise<Array<any>> {
+    const { data, error } = await this.supabase
+      .from(VENUES_TABLE)
+      .select('*, venue_contacts!venues_contact_id_fkey(*)');
+
+    if (error) {
+      this.logger.error('Error fetching existing venues:', error.message);
+      throw new Error(`Failed to fetch existing venues: ${error.message}`);
+    }
+
+    return this.toCamelCase<Array<any>>(data ?? []);
   }
 
   async getExistingEvents(): Promise<any[]> {

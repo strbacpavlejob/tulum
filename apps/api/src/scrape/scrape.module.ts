@@ -11,6 +11,7 @@ import { UsersModule } from '../users/users.module';
 import { InstagramModule } from '../instagram/instagram.module';
 import { R2Module } from '../r2/r2.module';
 import { GuestListSerbiaScraperService } from './scrapers/guest-list/guest-list-serbia-scraper.service';
+import { InstagramScraperService } from './scrapers/instagram/instagram-scraper.service';
 import { ScraperService } from './services/scrape.service';
 
 @Module({
@@ -28,6 +29,7 @@ import { ScraperService } from './services/scrape.service';
   providers: [
     GoOutScraperService,
     GuestListSerbiaScraperService,
+    InstagramScraperService,
     ScrapeCronService,
     ScraperService,
   ],

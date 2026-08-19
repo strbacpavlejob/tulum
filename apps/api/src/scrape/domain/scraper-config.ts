@@ -169,6 +169,10 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
       venueTypeMapping: [
         { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },
       ],
+      defaultAgeRestriction: {
+        male: 18,
+        female: 18,
+      },
     },
   },
 };
