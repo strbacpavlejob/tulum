@@ -95,10 +95,9 @@ export class InstagramScraperService implements Scraper<
       hostId: this.config.venues.defaultHostId ?? 'DEFAULT_VENUE_HOST_ID',
       venueType: VenueTypeEnum.NIGHTCLUB,
       name:
-        instagramVenue.fullName ??
-        instagramVenue.username ??
-        contact?.instagramHandle ??
-        'Unknown Venue',
+        instagramVenue.fullName === '' || instagramVenue.fullName === null
+          ? (instagramVenue.username ?? 'Unknown Venue')
+          : instagramVenue.fullName,
       longitude: instagramVenue.longitude,
       latitude: instagramVenue.latitude,
       address:
@@ -147,6 +146,7 @@ export class InstagramScraperService implements Scraper<
 
     const existingInstagramHandles = new Set(
       existingData.venues
+        ?.filter((venue) => venue.scraper !== ScraperSource.INSTAGRAM)
         ?.map((venue) => venue.venueContacts?.instagramHandle)
         .filter(Boolean),
     );
