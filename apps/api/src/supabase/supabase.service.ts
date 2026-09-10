@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Venue } from '../scrape/interfaces/venue.interface';
 import { Event } from '../scrape/interfaces/event.interface';
+import { ScrapedEvent, ScrapedVenue } from '../scrape/domain/scraper.interface';
 
 const VENUES_TABLE = 'venues';
 const EVENTS_TABLE = 'events';
@@ -32,45 +33,57 @@ export class SupabaseService implements OnModuleInit {
     this.logger.log('Supabase client initialized');
   }
 
+  private toCamelCase<T>(value: unknown): T {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.toCamelCase(item)) as T;
+    }
+
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, val]) => [
+          key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase()),
+          this.toCamelCase(val),
+        ]),
+      ) as T;
+    }
+
+    return value as T;
+  }
   getClient(): SupabaseClient {
     return this.supabase;
   }
 
   async saveScrapedData(data: {
-    venues: Omit<Venue, 'id'>[];
-    events: (Omit<Event, 'id'> & { id?: string })[];
+    venues: ScrapedVenue[];
+    events: ScrapedEvent[];
   }): Promise<{ venues: number; events: number }> {
     this.logger.log(
       `Saving scraped data: ${data.venues.length} venues, ${data.events.length} events`,
     );
 
     // 1. Upsert venues and get back their DB IDs (always runs)
-    const venueNameToId = await this.upsertVenues(data.venues);
+    const venueNameToId = await this.upsertScrapedVenues(data.venues);
 
     // 1b. Upsert contacts only when SCRAPE_VENUE_CONTACTS=true
     if (process.env.SCRAPE_VENUE_CONTACTS === 'true') {
-      await this.upsertVenueContacts(data.venues, venueNameToId);
+      await this.upsertScrapedVenueContacts(data.venues, venueNameToId);
     } else {
       this.logger.debug(
         'Skipping venue contact upsert (SCRAPE_VENUE_CONTACTS is not "true")',
       );
     }
 
-    // 2. Map events to use real DB venue IDs (scraped data uses temporary IDs)
+    // 2. Map events to use real DB venue IDs via the venue embedded in each event
     const mappedEvents: Record<string, unknown>[] = [];
     for (const event of data.events) {
-      const dbVenueId = this.isUuid(event.venue_id)
-        ? event.venue_id
-        : event.venue_name
-          ? venueNameToId.get(event.venue_name)
-          : undefined;
+      const dbVenueId = venueNameToId.get(event.venue.name);
       if (!dbVenueId) {
         this.logger.warn(
-          `Skipping event "${event.title}" - no matching venue found (venue_name: ${event.venue_name})`,
+          `Skipping event "${event.title}" - no matching venue found (venue: ${event.venue.name})`,
         );
         continue;
       }
-      mappedEvents.push(this.mapEventToDbRow(event, dbVenueId));
+      mappedEvents.push(this.mapScrapedEventToDbRow(event, dbVenueId));
     }
 
     // 3. Upsert events
@@ -81,6 +94,200 @@ export class SupabaseService implements OnModuleInit {
     );
 
     return { venues: venueNameToId.size, events: savedEventsCount };
+  }
+
+  private async upsertScrapedVenues(
+    venues: ScrapedVenue[],
+  ): Promise<Map<string, string>> {
+    const validVenues = venues.filter((venue) => venue.name?.trim());
+    const dbRows = validVenues.map((venue) =>
+      this.mapScrapedVenueToDbRow(venue),
+    );
+
+    const gooutVenueNames = Array.from(
+      new Set(
+        validVenues
+          .filter((venue) => venue.scraper === 'goout')
+          .map((venue) => venue.name),
+      ),
+    );
+
+    const existingGooutVenueNames = new Set<string>();
+    if (gooutVenueNames.length > 0) {
+      const { data: existingVenues, error: existingVenuesError } =
+        await this.supabase
+          .from(VENUES_TABLE)
+          .select('name')
+          .in('name', gooutVenueNames);
+
+      if (existingVenuesError) {
+        this.logger.error(
+          'Error fetching existing goout venues:',
+          existingVenuesError.message,
+        );
+        throw new Error(
+          `Failed to fetch existing goout venues: ${existingVenuesError.message}`,
+        );
+      }
+
+      (existingVenues as { name: string }[] | null)?.forEach((venue) =>
+        existingGooutVenueNames.add(venue.name),
+      );
+    }
+
+    const upsertRows = dbRows.map((row) => {
+      const name = row.name as string | undefined;
+      const scraper = row.scraper as string | undefined;
+
+      if (
+        name &&
+        scraper === 'goout' &&
+        existingGooutVenueNames.has(name) &&
+        'picture_url' in row
+      ) {
+        const withoutPicture = { ...row };
+        delete withoutPicture.picture_url;
+        return withoutPicture;
+      }
+
+      return row;
+    });
+
+    const { data, error } = await this.supabase
+      .from(VENUES_TABLE)
+      .upsert(upsertRows, { onConflict: 'name' })
+      .select('id, name');
+
+    if (error) {
+      this.logger.error('Error upserting venues:', error.message);
+      throw new Error(`Failed to upsert venues: ${error.message}`);
+    }
+
+    const venueNameToId = new Map<string, string>();
+    data?.forEach((v: { name: string; id: string }) =>
+      venueNameToId.set(v.name, v.id),
+    );
+
+    return venueNameToId;
+  }
+
+  private async upsertScrapedVenueContacts(
+    venues: ScrapedVenue[],
+    venueNameToId: Map<string, string>,
+  ): Promise<void> {
+    for (const venue of venues) {
+      if (!venue.venueContacts) continue;
+      const venueId = venueNameToId.get(venue.name);
+      if (!venueId) continue;
+
+      if (
+        !venue.venueContacts.phoneNumber &&
+        !venue.venueContacts.instagramHandle
+      )
+        continue;
+
+      const { data: existingVenue } = await this.supabase
+        .from('venues')
+        .select('contact_id')
+        .eq('id', venueId)
+        .single();
+
+      let contactId: string | null =
+        (existingVenue as { contact_id: string | null } | null)?.contact_id ??
+        null;
+
+      if (contactId) {
+        const { error } = await this.supabase
+          .from('venue_contacts')
+          .update({
+            phone_number: venue.venueContacts.phoneNumber,
+            is_phone: venue.venueContacts.isPhone,
+            is_viber: venue.venueContacts.isViber,
+            is_sms: venue.venueContacts.isSms,
+            is_whatsapp: venue.venueContacts.isWhatsapp,
+            is_instagram: venue.venueContacts.isInstagram ?? false,
+            instagram_handle: venue.venueContacts.instagramHandle ?? null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', contactId);
+        if (error) {
+          this.logger.warn(
+            `Failed to update venue_contact for venue ${venue.name}: ${error.message}`,
+          );
+        }
+      } else {
+        const { data: newContact, error: insertError } = await this.supabase
+          .from('venue_contacts')
+          .insert({
+            phone_number: venue.venueContacts.phoneNumber,
+            is_phone: venue.venueContacts.isPhone,
+            is_viber: venue.venueContacts.isViber,
+            is_sms: venue.venueContacts.isSms,
+            is_whatsapp: venue.venueContacts.isWhatsapp,
+            is_instagram: venue.venueContacts.isInstagram ?? false,
+            instagram_handle: venue.venueContacts.instagramHandle ?? null,
+          })
+          .select('id')
+          .single();
+        if (insertError || !newContact) {
+          this.logger.warn(
+            `Failed to insert venue_contact for venue ${venue.name}: ${insertError?.message}`,
+          );
+          continue;
+        }
+        contactId = (newContact as { id: string }).id;
+
+        const { error: linkError } = await this.supabase
+          .from('venues')
+          .update({ contact_id: contactId })
+          .eq('id', venueId);
+        if (linkError) {
+          this.logger.warn(
+            `Failed to link venue_contact to venue ${venue.name}: ${linkError.message}`,
+          );
+        }
+      }
+    }
+  }
+
+  private mapScrapedVenueToDbRow(venue: ScrapedVenue): Record<string, unknown> {
+    const row: Record<string, unknown> = {
+      host_id: venue.hostId,
+      name: venue.name,
+      longitude: venue.longitude,
+      latitude: venue.latitude,
+      venue_type: venue.venueType,
+      capacity: venue.capacity ?? undefined,
+      address: venue.address ?? undefined,
+      description: venue.description ?? undefined,
+      picture_url: venue.pictureUrl ?? undefined,
+      scraper: venue.scraper ?? undefined,
+      min_age_male: venue.minAgeMale,
+      min_age_female: venue.minAgeFemale,
+    };
+    return Object.fromEntries(
+      Object.entries(row).filter(([, v]) => v !== undefined),
+    );
+  }
+
+  private mapScrapedEventToDbRow(
+    event: ScrapedEvent,
+    dbVenueId: string,
+  ): Record<string, unknown> {
+    return {
+      venue_id: dbVenueId,
+      title: this.sanitize(event.title),
+      description: this.sanitize(event.description),
+      start_date_time: event.startDateTime.toISOString(),
+      end_date_time: event.endDateTime.toISOString(),
+      tags: (event.tags?.map((t) => t.replace(/\u0000/g, '')) ?? []).slice(
+        0,
+        3,
+      ),
+      picture_url: event.pictureUrl,
+      status: event.status,
+      scraper: event.scraper ?? null,
+    };
   }
 
   private async upsertVenueContacts(
@@ -166,12 +373,13 @@ export class SupabaseService implements OnModuleInit {
   private async upsertVenues(
     venues: Omit<Venue, 'id'>[],
   ): Promise<Map<string, string>> {
-    const dbRows = venues.map((venue) => this.mapVenueToDbRow(venue));
+    const validVenues = venues.filter((venue) => venue.name?.trim());
+    const dbRows = validVenues.map((venue) => this.mapVenueToDbRow(venue));
 
     // For goout venues, keep existing DB picture_url values intact.
     const gooutVenueNames = Array.from(
       new Set(
-        venues
+        validVenues
           .filter((venue) => venue.scraper === 'goout')
           .map((venue) => venue.name),
       ),
@@ -549,5 +757,39 @@ export class SupabaseService implements OnModuleInit {
       `Deleted ${count} events with end_date_time before ${cutoff}`,
     );
     return count;
+  }
+
+  async getExistingVenues(): Promise<any[]> {
+    const { data, error } = await this.supabase.from(VENUES_TABLE).select('*');
+
+    if (error) {
+      this.logger.error('Error fetching existing venues:', error.message);
+      throw new Error(`Failed to fetch existing venues: ${error.message}`);
+    }
+
+    return data ?? [];
+  }
+
+  async getExistingVenuesWithContacts(): Promise<Array<any>> {
+    const { data, error } = await this.supabase
+      .from(VENUES_TABLE)
+      .select('*, venue_contacts!venues_contact_id_fkey(*)');
+
+    if (error) {
+      this.logger.error('Error fetching existing venues:', error.message);
+      throw new Error(`Failed to fetch existing venues: ${error.message}`);
+    }
+
+    return this.toCamelCase<Array<any>>(data ?? []);
+  }
+
+  async getExistingEvents(): Promise<any[]> {
+    const { data, error } = await this.supabase.from(EVENTS_TABLE).select('*');
+
+    if (error) {
+      this.logger.error('Error fetching existing events:', error.message);
+      throw new Error(`Failed to fetch existing events: ${error.message}`);
+    }
+    return data ?? [];
   }
 }

@@ -1,52 +1,19 @@
-import {
-  Controller,
-  Get,
-  Param,
-  NotFoundException,
-  UseGuards,
-} from '@nestjs/common';
-import { scrapers } from './scrapers.config';
-import { GoOutScraperService } from './services/go-out-scraper.service';
-import { GuestListSerbiaScraperService } from './services/guest-list-serbia-scraper.service';
-import { UnitedScraperService } from './services/united-scraper.service';
-import { SupabaseService } from '../supabase/supabase.service';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { ScraperService } from './services/scrape.service';
 
 @UseGuards(AdminGuard)
 @Controller('scrape')
 export class ScrapeController {
-  constructor(
-    private readonly goOutScraperService: GoOutScraperService,
-    private readonly guestListSerbiaScraperService: GuestListSerbiaScraperService,
-    private readonly unitedScraperService: UnitedScraperService,
-    private readonly supabaseService: SupabaseService,
-  ) {}
+  constructor(private readonly scraperService: ScraperService) {}
 
   @Get()
   async scrapeAll() {
-    return this.unitedScraperService.runPipeline();
+    return this.scraperService.scrapeWithAll();
   }
 
   @Get(':scraperId')
-  async scrape(@Param('scraperId') scraperId: string) {
-    const id = parseInt(scraperId, 10);
-
-    if (id === scrapers.goOut) {
-      const data = await this.goOutScraperService.scrape();
-      const result = await this.supabaseService.saveScrapedData(data);
-      const deletedOldEvents = await this.supabaseService.deleteOldEvents();
-
-      return { ...result, deletedOldEvents };
-    }
-
-    if (id === scrapers.guestListSerbia) {
-      const data = await this.guestListSerbiaScraperService.scrape();
-      const result = await this.supabaseService.saveScrapedData(data);
-      const deletedOldEvents = await this.supabaseService.deleteOldEvents();
-
-      return { ...result, deletedOldEvents };
-    }
-
-    throw new NotFoundException(`Scraper with id ${id} not found`);
+  async scrape(@Param('scraperId') scraperId: number) {
+    return this.scraperService.scrapeWithSingleScraper(scraperId);
   }
 }
