@@ -220,6 +220,7 @@ export function CreateEventDialog({
     if (!file) {
       setImageFile(null);
       setPicturePreview(null);
+      setValue("picture_url", "");
       return;
     }
 
@@ -271,6 +272,7 @@ export function CreateEventDialog({
           start_date_time: data.start_date_time,
           end_date_time: data.end_date_time,
           tags: data.tags,
+          picture_url: data.picture_url || event.picture_url || undefined,
           status: data.status,
         };
 
@@ -290,6 +292,7 @@ export function CreateEventDialog({
           start_date_time: data.start_date_time,
           end_date_time: data.end_date_time,
           tags: data.tags,
+          picture_url: data.picture_url || undefined,
           status: data.status,
         };
 
