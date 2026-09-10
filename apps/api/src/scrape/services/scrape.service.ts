@@ -135,7 +135,9 @@ export class ScraperService {
     let savedEvents = 0;
     let deletedOldEvents = 0;
 
-    const scraperIds = [1, 2, 3];
+    // const scraperIds = [1, 2, 3];
+    // disabled instagram scraper
+    const scraperIds = [1, 2];
 
     for (const scraperId of scraperIds) {
       const result = await this.scrapeWithSingleScraper(scraperId);
