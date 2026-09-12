@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
 import {
   SCRAPER_CONFIGS,
@@ -13,120 +12,73 @@ import {
   Scraper,
   ScraperResult,
 } from '../../domain/scraper.interface';
-import { VenueTypeEnum } from '../../domain/scraper-venue.interfaces';
-import { VenueContact } from '../../domain/scraper-venue-contact.interfaces';
+import { Venue } from '../../domain/scraper-venue.interfaces';
 import { sanitizeScrapedText } from '../../shared/scraper.helpers';
-import { instagramUsernameList } from 'src/scrape/instagram-username-list';
-import { InstagramVenueScraperService } from 'src/instagram/instagram-venue-scraper.service';
-import { extractEventData } from 'src/instagram/instagram-event-extractor';
-import { GeocoderService } from 'src/geocoder/geocoder.service';
-import { R2Service } from 'src/r2/r2.service';
+import { AiEventProcessingService } from '../../application/ai-event-processing/ai-event-processing.service';
+import {
+  InstagramApifyService,
+  InstagramPost,
+} from './instagram-apify.service';
 
-export interface InstagramVenue {
-  username: string;
-  fullName: string | null;
-  biography: string | null;
-  phoneNumber: string | null;
-  isWhatsappLinked: boolean;
-  profilePictureUrl: string | null;
-  address: string | null;
-  latitude: number;
-  longitude: number;
-}
-
-export interface InstagramEvent {
-  username: string;
-  venueName: string;
+interface InstagramCandidateEvent {
+  ownerUsername: string;
+  sourceUrl: string;
+  timestamp: string;
+  venueId: string;
+  venue: ScrapedVenue;
   imageUrl: string | null;
   title: string;
   description: string;
   startDateTime: string;
   endDateTime: string;
   tags: string[];
+  [key: string]: unknown;
 }
 
 @Injectable()
 export class InstagramScraperService implements Scraper<
-  [instagramVenue: InstagramVenue],
-  [instagramEvent: InstagramEvent, venueId: string, venue: ScrapedVenue]
+  [existingVenue: Venue],
+  [instagramEvent: InstagramCandidateEvent]
 > {
-  public readonly config: ScraperConfig =
-    SCRAPER_CONFIGS[ScraperSource.INSTAGRAM];
+  public readonly config: ScraperConfig = {
+    ...SCRAPER_CONFIGS[ScraperSource.INSTAGRAM],
+    baseUrl: 'https://apify.com/apify/instagram-scraper',
+  };
 
   private readonly logger = new Logger(InstagramScraperService.name);
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly instagramVenueScraperService: InstagramVenueScraperService,
-    private readonly geocoderService: GeocoderService,
-    private readonly r2Service: R2Service,
-  ) {
-    const baseConfig = SCRAPER_CONFIGS[ScraperSource.INSTAGRAM];
+    private readonly instagramApifyService: InstagramApifyService,
+    private readonly aiEventProcessingService: AiEventProcessingService,
+  ) {}
 
-    this.config = {
-      ...baseConfig,
-      venues: {
-        ...baseConfig.venues,
-        defaultHostId: this.configService.getOrThrow<string>(
-          'DEFAULT_VENUE_HOST_ID',
-        ),
-      },
+  mapVenue(existingVenue: Venue): ScrapedVenue {
+    return {
+      hostId: existingVenue.hostId,
+      venueType: existingVenue.venueType,
+      name: existingVenue.name,
+      description: existingVenue.description,
+      latitude: existingVenue.latitude,
+      longitude: existingVenue.longitude,
+      address: existingVenue.address,
+      createdAt: existingVenue.createdAt,
+      updatedAt: existingVenue.updatedAt,
+      capacity: existingVenue.capacity,
+      pictureUrl: existingVenue.pictureUrl,
+      scraper: existingVenue.scraper,
+      venueContacts: existingVenue.venueContacts,
+      requiresReservation: existingVenue.requiresReservation,
+      minAgeMale: existingVenue.minAgeMale,
+      minAgeFemale: existingVenue.minAgeFemale,
     };
   }
 
-  mapVenue(instagramVenue: InstagramVenue): ScrapedVenue {
-    const now = new Date();
-
-    const contact: VenueContact | null = instagramVenue.username
-      ? {
-          phoneNumber: instagramVenue.phoneNumber ?? '',
-          isPhone: !!instagramVenue.phoneNumber,
-          isViber: false,
-          isSms: false,
-          isWhatsapp: instagramVenue.isWhatsappLinked,
-          instagramHandle: instagramVenue.username,
-          isInstagram: true,
-          createdAt: now,
-          updatedAt: now,
-        }
-      : null;
-
-    return {
-      hostId: this.config.venues.defaultHostId ?? 'DEFAULT_VENUE_HOST_ID',
-      venueType: VenueTypeEnum.NIGHTCLUB,
-      name:
-        instagramVenue.fullName === '' || instagramVenue.fullName === null
-          ? (instagramVenue.username ?? 'Unknown Venue')
-          : instagramVenue.fullName,
-      longitude: instagramVenue.longitude,
-      latitude: instagramVenue.latitude,
-      address:
-        instagramVenue.address ??
-        instagramVenue.fullName ??
-        instagramVenue.username,
-      description: sanitizeScrapedText(instagramVenue.biography ?? null),
-      capacity: this.config.venues.defaultCapacity,
-      pictureUrl: instagramVenue.profilePictureUrl,
-      scraper: this.config.source,
-      venueContacts: contact,
-      requiresReservation: false,
-      minAgeMale: this.config.venues.defaultAgeRestriction?.male ?? 0,
-      minAgeFemale: this.config.venues.defaultAgeRestriction?.female ?? 0,
-      createdAt: now,
-      updatedAt: now,
-    };
-  }
-
-  mapEvent(
-    instagramEvent: InstagramEvent,
-    venueId: string,
-    venue: ScrapedVenue,
-  ): ScrapedEvent {
+  mapEvent(instagramEvent: InstagramCandidateEvent): ScrapedEvent {
     const now = new Date();
 
     return {
-      venue,
-      venueId,
+      venue: instagramEvent.venue,
+      venueId: instagramEvent.venueId,
       title: instagramEvent.title,
       description: sanitizeScrapedText(instagramEvent.description),
       startDateTime: new Date(instagramEvent.startDateTime),
@@ -140,130 +92,164 @@ export class InstagramScraperService implements Scraper<
     };
   }
 
-  async scrape(existingData: ExistingData): Promise<ScraperResult> {
-    const scrapedVenues: ScrapedVenue[] = [];
-    const scrapedEvents: ScrapedEvent[] = [];
+  async scrape(existingData?: ExistingData): Promise<ScraperResult> {
+    const venues = existingData?.venues ?? [];
+    if (!venues.length) {
+      this.logger.log(
+        'No venues available in existing data for Instagram scrape.',
+      );
+      return { venues: [], events: [] };
+    }
 
-    const existingInstagramHandles = new Set(
-      existingData.venues
-        // ?.filter((venue) => venue.scraper !== ScraperSource.INSTAGRAM)
-        ?.map((venue) => venue.venueContacts?.instagramHandle)
-        .filter(Boolean),
-    );
+    const handleToVenue = new Map<string, Venue>();
+    for (const venue of venues) {
+      if (venue.scraper === ScraperSource.INSTAGRAM) {
+        continue;
+      }
 
-    const filteredUsernameList = instagramUsernameList.filter(
-      (username) => !existingInstagramHandles.has(username),
-    );
-    for (const username of filteredUsernameList) {
-      try {
-        this.logger.log(`Scraping @${username}...`);
+      const normalizedHandle = this.normalizeHandle(
+        venue.venueContacts?.instagramHandle,
+      );
+      if (!normalizedHandle) {
+        continue;
+      }
 
-        const { profile, posts } =
-          await this.instagramVenueScraperService.scrapeVenue(username);
-
-        const rawAddress = profile.address ?? profile.fullName ?? username;
-        const { latitude, longitude } =
-          await this.geocoderService.geocode(rawAddress);
-
-        const profilePictureUrl = await this.uploadProfilePicture(
-          username,
-          profile.profilePictureUrl,
-        );
-
-        const instagramVenue: InstagramVenue = {
-          username,
-          fullName: profile.fullName,
-          biography: profile.biography,
-          phoneNumber: profile.phoneNumber,
-          isWhatsappLinked: profile.isWhatsappLinked,
-          profilePictureUrl,
-          address: rawAddress,
-          latitude,
-          longitude,
-        };
-
-        const venue = this.mapVenue(instagramVenue);
-        const venueId = `instagram|${username}`;
-        scrapedVenues.push(venue);
-
-        for (let i = 0; i < posts.length; i++) {
-          const post = posts[i];
-          if (!post.description) continue;
-
-          const extracted = extractEventData(post.description);
-          const fallbackDate = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-
-          const imageUrl = await this.uploadPostImage(
-            username,
-            i,
-            post.imageUrl,
-          );
-
-          const instagramEvent: InstagramEvent = {
-            username,
-            venueName: profile.fullName ?? username,
-            imageUrl,
-            title: extracted.title ?? post.description.substring(0, 80),
-            description: post.description,
-            startDateTime: extracted.startDateTime ?? fallbackDate,
-            endDateTime:
-              extracted.endDateTime ?? extracted.startDateTime ?? fallbackDate,
-            tags: extracted.tags,
-          };
-
-          scrapedEvents.push(this.mapEvent(instagramEvent, venueId, venue));
-        }
-
-        this.logger.log(
-          `@${username}: scraped venue + ${scrapedEvents.length} events`,
-        );
-      } catch (err) {
-        this.logger.error(
-          `Failed to scrape @${username}: ${(err as Error).message}`,
-        );
+      if (!handleToVenue.has(normalizedHandle)) {
+        handleToVenue.set(normalizedHandle, venue);
       }
     }
 
-    return { venues: scrapedVenues, events: scrapedEvents };
+    const handles = [...handleToVenue.keys()];
+    if (!handles.length) {
+      this.logger.log(
+        'No eligible Instagram handles found on existing venues.',
+      );
+      return { venues: [], events: [] };
+    }
+
+    this.logger.log(`Preparing Apify scrape for ${handles.length} handles.`);
+
+    let posts: InstagramPost[] = [];
+    try {
+      posts = await this.instagramApifyService.fetchPosts(handles);
+    } catch (err) {
+      this.logger.error(
+        `Failed to fetch Instagram posts from Apify: ${(err as Error).message}`,
+      );
+      return { venues: [], events: [] };
+    }
+
+    if (!posts.length) {
+      this.logger.log('Apify returned no Instagram posts.');
+      return { venues: [], events: [] };
+    }
+
+    const fallbackDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const candidateEvents: InstagramCandidateEvent[] = [];
+    for (const post of posts) {
+      const ownerHandle = this.normalizeHandle(post.ownerUsername);
+      if (!ownerHandle) {
+        this.logger.warn('Skipping post with missing ownerUsername.');
+        continue;
+      }
+
+      const sourceVenue = handleToVenue.get(ownerHandle);
+      if (!sourceVenue) {
+        this.logger.warn(
+          `Skipping post for unknown ownerUsername @${ownerHandle}.`,
+        );
+        continue;
+      }
+
+      const description = (post.caption ?? '').trim();
+      if (!description) {
+        continue;
+      }
+
+      const startDate = this.parseDateOrFallback(post.timestamp, fallbackDate);
+      const endDate = new Date(startDate);
+      endDate.setHours(
+        endDate.getHours() + this.config.events.defaultDurationHour,
+      );
+
+      const sourceUrl =
+        post.url ?? `https://www.instagram.com/p/${post.shortCode ?? ''}`;
+
+      candidateEvents.push({
+        ownerUsername: ownerHandle,
+        sourceUrl,
+        imageUrl: post.displayUrl ?? null,
+        timestamp: startDate.toISOString(),
+        venueId: sourceVenue.id,
+        venue: this.mapVenue(sourceVenue),
+        title: description.substring(0, 80),
+        description,
+        startDateTime: startDate.toISOString(),
+        endDateTime: endDate.toISOString(),
+        tags: [],
+      });
+    }
+
+    if (!candidateEvents.length) {
+      this.logger.log('No Instagram posts could be mapped to existing venues.');
+      return { venues: [], events: [] };
+    }
+
+    const processedEvents = await this.processEventsSafely(candidateEvents);
+    const scrapedEvents = processedEvents.map((event) => this.mapEvent(event));
+
+    this.logger.log(
+      `Instagram bulk scrape produced ${scrapedEvents.length} events.`,
+    );
+
+    return { venues: [], events: scrapedEvents };
   }
 
-  private async uploadProfilePicture(
-    username: string,
-    url: string | null,
-  ): Promise<string | null> {
-    if (!url) return null;
-    try {
-      return await this.r2Service.downloadAndUpload(
-        url,
-        `scraped/instagram/${username}/profile.webp`,
-      );
-    } catch (err) {
-      this.logger.warn(
-        `Failed to upload profile picture for @${username}: ${(err as Error).message}`,
-      );
+  private normalizeHandle(handle?: string | null): string | null {
+    if (!handle) {
       return null;
     }
+
+    const normalized = handle.trim().replace(/^@+/, '').toLowerCase();
+    if (!normalized || !/^[a-z0-9._]+$/.test(normalized)) {
+      return null;
+    }
+
+    return normalized;
   }
 
-  private async uploadPostImage(
-    username: string,
-    index: number,
-    url: string | null,
-  ): Promise<string | null> {
-    if (!url) return null;
+  private parseDateOrFallback(
+    timestamp: string | undefined,
+    fallback: Date,
+  ): Date {
+    if (!timestamp) {
+      return fallback;
+    }
+
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+      return fallback;
+    }
+
+    return parsed;
+  }
+
+  private async processEventsSafely(
+    candidateEvents: InstagramCandidateEvent[],
+  ): Promise<InstagramCandidateEvent[]> {
     try {
-      return await this.r2Service.downloadAndUpload(
-        url,
-        `scraped/instagram/${username}/posts/${Date.now()}-${index}.webp`,
-        { width: 500, height: 375, maxSize: 5 * 1024 * 1024 },
-      );
+      return await this.aiEventProcessingService.processEvents(candidateEvents);
     } catch (err) {
-      this.logger.warn(
-        `Failed to upload post image for @${username}[${index}]: ${(err as Error).message}`,
+      this.logger.error(
+        `AI event processing failed, returning unprocessed candidate events: ${(err as Error).message}`,
       );
-      return null;
+
+      return candidateEvents.map((event) => ({
+        ...event,
+        tags: event.tags.length ? event.tags : ['instagram'],
+        description: sanitizeScrapedText(event.description) ?? '',
+      }));
     }
   }
 }

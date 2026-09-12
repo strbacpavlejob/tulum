@@ -7,7 +7,6 @@ import { GuestListSerbiaScraperService } from '../scrapers/guest-list/guest-list
 import { InstagramScraperService } from '../scrapers/instagram/instagram-scraper.service';
 import { SupabaseService } from 'src/supabase/supabase.service';
 import { DuplicateCheckerService } from 'src/duplicate-checker/duplicate-checker.service';
-import { AiEventProcessingService } from '../application/ai-event-processing/ai-event-processing.service';
 
 @Injectable()
 export class ScraperService {
@@ -19,7 +18,6 @@ export class ScraperService {
     private readonly instagramScraperService: InstagramScraperService,
     private readonly duplicateCheckerService: DuplicateCheckerService,
     private readonly supabaseService: SupabaseService,
-    private readonly aiEventProcessingService: AiEventProcessingService,
   ) {}
 
   private getScraper(scraperId: number): Scraper {
@@ -94,13 +92,8 @@ export class ScraperService {
     const existingVenues = this.mapToExistingVenues(existingData.venues);
     const existingEvents = this.mapToExistingEvents(existingData.events);
 
-    const { venues: scrapedVenues, events: rawScrapedEvents } =
+    const { venues: scrapedVenues, events: scrapedEvents } =
       await scraper.scrape(existingData);
-
-    const scrapedEvents =
-      scraperId === 3
-        ? await this.aiEventProcessingService.processEvents(rawScrapedEvents)
-        : rawScrapedEvents;
 
     const filteredScrapedVenues =
       this.duplicateCheckerService.filterDuplicateVenues(
