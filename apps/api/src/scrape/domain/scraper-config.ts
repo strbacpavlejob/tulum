@@ -161,7 +161,7 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
     events: {
       defaultDurationHour: 4,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
-      defaultStatus: EventStatusEnum.DRAFT,
+      defaultStatus: EventStatusEnum.ACTIVE,
     },
     venues: {
       defaultCapacity: 100,

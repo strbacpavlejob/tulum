@@ -76,7 +76,9 @@ export class SupabaseService implements OnModuleInit {
     // 2. Map events to use real DB venue IDs via the venue embedded in each event
     const mappedEvents: Record<string, unknown>[] = [];
     for (const event of data.events) {
-      const dbVenueId = venueNameToId.get(event.venue.name);
+      const dbVenueId =
+        venueNameToId.get(this.normalizeVenueName(event.venue.name)) ??
+        (this.isUuid(event.venueId) ? event.venueId : undefined);
       if (!dbVenueId) {
         this.logger.warn(
           `Skipping event "${event.title}" - no matching venue found (venue: ${event.venue.name})`,
@@ -165,7 +167,7 @@ export class SupabaseService implements OnModuleInit {
 
     const venueNameToId = new Map<string, string>();
     data?.forEach((v: { name: string; id: string }) =>
-      venueNameToId.set(v.name, v.id),
+      venueNameToId.set(this.normalizeVenueName(v.name), v.id),
     );
 
     return venueNameToId;
@@ -177,7 +179,7 @@ export class SupabaseService implements OnModuleInit {
   ): Promise<void> {
     for (const venue of venues) {
       if (!venue.venueContacts) continue;
-      const venueId = venueNameToId.get(venue.name);
+      const venueId = venueNameToId.get(this.normalizeVenueName(venue.name));
       if (!venueId) continue;
 
       if (
@@ -504,6 +506,10 @@ export class SupabaseService implements OnModuleInit {
     if (value == null) return null;
     // Remove null bytes which PostgreSQL rejects in json/jsonb columns
     return value.replace(/\u0000/g, '');
+  }
+
+  private normalizeVenueName(value: string | null | undefined): string {
+    return (value ?? '').trim().toLowerCase();
   }
 
   private isUuid(value: string | undefined): value is string {
