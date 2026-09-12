@@ -146,7 +146,7 @@ export class InstagramScraperService implements Scraper<
 
     const existingInstagramHandles = new Set(
       existingData.venues
-        ?.filter((venue) => venue.scraper !== ScraperSource.INSTAGRAM)
+        // ?.filter((venue) => venue.scraper !== ScraperSource.INSTAGRAM)
         ?.map((venue) => venue.venueContacts?.instagramHandle)
         .filter(Boolean),
     );

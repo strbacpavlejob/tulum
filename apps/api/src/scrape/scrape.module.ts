@@ -13,6 +13,7 @@ import { R2Module } from '../r2/r2.module';
 import { GuestListSerbiaScraperService } from './scrapers/guest-list/guest-list-serbia-scraper.service';
 import { InstagramScraperService } from './scrapers/instagram/instagram-scraper.service';
 import { ScraperService } from './services/scrape.service';
+import { AiEventProcessingService } from './application/ai-event-processing/ai-event-processing.service';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ import { ScraperService } from './services/scrape.service';
     InstagramScraperService,
     ScrapeCronService,
     ScraperService,
+    AiEventProcessingService,
   ],
+  exports: [AiEventProcessingService],
 })
 export class ScrapeModule {}
