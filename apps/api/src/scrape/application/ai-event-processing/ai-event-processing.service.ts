@@ -21,6 +21,8 @@ type InstagramEvent = {
   description?: string;
   tags?: string[];
 
+  imageUrl?: string;
+
   [key: string]: unknown;
 };
 
@@ -41,27 +43,47 @@ export class AiEventProcessingService {
       return [];
     }
 
-    const input = events.map((event, index) => ({
-      index,
+    const input: OpenAI.Responses.ResponseInput = events.map(
+      (event, index) => ({
+        role: 'user',
+        content: [
+          {
+            type: 'input_text',
+            text: JSON.stringify({
+              index,
 
-      venue: {
-        name: event.venue?.name ?? '',
-        venueType: event.venue?.venueType ?? '',
-        address: event.venue?.address ?? '',
-      },
+              venue: {
+                name: event.venue?.name ?? '',
+                venueType: event.venue?.venueType ?? '',
+                address: event.venue?.address ?? '',
+              },
 
-      title: event.title ?? '',
-      description: event.description ?? '',
-    }));
+              title: event.title ?? '',
+              description: event.description ?? '',
+            }),
+          },
+
+          ...(event.imageUrl
+            ? [
+                {
+                  type: 'input_image' as const,
+                  image_url: event.imageUrl,
+                  detail: 'high' as const,
+                },
+              ]
+            : []),
+        ],
+      }),
+    );
 
     const response = await this.openai.responses.parse({
       model:
         this.configService.get<string>('OPENAI_EVENT_PROCESSING_MODEL') ??
-        'gpt-5.5',
+        'gpt-5.6',
 
       instructions: EVENT_PROCESSING_PROMPT,
 
-      input: JSON.stringify(input),
+      input,
 
       text: {
         format: zodTextFormat(AiEventResultSchema, 'instagram_events'),
@@ -93,9 +115,7 @@ export class AiEventProcessingService {
       }
 
       if (!aiEvent.isEvent) {
-        this.logger.debug(
-          `Filtered "${originalEvent.title ?? 'unknown'}": ${aiEvent.reason}`,
-        );
+        this.logger.debug(`Filtered "${originalEvent.title ?? 'unknown'}"`);
 
         continue;
       }

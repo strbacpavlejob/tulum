@@ -1,11 +1,63 @@
 export const EVENT_PROCESSING_PROMPT = `
 You are processing Instagram posts for a nightlife and local events application.
 
-Your task has TWO steps for every supplied Instagram post.
+Each Instagram post may contain:
+
+- venue information
+- title
+- caption / description
+- an Instagram image or event poster
+
+IMPORTANT:
+
+When an image is provided, you MUST analyze both:
+
+1. the supplied text
+2. the visual content of the image
+
+Text visible inside the image is part of the event information.
+
+Pay particular attention to text shown on posters, including:
+
+- event name
+- artist names
+- DJ names
+- performers
+- date
+- day of week
+- start time
+- venue name
+- ticket information
+- reservation information
+- event type
+- music genre
+
+Information visible in the image may be used even when it is missing from
+the Instagram caption.
+
+For example:
+
+Caption:
+"See you Friday 🔥"
+
+Image:
+"DJ Marko — September 18 — 22:00"
+
+This SHOULD be recognized as an event because the image provides clear
+event information.
+
+However, do not invent information that is not clearly visible in either
+the image or the supplied text.
+
 
 STEP 1 — EVENT VALIDATION
 
 Determine whether the Instagram post represents a REAL UPCOMING EVENT.
+
+Use BOTH:
+
+- caption / description
+- text and information visible in the image
 
 Examples of valid events include:
 
@@ -68,8 +120,8 @@ IS an event.
 
 Be conservative.
 
-If there is not enough evidence that an upcoming organized event is being
-announced, classify it as NOT an event.
+If neither the text nor the image provides enough evidence that an upcoming
+organized event is being announced, classify it as NOT an event.
 
 
 STEP 2 — EVENT ENHANCEMENT
@@ -80,6 +132,8 @@ ONLY when isEvent = true, improve:
 - description
 - tags
 
+Use information from BOTH the supplied text and the image.
+
 TITLE:
 
 - catchy and memorable
@@ -88,19 +142,26 @@ TITLE:
 - emojis are allowed
 - do not invent facts
 
+If the image clearly contains an event title or artist name that is missing
+from the caption, you may use it in the title.
+
 DESCRIPTION:
 
 - 2–4 engaging sentences
 - capture the vibe and experience
 - preserve factual information
+- include useful event information visible in the image
 - do not invent dates
 - do not invent performers
 - do not invent prices
 - do not invent genres
 - do not invent reservation requirements
 
-If the original description contains reservation information,
-preserve it EXACTLY at the END of the description.
+If a date, time, performer or other event detail is clearly visible in the
+image, it may be included in the description.
+
+If the original description OR image contains reservation information,
+preserve it accurately at the END of the description.
 
 Reservation information includes:
 
@@ -119,7 +180,7 @@ TAGS:
 - lowercase
 - short
 - relevant
-- only infer tags supported by the supplied content
+- only infer tags supported by the supplied text or image
 
 Examples:
 
@@ -145,6 +206,9 @@ If another language is detected, use English.
 
 For Serbian, preferably preserve the original script.
 
+When the caption is very short, determine the language from the available
+caption, poster text and venue context.
+
 OUTPUT:
 
 Return exactly one result for every supplied index.
@@ -152,7 +216,6 @@ Return exactly one result for every supplied index.
 Valid event:
 
 isEvent = true
-reason = short explanation
 title = improved title
 description = improved description
 tags = relevant tags
@@ -160,7 +223,6 @@ tags = relevant tags
 Not an event:
 
 isEvent = false
-reason = short explanation
 title = null
 description = null
 tags = []
