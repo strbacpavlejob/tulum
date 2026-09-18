@@ -14,19 +14,22 @@ import {
 } from '../../domain/scraper.interface';
 import { Venue } from '../../domain/scraper-venue.interfaces';
 import { sanitizeScrapedText } from '../../shared/scraper.helpers';
-import { AiEventProcessingService } from '../../application/ai-event-processing/ai-event-processing.service';
+import {
+  AiEventProcessingService,
+  InstagramEvent,
+} from '../../application/ai-event-processing/ai-event-processing.service';
 import {
   InstagramApifyService,
   InstagramPost,
 } from './instagram-apify.service';
 
-interface InstagramCandidateEvent {
+interface InstagramCandidateEvent extends InstagramEvent {
   ownerUsername: string;
   sourceUrl: string;
   timestamp: string;
   venueId: string;
   venue: ScrapedVenue;
-  imageUrl: string | null;
+  imageUrl?: string;
   title: string;
   description: string;
   startDateTime: string;
@@ -87,7 +90,7 @@ export class InstagramScraperService implements Scraper<
       status: this.config.events.defaultStatus,
       createdAt: now,
       updatedAt: now,
-      pictureUrl: instagramEvent.imageUrl,
+      pictureUrl: instagramEvent.imageUrl ?? null,
       scraper: this.config.source,
     };
   }
@@ -103,7 +106,7 @@ export class InstagramScraperService implements Scraper<
 
     const handleToVenue = new Map<string, Venue>();
     for (const venue of venues) {
-      if (venue.scraper === ScraperSource.INSTAGRAM) {
+      if (venue.scraper !== ScraperSource.GUEST_LIST) {
         continue;
       }
 
@@ -179,7 +182,8 @@ export class InstagramScraperService implements Scraper<
       candidateEvents.push({
         ownerUsername: ownerHandle,
         sourceUrl,
-        imageUrl: post.displayUrl ?? null,
+        imageUrl: post.displayUrl ?? undefined,
+        postDate: post.timestamp,
         timestamp: startDate.toISOString(),
         venueId: sourceVenue.id,
         venue: this.mapVenue(sourceVenue),

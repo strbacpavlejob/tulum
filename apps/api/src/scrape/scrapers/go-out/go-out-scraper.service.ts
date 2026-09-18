@@ -114,7 +114,15 @@ export class GoOutScraperService implements Scraper<
   }
 
   async scrape(): Promise<ScraperResult> {
-    const accessToken = await this.authenticate();
+    let accessToken: string;
+    try {
+      accessToken = await this.authenticate();
+    } catch (error) {
+      this.logger.error(
+        `[${this.config.source}] Authentication failed — skipping scraper. Error: ${(error as Error).message}`,
+      );
+      return { venues: [], events: [] };
+    }
 
     const categoryToVenueType = this.buildCategoryToVenueTypeMap();
 

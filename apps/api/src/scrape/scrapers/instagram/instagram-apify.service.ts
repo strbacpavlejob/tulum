@@ -45,7 +45,8 @@ export class InstagramApifyService {
       directUrls,
       resultsType: 'posts',
       resultsLimit: 10,
-      onlyPostsNewerThan: '7 days',
+      skipPinnedPosts: true,
+      onlyPostsNewerThan: '8 days',
     });
 
     if (!run.defaultDatasetId) {
