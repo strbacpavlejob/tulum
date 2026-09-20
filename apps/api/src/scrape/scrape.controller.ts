@@ -9,7 +9,7 @@ export class ScrapeController {
 
   @Get()
   async scrapeAll() {
-    return this.scraperService.scrapeWithAll();
+    return this.scraperService.scrapeWithMultipleScrapers([1, 2, 3]);
   }
 
   @Get(':scraperId')

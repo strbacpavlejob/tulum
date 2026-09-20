@@ -44,4 +44,24 @@ export class SeedController {
   seedMockSwipes(@Param('userId') userId: string) {
     return this.seedService.seedMockSwipes(userId);
   }
+
+  /**
+   * POST /seed/mock-test-event/:userId
+   *
+   * Creates a test event for the given userId:
+   *  - Ensures the user has a host profile
+   *  - Creates a unique mock venue
+   *  - Creates an active event starting in 5 minutes
+   *  - Event lasts for 4 hours
+   *  - Checks ALL guests currently in the DB into the event
+   *
+   * Generates a new venue/event each time it is called.
+   */
+  @Post('mock-test-event/:userId')
+  @ApiOperation({
+    summary: 'Seed a test event with all guests attending (dev only)',
+  })
+  seedMockTestEvent(@Param('userId') userId: string) {
+    return this.seedService.seedMockTestEvent(userId);
+  }
 }
