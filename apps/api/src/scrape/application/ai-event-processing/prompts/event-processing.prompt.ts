@@ -210,18 +210,35 @@ return isEvent = false.
 
 
 ==================================================
-DATE RESOLUTION
+DATE AND TIME CONTEXT
 ==================================================
 
 Every input may contain:
 
-currentDate
-postDate
-timezone
+- currentDate
+- postDate
+- timezone
 
-Use these values to resolve dates.
+Use these values to resolve dates and times.
 
-The timezone normally represents the venue's local timezone.
+The supplied timezone represents the VENUE'S LOCAL TIMEZONE.
+
+IMPORTANT:
+
+currentDate and postDate may contain UTC timestamps or timezone offsets.
+
+They are reference values used to:
+
+- infer dates
+- infer years
+- resolve relative expressions
+- determine whether an event is upcoming
+
+They MUST NOT cause an explicitly stated event time to be shifted.
+
+Times written in the caption, description, title or image/poster are
+LOCAL WALL-CLOCK TIMES in the supplied venue timezone unless the source
+explicitly states another timezone.
 
 
 ==================================================
@@ -312,7 +329,7 @@ The most reasonable event date is:
 
 2027-01-02
 
-not:
+NOT:
 
 2026-01-02
 
@@ -336,22 +353,130 @@ numeric date, prefer the clearly printed explicit date.
 
 
 ==================================================
-TIME RESOLUTION
+TIME RESOLUTION AND TIMEZONE
 ==================================================
 
 Convert clear event times into ISO 8601 date-time values.
 
-Examples:
+CRITICAL TIMEZONE RULE:
+
+A time written in the Instagram caption, description, title or image/poster
+represents the LOCAL WALL-CLOCK TIME at the venue.
+
+The supplied timezone tells you which timezone that local clock time belongs to.
+
+You MUST preserve the displayed local clock time EXACTLY.
+
+DO NOT convert the displayed time to UTC.
+
+DO NOT subtract the timezone offset from the displayed time.
+
+DO NOT add the timezone offset to the displayed time.
+
+DO NOT shift the hour because of timezone conversion.
+
+The ISO 8601 result MUST contain the local event time together with the
+correct UTC offset for the supplied timezone and event date.
+
+Example:
+
+timezone:
+Europe/Belgrade
+
+poster:
+20.09.2026 22:00
+
+Correct:
+
+2026-09-20T22:00:00+02:00
+
+Incorrect:
+
+2026-09-20T20:00:00Z
+
+Incorrect:
+
+2026-09-20T20:00:00+02:00
+
+If the source says 22:00, the hour portion of startDateTime MUST remain 22:00.
+
+Another example:
+
+timezone:
+Europe/Belgrade
+
+poster:
+15.01.2027 22:00
+
+Correct:
+
+2027-01-15T22:00:00+01:00
+
+The UTC offset must be determined from the supplied timezone AND event date.
+
+For Europe/Belgrade this is normally:
+
+- +01:00 during standard time
+- +02:00 during daylight-saving time
+
+Do NOT blindly hardcode +01:00 or +02:00.
+
+Use the correct offset for the event's calendar date.
+
+Examples of source time formats:
 
 22h
 22:00
 10pm
+22.30
+22:30h
+
+Normalize them while preserving the stated local hour and minute.
+
+For example:
+
+22h -> 22:00 local time
+22:30 -> 22:30 local time
+10pm -> 22:00 local time
+
+MOST IMPORTANT TIME INVARIANT:
+
+SOURCE TIME == LOCAL CLOCK TIME IN OUTPUT
+
+If the poster says:
+
+23:00
+
+and timezone is:
+
+Europe/Belgrade
+
+then startDateTime MUST have:
+
+T23:00:00
+
+The timezone offset may vary depending on the event date,
+but the local hour MUST NOT change.
+
+NEVER transform:
+
+23:00 -> 21:00
+22:00 -> 20:00
+21:00 -> 19:00
+
+because of a +02:00 timezone offset.
+
+Those transformations represent UTC conversion and are NOT wanted in
+startDateTime/endDateTime.
 
 If only a start time is supplied, endDateTime may be null.
 
-If both start and end times are provided, resolve both.
+If both start and end times are supplied, resolve both.
 
-IMPORTANT:
+
+==================================================
+EVENTS CROSSING MIDNIGHT
+==================================================
 
 Events frequently continue after midnight.
 
@@ -363,12 +488,39 @@ Example:
 means:
 
 start:
-September 12 at 22:00
+September 12 at 22:00 local time
 
 end:
-September 13 at 05:00
+September 13 at 05:00 local time
 
-NOT September 12 at 05:00.
+For Europe/Belgrade during daylight-saving time:
+
+startDateTime:
+2026-09-12T22:00:00+02:00
+
+endDateTime:
+2026-09-13T05:00:00+02:00
+
+NOT:
+
+startDateTime:
+2026-09-12T20:00:00Z
+
+If the end time is earlier than the start time and no separate end date
+is provided, assume the event ends on the following calendar day when
+that interpretation is reasonable for an event.
+
+Example:
+
+23:00 - 04:00
+
+means:
+
+start:
+event date at 23:00
+
+end:
+following day at 04:00
 
 
 ==================================================
@@ -376,6 +528,12 @@ CURRENT DATE / UPCOMING EVENTS
 ==================================================
 
 Use currentDate to determine whether the event is still upcoming.
+
+When comparing currentDate with an event datetime, compare the actual
+moments in time correctly using their timezone offsets.
+
+Do NOT modify the event's local wall-clock time in the returned result
+just to perform this comparison.
 
 If an event has clearly already ended before currentDate,
 do NOT return it as an upcoming event.
@@ -404,18 +562,32 @@ Do not reject the entire post just because some listed events are already past.
 
 
 ==================================================
-UNCERTAIN DATES
+UNCERTAIN DATES OR TIMES
 ==================================================
 
-Never invent a date.
+Never invent a date or time.
 
 If an event is clearly real but its exact date cannot be reliably determined:
 
 startDateTime = null
 endDateTime = null
 
-The event may still be returned if there is sufficient evidence that
-it is an upcoming event.
+If the date is known but the start time is NOT provided, do NOT invent
+a typical event time.
+
+If the source says only:
+
+"Friday"
+
+do NOT assume:
+
+20:00
+21:00
+22:00
+23:00
+
+If an event is clearly real and upcoming but its exact datetime cannot
+be reliably determined, it may still be returned with null datetime values.
 
 
 ==================================================
@@ -686,6 +858,28 @@ description
 tags
 startDateTime
 endDateTime
+
+startDateTime and endDateTime MUST be either:
+
+- null
+- an ISO 8601 datetime containing the LOCAL event time and its UTC offset
+
+Example:
+
+2026-09-20T22:00:00+02:00
+
+Do NOT return UTC-normalized event times when a local event time was supplied.
+
+Example:
+
+Poster:
+22:00
+
+Correct:
+2026-09-20T22:00:00+02:00
+
+Incorrect:
+2026-09-20T20:00:00Z
 
 Use null for startDateTime or endDateTime when the value cannot be
 reliably determined.
