@@ -12,6 +12,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { MatchesService } from './matches.service';
+import { SwipeDecisionDto } from './dto/swipe-decision.dto';
 
 @ApiTags('matches')
 @Controller('matches')
@@ -41,6 +42,14 @@ export class MatchesController {
   @Post()
   async createMatch(@Body() match: Record<string, unknown>) {
     return this.matchesService.createMatch(match);
+  }
+
+  @Post('swipe')
+  submitSwipe(
+    @UserId() userId: string,
+    @Body() body: SwipeDecisionDto,
+  ): Promise<{ matched: boolean; match_id: number | null }> {
+    return this.matchesService.submitSwipeDecision(userId, body);
   }
 
   @Delete()

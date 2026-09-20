@@ -765,24 +765,28 @@ export async function fetchSwipeableProfiles(
 
 export async function createMatchSwipe(
   token: string,
-  userId: string,
   otherUserId: string,
   eventId: string,
-): Promise<void> {
-  const url = `${TULUM_API_URL}/matches`;
+  liked: boolean,
+): Promise<{ matched: boolean; match_id: number | null }> {
+  const url = `${TULUM_API_URL}/matches/swipe`;
   const response = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({
-      guest_id_1: userId,
-      guest_id_2: otherUserId,
+      other_user_id: otherUserId,
       event_id: eventId,
+      liked,
     }),
   });
-  // 409 / 23505 means the match already exists — ignore
-  if (!response.ok && response.status !== 409) {
-    throw new Error(`Failed to create match: ${response.status}`);
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Failed to submit swipe: ${response.status} ${body}`);
   }
+  return response.json() as Promise<{
+    matched: boolean;
+    match_id: number | null;
+  }>;
 }
 
 export async function createEventSession(
