@@ -155,13 +155,13 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
 
   [ScraperSource.INSTAGRAM]: {
     id: 3,
-    baseUrl: 'https://storiesig.info/en/',
+    baseUrl: 'https://apify.com/apify/instagram-scraper',
     source: ScraperSource.INSTAGRAM,
 
     events: {
       defaultDurationHour: 4,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
-      defaultStatus: EventStatusEnum.DRAFT,
+      defaultStatus: EventStatusEnum.ACTIVE,
     },
     venues: {
       defaultCapacity: 100,

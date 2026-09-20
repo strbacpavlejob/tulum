@@ -240,20 +240,42 @@ export default function MatchesScreen() {
 
   // ── Swipe handlers ─────────────────────────────────────────────────────────
   const handleSwipeLeft = (_profile: Profile) => {
+    if (eventIdRef.current != null) {
+      void getToken().then((token) => {
+        if (!token) return;
+        createMatchSwipe(
+          token,
+          _profile.id,
+          eventIdRef.current as string,
+          false,
+        ).catch(() => {});
+      });
+    }
     setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
   };
 
   const handleSwipeRight = async (profile: Profile) => {
-    if (userId && eventIdRef.current != null) {
+    let isMutualMatch = false;
+    if (eventIdRef.current != null) {
       const token = await getToken();
       if (token) {
-        createMatchSwipe(token, userId, profile.id, eventIdRef.current).catch(
-          () => {},
-        );
+        try {
+          const result = await createMatchSwipe(
+            token,
+            profile.id,
+            eventIdRef.current,
+            true,
+          );
+          isMutualMatch = result.matched;
+        } catch {
+          // Ignore swipe write failures in UI flow
+        }
       }
     }
-    setMatchedProfile(profile);
-    setShowMatch(true);
+    if (isMutualMatch) {
+      setMatchedProfile(profile);
+      setShowMatch(true);
+    }
     setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
   };
 

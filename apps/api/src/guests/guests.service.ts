@@ -5,6 +5,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 
 const GUESTS_TABLE = 'guests';
+const GUEST_SWIPES_TABLE = 'guest_swipes';
 const MAX_PHOTOS = 3;
 // Profile photo dimensions and target quality
 const PHOTO_WIDTH = 800;
@@ -99,6 +100,17 @@ export class GuestsService {
       matchedIds.add(m.guest_id_2 as string);
     }
 
+    // Also remove people this user has already swiped on at this event
+    const { data: mySwipes } = await this.db
+      .from(GUEST_SWIPES_TABLE)
+      .select('swiped_user_id')
+      .eq('swiper_user_id', userId)
+      .eq('event_id', targetEventId);
+
+    const swipedIds = new Set<string>(
+      (mySwipes ?? []).map((s) => s.swiped_user_id as string),
+    );
+
     // Find all user_ids at this event via event_sessions
     const { data: sessions } = await this.db
       .from('event_sessions')
@@ -108,7 +120,7 @@ export class GuestsService {
 
     const candidateIds = (sessions ?? [])
       .map((s: Record<string, unknown>) => s.user_id as string)
-      .filter((id) => !matchedIds.has(id));
+      .filter((id) => !matchedIds.has(id) && !swipedIds.has(id));
 
     // Fetch guest profiles + user info for candidates
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

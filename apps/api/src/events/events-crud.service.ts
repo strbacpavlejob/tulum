@@ -63,7 +63,7 @@ export class EventsCrudService {
 
     // Fetch saved event IDs for the current user
     const effectiveUserId = userId ?? filters.user_id;
-    let savedEventIds: Set<string> = new Set();
+    const savedEventIds: Set<string> = new Set();
     if (effectiveUserId) {
       const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
@@ -137,18 +137,16 @@ export class EventsCrudService {
       return [
         {
           id: event.id as string,
-          name: event.title,
+          name: event.title as string,
           picture:
-            (event.scraper as string) === 'goout'
-              ? ((venue as Record<string, unknown>).picture_url ??
-                event.picture_url)
-              : event.picture_url,
-          venue_name: venue.name,
-          venue_id: venue.id,
-          address: venue.address,
-          latitude: venue.latitude,
-          longitude: venue.longitude,
-          date: event.start_date_time,
+            (event as Record<string, string>).picture_url ??
+            (venue as Record<string, string>).picture_url,
+          venue_name: venue.name as string,
+          venue_id: venue.id as string,
+          address: venue.address as string,
+          latitude: venue.latitude as number,
+          longitude: venue.longitude as number,
+          date: event.start_date_time as string,
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(event.id as string),
           guest_count: guestCountMap.get(event.id as string) ?? 0,
@@ -162,13 +160,13 @@ export class EventsCrudService {
         return [
           {
             id: venue.id as string,
-            name: venue.name,
-            picture: venue.picture_url,
-            venue_name: venue.name,
-            venue_id: venue.id,
-            address: venue.address,
-            latitude: venue.latitude,
-            longitude: venue.longitude,
+            name: venue.name as string,
+            picture: venue.picture_url as string,
+            venue_name: venue.name as string,
+            venue_id: venue.id as string,
+            address: venue.address as string,
+            latitude: venue.latitude as number,
+            longitude: venue.longitude as number,
           },
         ];
       })
@@ -256,10 +254,8 @@ export class EventsCrudService {
       longitude: venueTyped.longitude,
       description: (event as Record<string, unknown>).description,
       picture:
-        (event as Record<string, unknown>).scraper === 'goout'
-          ? (venueTyped.picture_url ??
-            (event as Record<string, unknown>).picture_url)
-          : (event as Record<string, unknown>).picture_url,
+        (event as Record<string, unknown>).picture_url ??
+        (venue as Record<string, unknown>).picture_url,
       venue_name: venueTyped.name,
       venue_picture: venueTyped.picture_url ?? null,
       date: (event as Record<string, unknown>).start_date_time,

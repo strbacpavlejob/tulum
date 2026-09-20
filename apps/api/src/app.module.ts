@@ -26,7 +26,7 @@ import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     RedisModule,
     CleanupModule,

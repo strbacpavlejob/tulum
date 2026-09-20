@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { SwipeDecisionDto } from './dto/swipe-decision.dto';
 
 const MATCHES_TABLE = 'matches';
+const GUEST_SWIPES_TABLE = 'guest_swipes';
 
 @Injectable()
 export class MatchesService {
@@ -133,6 +135,115 @@ export class MatchesService {
       .single();
     if (error) throw error;
     return data;
+  }
+
+  async submitSwipeDecision(
+    userId: string,
+    swipe: SwipeDecisionDto,
+  ): Promise<{ matched: boolean; match_id: number | null }> {
+    const { other_user_id: otherUserId, event_id: eventId, liked } = swipe;
+
+    if (userId === otherUserId) {
+      throw new BadRequestException('Cannot swipe on yourself');
+    }
+
+    const { data: swipeSession } = await this.db
+      .from('event_sessions')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .is('exited_at', null)
+      .maybeSingle();
+
+    const { data: targetSession } = await this.db
+      .from('event_sessions')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', otherUserId)
+      .is('exited_at', null)
+      .maybeSingle();
+
+    if (!swipeSession || !targetSession) {
+      throw new BadRequestException(
+        'Both users must be at the same live event',
+      );
+    }
+
+    const { error: swipeError } = await this.db.from(GUEST_SWIPES_TABLE).upsert(
+      {
+        swiper_user_id: userId,
+        swiped_user_id: otherUserId,
+        event_id: eventId,
+        liked,
+      },
+      { onConflict: 'swiper_user_id,swiped_user_id,event_id' },
+    );
+    if (swipeError) throw swipeError;
+
+    if (!liked) {
+      return { matched: false, match_id: null };
+    }
+
+    const { data: reciprocal, error: reciprocalError } = await this.db
+      .from(GUEST_SWIPES_TABLE)
+      .select('id')
+      .eq('swiper_user_id', otherUserId)
+      .eq('swiped_user_id', userId)
+      .eq('event_id', eventId)
+      .eq('liked', true)
+      .maybeSingle();
+    if (reciprocalError) throw reciprocalError;
+
+    if (!reciprocal) {
+      return { matched: false, match_id: null };
+    }
+
+    const [guestId1, guestId2] = [userId, otherUserId].sort((a, b) =>
+      a.localeCompare(b),
+    );
+
+    const { data: existingMatch, error: existingMatchError } = await this.db
+      .from(MATCHES_TABLE)
+      .select('id')
+      .eq('guest_id_1', guestId1)
+      .eq('guest_id_2', guestId2)
+      .eq('event_id', eventId)
+      .maybeSingle();
+    if (existingMatchError) throw existingMatchError;
+
+    if (existingMatch) {
+      return { matched: true, match_id: existingMatch.id as number };
+    }
+
+    const { data: match, error: matchError } = await this.db
+      .from(MATCHES_TABLE)
+      .insert({
+        guest_id_1: guestId1,
+        guest_id_2: guestId2,
+        event_id: eventId,
+      })
+      .select('id')
+      .single();
+
+    // Another concurrent request may have inserted first.
+    if (matchError) {
+      const isUniqueViolation =
+        (matchError as { code?: string }).code === '23505';
+      if (!isUniqueViolation) throw matchError;
+
+      const { data: concurrentMatch, error: concurrentMatchError } =
+        await this.db
+          .from(MATCHES_TABLE)
+          .select('id')
+          .eq('guest_id_1', guestId1)
+          .eq('guest_id_2', guestId2)
+          .eq('event_id', eventId)
+          .single();
+      if (concurrentMatchError) throw concurrentMatchError;
+      return { matched: true, match_id: concurrentMatch.id as number };
+    }
+
+    return { matched: true, match_id: match.id as number };
   }
 
   async deleteMatch(matchId: number) {

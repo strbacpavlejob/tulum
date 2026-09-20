@@ -76,7 +76,9 @@ export class SupabaseService implements OnModuleInit {
     // 2. Map events to use real DB venue IDs via the venue embedded in each event
     const mappedEvents: Record<string, unknown>[] = [];
     for (const event of data.events) {
-      const dbVenueId = venueNameToId.get(event.venue.name);
+      const dbVenueId =
+        venueNameToId.get(this.normalizeVenueName(event.venue.name)) ??
+        (this.isUuid(event.venueId) ? event.venueId : undefined);
       if (!dbVenueId) {
         this.logger.warn(
           `Skipping event "${event.title}" - no matching venue found (venue: ${event.venue.name})`,
@@ -165,7 +167,7 @@ export class SupabaseService implements OnModuleInit {
 
     const venueNameToId = new Map<string, string>();
     data?.forEach((v: { name: string; id: string }) =>
-      venueNameToId.set(v.name, v.id),
+      venueNameToId.set(this.normalizeVenueName(v.name), v.id),
     );
 
     return venueNameToId;
@@ -177,7 +179,7 @@ export class SupabaseService implements OnModuleInit {
   ): Promise<void> {
     for (const venue of venues) {
       if (!venue.venueContacts) continue;
-      const venueId = venueNameToId.get(venue.name);
+      const venueId = venueNameToId.get(this.normalizeVenueName(venue.name));
       if (!venueId) continue;
 
       if (
@@ -449,18 +451,33 @@ export class SupabaseService implements OnModuleInit {
   ): Promise<number> {
     if (events.length === 0) return 0;
 
+    const normalizedEvents = events
+      .map((event) => this.normalizeEventUpsertRow(event))
+      .filter((event): event is Record<string, unknown> => event !== null);
+
+    if (normalizedEvents.length === 0) {
+      this.logger.warn(
+        'No valid events remain after normalization; skipping upsert.',
+      );
+      return 0;
+    }
+
     // Deduplicate by the conflict key to avoid "ON CONFLICT DO UPDATE command
     // cannot affect row a second time" when the scraper returns duplicate events.
     const seen = new Map<string, Record<string, unknown>>();
-    for (const event of events) {
-      const key = `${event.title}|${event.venue_id}|${event.start_date_time}`;
+    for (const event of normalizedEvents) {
+      const title = typeof event.title === 'string' ? event.title : '';
+      const venueId = typeof event.venue_id === 'string' ? event.venue_id : '';
+      const startDateTime =
+        typeof event.start_date_time === 'string' ? event.start_date_time : '';
+      const key = [title, venueId, startDateTime].join('|');
       seen.set(key, event);
     }
     const deduplicated = Array.from(seen.values());
 
-    if (deduplicated.length < events.length) {
+    if (deduplicated.length < normalizedEvents.length) {
       this.logger.warn(
-        `Removed ${events.length - deduplicated.length} duplicate events before upsert`,
+        `Removed ${normalizedEvents.length - deduplicated.length} duplicate events before upsert`,
       );
     }
 
@@ -502,8 +519,76 @@ export class SupabaseService implements OnModuleInit {
 
   private sanitize(value: string | null | undefined): string | null {
     if (value == null) return null;
-    // Remove null bytes which PostgreSQL rejects in json/jsonb columns
-    return value.replace(/\u0000/g, '');
+    // Remove control chars that can break JSON transport/parsing in PostgREST.
+    return Array.from(value)
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return !(code <= 31 || code === 127);
+      })
+      .join('');
+  }
+
+  private sanitizeTag(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const sanitized = this.sanitize(value)?.trim() ?? '';
+    return sanitized.length > 0 ? sanitized : null;
+  }
+
+  private toIsoString(value: unknown): string | null {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString();
+  }
+
+  private normalizeEventUpsertRow(
+    event: Record<string, unknown>,
+  ): Record<string, unknown> | null {
+    const venueId =
+      typeof event.venue_id === 'string' && this.isUuid(event.venue_id)
+        ? event.venue_id
+        : null;
+    const title = this.sanitize(
+      typeof event.title === 'string' ? event.title : null,
+    );
+    const description = this.sanitize(
+      typeof event.description === 'string' ? event.description : null,
+    );
+    const startDateTime = this.toIsoString(event.start_date_time);
+    const endDateTime = this.toIsoString(event.end_date_time);
+
+    if (!venueId || !title || !description || !startDateTime || !endDateTime) {
+      this.logger.warn('Skipping invalid event row before upsert.');
+      return null;
+    }
+
+    const tagsInput = Array.isArray(event.tags) ? event.tags : [];
+    const tags = tagsInput
+      .map((tag) => this.sanitizeTag(tag))
+      .filter((tag): tag is string => tag !== null)
+      .slice(0, 3);
+
+    return {
+      ...event,
+      venue_id: venueId,
+      title,
+      description,
+      start_date_time: startDateTime,
+      end_date_time: endDateTime,
+      tags,
+      picture_url:
+        typeof event.picture_url === 'string'
+          ? this.sanitize(event.picture_url)
+          : null,
+      scraper:
+        typeof event.scraper === 'string'
+          ? this.sanitize(event.scraper)
+          : (event.scraper ?? null),
+    };
+  }
+
+  private normalizeVenueName(value: string | null | undefined): string {
+    return (value ?? '').trim().toLowerCase();
   }
 
   private isUuid(value: string | undefined): value is string {

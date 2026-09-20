@@ -60,7 +60,109 @@ export class SeedService {
   private get db() {
     return this.supabaseService.getClient();
   }
+  async seedMockTestEvent(userId: string) {
+    // 1 ── Verify the user exists
+    const { data: user, error: userErr } = await this.db
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
 
+    if (userErr) throw userErr;
+
+    if (!user) {
+      throw new BadRequestException(`User ${userId} not found`);
+    }
+
+    // 2 ── Ensure user has a host profile
+    const { error: hostErr } = await this.db.from('hosts').upsert(
+      {
+        user_id: userId,
+      },
+      {
+        onConflict: 'user_id',
+        ignoreDuplicates: true,
+      },
+    );
+
+    if (hostErr) throw hostErr;
+
+    const now = Date.now();
+    const ts = Date.now();
+
+    // 3 ── Create mock venue
+    const { data: venue, error: venueErr } = await this.db
+      .from('venues')
+      .insert({
+        host_id: userId,
+        venue_type: 'nightclub',
+        name: `Tulum Test Venue ${ts}`,
+        description: 'Temporary mock venue for event testing.',
+        latitude: 44.8418626,
+        longitude: 20.3904346,
+        address: 'Test Street 1, Belgrade',
+        capacity: 1000,
+      })
+      .select('id')
+      .single();
+
+    if (venueErr) throw venueErr;
+
+    // 4 ── Event starts in 5 minutes and lasts 4 hours
+    const startDateTime = new Date(now + 5 * 60 * 1000).toISOString();
+
+    const endDateTime = new Date(
+      now + (5 * 60 + 4 * 60 * 60) * 1000,
+    ).toISOString();
+
+    // 5 ── Create test event
+    const { data: event, error: eventErr } = await this.db
+      .from('events')
+      .insert({
+        venue_id: venue.id,
+        title: `Tulum Test Event ${ts}`,
+        description:
+          'Mock event starting in 5 minutes for development/testing.',
+        start_date_time: startDateTime,
+        end_date_time: endDateTime,
+        tags: ['testing', 'techno', 'electronic'],
+        status: 'active',
+      })
+      .select('id, title, start_date_time, end_date_time')
+      .single();
+
+    if (eventErr) throw eventErr;
+
+    // 6 ── Get ALL guests
+    const { data: guests, error: guestsErr } = await this.db
+      .from('guests')
+      .select('user_id');
+
+    if (guestsErr) throw guestsErr;
+
+    // 7 ── Make every guest ATTEND the event by creating a ticket
+    if (guests?.length) {
+      const tickets = guests.map((guest) => ({
+        guest_id: guest.user_id,
+        event_id: event.id,
+      }));
+
+      const { error: ticketsErr } = await this.db
+        .from('tickets')
+        .insert(tickets);
+
+      if (ticketsErr) throw ticketsErr;
+    }
+
+    return {
+      venue_id: venue.id,
+      event_id: event.id,
+      event_title: event.title,
+      starts_at: event.start_date_time,
+      ends_at: event.end_date_time,
+      guests_attending: guests?.length ?? 0,
+    };
+  }
   async seedMockChats(userId: string) {
     // 1 ── Verify the user exists
     const { data: user, error: userErr } = await this.db
