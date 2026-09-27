@@ -57,8 +57,8 @@ const useStore = create<MyStore>((set) => ({
     tags: [],
     venueType: [],
     dateRange: {
-      start: null,
-      end: null,
+      start: new Date(),
+      end: addDays(new Date(), 7),
     },
     guestsLimit: null,
     isOnlyFavorite: false,
@@ -186,7 +186,7 @@ const useStore = create<MyStore>((set) => ({
         venueType: [],
         dateRange: {
           start: new Date(),
-          end: addDays(new Date(), 14),
+          end: addDays(new Date(), 7),
         },
         guestsLimit: null,
         isOnlyFavorite: false,

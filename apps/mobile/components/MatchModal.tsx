@@ -3,7 +3,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { Profile } from "@/types/profile";
 import * as Haptics from "expo-haptics";
 import { Heart, SendHorizonal, X } from "lucide-react-native";
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Platform, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -20,8 +20,7 @@ import { Avatar, AvatarImage } from "./ui/avatar";
 import useStore from "@/store/useStore";
 import { Input } from "./ui/input";
 import { useAuth } from "@clerk/expo";
-import { fetchOrCreateChat } from "@/lib/api";
-import { useChatSocket } from "@/hooks/useChatSocket";
+import { fetchOrCreateChat, sendChatMessage } from "@/lib/api";
 import { useRouter } from "expo-router";
 
 interface MatchModalProps {
@@ -140,13 +139,11 @@ export default function MatchModal({
   const { t } = useTranslation();
   const { user } = useStore();
 
-  const { userId, getToken } = useAuth();
+  const { getToken } = useAuth();
   const router = useRouter();
 
   const [text, setText] = useState("");
-  const [chatId, setChatId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const pendingSendRef = useRef<string | null>(null);
 
   const contentOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.8);
@@ -172,35 +169,11 @@ export default function MatchModal({
     transform: [{ scale: contentScale.value }],
   }));
 
-  const { connected, sendMessage } = useChatSocket(
-    chatId ?? null,
-    user?.id ?? null,
-    [],
-  );
-
-  // When socket connects and we have a pending message, send it and navigate
-  useEffect(() => {
-    if (!connected) return;
-    const pending = pendingSendRef.current;
-    if (pending && sendMessage) {
-      sendMessage(pending);
-      pendingSendRef.current = null;
-      setText("");
-      setSending(false);
-      // Open inbox so user can see the chat thread
-      try {
-        router.push("/inbox");
-      } catch (e) {
-        // ignore
-      }
-    }
-  }, [connected, sendMessage, router]);
-
   if (!profile) {
     return null;
   }
 
-  const userAvatar = user?.imgUrl ?? "";
+  const userAvatar = user?.photos?.[0] || user?.imgUrl || "";
   const matchAvatar = profile.images[0] ?? "";
 
   return (
@@ -294,15 +267,15 @@ export default function MatchModal({
         </View>
 
         {/* Bottom message input */}
-        <View className="absolute bottom-6 left-5 right-5 z-10 ios:bottom-10 flex-row items-center justify-between rounded-full bg-white/10 px-5 py-[14px] gap-2">
+        <View className="absolute bottom-6 left-5 right-5 z-10 ios:bottom-10 flex-row items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 gap-2">
           <Input
             inputMode="text"
             value={text}
             onChangeText={setText}
             placeholder={t("saySomethingNice")}
             placeholderClassName="text-base text-white/50"
-            className="flex-row items-center justify-between rounded-full bg-[transparent] px-5 py-[14px] border-0 focus:border-[transparent] focus:ring-0"
-            style={{ color: theme.colorStrong }}
+            className="flex-1 rounded-full bg-[transparent] px-4 py-3 border-0 focus:border-[transparent] focus:ring-0"
+            style={{ color: "#fff" }}
           />
 
           <TouchableOpacity
@@ -319,11 +292,19 @@ export default function MatchModal({
 
                 // Ensure chat exists on the server
                 const { chat } = await fetchOrCreateChat(profile.id, token);
-                setChatId(chat.id);
 
-                // Queue the message to be sent once socket connects
-                pendingSendRef.current = trimmed;
-              } catch (err) {
+                // Persist message immediately so it always appears in chat.
+                await sendChatMessage(token, {
+                  chatId: chat.id,
+                  senderId: user?.id,
+                  text: trimmed,
+                });
+
+                setText("");
+                setSending(false);
+                onClose();
+                router.push("/inbox");
+              } catch {
                 setSending(false);
               }
             }}

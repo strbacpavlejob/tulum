@@ -9,7 +9,6 @@ import {
   BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
-  BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import React, {
   forwardRef,
@@ -21,6 +20,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { PanResponder, Pressable, View } from "react-native";
+import { addDays } from "date-fns";
 import CalendarRangePicker from "./CalendarRangePicker";
 
 const CAPACITY_MIN = 0;
@@ -59,7 +59,7 @@ const defaultFilters: Filter = {
   title: "",
   tags: [],
   venueType: [],
-  dateRange: { start: null, end: null },
+  dateRange: { start: new Date(), end: addDays(new Date(), 7) },
   guestsLimit: null,
   isOnlyFavorite: false,
   priceRange: { min: null, max: null },
@@ -317,187 +317,185 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
         handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
         footerComponent={renderFooter}
       >
-        <BottomSheetView
+        <BottomSheetScrollView
           style={{ flex: 1, paddingHorizontal: 20, paddingVertical: 10 }}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ width: "100%", paddingBottom: 100 }}
         >
-          <View className="flex-1 gap-3">
+          <View className="gap-3">
             <Text className="text-xl font-bold text-light-gray12 dark:text-dark-gray12">
               {t("filters")}
             </Text>
 
-            <BottomSheetScrollView
-              contentContainerStyle={{ width: "100%", paddingBottom: 100 }}
-            >
-              <View className="gap-4 w-full">
-                {/* Venue Type */}
-                <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
-                  <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
-                    {t("filterVenueType")}
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {VENUE_OPTIONS.map((opt) => {
-                      const selected = filters.venueType.includes(
-                        opt.value as VenueType,
-                      );
-                      return (
-                        <Pressable
-                          key={opt.value}
-                          onPress={() =>
-                            toggleVenueType(opt.value as VenueType)
-                          }
-                          className="rounded-2xl px-4 py-3 mb-2 mr-2"
+            <View className="gap-4 w-full">
+              {/* Venue Type */}
+              <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
+                  {t("filterVenueType")}
+                </Text>
+                <View className="flex-row flex-wrap">
+                  {VENUE_OPTIONS.map((opt) => {
+                    const selected = filters.venueType.includes(
+                      opt.value as VenueType,
+                    );
+                    return (
+                      <Pressable
+                        key={opt.value}
+                        onPress={() => toggleVenueType(opt.value as VenueType)}
+                        className="rounded-2xl px-4 py-3 mb-2 mr-2"
+                        style={{
+                          backgroundColor: selected
+                            ? theme.color
+                            : theme.background,
+                          borderWidth: 1.5,
+                          borderColor: selected ? theme.color : theme.gray4,
+                        }}
+                      >
+                        <Text
                           style={{
-                            backgroundColor: selected
-                              ? theme.color
-                              : theme.background,
-                            borderWidth: 1.5,
-                            borderColor: selected ? theme.color : theme.gray4,
+                            fontSize: 14,
+                            fontWeight: selected ? "600" : "400",
+                            color: selected ? "#fff" : theme.gray11,
                           }}
                         >
-                          <Text
-                            style={{
-                              fontSize: 14,
-                              fontWeight: selected ? "600" : "400",
-                              color: selected ? "#fff" : theme.gray11,
-                            }}
-                          >
-                            {`${opt.emoji} ${t(opt.labelKey)}`}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
+                          {`${opt.emoji} ${t(opt.labelKey)}`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
+              </View>
 
-                {/* Capacity Range */}
-                <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
-                      {t("capacity")}
-                    </Text>
-                    <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
-                      {capacityMin} - {capacityMax}
-                    </Text>
-                  </View>
-                  <View className="gap-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
-                        {t("min")}
-                      </Text>
-                      <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
-                        {t("max")}
-                      </Text>
-                    </View>
-                    <View
-                      className="h-10 justify-center"
-                      onLayout={(event) =>
-                        setCapacityTrackWidth(event.nativeEvent.layout.width)
-                      }
-                    >
-                      <View
-                        style={{
-                          height: 4,
-                          borderRadius: 999,
-                          backgroundColor: theme.gray3,
-                        }}
-                      />
-                      <View
-                        className="absolute"
-                        style={{
-                          left: `${capacityLeft}%`,
-                          right: `${capacityRight}%`,
-                          height: 4,
-                          borderRadius: 999,
-                          backgroundColor: theme.color,
-                        }}
-                      />
-                      <View
-                        {...minThumbPanResponder.panHandlers}
-                        style={{
-                          position: "absolute",
-                          left: capacityMinThumbLeft,
-                          width: CAPACITY_THUMB_SIZE,
-                          height: CAPACITY_THUMB_SIZE,
-                          borderRadius: CAPACITY_THUMB_SIZE / 2,
-                          backgroundColor: theme.color,
-                          borderWidth: 2,
-                          borderColor: theme.background,
-                          transform: [
-                            { translateX: -CAPACITY_THUMB_SIZE / 2 },
-                            { translateY: -CAPACITY_THUMB_SIZE / 2 + 2 },
-                          ],
-                        }}
-                      />
-                      <View
-                        {...maxThumbPanResponder.panHandlers}
-                        style={{
-                          position: "absolute",
-                          left: capacityMaxThumbLeft,
-                          width: CAPACITY_THUMB_SIZE,
-                          height: CAPACITY_THUMB_SIZE,
-                          borderRadius: CAPACITY_THUMB_SIZE / 2,
-                          backgroundColor: theme.color,
-                          borderWidth: 2,
-                          borderColor: theme.background,
-                          transform: [
-                            { translateX: -CAPACITY_THUMB_SIZE / 2 },
-                            { translateY: -CAPACITY_THUMB_SIZE / 2 + 2 },
-                          ],
-                        }}
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                {/* Date Range */}
-                <View className="rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
-                  <CalendarRangePicker
-                    startDate={filters.dateRange.start}
-                    endDate={filters.dateRange.end}
-                    onChangeStartDate={(date) =>
-                      patchNested(["dateRange", "start"], date)
-                    }
-                    onChangeEndDate={(date) =>
-                      patchNested(["dateRange", "end"], date)
-                    }
-                  />
-                </View>
-
-                {/* Only Favorites */}
-                <View className="flex-row items-center justify-between rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+              {/* Capacity Range */}
+              <View className="gap-3 rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                <View className="flex-row justify-between items-center">
                   <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
-                    {t("onlyFavorites")}
+                    {t("capacity")}
                   </Text>
-                  <Pressable
-                    onPress={() =>
-                      patch("isOnlyFavorite", !filters.isOnlyFavorite)
+                  <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
+                    {capacityMin} - {capacityMax}
+                  </Text>
+                </View>
+                <View className="gap-2">
+                  <View className="flex-row justify-between">
+                    <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
+                      {t("min")}
+                    </Text>
+                    <Text className="text-xs text-light-gray9 dark:text-dark-gray9">
+                      {t("max")}
+                    </Text>
+                  </View>
+                  <View
+                    className="h-10 justify-center"
+                    onLayout={(event) =>
+                      setCapacityTrackWidth(event.nativeEvent.layout.width)
                     }
-                    style={{
-                      width: 44,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: filters.isOnlyFavorite
-                        ? theme.color
-                        : theme.gray4,
-                      justifyContent: "center",
-                      paddingHorizontal: 2,
-                    }}
                   >
                     <View
                       style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
-                        backgroundColor: "#ffffff",
-                        marginLeft: filters.isOnlyFavorite ? 20 : 0,
+                        height: 4,
+                        borderRadius: 999,
+                        backgroundColor: theme.gray3,
                       }}
                     />
-                  </Pressable>
+                    <View
+                      className="absolute"
+                      style={{
+                        left: `${capacityLeft}%`,
+                        right: `${capacityRight}%`,
+                        height: 4,
+                        borderRadius: 999,
+                        backgroundColor: theme.color,
+                      }}
+                    />
+                    <View
+                      {...minThumbPanResponder.panHandlers}
+                      style={{
+                        position: "absolute",
+                        left: capacityMinThumbLeft,
+                        width: CAPACITY_THUMB_SIZE,
+                        height: CAPACITY_THUMB_SIZE,
+                        borderRadius: CAPACITY_THUMB_SIZE / 2,
+                        backgroundColor: theme.color,
+                        borderWidth: 2,
+                        borderColor: theme.background,
+                        transform: [
+                          { translateX: -CAPACITY_THUMB_SIZE / 2 },
+                          { translateY: -CAPACITY_THUMB_SIZE / 2 + 2 },
+                        ],
+                      }}
+                    />
+                    <View
+                      {...maxThumbPanResponder.panHandlers}
+                      style={{
+                        position: "absolute",
+                        left: capacityMaxThumbLeft,
+                        width: CAPACITY_THUMB_SIZE,
+                        height: CAPACITY_THUMB_SIZE,
+                        borderRadius: CAPACITY_THUMB_SIZE / 2,
+                        backgroundColor: theme.color,
+                        borderWidth: 2,
+                        borderColor: theme.background,
+                        transform: [
+                          { translateX: -CAPACITY_THUMB_SIZE / 2 },
+                          { translateY: -CAPACITY_THUMB_SIZE / 2 + 2 },
+                        ],
+                      }}
+                    />
+                  </View>
                 </View>
               </View>
-            </BottomSheetScrollView>
+
+              {/* Date Range */}
+              <View className="rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                <CalendarRangePicker
+                  startDate={filters.dateRange.start}
+                  endDate={filters.dateRange.end}
+                  onChangeStartDate={(date) =>
+                    patchNested(["dateRange", "start"], date)
+                  }
+                  onChangeEndDate={(date) =>
+                    patchNested(["dateRange", "end"], date)
+                  }
+                />
+              </View>
+
+              {/* Only Favorites */}
+              <View className="flex-row items-center justify-between rounded-xl bg-light-backgroundStrong p-4 dark:bg-dark-backgroundStrong">
+                <Text className="font-semibold text-light-gray11 dark:text-dark-gray11">
+                  {t("onlyFavorites")}
+                </Text>
+                <Pressable
+                  onPress={() =>
+                    patch("isOnlyFavorite", !filters.isOnlyFavorite)
+                  }
+                  style={{
+                    width: 44,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: filters.isOnlyFavorite
+                      ? theme.color
+                      : theme.gray4,
+                    justifyContent: "center",
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: "#ffffff",
+                      marginLeft: filters.isOnlyFavorite ? 20 : 0,
+                    }}
+                  />
+                </Pressable>
+              </View>
+            </View>
           </View>
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheetModal>
     );
   },

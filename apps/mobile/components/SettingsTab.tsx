@@ -10,11 +10,9 @@ import { Settings } from "@/types/settings";
 import {
   Bell,
   Bug,
-  Globe,
   Languages,
   LocateFixed,
   LogOut,
-  MapPin,
   MapPinCheck,
   MapPinPlus,
   Sun,
@@ -154,9 +152,11 @@ export default function SettingsTab({
             onPress={() => {
               void onLogout();
             }}
-            className="w-full gap-2 border-red-50"
+            className="w-full h-12 gap-2 rounded-full"
             style={{
               borderColor: theme.border,
+              borderRadius: 999,
+              backgroundColor: theme.backgroundStrong,
             }}
           >
             <LogOut size={18} color={theme.colorStrong} />
@@ -175,9 +175,11 @@ export default function SettingsTab({
           <Button
             variant="outline"
             onPress={onDeleteAccountPress}
-            className="w-full gap-2"
+            className="w-full h-12 gap-2 rounded-full"
             style={{
               borderColor: theme.destructive,
+              borderRadius: 999,
+              backgroundColor: theme.destructive + "15",
             }}
           >
             <Trash2 size={18} color={theme.destructive} />

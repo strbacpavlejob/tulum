@@ -6,6 +6,7 @@ import GuestListModal from "@/components/GuestListModal";
 import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
+import { Button } from "@/components/ui/button";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   EventAttendeesData,
@@ -549,6 +550,15 @@ const EventDetailsScreen = () => {
     guestListRef.current?.present();
   }, []);
 
+  const handleBackPress = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/");
+  }, [router]);
+
   const handleShare = async () => {
     if (!event) return;
     try {
@@ -616,7 +626,7 @@ const EventDetailsScreen = () => {
 
           {/* Back button — top left */}
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBackPress}
             style={{
               position: "absolute",
               top: insets.top + 8,
@@ -809,18 +819,19 @@ const EventDetailsScreen = () => {
 
         {/* Bottom CTA */}
         <View className="px-5 pb-5">
-          <Pressable
-            className="flex-row items-center justify-center gap-2 w-full py-4 rounded-full"
+          <Button
+            variant={isAttending ? "destructive" : "default"}
+            size="lg"
+            className="w-full h-14 rounded-full"
             style={{
-              backgroundColor: isAttending
-                ? theme.destructiveForeground
-                : theme.color,
+              backgroundColor: isAttending ? theme.destructive : theme.color,
+              borderRadius: 999,
             }}
             onPress={handleAttend}
           >
             <Text
               style={{
-                color: isAttending ? theme.destructive : theme.background,
+                color: "#fff",
                 fontWeight: "600",
                 fontSize: 18,
               }}
@@ -828,11 +839,11 @@ const EventDetailsScreen = () => {
               {isAttending ? t("cancelAttendance") : t("attend")}
             </Text>
             {isAttending ? (
-              <UserMinus size={20} color={theme.destructive} />
+              <UserMinus size={20} color="#fff" />
             ) : (
-              <UserPlus size={20} color={theme.background} />
+              <UserPlus size={20} color="#fff" />
             )}
-          </Pressable>
+          </Button>
         </View>
 
         <GuestListModal

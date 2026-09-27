@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import * as WebBrowser from "expo-web-browser";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSSO } from "@clerk/expo";
@@ -100,7 +100,7 @@ export default function SignUpScreen() {
         </Text>
 
         {/* Apple */}
-        <Pressable
+        <Button
           onPress={handleAppleSignIn}
           className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
@@ -108,10 +108,10 @@ export default function SignUpScreen() {
           <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             Continue with Apple
           </Text>
-        </Pressable>
+        </Button>
 
         {/* Google */}
-        <Pressable
+        <Button
           onPress={handleGoogleSignIn}
           className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
@@ -119,7 +119,7 @@ export default function SignUpScreen() {
           <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             Continue with Google
           </Text>
-        </Pressable>
+        </Button>
 
         {/* Email */}
         <Button

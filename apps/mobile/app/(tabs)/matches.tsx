@@ -17,14 +17,11 @@ import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Text, TouchableOpacity, View, Linking } from "react-native";
 import {
   SafeAreaView,
-  Text,
-  TouchableOpacity,
-  View,
-  Linking,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import MatchIcon from "@/components/illustrations/Match";
 import { useRouter } from "expo-router";

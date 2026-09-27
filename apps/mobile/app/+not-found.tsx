@@ -1,7 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { Link, Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
 export default function NotFoundScreen() {
   const { t } = useTranslation();
@@ -13,9 +14,9 @@ export default function NotFoundScreen() {
           {t("screenNotFound")}
         </Text>
         <Link href="/" asChild>
-          <Pressable className="mt-3 py-3 px-6 bg-gray-200 rounded-lg items-center">
+          <Button className="mt-3 px-6 bg-gray-200 rounded-lg items-center">
             <Text>{t("goToHome")}</Text>
-          </Pressable>
+          </Button>
         </Link>
       </View>
     </>

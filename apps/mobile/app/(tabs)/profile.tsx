@@ -585,6 +585,8 @@ export default function ProfileScreen() {
     }
   };
 
+  const profileAvatarUri = user.photos?.[0] || user.imgUrl;
+
   return (
     <SafeAreaView
       edges={["top"]}
@@ -602,7 +604,7 @@ export default function ProfileScreen() {
           <Avatar alt="Your avatar" className="h-20 w-20">
             <AvatarImage
               source={{
-                uri: user.imgUrl,
+                uri: profileAvatarUri,
               }}
             />
           </Avatar>

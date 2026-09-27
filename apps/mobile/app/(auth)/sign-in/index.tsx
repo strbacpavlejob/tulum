@@ -1,9 +1,10 @@
 import Blob from "@/components/Blob";
 import LanguageSelector from "@/components/LanguageSelector";
 import Logo from "@/components/illustrations/logo";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import * as WebBrowser from "expo-web-browser";
-import { Platform, Pressable, View } from "react-native";
+import { Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth, useSSO } from "@clerk/expo";
@@ -182,7 +183,7 @@ export default function SignInScreen() {
           {t("authSignInSubtitle")}
         </Text>
 
-        <Pressable
+        <Button
           onPress={() => handleSSOSignIn("oauth_apple")}
           className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
@@ -190,9 +191,9 @@ export default function SignInScreen() {
           <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             {t("authContinueWithApple")}
           </Text>
-        </Pressable>
+        </Button>
 
-        <Pressable
+        <Button
           onPress={() => handleSSOSignIn("oauth_google")}
           className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
         >
@@ -200,7 +201,7 @@ export default function SignInScreen() {
           <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
             {t("authContinueWithGoogle")}
           </Text>
-        </Pressable>
+        </Button>
 
         {/* <View className="flex-row items-center my-4">
           <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />

@@ -1,10 +1,11 @@
+import { Button } from "@/components/ui/button";
 import LoadingIndicator from "@/components/loading-indicator";
 import { fetchGuestMe } from "@/lib/api";
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function Index() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
@@ -79,19 +80,15 @@ export default function Index() {
         >
           {t("serverUnreachable")}
         </Text>
-        <Pressable
+        <Button
           onPress={checkOnboarding}
-          style={{
-            backgroundColor: "#6C47FF",
-            paddingHorizontal: 24,
-            paddingVertical: 12,
-            borderRadius: 12,
-          }}
+          className="px-6 rounded-xl"
+          style={{ backgroundColor: "#6C47FF" }}
         >
           <Text style={{ color: "white", fontWeight: "700" }}>
             {t("retry")}
           </Text>
-        </Pressable>
+        </Button>
       </View>
     );
   }

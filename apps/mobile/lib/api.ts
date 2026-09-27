@@ -582,6 +582,31 @@ export async function fetchOrCreateChat(
   return response.json() as Promise<ChatOpenResponse>;
 }
 
+export async function sendChatMessage(
+  token: string,
+  payload: {
+    chatId: string;
+    senderId?: string | null;
+    text: string;
+  },
+) {
+  const url = `${TULUM_API_URL}/chats/messages`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      chat_id: payload.chatId,
+      sender_id: payload.senderId,
+      message: payload.text,
+    }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to send message: ${response.status} ${text}`);
+  }
+  return response.json();
+}
+
 // ─── Matches ──────────────────────────────────────────────────────────────────
 
 export interface MatchListItem {
