@@ -21,11 +21,23 @@ export class InstagramApifyService {
   private readonly logger = new Logger(InstagramApifyService.name);
 
   private readonly client: ApifyClient;
+  private readonly instagramApiConfig: {
+    resultsLimit: number;
+    onlyPostsNewerThan: number;
+  };
 
   constructor(private readonly configService: ConfigService) {
     this.client = new ApifyClient({
       token: this.configService.getOrThrow<string>('APIFY_API_TOKEN'),
     });
+    this.instagramApiConfig = {
+      resultsLimit: this.configService.getOrThrow<number>(
+        'APIFY_API_POSTS_LIMIT',
+      ),
+      onlyPostsNewerThan: this.configService.getOrThrow<number>(
+        'APIFY_API_ONLY_POSTS_NEWER_THAN_IN_DAYS',
+      ),
+    };
   }
 
   async fetchPosts(instagramHandles: string[]): Promise<InstagramPost[]> {
@@ -44,9 +56,9 @@ export class InstagramApifyService {
     const run = await this.client.actor('apify/instagram-scraper').call({
       directUrls,
       resultsType: 'posts',
-      resultsLimit: 10,
+      resultsLimit: this.instagramApiConfig.resultsLimit,
       skipPinnedPosts: true,
-      onlyPostsNewerThan: '8 days',
+      onlyPostsNewerThan: `${this.instagramApiConfig.onlyPostsNewerThan} days`,
     });
 
     if (!run.defaultDatasetId) {
