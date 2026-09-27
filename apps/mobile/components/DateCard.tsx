@@ -30,11 +30,11 @@ export const DateCard = ({ dateString }: DateCardProps) => {
   const time = format(date, "HH:mm");
 
   return (
-    <View className="flex min-h-[128px] w-24 flex-col items-center justify-center gap-2 rounded-lg border border-light-gray3 bg-light-backgroundStrong p-4 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
+    <View className="flex min-h-[128px] flex-col items-center justify-center gap-2 rounded-lg border border-light-gray3 bg-light-backgroundStrong px-4 py-4 dark:border-dark-gray3 dark:bg-dark-backgroundStrong">
       <Text className="flex text-center text-sm font-medium uppercase text-light-gray12 dark:text-dark-gray12">
         {monthDay}
       </Text>
-      <Text className="mt-2 w-full text-center text-md font-semibold uppercase text-light-gray12 dark:text-dark-gray12">
+      <Text className="mt-2 text-center text-md font-semibold uppercase text-light-gray12 dark:text-dark-gray12">
         {dayName}
       </Text>
       <Text className="text-center text-sm font-medium uppercase text-light-gray12 dark:text-dark-gray12">
