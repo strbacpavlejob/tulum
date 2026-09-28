@@ -26,6 +26,7 @@ import LoadingIndicator from "@/components/loading-indicator";
 import MatchIcon from "@/components/illustrations/Match";
 import { useRouter } from "expo-router";
 import { CarTaxiFront } from "lucide-react-native";
+import { toast } from "sonner-native";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -218,8 +219,8 @@ export default function MatchesScreen() {
           // ignore check-in failures — still try to load profiles
         }
       }
-      const data = await fetchSwipeableProfiles(token);
-      setEventId(data.event_id);
+      const data = await fetchSwipeableProfiles(token, liveTicket?.event_id);
+      setEventId(data.event_id ?? liveTicket?.event_id ?? null);
       setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
     } catch {
       // Keep empty state on error
@@ -237,38 +238,54 @@ export default function MatchesScreen() {
 
   // ── Swipe handlers ─────────────────────────────────────────────────────────
   const handleSwipeLeft = (_profile: Profile) => {
-    if (eventIdRef.current != null) {
-      void getToken().then((token) => {
-        if (!token) return;
-        createMatchSwipe(
-          token,
-          _profile.id,
-          eventIdRef.current as string,
-          false,
-        ).catch(() => {});
-      });
+    if (eventIdRef.current == null) {
+      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+      return;
     }
-    setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
+
+    void getToken().then((token) => {
+      if (!token) {
+        toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+        return;
+      }
+      createMatchSwipe(token, _profile.id, eventIdRef.current as string, false)
+        .then(() => {
+          setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
+        })
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          toast.error(msg || "Failed to submit swipe.");
+        });
+    });
   };
 
   const handleSwipeRight = async (profile: Profile) => {
-    let isMutualMatch = false;
-    if (eventIdRef.current != null) {
-      const token = await getToken();
-      if (token) {
-        try {
-          const result = await createMatchSwipe(
-            token,
-            profile.id,
-            eventIdRef.current,
-            true,
-          );
-          isMutualMatch = result.matched;
-        } catch {
-          // Ignore swipe write failures in UI flow
-        }
-      }
+    if (eventIdRef.current == null) {
+      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+      return;
     }
+
+    const token = await getToken();
+    if (!token) {
+      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+      return;
+    }
+
+    let isMutualMatch = false;
+    try {
+      const result = await createMatchSwipe(
+        token,
+        profile.id,
+        eventIdRef.current,
+        true,
+      );
+      isMutualMatch = result.matched;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg || "Failed to submit swipe.");
+      return;
+    }
+
     if (isMutualMatch) {
       setMatchedProfile(profile);
       setShowMatch(true);

@@ -160,10 +160,16 @@ export class MatchesService {
       .select('id')
       .eq('event_id', eventId)
       .eq('user_id', otherUserId)
-      .is('exited_at', null)
       .maybeSingle();
 
-    if (!swipeSession || !targetSession) {
+    const { data: targetTicket } = await this.db
+      .from('tickets')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('guest_id', otherUserId)
+      .maybeSingle();
+
+    if (!swipeSession || (!targetSession && !targetTicket)) {
       throw new BadRequestException(
         'Both users must be at the same live event',
       );
