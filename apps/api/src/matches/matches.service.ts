@@ -59,6 +59,7 @@ export class MatchesService {
         event:events!matches_event_id_fkey(
           id,
           title,
+          end_date_time,
           venue:venues!events_venue_id_fkey(name, latitude, longitude)
         ),
         chats!chats_match_id_fkey(
@@ -77,54 +78,64 @@ export class MatchesService {
 
     if (error) throw error;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data ?? []).map((match: any) => {
-      const isGuest1 = match.guest_id_1 === userId;
-      const other = isGuest1 ? match.guest2 : match.guest1;
-      const chat = match.chats?.[0] ?? null;
-      const chatId: string | null = chat?.id ?? null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const msgs: any[] = chat?.chat_messages ?? [];
-      const sortedMsgs = [...msgs].sort(
-        (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
-      );
-      const lastMsg = sortedMsgs[0] ?? null;
+    const nowMs = Date.now();
 
-      return {
-        id: match.id as number,
-        matched_at: match.matched_at as string,
-        chat_id: chatId,
-        has_messages: msgs.length > 0,
-        last_message: lastMsg
-          ? {
-              id: lastMsg.id as number,
-              text: lastMsg.message as string,
-              sender_id: lastMsg.sender_id as string,
-              sent_at: lastMsg.sent_at as string,
-            }
-          : null,
-        other_guest: {
-          user_id: (other?.user_id ?? null) as string | null,
-          first_name: (other?.user?.first_name ?? null) as string | null,
-          last_name: (other?.user?.last_name ?? null) as string | null,
-          avatar_url: (other?.user?.avatar_url ?? null) as string | null,
-          picture_urls: (other?.picture_urls ?? []) as string[],
-          birthday: (other?.birthday ?? null) as string | null,
-          interests: (other?.interests ?? []) as string[],
-        },
-        event: match.event
-          ? {
-              id: match.event.id as string,
-              title: match.event.title as string,
-              venue_name: (match.event.venue?.name ?? null) as string | null,
-              venue_lat: (match.event.venue?.latitude ?? null) as number | null,
-              venue_lng: (match.event.venue?.longitude ?? null) as
-                | number
-                | null,
-            }
-          : null,
-      };
-    });
+    return (data ?? [])
+      .filter((match: any) => {
+        const endDateRaw = match?.event?.end_date_time;
+        if (!endDateRaw) return false;
+        const endMs = new Date(endDateRaw).getTime();
+        return Number.isFinite(endMs) && endMs >= nowMs;
+      })
+      .map((match: any) => {
+        const isGuest1 = match.guest_id_1 === userId;
+        const other = isGuest1 ? match.guest2 : match.guest1;
+        const chat = match.chats?.[0] ?? null;
+        const chatId: string | null = chat?.id ?? null;
+        const msgs: any[] = chat?.chat_messages ?? [];
+        const sortedMsgs = [...msgs].sort(
+          (a, b) =>
+            new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
+        );
+        const lastMsg = sortedMsgs[0] ?? null;
+
+        return {
+          id: match.id as number,
+          matched_at: match.matched_at as string,
+          chat_id: chatId,
+          has_messages: msgs.length > 0,
+          last_message: lastMsg
+            ? {
+                id: lastMsg.id as number,
+                text: lastMsg.message as string,
+                sender_id: lastMsg.sender_id as string,
+                sent_at: lastMsg.sent_at as string,
+              }
+            : null,
+          other_guest: {
+            user_id: (other?.user_id ?? null) as string | null,
+            first_name: (other?.user?.first_name ?? null) as string | null,
+            last_name: (other?.user?.last_name ?? null) as string | null,
+            avatar_url: (other?.user?.avatar_url ?? null) as string | null,
+            picture_urls: (other?.picture_urls ?? []) as string[],
+            birthday: (other?.birthday ?? null) as string | null,
+            interests: (other?.interests ?? []) as string[],
+          },
+          event: match.event
+            ? {
+                id: match.event.id as string,
+                title: match.event.title as string,
+                venue_name: (match.event.venue?.name ?? null) as string | null,
+                venue_lat: (match.event.venue?.latitude ?? null) as
+                  | number
+                  | null,
+                venue_lng: (match.event.venue?.longitude ?? null) as
+                  | number
+                  | null,
+              }
+            : null,
+        };
+      });
   }
 
   async createMatch(match: Record<string, unknown>) {
