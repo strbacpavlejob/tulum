@@ -179,6 +179,8 @@ export class GuestsService {
       interested_in: dto.interested_in,
       interests: dto.interests ?? [],
       picture_urls: dto.picture_urls ?? [],
+      venue_types: dto.venue_types ?? [],
+      bio: dto.bio?.trim() || null,
       birthday: dto.birthday,
     };
 

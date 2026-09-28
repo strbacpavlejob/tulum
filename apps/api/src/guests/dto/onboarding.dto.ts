@@ -76,6 +76,17 @@ export class OnboardingDto {
   @IsString({ each: true })
   picture_urls?: string[];
 
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  venue_types?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
   @ApiProperty({ description: 'Date of birth in YYYY-MM-DD format' })
   @IsString()
   @IsRealDate()

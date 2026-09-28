@@ -3,8 +3,10 @@ import LanguageSelector from "@/components/LanguageSelector";
 import Logo from "@/components/illustrations/logo";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import ClerkCaptcha from "@/components/ClerkCaptcha";
 import * as WebBrowser from "expo-web-browser";
-import { Platform, View } from "react-native";
+import * as Linking from "expo-linking";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth, useSSO } from "@clerk/expo";
@@ -88,16 +90,13 @@ export default function SignInScreen() {
     return false;
   };
 
-  // const redirectUrl =
-  //   Platform.OS === "web"
-  //     ? `${window.location.origin}/onboarding`
-  //     : Linking.createURL("/onboarding");
+  const redirectUrl = Linking.createURL("/(auth)/sso-callback");
 
   const handleSSOSignIn = async (strategy: "oauth_apple" | "oauth_google") => {
     try {
       const result = await startSSOFlow({
         strategy,
-        // redirectUrl,
+        redirectUrl,
       });
 
       if (result.createdSessionId && result.setActive) {
@@ -118,12 +117,6 @@ export default function SignInScreen() {
         err instanceof Error ? err.message : t("authSsoSignInFailed"),
       );
     }
-  };
-
-  const Captcha = () => {
-    if (Platform.OS !== "web") return null;
-
-    return <div id="clerk-captcha" style={{ marginTop: 12 }} />;
   };
 
   if (!isAuthLoaded || isSignedIn) {
@@ -216,7 +209,7 @@ export default function SignInScreen() {
           </Text>
           <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
         </View> */}
-        <Captcha />
+        <ClerkCaptcha />
 
         <Text className="mt-5 text-center leading-[18px] text-light-colorMuted dark:text-dark-colorMuted">
           {t("authTermsPrefix")}{" "}

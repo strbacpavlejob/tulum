@@ -235,9 +235,41 @@ interface MyProfileResponse {
     seeking: string | null;
     interested_in: ("male" | "female" | "other")[];
     interests: string[];
+    venue_types?: string[];
+    bio?: string | null;
     picture_urls: string[];
     birthday: string | null;
   } | null;
+}
+
+function mapSeekingToLookingFor(
+  seeking: string | null | undefined,
+): User["lookingFor"] {
+  switch (seeking) {
+    case "casual":
+      return ["to date"];
+    case "relationship":
+      return ["ready for a relationship"];
+    case "friendship":
+      return ["open to chat"];
+    case "party":
+      return ["to party"];
+    default:
+      return undefined;
+  }
+}
+
+function mapInterestedInToLookingForGender(
+  interestedIn: ("male" | "female" | "other")[] | null | undefined,
+): User["lookingForGender"] {
+  if (!interestedIn || interestedIn.length === 0) return undefined;
+  const set = new Set(interestedIn);
+  if (set.has("male") && set.has("female") && set.has("other")) {
+    return "everyone";
+  }
+  if (set.has("male")) return "male";
+  if (set.has("female")) return "female";
+  return undefined;
 }
 
 export function mapProfileToUser(raw: MyProfileResponse): User {
@@ -262,6 +294,12 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
     imgUrl: raw.avatar_url ?? undefined,
     photos: raw.guest?.picture_urls ?? [],
     gender: raw.guest?.gender ?? undefined,
+    lookingForGender: mapInterestedInToLookingForGender(
+      raw.guest?.interested_in,
+    ),
+    lookingFor: mapSeekingToLookingFor(raw.guest?.seeking),
+    preferredVenueTypes: raw.guest?.venue_types ?? [],
+    info: raw.guest?.bio ?? undefined,
     birthday,
     age,
     interests: raw.guest?.interests ?? [],
@@ -319,6 +357,8 @@ export interface GuestProfile {
   seeking: SeekingValue | null;
   interested_in: GenderValue[];
   interests: string[];
+  venue_types: string[];
+  bio: string | null;
   picture_urls: string[];
   birthday: string;
 }
@@ -333,6 +373,8 @@ export interface OnboardingPayload {
   seeking: SeekingValue;
   interested_in: GenderValue[];
   interests?: string[];
+  venue_types?: string[];
+  bio?: string;
   picture_urls?: string[];
   birthday: string;
 }

@@ -60,6 +60,21 @@ const LOOKING_FOR_OPTIONS: { labelKey: string; value: SeekingValue }[] = [
   { labelKey: "onboardingSeekingParty", value: "party" },
 ];
 
+function mapSeekingToLookingFor(
+  seeking: SeekingValue,
+): "to date" | "to party" | "open to chat" | "ready for a relationship" {
+  switch (seeking) {
+    case "casual":
+      return "to date";
+    case "relationship":
+      return "ready for a relationship";
+    case "friendship":
+      return "open to chat";
+    case "party":
+      return "to party";
+  }
+}
+
 const VENUE_OPTIONS: { emoji: string; labelKey: string; value: string }[] = [
   { emoji: "🍺", labelKey: "bar", value: "bar" },
   { emoji: "🍻", labelKey: "pub", value: "pub" },
@@ -208,6 +223,16 @@ function PhotoPickerStep({
 }) {
   const { getToken } = useAuth();
 
+  const mergePhotoUrls = (current: string[], incoming: string[]) => {
+    // During onboarding, backend may return only the latest uploaded URL
+    // before the guest row exists. Merge to avoid overriding prior picks.
+    const merged = [...current];
+    for (const url of incoming) {
+      if (!merged.includes(url)) merged.push(url);
+    }
+    return merged.slice(0, 3);
+  };
+
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -234,7 +259,7 @@ function PhotoPickerStep({
         asset.uri,
         asset.mimeType ?? "image/jpeg",
       );
-      onPhotosChange(updatedUrls);
+      onPhotosChange(mergePhotoUrls(photos, updatedUrls));
     } catch (err) {
       Alert.alert(
         uploadFailedTitle,
@@ -251,7 +276,8 @@ function PhotoPickerStep({
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
       const updatedUrls = await deleteGuestPhoto(token, url);
-      onPhotosChange(updatedUrls);
+      const fallbackUrls = photos.filter((u) => u !== url);
+      onPhotosChange(updatedUrls.length ? updatedUrls : fallbackUrls);
     } catch (err) {
       Alert.alert(
         removeFailedTitle,
@@ -529,6 +555,8 @@ export default function OnboardingScreen() {
         seeking: seeking as SeekingValue,
         interested_in: interestedIn,
         interests: tags,
+        venue_types: venueTypes,
+        bio: bio.trim() || undefined,
         picture_urls: photos,
         birthday: birthdayIso,
       });
@@ -539,6 +567,7 @@ export default function OnboardingScreen() {
         age,
         gender: gender as "male" | "female" | "other",
         lookingForGender: lookingForGender as LookingForGender,
+        lookingFor: [mapSeekingToLookingFor(seeking as SeekingValue)],
         tags,
         preferredVenueTypes: venueTypes,
         imgUrl: photos[0],
@@ -791,9 +820,14 @@ export default function OnboardingScreen() {
           <Button
             onPress={handleNext}
             disabled={!canProceed() || submitting}
+            variant="default"
             size="lg"
-            className="w-full rounded-2xl"
-            style={!canProceed() || submitting ? { opacity: 0.45 } : {}}
+            className="w-full h-14 rounded-full bg-light-color dark:bg-dark-color"
+            style={
+              !canProceed() || submitting
+                ? { opacity: 0.45, borderRadius: 999 }
+                : { borderRadius: 999 }
+            }
           >
             {submitting ? (
               <LoadingIndicator />

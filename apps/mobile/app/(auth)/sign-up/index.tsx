@@ -1,9 +1,11 @@
 import Blob from "@/components/Blob";
+import ClerkCaptcha from "@/components/ClerkCaptcha";
 import Logo from "@/components/illustrations/logo";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,11 +21,13 @@ export default function SignUpScreen() {
   const router = useRouter();
 
   const { startSSOFlow } = useSSO();
+  const redirectUrl = Linking.createURL("/(auth)/sso-callback");
 
   const handleAppleSignIn = async () => {
     try {
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy: "oauth_apple",
+        redirectUrl,
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
@@ -38,6 +42,7 @@ export default function SignUpScreen() {
     try {
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy: "oauth_google",
+        redirectUrl,
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
@@ -143,6 +148,8 @@ export default function SignUpScreen() {
             Privacy Policy
           </Text>
         </Text>
+
+        <ClerkCaptcha />
       </View>
     </SafeAreaView>
   );
