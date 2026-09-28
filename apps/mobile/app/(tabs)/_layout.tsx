@@ -1,5 +1,12 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { fetchMyProfile, fetchSettings } from "@/lib/api";
+import {
+  fetchMyMatches,
+  fetchMyProfile,
+  fetchOrCreateChat,
+  fetchSettings,
+  type MatchListItem,
+} from "@/lib/api";
+import { getUnreadChatsCount } from "@/lib/inboxUnread";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
@@ -10,8 +17,8 @@ import {
   Tickets,
   User,
 } from "lucide-react-native";
-import React, { useEffect } from "react";
-import { View } from "react-native";
+import React, { useCallback, useEffect, useRef } from "react";
+import { AppState, View } from "react-native";
 
 type IconProps = {
   icon: React.ElementType;
@@ -42,7 +49,14 @@ export default function TabLayout() {
   const { isSignedIn, isLoaded, userId, getToken } = useAuth();
   const theme = useAppTheme();
 
-  const { user, settings, setUser, setSettings } = useStore();
+  const {
+    user,
+    settings,
+    setUser,
+    setSettings,
+    inboxUnreadCount,
+    setInboxUnreadCount,
+  } = useStore();
 
   useEffect(() => {
     // Re-fetch whenever userId changes or the stored user lacks an ID.
@@ -64,15 +78,97 @@ export default function TabLayout() {
         setUser(profile);
 
         if (remoteSettings) {
+          const currentSettings = useStore.getState().settings;
           setSettings({
-            ...settings,
+            ...currentSettings,
             language: remoteSettings.language,
             theme: remoteSettings.theme,
           });
         }
       })
       .catch(console.error);
-  }, [getToken, setSettings, setUser, settings, user?.id, userId]);
+  }, [getToken, setSettings, setUser, user?.id, userId]);
+
+  const getTokenRef = useRef(getToken);
+  const refreshInFlightRef = useRef(false);
+  const unreadCountRef = useRef(inboxUnreadCount);
+
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
+
+  useEffect(() => {
+    unreadCountRef.current = inboxUnreadCount;
+  }, [inboxUnreadCount]);
+
+  const refreshInboxUnread = useCallback(async () => {
+    if (!userId || refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
+    try {
+      const token = await getTokenRef.current();
+      if (!token) return;
+      const items = await fetchMyMatches(token);
+
+      const hydratedItems: MatchListItem[] = await Promise.all(
+        items.map(async (item) => {
+          const hasActivityFromMatches =
+            item.has_messages ||
+            Boolean(item.last_message) ||
+            Boolean(item.chat_id);
+          if (hasActivityFromMatches) return item;
+
+          try {
+            const opened = await fetchOrCreateChat(item.id, token);
+            const last = opened.messages[opened.messages.length - 1];
+            if (!last) return item;
+
+            return {
+              ...item,
+              chat_id: opened.chat.id,
+              has_messages: true,
+              last_message: {
+                id: String(last.id),
+                text: last.text,
+                sender_id: last.sender_id,
+                sent_at: last.sent_at,
+              },
+            };
+          } catch {
+            return item;
+          }
+        }),
+      );
+
+      const unreadCount = await getUnreadChatsCount(hydratedItems, userId);
+      if (unreadCount !== unreadCountRef.current) {
+        unreadCountRef.current = unreadCount;
+        setInboxUnreadCount(unreadCount);
+      }
+    } catch {
+      // Ignore transient network errors.
+    } finally {
+      refreshInFlightRef.current = false;
+    }
+  }, [setInboxUnreadCount, userId]);
+
+  useEffect(() => {
+    void refreshInboxUnread();
+
+    const interval = setInterval(() => {
+      void refreshInboxUnread();
+    }, 15000);
+
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void refreshInboxUnread();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      appStateSub.remove();
+    };
+  }, [refreshInboxUnread]);
 
   if (!isLoaded) {
     return null;
@@ -128,6 +224,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
+          tabBarBadge: inboxUnreadCount > 0 ? "" : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: "#ef4444",
+            minWidth: 8,
+            height: 8,
+            borderRadius: 4,
+            marginTop: 2,
+          },
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={MessageCircle} focused={focused} />
           ),

@@ -11,6 +11,7 @@ import { create } from "zustand";
 interface MyStore {
   user: User | null;
   settings: Settings;
+  inboxUnreadCount: number;
   events?: EventSummary[];
   filteredEvents?: EventSummary[];
   pins?: EventPin[];
@@ -22,6 +23,7 @@ interface MyStore {
   // Actions (methods) to mutate the state
   setUser: (user: User | null) => void;
   setSettings: (settings: Settings) => void;
+  setInboxUnreadCount: (count: number) => void;
   setEvents: (events: EventSummary[]) => void;
   setPins: (pins: EventPin[]) => void;
   setTickets: (tickets: Ticket[]) => void;
@@ -46,6 +48,7 @@ const useStore = create<MyStore>((set) => ({
     theme: "dark",
     notificationsEnabled: true,
   },
+  inboxUnreadCount: 0,
   events: [],
   filteredEvents: [],
   pins: [],
@@ -80,6 +83,8 @@ const useStore = create<MyStore>((set) => ({
   // Action implementations
   setUser: (user: User | null) => set({ user }),
   setSettings: (settings: Settings) => set({ settings }),
+  setInboxUnreadCount: (count: number) =>
+    set({ inboxUnreadCount: Math.max(0, count) }),
   setEvents: (events: EventSummary[]) => set({ events }),
   setPins: (pins: EventPin[]) => set({ pins }),
   setTickets: (tickets: Ticket[]) => set({ tickets }),

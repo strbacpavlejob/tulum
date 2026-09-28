@@ -10,6 +10,7 @@ import {
   type ChatMessage,
   type MatchListItem,
 } from "@/lib/api";
+import { getUnreadChatsCount, markMatchAsRead } from "@/lib/inboxUnread";
 import type { Match, Message, NewMatch } from "@/types/chat";
 import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
@@ -30,8 +31,9 @@ import {
 } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import EmptyIndicator from "@/components/EmptyIndicator";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import ChatIcon from "@/components/illustrations/Chat";
+import useStore from "@/store/useStore";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -228,7 +230,6 @@ function LocationGateScreen({
   onCheckLocation: () => void;
   onBack: () => void;
 }) {
-  const theme = useAppTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -326,6 +327,7 @@ export default function InboxScreen() {
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
   const router = useRouter();
+  const setInboxUnreadCount = useStore((s) => s.setInboxUnreadCount);
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [newMatches, setNewMatches] = useState<NewMatch[]>([]);
@@ -362,11 +364,63 @@ export default function InboxScreen() {
       const token = await getToken();
       if (!token) return;
       const items = await fetchMyMatches(token);
+
+      // Some backends can temporarily return stale has_messages/chat_id fields.
+      // Probe chat activity for "fresh" matches so existing conversations still
+      // appear in the messages list.
+      const activityByMatchId = new Map<
+        string,
+        {
+          chatId: string;
+          lastMessageId: string;
+          lastMessageText: string;
+          lastMessageSenderId: string;
+          lastMessageSentAt: string;
+        }
+      >();
+
+      await Promise.all(
+        items.map(async (item) => {
+          const hasActivityFromMatches =
+            item.has_messages ||
+            Boolean(item.last_message) ||
+            Boolean(item.chat_id);
+          if (hasActivityFromMatches) return;
+
+          try {
+            const opened = await fetchOrCreateChat(item.id, token);
+            const last = opened.messages[opened.messages.length - 1];
+            if (last) {
+              activityByMatchId.set(String(item.id), {
+                chatId: opened.chat.id,
+                lastMessageId: String(last.id),
+                lastMessageText: last.text,
+                lastMessageSenderId: last.sender_id,
+                lastMessageSentAt: last.sent_at,
+              });
+            }
+          } catch {
+            // Ignore per-item fallback errors and rely on /matches/mine fields.
+          }
+        }),
+      );
+
       const active: Match[] = [];
       const fresh: NewMatch[] = [];
       for (const item of items) {
+        const activityHint = activityByMatchId.get(String(item.id));
         const mapped = mapToMatch(item);
-        if (!item.has_messages) {
+        if (activityHint) {
+          mapped.chatId = activityHint.chatId;
+          mapped.lastMessage = activityHint.lastMessageText;
+          mapped.lastMessageTime = new Date(activityHint.lastMessageSentAt);
+        }
+        const hasChatActivity =
+          item.has_messages ||
+          Boolean(item.last_message) ||
+          Boolean(item.chat_id) ||
+          Boolean(activityHint);
+        if (!hasChatActivity) {
           // No messages yet → show in "New Matches" bubbles
           fresh.push({
             id: mapped.id,
@@ -380,6 +434,25 @@ export default function InboxScreen() {
           active.push(mapped);
         }
       }
+
+      const hydratedItems: MatchListItem[] = items.map((item) => {
+        const activityHint = activityByMatchId.get(String(item.id));
+        if (!activityHint) return item;
+        return {
+          ...item,
+          chat_id: activityHint.chatId,
+          has_messages: true,
+          last_message: {
+            id: activityHint.lastMessageId,
+            text: activityHint.lastMessageText,
+            sender_id: activityHint.lastMessageSenderId,
+            sent_at: activityHint.lastMessageSentAt,
+          },
+        };
+      });
+
+      const unreadCount = await getUnreadChatsCount(hydratedItems, userId);
+      setInboxUnreadCount(unreadCount);
       setMatches(active);
       setNewMatches(fresh);
     } catch {
@@ -387,11 +460,17 @@ export default function InboxScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setInboxUnreadCount, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadMatches();
   }, [loadMatches]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMatches();
+    }, [loadMatches]),
+  );
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -414,6 +493,10 @@ export default function InboxScreen() {
         timestamp: new Date(m.sent_at),
         isFromUser: m.sender_id === userId,
       }));
+      await markMatchAsRead(match.id);
+      setInboxUnreadCount(
+        Math.max(0, useStore.getState().inboxUnreadCount - 1),
+      );
       setSelectedInitialMessages(mapped);
       setSelectedMatch({ ...match, chatId: chat.id });
     } catch {
@@ -447,7 +530,6 @@ export default function InboxScreen() {
         // Check if the event is currently live via tickets
         const tickets = await fetchMyTickets(token, userId!);
         const now = Date.now();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const liveTicket = tickets.find((tk: any) => {
           const start = tk.date ? new Date(tk.date).getTime() : null;
           const end = tk.end_date_time
