@@ -68,9 +68,9 @@ export class GuestsService {
       targetEventId = session.event_id as string;
     } else {
       // If an explicit eventId was provided, ensure the requesting user
-      // is actually attending that event. If they're not attending, return
-      // an empty result — we should only return guests who are at the same
-      // event as the requester.
+      // is actually attending that event (active session OR valid ticket).
+      // If they're not attending, return an empty result — we should only
+      // return guests who are at the same event as the requester.
       const { data: userSession } = await this.db
         .from('event_sessions')
         .select('id')
@@ -78,7 +78,20 @@ export class GuestsService {
         .eq('user_id', userId)
         .is('exited_at', null)
         .maybeSingle();
-      if (!userSession)
+
+      let isAttending = Boolean(userSession);
+
+      if (!isAttending) {
+        const { data: userTicket } = await this.db
+          .from('tickets')
+          .select('id')
+          .eq('event_id', targetEventId)
+          .eq('guest_id', userId)
+          .maybeSingle();
+        isAttending = Boolean(userTicket);
+      }
+
+      if (!isAttending)
         return {
           event_id: null,
           event_title: '',
@@ -129,7 +142,7 @@ export class GuestsService {
       const { data: guests, error } = await this.db
         .from(GUESTS_TABLE)
         .select(
-          'user_id, picture_urls, birthday, interests, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
+          'user_id, gender, picture_urls, birthday, interests, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
         )
         .in('user_id', candidateIds);
       if (error) throw error;
@@ -148,6 +161,7 @@ export class GuestsService {
           first_name: (user?.first_name ?? null) as string | null,
           last_name: (user?.last_name ?? null) as string | null,
           avatar_url: (user?.avatar_url ?? null) as string | null,
+          gender: (g.gender ?? null) as 'male' | 'female' | 'other' | null,
           picture_urls: (g.picture_urls ?? []) as string[],
           age,
           interests: (g.interests ?? []) as string[],

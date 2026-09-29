@@ -140,10 +140,15 @@ export class SeedService {
 
     if (guestsErr) throw guestsErr;
 
-    // 7 ── Make every guest ATTEND the event by creating a ticket
+    // 7 ── Make every guest attend + checked-in for swipeability
     if (guests?.length) {
       const tickets = guests.map((guest) => ({
         guest_id: guest.user_id,
+        event_id: event.id,
+      }));
+
+      const sessions = guests.map((guest) => ({
+        user_id: guest.user_id,
         event_id: event.id,
       }));
 
@@ -152,6 +157,12 @@ export class SeedService {
         .insert(tickets);
 
       if (ticketsErr) throw ticketsErr;
+
+      const { error: sessionsErr } = await this.db
+        .from('event_sessions')
+        .insert(sessions);
+
+      if (sessionsErr) throw sessionsErr;
     }
 
     return {
@@ -161,6 +172,7 @@ export class SeedService {
       starts_at: event.start_date_time,
       ends_at: event.end_date_time,
       guests_attending: guests?.length ?? 0,
+      guests_checked_in: guests?.length ?? 0,
     };
   }
   async seedMockChats(userId: string) {

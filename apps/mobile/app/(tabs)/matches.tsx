@@ -3,6 +3,9 @@ import EmptyIndicator from "@/components/EmptyIndicator";
 import HandsIcon from "@/components/illustrations/Hands";
 import { MatchLocationMap } from "@/components/MatchLocationMap";
 import MatchModal from "@/components/MatchModal";
+import MatchesGenderToggle from "@/components/MatchesGenderToggle";
+import MatchesLocationGateCard from "@/components/MatchesLocationGateCard";
+import MatchesTaxiButton from "@/components/MatchesTaxiButton";
 import SwipeCard from "@/components/SwipeCard";
 import {
   createMatchSwipe,
@@ -13,11 +16,18 @@ import {
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { Profile } from "@/types/profile";
+import { LookingForGender } from "@/types/user";
 import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity, View, Linking } from "react-native";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { StyleSheet, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -25,8 +35,8 @@ import {
 import LoadingIndicator from "@/components/loading-indicator";
 import MatchIcon from "@/components/illustrations/Match";
 import { useRouter } from "expo-router";
-import { CarTaxiFront } from "lucide-react-native";
 import { toast } from "sonner-native";
+import useStore from "@/store/useStore";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +110,11 @@ interface LiveTicket {
   event_title: string;
 }
 
+interface SwipeCandidate {
+  profile: Profile;
+  gender: "male" | "female" | "other" | null;
+}
+
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
@@ -107,6 +122,9 @@ export default function MatchesScreen() {
   const { userId, getToken } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const lookingForGenderFromProfile = useStore(
+    (s) => s.user?.lookingForGender ?? "everyone",
+  );
 
   // ── Eligibility ────────────────────────────────────────────────────────────
   const [eligibility, setEligibility] = useState<EligibilityState>("checking");
@@ -117,12 +135,30 @@ export default function MatchesScreen() {
   } | null>(null);
 
   // ── Swipe state ────────────────────────────────────────────────────────────
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<SwipeCandidate[]>([]);
   const [eventId, setEventId] = useState<string | null>(null);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [showMatch, setShowMatch] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<LookingForGender>(
+    lookingForGenderFromProfile,
+  );
+
+  useEffect(() => {
+    setGenderFilter(lookingForGenderFromProfile);
+  }, [lookingForGenderFromProfile]);
+
+  const filteredProfiles = useMemo(() => {
+    if (genderFilter === "everyone") {
+      return profiles;
+    }
+    return profiles.filter((candidate) => candidate.gender === genderFilter);
+  }, [profiles, genderFilter]);
+
+  useEffect(() => {
+    setCurrentCardIndex(0);
+  }, [genderFilter]);
 
   const eventIdRef = useRef<string | null>(null);
   eventIdRef.current = eventId;
@@ -221,7 +257,13 @@ export default function MatchesScreen() {
       }
       const data = await fetchSwipeableProfiles(token, liveTicket?.event_id);
       setEventId(data.event_id ?? liveTicket?.event_id ?? null);
-      setProfiles(data.profiles.map((p) => mapToProfile(p, data.event_title)));
+      setProfiles(
+        data.profiles.map((p) => ({
+          profile: mapToProfile(p, data.event_title),
+          gender: p.gender,
+        })),
+      );
+      setCurrentCardIndex(0);
     } catch {
       // Keep empty state on error
     } finally {
@@ -294,16 +336,16 @@ export default function MatchesScreen() {
   };
 
   const handleSuperLike = () => {
-    if (currentCardIndex < profiles.length)
-      handleSwipeRight(profiles[currentCardIndex]);
+    if (currentCardIndex < filteredProfiles.length)
+      handleSwipeRight(filteredProfiles[currentCardIndex].profile);
   };
   const handlePass = () => {
-    if (currentCardIndex < profiles.length)
-      handleSwipeLeft(profiles[currentCardIndex]);
+    if (currentCardIndex < filteredProfiles.length)
+      handleSwipeLeft(filteredProfiles[currentCardIndex].profile);
   };
   const handleLike = () => {
-    if (currentCardIndex < profiles.length)
-      handleSwipeRight(profiles[currentCardIndex]);
+    if (currentCardIndex < filteredProfiles.length)
+      handleSwipeRight(filteredProfiles[currentCardIndex].profile);
   };
   const handleRewind = () => {
     if (currentCardIndex > 0) setCurrentCardIndex((prev) => prev - 1);
@@ -314,11 +356,11 @@ export default function MatchesScreen() {
     const visible: React.ReactNode[] = [];
     for (let i = 0; i < cardsToShow; i++) {
       const cardIndex = currentCardIndex + i;
-      if (cardIndex >= profiles.length) break;
+      if (cardIndex >= filteredProfiles.length) break;
       visible.push(
         <SwipeCard
-          key={profiles[cardIndex].id}
-          profile={profiles[cardIndex]}
+          key={filteredProfiles[cardIndex].profile.id}
+          profile={filteredProfiles[cardIndex].profile}
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
           index={i}
@@ -378,113 +420,29 @@ export default function MatchesScreen() {
           userLng={userCoords?.lng ?? liveTicket.venue_lng + 0.003}
         />
 
-        {/* Overlay card */}
         <View
-          className="gap-2 rounded-[20px] bg-light-backgroundStrong p-5 dark:bg-dark-backgroundStrong"
-          style={{
-            position: "absolute",
-            top: insets.top + 16,
-            left: 16,
-            right: 16,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
+          pointerEvents="box-none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            { zIndex: 2000, elevation: 2000 },
+          ]}
         >
-          <Text className="text-[18px] font-bold leading-[26px] text-light-color dark:text-dark-color">
-            {t("matchesAlmostThere")}
-          </Text>
-          <Text className="text-[13px] leading-5 text-light-gray10 dark:text-dark-gray10">
-            {t("matchesArriveAtVenue")}
-          </Text>
-          <TouchableOpacity
-            onPress={() =>
+          <MatchesLocationGateCard
+            topInset={insets.top}
+            onBypass={() => setEligibility("eligible")}
+          />
+
+          <MatchesTaxiButton
+            eventId={liveTicket.event_id}
+            venueLat={liveTicket.venue_lat}
+            venueLng={liveTicket.venue_lng}
+            bottomInset={insets.bottom}
+            onCheckLocation={() =>
               checkLocation(liveTicket.venue_lat, liveTicket.venue_lng)
             }
-            className="mt-1 self-start rounded-full bg-light-color px-5 py-2.5 dark:bg-dark-color"
-          >
-            <Text className="text-[13px] font-semibold text-light-background dark:text-dark-background">
-              {t("matchesCheckLocation")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Call Yandex Taxi button */}
-        <View
-          className="flex-row gap-4 rounded-[14px] bg-light-backgroundStrong p-[14px] dark:bg-dark-backgroundStrong"
-          style={{
-            position: "absolute",
-            bottom: insets.bottom + 24,
-            left: 16,
-            right: 16,
-            alignItems: "center",
-          }}
-        >
-          <TouchableOpacity
-            onPress={async () => {
-              if (!liveTicket) return;
-
-              let startLatNum = userCoords?.lat;
-              let startLonNum = userCoords?.lng;
-
-              if (startLatNum == null || startLonNum == null) {
-                try {
-                  const { status } =
-                    await Location.requestForegroundPermissionsAsync();
-                  if (status === "granted") {
-                    const pos = await Location.getCurrentPositionAsync({
-                      accuracy: Location.Accuracy.Balanced,
-                    });
-                    startLatNum = pos.coords.latitude;
-                    startLonNum = pos.coords.longitude;
-                    setUserCoords({ lat: startLatNum, lng: startLonNum });
-                  } else {
-                    // permission denied — don't open
-                    return;
-                  }
-                } catch {
-                  return;
-                }
-              }
-
-              const startLat = (startLatNum ?? liveTicket.venue_lat).toFixed(6);
-              const startLon = (startLonNum ?? liveTicket.venue_lng).toFixed(6);
-              const endLat = liveTicket.venue_lat.toFixed(6);
-              const endLon = liveTicket.venue_lng.toFixed(6);
-
-              const url =
-                `https://3.redirect.appmetrica.yandex.com/route` +
-                `?start-lat=${startLat}` +
-                `&start-lon=${startLon}` +
-                `&end-lat=${endLat}` +
-                `&end-lon=${endLon}` +
-                `&ref=${encodeURIComponent(`tulum_${liveTicket.event_id}`)}` +
-                `&appmetrica_tracking_id=25395763362139037`;
-
-              try {
-                await Linking.openURL(url);
-              } catch (err) {
-                console.warn("Failed to open Yandex Go link", err);
-              }
-            }}
-            className="bg-yellow-500"
-            style={{
-              width: "100%",
-              paddingVertical: 14,
-              borderRadius: 14,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            <CarTaxiFront size={20} style={{ marginBottom: 2 }} />
-            <Text style={{ fontWeight: "700", fontSize: 16 }}>
-              {t("callYandexTaxi")}
-            </Text>
-          </TouchableOpacity>
+            userCoords={userCoords}
+            setUserCoords={setUserCoords}
+          />
         </View>
       </View>
     );
@@ -498,7 +456,7 @@ export default function MatchesScreen() {
     );
   }
 
-  if (currentCardIndex >= profiles.length) {
+  if (currentCardIndex >= filteredProfiles.length) {
     return (
       <View className="flex-1 bg-light-background dark:bg-dark-background">
         <SafeAreaView className="flex-1">
@@ -527,7 +485,12 @@ export default function MatchesScreen() {
     <View className="flex-1 bg-light-background dark:bg-dark-background">
       <SafeAreaView className="flex-1">
         <View style={{ flex: 1, paddingTop: insets.top }}>
-          <View className="flex-1 justify-center items-center">
+          <MatchesGenderToggle
+            value={genderFilter}
+            onChange={setGenderFilter}
+          />
+
+          <View className="m-2 flex-1 justify-center items-center">
             {renderCards()}
           </View>
           <ActionButtons

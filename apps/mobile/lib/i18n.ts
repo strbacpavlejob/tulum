@@ -153,9 +153,9 @@ const resources = {
       matchesLockedSubtitle:
         "Matching unlocks during a live event with a valid ticket, so check your upcoming tickets below.",
       matchesUnlockButton: "View tickets",
-      matchesAlmostThere: "Almost there! 📍",
+      matchesAlmostThere: "Almost there!",
       matchesArriveAtVenue:
-        "Arrive at the event venue to unlock matching. Once you're within range, swiping will be enabled automatically.",
+        "Swiping is only available at the event venue. Once you arrive, tap the location button below to verify your position and start matching.",
       matchesCheckLocation: "Check my location",
       callYandexTaxi: "Call Yandex Taxi",
       matchesYourLocation: "Your location",
@@ -518,9 +518,9 @@ const resources = {
       matchesLockedSubtitle:
         "Mečevi se otključavaju tokom aktivnog događaja uz važeću kartu, zato proveri svoje predstojeće karte ispod.",
       matchesUnlockButton: "Pogledaj karte",
-      matchesAlmostThere: "Skoro si tu! 📍",
+      matchesAlmostThere: "Skoro si tu!",
       matchesArriveAtVenue:
-        "Stigi do mesta događaja da otključaš mečeve. Čim budeš u blizini, prevlačenje će biti automatski omogućeno.",
+        "Prevlačenje je dostupno samo na lokaciji događaja. Kada stigneš, dodirni dugme za lokaciju ispod da potvrdiš svoju poziciju i počneš sa mečevima.",
       matchesCheckLocation: "Proveri moju lokaciju",
       callYandexTaxi: "Pozovi Yandex Taxi",
       matchesYourLocation: "Tvoja lokacija",
@@ -881,9 +881,9 @@ const resources = {
       matchesLockedSubtitle:
         "Матчи открываются только во время активного события с действительным билетом, поэтому проверьте билеты ниже.",
       matchesUnlockButton: "Перейти к билетам",
-      matchesAlmostThere: "Почти на месте! 📍",
+      matchesAlmostThere: "Почти на месте!",
       matchesArriveAtVenue:
-        "Приходите на место проведения мероприятия, чтобы разблокировать знакомства. Как только вы окажетесь в радиусе, свайпы включатся автоматически.",
+        "Свайпы доступны только на площадке мероприятия. Когда вы прибудете, нажмите кнопку геолокации ниже, чтобы подтвердить своё местоположение и начать знакомиться.",
       matchesCheckLocation: "Проверить мою геолокацию",
       callYandexTaxi: "Вызвать Яндекс.Такси",
       matchesYourLocation: "Ваше местоположение",

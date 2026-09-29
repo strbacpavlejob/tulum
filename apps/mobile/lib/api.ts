@@ -805,6 +805,7 @@ export interface SwipeableProfile {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
+  gender: "male" | "female" | "other" | null;
   picture_urls: string[];
   age: number;
   interests: string[];

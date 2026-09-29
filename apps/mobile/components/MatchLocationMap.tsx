@@ -1,4 +1,3 @@
-import { useAppTheme } from "@/hooks/useAppTheme";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useColorScheme, View } from "react-native";
@@ -57,7 +56,6 @@ export const MatchLocationMap = ({
   userLat,
   userLng,
 }: MatchLocationMapProps) => {
-  const theme = useAppTheme();
   const colorScheme = useColorScheme();
   const storeTheme = useStore((s) => s.settings.theme);
   const isDark =
@@ -140,7 +138,6 @@ export const MatchLocationMap = ({
         setMapReady(false);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueLat, venueLng, userLat, userLng]);
 
   // Swap tile layer on theme change
@@ -158,7 +155,7 @@ export const MatchLocationMap = ({
   }, [isDark, mapReady]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} pointerEvents="none">
       <div
         ref={mapContainerRef}
         style={{
@@ -167,6 +164,8 @@ export const MatchLocationMap = ({
           left: 0,
           right: 0,
           bottom: 0,
+          zIndex: 0,
+          pointerEvents: "none",
         }}
       />
     </View>
