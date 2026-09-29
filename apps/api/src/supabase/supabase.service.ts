@@ -6,6 +6,9 @@ import { ScrapedEvent, ScrapedVenue } from '../scrape/domain/scraper.interface';
 
 const VENUES_TABLE = 'venues';
 const EVENTS_TABLE = 'events';
+const MATCHES_TABLE = 'matches';
+const CHATS_TABLE = 'chats';
+const CHAT_MESSAGES_TABLE = 'chat_messages';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
@@ -826,10 +829,88 @@ export class SupabaseService implements OnModuleInit {
   async deleteOldEvents(before?: string): Promise<number> {
     const cutoff = before ?? new Date().toISOString();
 
+    const { data: oldEvents, error: oldEventsError } = await this.supabase
+      .from(EVENTS_TABLE)
+      .select('id')
+      .lt('end_date_time', cutoff);
+
+    if (oldEventsError) {
+      this.logger.error('Error selecting old events:', oldEventsError.message);
+      throw new Error(`Failed to select old events: ${oldEventsError.message}`);
+    }
+
+    const eventIds = (oldEvents ?? []).map((e) => e.id as string);
+    if (eventIds.length === 0) {
+      this.logger.log(`Deleted 0 events with end_date_time before ${cutoff}`);
+      return 0;
+    }
+
+    const { data: chats, error: chatsError } = await this.supabase
+      .from(CHATS_TABLE)
+      .select('id')
+      .in('event_id', eventIds);
+
+    if (chatsError) {
+      this.logger.error(
+        'Error selecting chats for old events:',
+        chatsError.message,
+      );
+      throw new Error(`Failed to select old chats: ${chatsError.message}`);
+    }
+
+    const chatIds = (chats ?? []).map((c) => c.id as string);
+
+    if (chatIds.length > 0) {
+      const { error: deleteMessagesError } = await this.supabase
+        .from(CHAT_MESSAGES_TABLE)
+        .delete()
+        .in('chat_id', chatIds);
+
+      if (deleteMessagesError) {
+        this.logger.error(
+          'Error deleting chat messages for old events:',
+          deleteMessagesError.message,
+        );
+        throw new Error(
+          `Failed to delete old chat messages: ${deleteMessagesError.message}`,
+        );
+      }
+
+      const { error: deleteChatsError } = await this.supabase
+        .from(CHATS_TABLE)
+        .delete()
+        .in('id', chatIds);
+
+      if (deleteChatsError) {
+        this.logger.error(
+          'Error deleting chats for old events:',
+          deleteChatsError.message,
+        );
+        throw new Error(
+          `Failed to delete old chats: ${deleteChatsError.message}`,
+        );
+      }
+    }
+
+    const { error: deleteMatchesError } = await this.supabase
+      .from(MATCHES_TABLE)
+      .delete()
+      .in('event_id', eventIds);
+
+    if (deleteMatchesError) {
+      this.logger.error(
+        'Error deleting matches for old events:',
+        deleteMatchesError.message,
+      );
+      throw new Error(
+        `Failed to delete old matches: ${deleteMatchesError.message}`,
+      );
+    }
+
     const { data, error } = await this.supabase
       .from(EVENTS_TABLE)
       .delete()
-      .lt('end_date_time', cutoff)
+      .in('id', eventIds)
       .select('id');
 
     if (error) {
