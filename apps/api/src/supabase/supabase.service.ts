@@ -66,6 +66,14 @@ export class SupabaseService implements OnModuleInit {
 
     // 1. Upsert venues and get back their DB IDs (always runs)
     const venueNameToId = await this.upsertScrapedVenues(data.venues);
+    const savedVenuesCount = venueNameToId.size;
+
+    // If all scraped venues were filtered as duplicates, events still need
+    // to resolve to already existing DB venues.
+    await this.fillMissingVenueIdsFromExistingVenues(
+      data.events,
+      venueNameToId,
+    );
 
     // 1b. Upsert contacts only when SCRAPE_VENUE_CONTACTS=true
     if (process.env.SCRAPE_VENUE_CONTACTS === 'true') {
@@ -95,10 +103,59 @@ export class SupabaseService implements OnModuleInit {
     const savedEventsCount = await this.upsertEvents(mappedEvents);
 
     this.logger.log(
-      `Saved ${venueNameToId.size} venues and ${savedEventsCount} events`,
+      `Saved ${savedVenuesCount} venues and ${savedEventsCount} events`,
     );
 
-    return { venues: venueNameToId.size, events: savedEventsCount };
+    return { venues: savedVenuesCount, events: savedEventsCount };
+  }
+
+  private async fillMissingVenueIdsFromExistingVenues(
+    events: ScrapedEvent[],
+    venueNameToId: Map<string, string>,
+  ): Promise<void> {
+    const unresolvedEvents = events.filter((event) => {
+      const normalizedVenueName = this.normalizeVenueName(event.venue?.name);
+
+      return (
+        normalizedVenueName.length > 0 &&
+        !venueNameToId.has(normalizedVenueName) &&
+        !this.isUuid(event.venueId)
+      );
+    });
+
+    if (unresolvedEvents.length === 0) {
+      return;
+    }
+
+    const { data, error } = await this.supabase
+      .from(VENUES_TABLE)
+      .select('id, name');
+
+    if (error) {
+      this.logger.error(
+        'Error fetching existing venues for event mapping:',
+        error.message,
+      );
+      throw new Error(
+        `Failed to fetch existing venues for event mapping: ${error.message}`,
+      );
+    }
+
+    for (const venue of (data as { id: string; name: string }[] | null) ?? []) {
+      const normalizedName = this.normalizeVenueName(venue.name);
+
+      if (!normalizedName) {
+        continue;
+      }
+
+      if (!venueNameToId.has(normalizedName)) {
+        venueNameToId.set(normalizedName, venue.id);
+      }
+    }
+
+    this.logger.debug(
+      `Loaded ${data?.length ?? 0} existing venues to resolve ${unresolvedEvents.length} events`,
+    );
   }
 
   private async upsertScrapedVenues(
@@ -591,7 +648,13 @@ export class SupabaseService implements OnModuleInit {
   }
 
   private normalizeVenueName(value: string | null | undefined): string {
-    return (value ?? '').trim().toLowerCase();
+    return (value ?? '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   private isUuid(value: string | undefined): value is string {
