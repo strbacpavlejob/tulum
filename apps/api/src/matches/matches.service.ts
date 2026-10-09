@@ -1,9 +1,45 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  MAX_LIKE_PERCENTAGE,
+  MIN_LIKE_LIMIT,
+  normalizeLikeFilters,
+} from '../common/like-limit';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SwipeDecisionDto } from './dto/swipe-decision.dto';
 
 const MATCHES_TABLE = 'matches';
 const GUEST_SWIPES_TABLE = 'guest_swipes';
+
+interface SwipeLimitDecision {
+  allowed: boolean;
+  was_already_liked: boolean;
+  likes_used: number;
+  like_limit: number;
+  eligible_guest_count: number;
+  limit_reached: boolean;
+}
+
+interface SwipeDecisionResult {
+  matched: boolean;
+  match_id: number | null;
+  was_already_liked: boolean;
+  likes_used: number;
+  like_limit: number;
+  eligible_guest_count: number;
+  limit_reached: boolean;
+}
+
+function parseDbTimestampMs(value: unknown): number | null {
+  if (typeof value !== 'string' || !value) return null;
+
+  // Postgres "timestamp without time zone" values often come back without
+  // an offset (e.g. 2026-10-08T19:55:35.587). Treat those as UTC.
+  const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+  const iso = hasExplicitOffset ? value : `${value}Z`;
+  const ms = new Date(iso).getTime();
+
+  return Number.isFinite(ms) ? ms : null;
+}
 
 @Injectable()
 export class MatchesService {
@@ -83,9 +119,8 @@ export class MatchesService {
     return (data ?? [])
       .filter((match: any) => {
         const endDateRaw = match?.event?.end_date_time;
-        if (!endDateRaw) return false;
-        const endMs = new Date(endDateRaw).getTime();
-        return Number.isFinite(endMs) && endMs >= nowMs;
+        const endMs = parseDbTimestampMs(endDateRaw);
+        return endMs !== null && endMs >= nowMs;
       })
       .map((match: any) => {
         const isGuest1 = match.guest_id_1 === userId;
@@ -151,7 +186,7 @@ export class MatchesService {
   async submitSwipeDecision(
     userId: string,
     swipe: SwipeDecisionDto,
-  ): Promise<{ matched: boolean; match_id: number | null }> {
+  ): Promise<SwipeDecisionResult> {
     const { other_user_id: otherUserId, event_id: eventId, liked } = swipe;
 
     if (userId === otherUserId) {
@@ -186,19 +221,66 @@ export class MatchesService {
       );
     }
 
-    const { error: swipeError } = await this.db.from(GUEST_SWIPES_TABLE).upsert(
-      {
-        swiper_user_id: userId,
-        swiped_user_id: otherUserId,
-        event_id: eventId,
-        liked,
-      },
-      { onConflict: 'swiper_user_id,swiped_user_id,event_id' },
-    );
-    if (swipeError) throw swipeError;
+    const filters = normalizeLikeFilters({
+      genderFilter: swipe.gender_filter,
+      ageMin: swipe.age_min,
+      ageMax: swipe.age_max,
+      selectedInterests: swipe.selected_interests,
+    });
+
+    // Use one DB-side atomic decision to prevent race-condition limit bypasses.
+    const rpcClient = this.db as any;
+    const { data: swipeDecisionData, error: swipeDecisionError } =
+      (await rpcClient.rpc('submit_guest_swipe_with_limit', {
+        p_swiper_user_id: userId,
+        p_swiped_user_id: otherUserId,
+        p_event_id: eventId,
+        p_liked: liked,
+        p_max_like_percentage: MAX_LIKE_PERCENTAGE,
+        p_min_like_limit: MIN_LIKE_LIMIT,
+        p_gender_filter: filters.genderFilter,
+        p_age_min: filters.ageMin,
+        p_age_max: filters.ageMax,
+        p_interest_filters: filters.selectedInterests,
+      })) as {
+        data: SwipeLimitDecision[] | SwipeLimitDecision | null;
+        error: unknown;
+      };
+    if (swipeDecisionError) throw swipeDecisionError;
+
+    const swipeDecision = (
+      Array.isArray(swipeDecisionData)
+        ? swipeDecisionData[0]
+        : swipeDecisionData
+    ) as SwipeLimitDecision | undefined;
+
+    if (!swipeDecision) {
+      throw new BadRequestException('Failed to process swipe decision');
+    }
+
+    if (!swipeDecision.allowed) {
+      throw new BadRequestException({
+        message: 'Like limit reached for current eligible guests',
+        likes_used: swipeDecision.likes_used,
+        like_limit: swipeDecision.like_limit,
+        eligible_guest_count: swipeDecision.eligible_guest_count,
+      });
+    }
+
+    const decisionSnapshot = {
+      was_already_liked: swipeDecision.was_already_liked,
+      likes_used: swipeDecision.likes_used,
+      like_limit: swipeDecision.like_limit,
+      eligible_guest_count: swipeDecision.eligible_guest_count,
+      limit_reached: swipeDecision.limit_reached,
+    };
 
     if (!liked) {
-      return { matched: false, match_id: null };
+      return {
+        matched: false,
+        match_id: null,
+        ...decisionSnapshot,
+      };
     }
 
     const { data: reciprocal, error: reciprocalError } = await this.db
@@ -212,7 +294,11 @@ export class MatchesService {
     if (reciprocalError) throw reciprocalError;
 
     if (!reciprocal) {
-      return { matched: false, match_id: null };
+      return {
+        matched: false,
+        match_id: null,
+        ...decisionSnapshot,
+      };
     }
 
     const [guestId1, guestId2] = [userId, otherUserId].sort((a, b) =>
@@ -229,7 +315,11 @@ export class MatchesService {
     if (existingMatchError) throw existingMatchError;
 
     if (existingMatch) {
-      return { matched: true, match_id: existingMatch.id as number };
+      return {
+        matched: true,
+        match_id: existingMatch.id as number,
+        ...decisionSnapshot,
+      };
     }
 
     const { data: match, error: matchError } = await this.db
@@ -257,10 +347,18 @@ export class MatchesService {
           .eq('event_id', eventId)
           .single();
       if (concurrentMatchError) throw concurrentMatchError;
-      return { matched: true, match_id: concurrentMatch.id as number };
+      return {
+        matched: true,
+        match_id: concurrentMatch.id as number,
+        ...decisionSnapshot,
+      };
     }
 
-    return { matched: true, match_id: match.id as number };
+    return {
+      matched: true,
+      match_id: match.id as number,
+      ...decisionSnapshot,
+    };
   }
 
   async deleteMatch(matchId: number) {

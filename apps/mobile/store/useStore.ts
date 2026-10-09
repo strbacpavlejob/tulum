@@ -7,6 +7,24 @@ import { User } from "@/types/user";
 import { addDays } from "date-fns";
 import { create } from "zustand";
 
+interface SwipeableCandidate {
+  user_id: string;
+  event_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  gender: "male" | "female" | "other" | null;
+  picture_urls: string[];
+  age: number;
+  interests: string[];
+  liked_by_me?: boolean;
+}
+
+interface SwipeableCandidatesCacheEntry {
+  eventTitle: string;
+  candidates: SwipeableCandidate[];
+}
+
 // 2) Define the shape of your entire store
 interface MyStore {
   user: User | null;
@@ -18,6 +36,7 @@ interface MyStore {
   filteredPins?: EventPin[];
   tickets?: Ticket[];
   selectedEventId?: string | null;
+  swipeableCandidatesByEvent: Record<string, SwipeableCandidatesCacheEntry>;
   filter: Filter;
 
   // Actions (methods) to mutate the state
@@ -28,6 +47,15 @@ interface MyStore {
   setPins: (pins: EventPin[]) => void;
   setTickets: (tickets: Ticket[]) => void;
   setSelectedEventId: (id: string | null) => void;
+  setSwipeableCandidatesForEvent: (
+    eventId: string,
+    eventTitle: string,
+    candidates: SwipeableCandidate[],
+  ) => void;
+  getSwipeableCandidatesForEvent: (
+    eventId: string,
+  ) => SwipeableCandidatesCacheEntry | null;
+  clearSwipeableCandidatesForEvent: (eventId: string) => void;
   setFilter: (filter: Filter) => void;
   getFilter: () => Filter;
   applyEventsFilter: () => void;
@@ -55,6 +83,7 @@ const useStore = create<MyStore>((set) => ({
   filteredPins: [],
   tickets: [],
   selectedEventId: null,
+  swipeableCandidatesByEvent: {},
   filter: {
     title: "",
     tags: [],
@@ -89,6 +118,28 @@ const useStore = create<MyStore>((set) => ({
   setPins: (pins: EventPin[]) => set({ pins }),
   setTickets: (tickets: Ticket[]) => set({ tickets }),
   setSelectedEventId: (id: string | null) => set({ selectedEventId: id }),
+  setSwipeableCandidatesForEvent: (
+    eventId: string,
+    eventTitle: string,
+    candidates: SwipeableCandidate[],
+  ) =>
+    set((s) => ({
+      swipeableCandidatesByEvent: {
+        ...s.swipeableCandidatesByEvent,
+        [eventId]: {
+          eventTitle,
+          candidates,
+        },
+      },
+    })),
+  getSwipeableCandidatesForEvent: (eventId: string) =>
+    useStore.getState().swipeableCandidatesByEvent[eventId] ?? null,
+  clearSwipeableCandidatesForEvent: (eventId: string) =>
+    set((s) => {
+      const next = { ...s.swipeableCandidatesByEvent };
+      delete next[eventId];
+      return { swipeableCandidatesByEvent: next };
+    }),
   setFilter: (filter: Filter) => set({ filter }),
   getFilter: (): Filter => useStore.getState().filter,
 

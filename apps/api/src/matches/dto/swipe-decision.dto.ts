@@ -1,5 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class SwipeDecisionDto {
   @ApiProperty({
@@ -21,4 +31,45 @@ export class SwipeDecisionDto {
   })
   @IsBoolean()
   liked!: boolean;
+
+  @ApiProperty({
+    description:
+      'Current gender filter for eligible-guest like limit calculation',
+    required: false,
+    enum: ['male', 'female', 'everyone'],
+  })
+  @IsOptional()
+  @IsIn(['male', 'female', 'everyone'])
+  gender_filter?: 'male' | 'female' | 'everyone';
+
+  @ApiProperty({
+    description: 'Current minimum age filter used for like-limit calculation',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  age_min?: number;
+
+  @ApiProperty({
+    description: 'Current maximum age filter used for like-limit calculation',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(120)
+  age_max?: number;
+
+  @ApiProperty({
+    description:
+      'Current selected interests used for like-limit calculation (OR matching)',
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  selected_interests?: string[];
 }

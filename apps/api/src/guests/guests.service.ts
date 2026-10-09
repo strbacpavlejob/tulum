@@ -1,5 +1,12 @@
+/// <reference types="multer" />
+
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import {
+  calculateEffectiveLikeLimit,
+  normalizeLikeFilters,
+  type LikeFilters,
+} from '../common/like-limit';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
@@ -19,6 +26,30 @@ function isOnboardingComplete(guest: Record<string, unknown> | null): boolean {
     Array.isArray(guest.interested_in) &&
     (guest.interested_in as unknown[]).length > 0
   );
+}
+
+function profileMatchesFilters(
+  profile: {
+    gender: 'male' | 'female' | 'other' | null;
+    age: number;
+    interests: string[];
+  },
+  filters: LikeFilters,
+): boolean {
+  const genderMatch =
+    filters.genderFilter === 'everyone' ||
+    profile.gender === filters.genderFilter;
+
+  const ageMinMatch = filters.ageMin === null || profile.age >= filters.ageMin;
+  const ageMaxMatch = filters.ageMax === null || profile.age <= filters.ageMax;
+
+  const interestsMatch =
+    filters.selectedInterests.length === 0 ||
+    filters.selectedInterests.some((interest) =>
+      profile.interests.includes(interest),
+    );
+
+  return genderMatch && ageMinMatch && ageMaxMatch && interestsMatch;
 }
 
 @Injectable()
@@ -45,7 +76,17 @@ export class GuestsService {
     };
   }
 
-  async getSwipeableGuests(userId: string, eventId?: string) {
+  async getSwipeableGuests(
+    userId: string,
+    eventId?: string,
+    filtersInput?: {
+      genderFilter?: string | null;
+      ageMin?: number | null;
+      ageMax?: number | null;
+      selectedInterests?: string[] | null;
+    },
+  ) {
+    const filters = normalizeLikeFilters(filtersInput);
     let targetEventId = eventId;
 
     if (!targetEventId) {
@@ -113,27 +154,35 @@ export class GuestsService {
       matchedIds.add(m.guest_id_2 as string);
     }
 
-    // Also remove people this user has already swiped on at this event
+    // Load existing swipes so profiles can show liked-state and usage can be counted.
     const { data: mySwipes } = await this.db
       .from(GUEST_SWIPES_TABLE)
-      .select('swiped_user_id')
+      .select('swiped_user_id, liked')
       .eq('swiper_user_id', userId)
       .eq('event_id', targetEventId);
 
-    const swipedIds = new Set<string>(
-      (mySwipes ?? []).map((s) => s.swiped_user_id as string),
+    const likedByMeIds = new Set<string>(
+      (mySwipes ?? [])
+        .filter((s) => Boolean(s.liked))
+        .map((s) => s.swiped_user_id as string),
     );
+    const likesUsed = (mySwipes ?? []).filter((s) => Boolean(s.liked)).length;
 
-    // Find all user_ids at this event via event_sessions
+    // Find all currently active user_ids at this event via event_sessions
     const { data: sessions } = await this.db
       .from('event_sessions')
       .select('user_id')
       .eq('event_id', targetEventId)
+      .is('exited_at', null)
       .neq('user_id', userId);
 
-    const candidateIds = (sessions ?? [])
-      .map((s: Record<string, unknown>) => s.user_id as string)
-      .filter((id) => !matchedIds.has(id) && !swipedIds.has(id));
+    const candidateIds = Array.from(
+      new Set(
+        (sessions ?? []).map(
+          (s: Record<string, unknown>) => s.user_id as string,
+        ),
+      ),
+    ).filter((id) => !matchedIds.has(id));
 
     // Fetch guest profiles + user info for candidates
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,9 +214,19 @@ export class GuestsService {
           picture_urls: (g.picture_urls ?? []) as string[],
           age,
           interests: (g.interests ?? []) as string[],
+          liked_by_me: likedByMeIds.has(g.user_id as string),
         };
       });
     }
+
+    const eligibleGuestCount = profiles.filter((profile) =>
+      profileMatchesFilters(profile, filters),
+    ).length;
+
+    const likeLimit = calculateEffectiveLikeLimit(
+      eligibleGuestCount,
+      likesUsed,
+    );
 
     // Fetch event title + venue name
     const { data: event } = await this.db
@@ -182,6 +241,9 @@ export class GuestsService {
       event_venue: ((event?.venues as unknown as Record<string, unknown> | null)
         ?.name ?? '') as string,
       profiles,
+      likes_used: likesUsed,
+      like_limit: likeLimit,
+      eligible_guest_count: eligibleGuestCount,
     };
   }
 

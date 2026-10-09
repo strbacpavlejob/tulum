@@ -20,7 +20,7 @@ export default function MatchesLocationGateCard({
   const theme = useAppTheme();
 
   const showBypassButton =
-    (process.env.EXPO_ENVIROMENT ?? "").toLowerCase() === "local";
+    (process.env.EXPO_PUBLIC_ENVIRONMENT ?? "").toLowerCase() === "local";
 
   return (
     <View
