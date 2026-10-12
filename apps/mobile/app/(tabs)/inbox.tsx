@@ -22,6 +22,7 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
@@ -32,8 +33,26 @@ import {
 import LoadingIndicator from "@/components/loading-indicator";
 import EmptyIndicator from "@/components/EmptyIndicator";
 import { useFocusEffect, useRouter } from "expo-router";
-import ChatIcon from "@/components/illustrations/Chat";
 import useStore from "@/store/useStore";
+
+const emptyChatIllustration = require("@/assets/images/tulum-empty-chat.webp");
+
+function EmptyChatIllustration() {
+  const { width, height } = useWindowDimensions();
+
+  return (
+    <Image
+      source={emptyChatIllustration}
+      style={{
+        width: width * 0.8,
+        height: height * 0.42,
+        alignSelf: "center",
+      }}
+      contentFit="contain"
+      accessibilityLabel="Tulum capybara relaxing and waiting for messages"
+    />
+  );
+}
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -767,7 +786,7 @@ export default function InboxScreen() {
           <EmptyIndicator
             title={t("noMessagesYet")}
             subtitle={t("noMessagesYetSubtitle")}
-            picture={ChatIcon}
+            picture={() => <EmptyChatIllustration />}
             onPress={() => router.push("/matches")}
             buttonText={t("noMessagesYetButton")}
           />

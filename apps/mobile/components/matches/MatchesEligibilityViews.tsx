@@ -1,13 +1,31 @@
 import EmptyIndicator from "@/components/EmptyIndicator";
 import HandsIcon from "@/components/illustrations/Hands";
-import MatchIcon from "@/components/illustrations/Match";
 import LoadingIndicator from "@/components/loading-indicator";
 import { MatchLocationMap } from "@/components/MatchLocationMap";
 import MatchesLocationGateCard from "@/components/MatchesLocationGateCard";
 import MatchesTaxiButton from "@/components/MatchesTaxiButton";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+const matchesLockIllustration = require("@/assets/images/tulum-matches-lock.webp");
+
+function MatchesLockIllustration() {
+  const { width, height } = useWindowDimensions();
+
+  return (
+    <Image
+      source={matchesLockIllustration}
+      style={{
+        width: width * 0.8,
+        height: height * 0.42,
+        alignSelf: "center",
+      }}
+      contentFit="contain"
+      accessibilityLabel="Tulum capybara waiting for matching to unlock"
+    />
+  );
+}
 
 type UserCoords = {
   lat: number;
@@ -68,7 +86,7 @@ export function LockedStateView({
           <EmptyIndicator
             title={title}
             subtitle={subtitle}
-            picture={MatchIcon}
+            picture={() => <MatchesLockIllustration />}
             onPress={onUnlock}
             buttonText={buttonText}
           />
@@ -77,7 +95,6 @@ export function LockedStateView({
     </View>
   );
 }
-
 type LocationRequiredViewProps = {
   liveTicket: LiveTicket;
   userCoords: UserCoords;

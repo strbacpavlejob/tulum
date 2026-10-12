@@ -1,5 +1,4 @@
 import EmptyIndicator from "@/components/EmptyIndicator";
-import CalendarIcon from "@/components/illustrations/Map";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { fetchMyTickets } from "@/lib/api";
@@ -8,14 +7,24 @@ import { Ticket } from "@/types/ticket";
 import { EventSummary } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, RefreshControl, ScrollView, View } from "react-native";
+import {
+  Animated,
+  RefreshControl,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import LoadingIndicator from "@/components/loading-indicator";
 import { TicketCard } from "@/components/TicketCard";
+import { StyleSheet } from "nativewind";
 
-const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000; // 4 hours before start = still "live"
-const SOON_WINDOW_MS = 3 * 60 * 60 * 1000; // within 3 hours from now = "starting soon"
+const noTicketsIllustration = require("@/assets/images/tulum-no-tickets.webp");
+
+const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000;
+const SOON_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 function ticketToEvent(ticket: Ticket): EventSummary {
   return {
@@ -36,7 +45,7 @@ function LiveDot() {
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0.2,
@@ -49,7 +58,11 @@ function LiveDot() {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+
+    animation.start();
+
+    return () => animation.stop();
   }, [opacity]);
 
   return (
@@ -77,6 +90,7 @@ function Section({
   live?: boolean;
 }) {
   if (events.length === 0) return null;
+
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-2">
@@ -85,6 +99,7 @@ function Section({
           {title}
         </Text>
       </View>
+
       {events.map((event) => (
         <TicketCard
           key={event.id}
@@ -97,6 +112,39 @@ function Section({
     </View>
   );
 }
+function NoTicketsIllustration() {
+  const { width, height } = useWindowDimensions();
+  const theme = useAppTheme();
+
+  return (
+    <View
+      style={{
+        width: width * 0.8,
+        height: height * 0.5,
+        alignSelf: "center",
+      }}
+    >
+      <Image
+        source={noTicketsIllustration}
+        style={{
+          height: "100%",
+        }}
+        contentFit="contain"
+        accessibilityLabel="Tulum capybara exploring upcoming events"
+      />
+
+      {/* Theme-aware color overlay */}
+      <View
+        pointerEvents="none"
+        style={{
+          ...StyleSheet.absoluteFill,
+          backgroundColor: theme.background,
+          opacity: 0.15,
+        }}
+      />
+    </View>
+  );
+}
 
 export default function TicketsScreen() {
   const { tickets, setTickets } = useStore();
@@ -104,16 +152,19 @@ export default function TicketsScreen() {
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadTickets = (isRefresh = false) => {
     if (!userId) return;
+
     if (isRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
     }
+
     getToken()
       .then((token) => {
         if (!token) throw new Error("No token");
@@ -133,14 +184,18 @@ export default function TicketsScreen() {
 
   const { live, soon, rest } = useMemo(() => {
     const now = Date.now();
+
     const live: EventSummary[] = [];
     const soon: EventSummary[] = [];
     const rest: EventSummary[] = [];
 
     (tickets ?? []).forEach((ticket: Ticket) => {
       const start = new Date(ticket.date).getTime();
-      if (start < now - LIVE_WINDOW_MS) return; // expired — skip
+
+      if (start < now - LIVE_WINDOW_MS) return;
+
       const event = ticketToEvent(ticket);
+
       if (start <= now) {
         live.push(event);
       } else if (start <= now + SOON_WINDOW_MS) {
@@ -171,9 +226,7 @@ export default function TicketsScreen() {
         <EmptyIndicator
           title={t("noTicketsTitle")}
           subtitle={t("noTicketsSubtitle")}
-          picture={({ color, ...rest }) => (
-            <CalendarIcon {...rest} color={theme.color} />
-          )}
+          picture={() => <NoTicketsIllustration />}
           onPress={() => router.push("/")}
           buttonText={t("goToMap")}
         />
@@ -184,7 +237,7 @@ export default function TicketsScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
       <ScrollView
-        className="p-4 w-full"
+        className="w-full p-4"
         contentContainerStyle={{ gap: 32 }}
         refreshControl={
           <RefreshControl
@@ -198,14 +251,16 @@ export default function TicketsScreen() {
         <Section
           title={t("liveNow")}
           events={live}
-          onPress={(/* event */) => router.push("/matches")}
+          onPress={() => router.push("/matches")}
           live
         />
+
         <Section
           title={t("startingSoon")}
           events={soon}
           onPress={handlePress}
         />
+
         <Section title={t("upcoming")} events={rest} onPress={handlePress} />
       </ScrollView>
     </View>
