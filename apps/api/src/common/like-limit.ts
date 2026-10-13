@@ -1,7 +1,7 @@
 export const MAX_LIKE_PERCENTAGE = 0.2;
 export const MIN_LIKE_LIMIT = 3;
 
-export type LikeGenderFilter = 'male' | 'female' | 'everyone';
+export type LikeGenderFilter = 'male' | 'female' | 'other' | 'everyone';
 
 export interface LikeFilters {
   genderFilter: LikeGenderFilter;
@@ -17,7 +17,9 @@ export function normalizeLikeFilters(input?: {
   selectedInterests?: string[] | null;
 }): LikeFilters {
   const genderFilter =
-    input?.genderFilter === 'male' || input?.genderFilter === 'female'
+    input?.genderFilter === 'male' ||
+    input?.genderFilter === 'female' ||
+    input?.genderFilter === 'other'
       ? input.genderFilter
       : 'everyone';
 

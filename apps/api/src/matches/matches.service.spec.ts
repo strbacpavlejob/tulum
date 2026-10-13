@@ -42,9 +42,10 @@ function createServiceWithScript(script: ScriptMap) {
     return query;
   };
 
+  const rpc = jest.fn(async (fn: string) => consume(`rpc.${fn}`));
   const db = {
     from: jest.fn((table: string) => getQuery(table)),
-    rpc: jest.fn(async (fn: string) => consume(`rpc.${fn}`)),
+    rpc,
   };
 
   const supabaseService = {
@@ -53,6 +54,7 @@ function createServiceWithScript(script: ScriptMap) {
 
   return {
     service: new MatchesService(supabaseService),
+    rpc,
   };
 }
 
@@ -100,6 +102,38 @@ describe('MatchesService submitSwipeDecision', () => {
     await expect(
       service.submitSwipeDecision('me-user', baseSwipe),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('passes the other gender filter to the atomic like-limit decision', async () => {
+    const script = {
+      ...attendingScript(),
+      'rpc.submit_guest_swipe_with_limit': [
+        {
+          data: {
+            allowed: true,
+            was_already_liked: false,
+            likes_used: 1,
+            like_limit: 3,
+            eligible_guest_count: 10,
+            limit_reached: false,
+          },
+          error: null,
+        },
+      ],
+      'guest_swipes.maybeSingle': [{ data: null, error: null }],
+    };
+
+    const { service, rpc } = createServiceWithScript(script);
+
+    await service.submitSwipeDecision('me-user', {
+      ...baseSwipe,
+      gender_filter: 'other',
+    });
+
+    expect(rpc).toHaveBeenCalledWith(
+      'submit_guest_swipe_with_limit',
+      expect.objectContaining({ p_gender_filter: 'other' }),
+    );
   });
 
   it('returns non-match snapshot when reciprocal like does not exist', async () => {

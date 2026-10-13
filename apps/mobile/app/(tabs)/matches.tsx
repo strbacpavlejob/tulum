@@ -15,7 +15,7 @@ import {
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { Profile } from "@/types/profile";
-import { LookingForGender } from "@/types/user";
+import type { GenderFilter } from "@/types/user";
 import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
 
@@ -149,22 +149,16 @@ interface LikeStats {
 
 function applyProfileFilters(
   candidates: SwipeCandidate[],
-  genderFilter: LookingForGender,
+  genderFilter: GenderFilter,
   ageMin: number,
   ageMax: number,
-  selectedInterests: string[],
 ): SwipeCandidate[] {
   return candidates.filter((candidate) => {
     const genderMatch =
       genderFilter === "everyone" || candidate.gender === genderFilter;
     const ageMatch =
       candidate.profile.age >= ageMin && candidate.profile.age <= ageMax;
-    const interestsMatch =
-      selectedInterests.length === 0 ||
-      selectedInterests.some((interest) =>
-        candidate.profile.hobbies.includes(interest),
-      );
-    return genderMatch && ageMatch && interestsMatch;
+    return genderMatch && ageMatch;
   });
 }
 
@@ -200,11 +194,10 @@ export default function MatchesScreen() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
   const [showMatch, setShowMatch] = useState(false);
-  const [genderFilter, setGenderFilter] = useState<LookingForGender>(
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>(
     lookingForGenderFromProfile,
   );
   const [ageRange, setAgeRange] = useState({ min: 18, max: 60 });
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [likeStats, setLikeStats] = useState<LikeStats>({
     likesUsed: 0,
     likeLimit: 0,
@@ -215,27 +208,14 @@ export default function MatchesScreen() {
     setGenderFilter(lookingForGenderFromProfile);
   }, [lookingForGenderFromProfile]);
 
-  const availableInterests = useMemo(() => {
-    const uniqueInterests = new Set<string>();
-    profiles.forEach((candidate) => {
-      candidate.profile.hobbies.forEach((interest) => {
-        if (interest) {
-          uniqueInterests.add(interest.trim());
-        }
-      });
-    });
-    return Array.from(uniqueInterests).sort((a, b) => a.localeCompare(b));
-  }, [profiles]);
-
   const filteredProfiles = useMemo(() => {
     return applyProfileFilters(
       profiles,
       genderFilter,
       ageRange.min,
       ageRange.max,
-      selectedInterests,
     );
-  }, [profiles, genderFilter, ageRange.min, ageRange.max, selectedInterests]);
+  }, [profiles, genderFilter, ageRange.min, ageRange.max]);
 
   const likedProfileIds = useMemo(() => {
     return new Set(
@@ -263,25 +243,15 @@ export default function MatchesScreen() {
   genderFilterRef.current = genderFilter;
   const ageRangeRef = useRef(ageRange);
   ageRangeRef.current = ageRange;
-  const selectedInterestsRef = useRef(selectedInterests);
-  selectedInterestsRef.current = selectedInterests;
 
   const swipeFilters = useMemo<SwipeFilters>(
     () => ({
       genderFilter,
       ageMin: ageRange.min,
       ageMax: ageRange.max,
-      selectedInterests,
     }),
-    [genderFilter, ageRange.min, ageRange.max, selectedInterests],
+    [genderFilter, ageRange.min, ageRange.max],
   );
-
-  useEffect(() => {
-    if (!selectedInterests.length) return;
-    setSelectedInterests((prev) =>
-      prev.filter((interest) => availableInterests.includes(interest)),
-    );
-  }, [availableInterests, selectedInterests.length]);
 
   useEffect(() => {
     const eligibleGuestCount = filteredProfiles.length;
@@ -442,7 +412,6 @@ export default function MatchesScreen() {
         genderFilterRef.current,
         ageRangeRef.current.min,
         ageRangeRef.current.max,
-        selectedInterestsRef.current,
       );
 
       if (!nextFiltered.length) {
@@ -606,20 +575,6 @@ export default function MatchesScreen() {
     setCurrentCardIndex(nextIndex);
   };
 
-  const handleToggleInterest = (interest: string) => {
-    setSelectedInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((item) => item !== interest)
-        : [...prev, interest],
-    );
-    setCurrentCardIndex(0);
-  };
-
-  const handleClearInterests = () => {
-    setSelectedInterests([]);
-    setCurrentCardIndex(0);
-  };
-
   const handleAgeChange = (next: { min: number; max: number }) => {
     setAgeRange(next);
     setCurrentCardIndex(0);
@@ -671,7 +626,7 @@ export default function MatchesScreen() {
     return <LoadingStateView />;
   }
 
-  if (!filteredProfiles.length) {
+  if (!profiles.length) {
     return (
       <EmptyMatchesView
         topInset={insets.top}
@@ -697,10 +652,6 @@ export default function MatchesScreen() {
       ageMin={ageRange.min}
       ageMax={ageRange.max}
       onAgeChange={handleAgeChange}
-      selectedInterests={selectedInterests}
-      availableInterests={availableInterests}
-      onToggleInterest={handleToggleInterest}
-      onClearInterests={handleClearInterests}
       profiles={filteredProfiles}
       currentCardIndex={currentCardIndex}
       onChangeCardIndex={handleVerticalIndexChange}

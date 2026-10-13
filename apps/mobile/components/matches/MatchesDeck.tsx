@@ -1,24 +1,14 @@
 import MatchModal from "@/components/MatchModal";
+import { MatchesFiltersBottomSheet } from "@/components/matches/MatchesFiltersBottomSheet";
+import type { MatchesFiltersBottomSheetRef } from "@/components/matches/MatchesFiltersBottomSheet";
 import { Profile } from "@/types/profile";
-import { LookingForGender } from "@/types/user";
-import Slider from "@react-native-community/slider";
-import { BlurView } from "expo-blur";
+import type { GenderFilter } from "@/types/user";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  ChevronDown,
-  ChevronUp,
-  Heart,
-  MapPin,
-  Minus,
-  Plus,
-  SlidersHorizontal,
-  Sparkles,
-} from "lucide-react-native";
+import { Heart, SlidersHorizontal } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -37,15 +27,11 @@ type MatchesDeckProps = {
   venueName: string;
   eventTitle: string;
   venuePeopleCount: number;
-  genderFilter: LookingForGender;
-  onGenderChange: (value: LookingForGender) => void;
+  genderFilter: GenderFilter;
+  onGenderChange: (value: GenderFilter) => void;
   ageMin: number;
   ageMax: number;
   onAgeChange: (next: { min: number; max: number }) => void;
-  selectedInterests: string[];
-  availableInterests: string[];
-  onToggleInterest: (interest: string) => void;
-  onClearInterests: () => void;
   profiles: SwipeCandidate[];
   currentCardIndex: number;
   onChangeCardIndex: (index: number) => void;
@@ -59,8 +45,6 @@ type MatchesDeckProps = {
   matchedProfile: Profile | null;
   onCloseMatch: () => void;
 };
-const MIN_AGE = 18;
-const MAX_AGE = 60;
 export default function MatchesDeck({
   topInset,
   bottomInset,
@@ -72,10 +56,6 @@ export default function MatchesDeck({
   ageMin,
   ageMax,
   onAgeChange,
-  selectedInterests,
-  availableInterests,
-  onToggleInterest,
-  onClearInterests,
   profiles,
   currentCardIndex,
   onChangeCardIndex,
@@ -89,7 +69,10 @@ export default function MatchesDeck({
   onCloseMatch,
 }: MatchesDeckProps) {
   const { height: windowHeight } = useWindowDimensions();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [measuredListHeight, setMeasuredListHeight] = useState(0);
+  const cardHeight =
+    measuredListHeight || Math.max(windowHeight - topInset - bottomInset, 1);
+  const filterSheetRef = useRef<MatchesFiltersBottomSheetRef>(null);
   const dragStartOffsetYRef = useRef(0);
   const wrapInProgressRef = useRef(false);
   const listRef = useRef<FlatList<SwipeCandidate>>(null);
@@ -102,15 +85,7 @@ export default function MatchesDeck({
       index: currentCardIndex,
       animated: true,
     });
-  }, [currentCardIndex, profiles.length]);
-  const adjustMinAge = (delta: number) => {
-    const nextMin = Math.max(MIN_AGE, Math.min(ageMin + delta, ageMax));
-    onAgeChange({ min: nextMin, max: ageMax });
-  };
-  const adjustMaxAge = (delta: number) => {
-    const nextMax = Math.min(MAX_AGE, Math.max(ageMax + delta, ageMin));
-    onAgeChange({ min: ageMin, max: nextMax });
-  };
+  }, [cardHeight, currentCardIndex, profiles.length]);
   const onScrollEnd = (offsetY: number, height: number) => {
     if (!height) return;
     const nextIndex = Math.max(
@@ -129,7 +104,7 @@ export default function MatchesDeck({
     if (profiles.length < 2 || wrapInProgressRef.current) {
       return;
     }
-    const maxOffset = Math.max((profiles.length - 1) * windowHeight, 0);
+    const maxOffset = Math.max((profiles.length - 1) * cardHeight, 0);
     const triedForward = dragDelta > 18 || velocityY < -0.4;
     const triedBackward = dragDelta < -18 || velocityY > 0.4;
     if (
@@ -171,18 +146,15 @@ export default function MatchesDeck({
     }
     onLike(currentProfile);
   };
-  const cardHeight = windowHeight;
   const headerTop = Math.max(topInset + 6, 18);
   const detailsBottomOffset = Math.max(bottomInset + 12, 16);
   const activePeopleCount = Math.max(venuePeopleCount, profiles.length);
-  const likeBudgetLabel = `${likesUsed} / ${likeLimit}`;
   const likesRemaining = Math.max(0, likeLimit - likesUsed);
   const likeButtonLabel = currentProfileLiked
     ? "Liked"
     : likeDisabled
       ? "No Likes left"
       : "Like";
-  const ageValueLabel = `${ageMin} - ${ageMax}`;
   return (
     <View className="flex-1 bg-[#111015]">
       <SafeAreaView className="flex-1">
@@ -190,6 +162,12 @@ export default function MatchesDeck({
           <FlatList
             ref={listRef}
             data={profiles}
+            onLayout={(event) => {
+              const nextHeight = event.nativeEvent.layout.height;
+              setMeasuredListHeight((previousHeight) =>
+                previousHeight === nextHeight ? previousHeight : nextHeight,
+              );
+            }}
             keyExtractor={(item) => item.profile.id}
             pagingEnabled
             bounces={false}
@@ -247,6 +225,16 @@ export default function MatchesDeck({
             colors={["rgba(53,44,78,0.25)", "rgba(16,14,22,0)"]}
             style={StyleSheet.absoluteFillObject}
           />
+          {profiles.length === 0 ? (
+            <View
+              pointerEvents="none"
+              className="absolute inset-0 items-center justify-center px-8"
+            >
+              <Text className="text-center text-lg font-bold text-white">
+                No profiles match these filters.
+              </Text>
+            </View>
+          ) : null}
           <View
             className="absolute left-0 right-0 flex-row items-start justify-between px-5"
             style={{ top: headerTop, zIndex: 20 }}
@@ -263,14 +251,11 @@ export default function MatchesDeck({
               </View>
             </View>
             <Pressable
-              onPress={() => setIsFilterOpen(true)}
-              className="h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/25 bg-white/15"
+              onPress={() => filterSheetRef.current?.open()}
+              className="h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-light-background/25 bg-light-background/15 dark:border-dark-background/25 dark: bg-dark-background/15"
+              accessibilityRole="button"
+              accessibilityLabel="Open filters"
             >
-              <BlurView
-                intensity={30}
-                tint="dark"
-                style={StyleSheet.absoluteFillObject}
-              />
               <SlidersHorizontal size={18} color="#ffffff" />
             </Pressable>
           </View>
@@ -341,182 +326,20 @@ export default function MatchesDeck({
                 </View>
               </>
             ) : null}
-            {profiles.length > 1 && (
-              <View className="mt-5 flex-row items-center justify-center gap-2">
-                <View className="items-center justify-center">
-                  <ChevronUp size={14} color="#d7c6fa" />
-                  <ChevronDown size={14} color="#d7c6fa" />
-                </View>
-                <Text className="text-xs font-medium text-[#d7cfdc]">
-                  Swipe to explore everyone here
-                </Text>
-              </View>
-            )}
           </View>
           <MatchModal
             visible={showMatch}
             profile={matchedProfile}
             onClose={onCloseMatch}
           />
-          <Modal
-            visible={isFilterOpen}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setIsFilterOpen(false)}
-          >
-            <Pressable
-              className="flex-1 justify-end bg-[#09070bb0]"
-              onPress={() => setIsFilterOpen(false)}
-            >
-              <Pressable
-                onPress={(event) => event.stopPropagation()}
-                className="rounded-t-[30px] border-t border-white/10 bg-[#24202e] px-6 pb-8 pt-6"
-              >
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-2xl font-black text-white">
-                    Discovery filters
-                  </Text>
-                  <Sparkles size={18} color="#d2b8ff" />
-                </View>
-                <Text className="mt-2 text-sm text-[#bcb3c6]">
-                  Fine-tune who you meet at this event.
-                </Text>
-                <Text className="mt-5 text-xs font-bold uppercase tracking-[1px] text-white/70">
-                  Show me
-                </Text>
-                <View className="mt-2 flex-row gap-2">
-                  {[
-                    { label: "Everyone", value: "everyone" as const },
-                    { label: "Women", value: "female" as const },
-                    { label: "Men", value: "male" as const },
-                  ].map((option) => {
-                    const active = genderFilter === option.value;
-                    return (
-                      <Pressable
-                        key={option.value}
-                        onPress={() => onGenderChange(option.value)}
-                        className={`rounded-full border px-4 py-2 ${
-                          active
-                            ? "border-[#b58cff] bg-[#b58cff]"
-                            : "border-white/20 bg-white/10"
-                        }`}
-                      >
-                        <Text
-                          className={`text-xs font-bold ${active ? "text-[#1b102f]" : "text-white/90"}`}
-                        >
-                          {option.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                <View className="mt-5 rounded-2xl border border-white/15 bg-[#1b1624] px-4 py-4">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-xs font-bold uppercase tracking-[1px] text-white/70">
-                      Age range
-                    </Text>
-                    <Text className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
-                      {ageValueLabel}
-                    </Text>
-                  </View>
-                  <Slider
-                    minimumValue={MIN_AGE}
-                    maximumValue={MAX_AGE}
-                    step={1}
-                    minimumTrackTintColor="#b58cff"
-                    maximumTrackTintColor="#5a506b"
-                    thumbTintColor="#a77aff"
-                    value={ageMax}
-                    onValueChange={(value) => {
-                      const nextMax = Math.max(ageMin, Math.round(value));
-                      onAgeChange({ min: ageMin, max: nextMax });
-                    }}
-                  />
-                  <View className="mt-2 flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-xs text-white/70">Min</Text>
-                      <Pressable
-                        onPress={() => adjustMinAge(-1)}
-                        className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
-                      >
-                        <Minus size={14} color="#fff" />
-                      </Pressable>
-                      <Pressable
-                        onPress={() => adjustMinAge(1)}
-                        className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
-                      >
-                        <Plus size={14} color="#fff" />
-                      </Pressable>
-                    </View>
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-xs text-white/70">Max</Text>
-                      <Pressable
-                        onPress={() => adjustMaxAge(-1)}
-                        className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
-                      >
-                        <Minus size={14} color="#fff" />
-                      </Pressable>
-                      <Pressable
-                        onPress={() => adjustMaxAge(1)}
-                        className="h-8 w-8 items-center justify-center rounded-full bg-white/10"
-                      >
-                        <Plus size={14} color="#fff" />
-                      </Pressable>
-                    </View>
-                  </View>
-                </View>
-                <View className="mt-5 flex-row items-center justify-between">
-                  <Text className="text-xs font-bold uppercase tracking-[1px] text-white/70">
-                    Interests
-                  </Text>
-                  <Pressable onPress={onClearInterests}>
-                    <Text className="text-xs font-semibold text-white/75">
-                      Clear
-                    </Text>
-                  </Pressable>
-                </View>
-                <View className="mt-2 flex-row flex-wrap gap-2">
-                  {availableInterests.length ? (
-                    availableInterests.map((interest) => {
-                      const active = selectedInterests.includes(interest);
-                      return (
-                        <Pressable
-                          key={interest}
-                          onPress={() => onToggleInterest(interest)}
-                          className={`rounded-full border px-3 py-2 ${
-                            active
-                              ? "border-[#b58cff] bg-[#b58cff]"
-                              : "border-white/20 bg-white/5"
-                          }`}
-                        >
-                          <Text
-                            className={`text-xs font-semibold ${active ? "text-[#1b102f]" : "text-white/90"}`}
-                          >
-                            {interest}
-                          </Text>
-                        </Pressable>
-                      );
-                    })
-                  ) : (
-                    <Text className="text-xs text-white/65">
-                      Interests will appear as profiles load.
-                    </Text>
-                  )}
-                </View>
-                <Pressable
-                  onPress={() => setIsFilterOpen(false)}
-                  className="mt-7 items-center rounded-2xl bg-[#a77aff] py-3.5"
-                >
-                  <View className="flex-row items-center">
-                    <MapPin size={15} color="#180e29" />
-                    <Text className="ml-2 text-sm font-extrabold text-[#180e29]">
-                      Apply filters
-                    </Text>
-                  </View>
-                </Pressable>
-              </Pressable>
-            </Pressable>
-          </Modal>
+          <MatchesFiltersBottomSheet
+            ref={filterSheetRef}
+            genderFilter={genderFilter}
+            onGenderChange={onGenderChange}
+            ageMin={ageMin}
+            ageMax={ageMax}
+            onAgeChange={onAgeChange}
+          />
         </View>
       </SafeAreaView>
     </View>

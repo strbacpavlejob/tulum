@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
-import { type LookingForGender, User } from "@/types/user";
+import { type GenderFilter, User } from "@/types/user";
 
 const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -834,7 +834,7 @@ export interface SwipeableResponse {
 }
 
 export interface SwipeFilters {
-  genderFilter?: LookingForGender;
+  genderFilter?: GenderFilter;
   ageMin?: number;
   ageMax?: number;
   selectedInterests?: string[];

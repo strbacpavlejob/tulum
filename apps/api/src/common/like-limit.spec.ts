@@ -47,4 +47,10 @@ describe('like-limit helpers', () => {
       selectedInterests: ['techno', 'house'],
     });
   });
+
+  it('preserves the other gender filter', () => {
+    expect(normalizeLikeFilters({ genderFilter: 'other' }).genderFilter).toBe(
+      'other',
+    );
+  });
 });

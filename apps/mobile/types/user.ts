@@ -52,6 +52,7 @@ export type Religion =
   | "prefer not to say";
 
 export type LookingForGender = "male" | "female" | "everyone";
+export type GenderFilter = "male" | "female" | "other" | "everyone";
 
 export interface User {
   id?: string;

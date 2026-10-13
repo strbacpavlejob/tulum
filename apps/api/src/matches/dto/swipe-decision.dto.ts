@@ -36,11 +36,11 @@ export class SwipeDecisionDto {
     description:
       'Current gender filter for eligible-guest like limit calculation',
     required: false,
-    enum: ['male', 'female', 'everyone'],
+    enum: ['male', 'female', 'other', 'everyone'],
   })
   @IsOptional()
-  @IsIn(['male', 'female', 'everyone'])
-  gender_filter?: 'male' | 'female' | 'everyone';
+  @IsIn(['male', 'female', 'other', 'everyone'])
+  gender_filter?: 'male' | 'female' | 'other' | 'everyone';
 
   @ApiProperty({
     description: 'Current minimum age filter used for like-limit calculation',
