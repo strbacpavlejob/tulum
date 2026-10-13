@@ -1,4 +1,5 @@
 {
+  "chat.useCustomizationsInParentRepositories": true,
   "deno.enablePaths": [
     "supabase/functions"
   ],

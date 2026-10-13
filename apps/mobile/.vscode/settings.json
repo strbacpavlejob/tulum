@@ -1,4 +1,5 @@
 {
+  "chat.useCustomizationsInParentRepositories": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",

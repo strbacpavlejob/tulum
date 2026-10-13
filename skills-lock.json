@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "skills": {
+    "clerk-expo": {
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/clerk-expo/SKILL.md",
+      "computedHash": "15c3f265d693cd5a61b6154e686d9b606910e84feeaafbdbaf99bac9db0ad2ba"
+    },
+    "clerk-nextjs-patterns": {
+      "source": "clerk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/clerk-nextjs-patterns/SKILL.md",
+      "computedHash": "72c949607a371a463e5a8bbce4d47d58f35bf6d8c4e84b79701c378344b465e4"
+    },
+    "expo-animation": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-animation/SKILL.md",
+      "computedHash": "daf380553ca20b8c555f954e340b64dfa874d953a9e4e71891848562351e672f"
+    },
+    "expo-data-fetching": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-data-fetching/SKILL.md",
+      "computedHash": "e3d31524a94bc06915293a1ececfe23b60c13e89c733f0d6780606669ad60ef9"
+    },
+    "expo-overview": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-overview/SKILL.md",
+      "computedHash": "ae10834702315c887df298a220712bf5e89ab6a0d9088eb54c6d7fddddb3e8b3"
+    },
+    "expo-router": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-router/SKILL.md",
+      "computedHash": "512978d4ea35857932b79ee9b15a47d7ab78382dc1fcd275601b87e4c80c1e59"
+    },
+    "nestjs-architecture-principles": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-architecture-principles/SKILL.md",
+      "computedHash": "fe7cd088ac5f75a290198fb80a7db4d17b973fb32885ac09d3edb2c05c0351cc"
+    },
+    "nestjs-code-audit": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-code-audit/SKILL.md",
+      "computedHash": "37559eae79418495034f334291c93ccb65356aeea173e140eb5b3910b88c3b66"
+    },
+    "nestjs-feature-audit": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-feature-audit/SKILL.md",
+      "computedHash": "e938fa109afc78ded3f0f26465119132a708e045d33d62045a2ea6bbe225afb4"
+    },
+    "nestjs-features-performance": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-features-performance/SKILL.md",
+      "computedHash": "3dc94bbf9dacbffcdd86789c0377d83e176aea9ef4b1d4f65d18793085b14128"
+    },
+    "nestjs-git-commit-pr-message": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-git-commit-pr-message/SKILL.md",
+      "computedHash": "cad900bb0bd22609b94df943180b26c1fa1cfd32fc76844a9c308674ba404707"
+    },
+    "nestjs-oop-design-patterns": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-oop-design-patterns/SKILL.md",
+      "computedHash": "88c6c380685e0fa73ffac2943787813900f8b3a0b6cf4fbf93c313fa5dcde090"
+    },
+    "nestjs-professional-software-engineering": {
+      "source": "amirtaherkhani/nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/nestjs-professional-software-engineering/SKILL.md",
+      "computedHash": "3ba1dc6f4f5244c03e836e2753ea7df6d74a0ae0249d16e264463563cfef1bd6"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "211141fd078b4b3645803868528d54221bc7755d24d5c8af45a366785c151dba"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "e14e276241805c97dbcfe40dcbea1a3035269cc7293cac4b1832dda41a835e60"
+    }
+  }
+}
