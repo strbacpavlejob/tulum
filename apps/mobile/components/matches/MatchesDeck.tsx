@@ -76,25 +76,55 @@ export default function MatchesDeck({
   const dragStartOffsetYRef = useRef(0);
   const wrapInProgressRef = useRef(false);
   const listRef = useRef<FlatList<SwipeCandidate>>(null);
-  const currentProfile = profiles[currentCardIndex]?.profile ?? null;
+  const [visibleCardIndex, setVisibleCardIndex] = useState(currentCardIndex);
+  const visibleCardIndexRef = useRef(currentCardIndex);
+  const scrollDrivenIndexRef = useRef<{
+    index: number;
+    cardHeight: number;
+    profilesLength: number;
+  } | null>(null);
+  const currentProfile = profiles[visibleCardIndex]?.profile ?? null;
   const currentProfileLiked =
     currentProfile != null && likedProfileIds.has(currentProfile.id);
   useEffect(() => {
+    visibleCardIndexRef.current = currentCardIndex;
+    setVisibleCardIndex(currentCardIndex);
+  }, [currentCardIndex]);
+  useEffect(() => {
     if (!profiles.length) return;
+    const scrollDrivenIndex = scrollDrivenIndexRef.current;
+    scrollDrivenIndexRef.current = null;
+    if (
+      scrollDrivenIndex?.index === currentCardIndex &&
+      scrollDrivenIndex.cardHeight === cardHeight &&
+      scrollDrivenIndex.profilesLength === profiles.length
+    ) {
+      return;
+    }
     listRef.current?.scrollToIndex({
       index: currentCardIndex,
       animated: true,
     });
   }, [cardHeight, currentCardIndex, profiles.length]);
-  const onScrollEnd = (offsetY: number, height: number) => {
-    if (!height) return;
+  const updateVisibleCardIndex = (offsetY: number) => {
+    if (!profiles.length) return;
     const nextIndex = Math.max(
       0,
-      Math.min(Math.round(offsetY / height), profiles.length - 1),
+      Math.min(Math.round(offsetY / cardHeight), profiles.length - 1),
     );
-    if (nextIndex !== currentCardIndex) {
+    if (nextIndex !== visibleCardIndexRef.current) {
+      visibleCardIndexRef.current = nextIndex;
+      scrollDrivenIndexRef.current = {
+        index: nextIndex,
+        cardHeight,
+        profilesLength: profiles.length,
+      };
+      setVisibleCardIndex(nextIndex);
       onChangeCardIndex(nextIndex);
     }
+  };
+  const onScrollEnd = (offsetY: number) => {
+    updateVisibleCardIndex(offsetY);
   };
   const handleEdgeWrap = (
     offsetY: number,
@@ -108,7 +138,7 @@ export default function MatchesDeck({
     const triedForward = dragDelta > 18 || velocityY < -0.4;
     const triedBackward = dragDelta < -18 || velocityY > 0.4;
     if (
-      currentCardIndex === profiles.length - 1 &&
+      visibleCardIndexRef.current === profiles.length - 1 &&
       triedForward &&
       offsetY >= maxOffset - 2
     ) {
@@ -119,7 +149,7 @@ export default function MatchesDeck({
       });
       return;
     }
-    if (currentCardIndex === 0 && triedBackward && offsetY <= 2) {
+    if (visibleCardIndexRef.current === 0 && triedBackward && offsetY <= 2) {
       wrapInProgressRef.current = true;
       onChangeCardIndex(profiles.length - 1);
       requestAnimationFrame(() => {
@@ -138,6 +168,7 @@ export default function MatchesDeck({
     const endOffsetY = event.nativeEvent.contentOffset.y;
     const dragDelta = endOffsetY - dragStartOffsetYRef.current;
     const velocityY = event.nativeEvent.velocity?.y ?? 0;
+    onScrollEnd(endOffsetY);
     handleEdgeWrap(endOffsetY, dragDelta, velocityY);
   };
   const handleLikePress = () => {
@@ -173,6 +204,10 @@ export default function MatchesDeck({
             bounces={false}
             showsVerticalScrollIndicator={false}
             decelerationRate="fast"
+            scrollEventThrottle={16}
+            onScroll={(event) =>
+              updateVisibleCardIndex(event.nativeEvent.contentOffset.y)
+            }
             getItemLayout={(_, index) => ({
               length: cardHeight,
               offset: cardHeight * index,
@@ -212,10 +247,7 @@ export default function MatchesDeck({
               </View>
             )}
             onMomentumScrollEnd={(event) =>
-              onScrollEnd(
-                event.nativeEvent.contentOffset.y,
-                event.nativeEvent.layoutMeasurement.height,
-              )
+              onScrollEnd(event.nativeEvent.contentOffset.y)
             }
             onScrollBeginDrag={handleScrollBeginDrag}
             onScrollEndDrag={handleScrollEndDrag}
