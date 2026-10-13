@@ -1,3 +1,5 @@
+/// <reference types="multer" />
+
 import {
   BadRequestException,
   Body,
@@ -41,10 +43,29 @@ export class GuestsController {
   async getSwipeable(
     @UserId() userId: string,
     @Query('event_id') eventId?: string,
+    @Query('gender_filter') genderFilter?: string,
+    @Query('age_min') ageMin?: string,
+    @Query('age_max') ageMax?: string,
+    @Query('selected_interests') selectedInterests?: string | string[],
   ) {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
-    return this.guestsService.getSwipeableGuests(userId, eventId);
+
+    const parsedAgeMin = Number.parseInt(ageMin ?? '', 10);
+    const parsedAgeMax = Number.parseInt(ageMax ?? '', 10);
+
+    const interests = Array.isArray(selectedInterests)
+      ? selectedInterests
+      : typeof selectedInterests === 'string'
+        ? selectedInterests.split(',')
+        : [];
+
+    return this.guestsService.getSwipeableGuests(userId, eventId, {
+      genderFilter,
+      ageMin: Number.isFinite(parsedAgeMin) ? parsedAgeMin : null,
+      ageMax: Number.isFinite(parsedAgeMax) ? parsedAgeMax : null,
+      selectedInterests: interests,
+    });
   }
 
   @Post('onboarding')

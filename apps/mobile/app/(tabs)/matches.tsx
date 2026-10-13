@@ -1,17 +1,16 @@
-import ActionButtons from "@/components/ActionButtons";
-import EmptyIndicator from "@/components/EmptyIndicator";
-import HandsIcon from "@/components/illustrations/Hands";
-import { MatchLocationMap } from "@/components/MatchLocationMap";
-import MatchModal from "@/components/MatchModal";
-import MatchesGenderToggle from "@/components/MatchesGenderToggle";
-import MatchesLocationGateCard from "@/components/MatchesLocationGateCard";
-import MatchesTaxiButton from "@/components/MatchesTaxiButton";
-import SwipeCard from "@/components/SwipeCard";
+import MatchesDeck from "@/components/matches/MatchesDeck";
+import {
+  EmptyMatchesView,
+  LoadingStateView,
+  LocationRequiredView,
+  LockedStateView,
+} from "@/components/matches/MatchesEligibilityViews";
 import {
   createMatchSwipe,
   fetchMyTickets,
   fetchSwipeableProfiles,
   createEventSession,
+  type SwipeFilters,
   type SwipeableProfile,
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -27,13 +26,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { StyleSheet, View } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import LoadingIndicator from "@/components/loading-indicator";
-import MatchIcon from "@/components/illustrations/Match";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { toast } from "sonner-native";
 import useStore from "@/store/useStore";
@@ -45,6 +38,11 @@ const PROXIMITY_RADIUS_M = 300;
 
 /** How often (ms) to re-check position on the location verification screen */
 const LOCATION_POLL_INTERVAL_MS = 5_000;
+
+const PROFILE_REFRESH_INTERVAL_MS = 15_000;
+const MAX_LIKE_PERCENTAGE = 0.2;
+const MIN_LIKE_LIMIT = 3;
+const PRE_EVENT_GRACE_MS = 5 * 60 * 1000;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +92,33 @@ function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
   };
 }
 
+function calculateRawLikeLimit(eligibleGuestCount: number): number {
+  const normalizedEligibleCount = Math.max(0, Math.floor(eligibleGuestCount));
+
+  if (normalizedEligibleCount === 0) {
+    return 0;
+  }
+
+  const percentageLimit = Math.floor(
+    normalizedEligibleCount * MAX_LIKE_PERCENTAGE,
+  );
+
+  return Math.min(
+    normalizedEligibleCount,
+    Math.max(MIN_LIKE_LIMIT, percentageLimit),
+  );
+}
+
+function calculateEffectiveLikeLimit(
+  eligibleGuestCount: number,
+  likesUsed: number,
+): number {
+  return Math.max(
+    Math.max(0, likesUsed),
+    calculateRawLikeLimit(eligibleGuestCount),
+  );
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type EligibilityState =
@@ -113,6 +138,34 @@ interface LiveTicket {
 interface SwipeCandidate {
   profile: Profile;
   gender: "male" | "female" | "other" | null;
+  likedByMe: boolean;
+}
+
+interface LikeStats {
+  likesUsed: number;
+  likeLimit: number;
+  eligibleGuestCount: number;
+}
+
+function applyProfileFilters(
+  candidates: SwipeCandidate[],
+  genderFilter: LookingForGender,
+  ageMin: number,
+  ageMax: number,
+  selectedInterests: string[],
+): SwipeCandidate[] {
+  return candidates.filter((candidate) => {
+    const genderMatch =
+      genderFilter === "everyone" || candidate.gender === genderFilter;
+    const ageMatch =
+      candidate.profile.age >= ageMin && candidate.profile.age <= ageMax;
+    const interestsMatch =
+      selectedInterests.length === 0 ||
+      selectedInterests.some((interest) =>
+        candidate.profile.hobbies.includes(interest),
+      );
+    return genderMatch && ageMatch && interestsMatch;
+  });
 }
 
 // ── Screen ─────────────────────────────────────────────────────────────────────
@@ -124,6 +177,12 @@ export default function MatchesScreen() {
   const router = useRouter();
   const lookingForGenderFromProfile = useStore(
     (s) => s.user?.lookingForGender ?? "everyone",
+  );
+  const setSwipeableCandidatesForEvent = useStore(
+    (s) => s.setSwipeableCandidatesForEvent,
+  );
+  const getSwipeableCandidatesForEvent = useStore(
+    (s) => s.getSwipeableCandidatesForEvent,
   );
 
   // ── Eligibility ────────────────────────────────────────────────────────────
@@ -144,17 +203,47 @@ export default function MatchesScreen() {
   const [genderFilter, setGenderFilter] = useState<LookingForGender>(
     lookingForGenderFromProfile,
   );
+  const [ageRange, setAgeRange] = useState({ min: 18, max: 60 });
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [likeStats, setLikeStats] = useState<LikeStats>({
+    likesUsed: 0,
+    likeLimit: 0,
+    eligibleGuestCount: 0,
+  });
 
   useEffect(() => {
     setGenderFilter(lookingForGenderFromProfile);
   }, [lookingForGenderFromProfile]);
 
+  const availableInterests = useMemo(() => {
+    const uniqueInterests = new Set<string>();
+    profiles.forEach((candidate) => {
+      candidate.profile.hobbies.forEach((interest) => {
+        if (interest) {
+          uniqueInterests.add(interest.trim());
+        }
+      });
+    });
+    return Array.from(uniqueInterests).sort((a, b) => a.localeCompare(b));
+  }, [profiles]);
+
   const filteredProfiles = useMemo(() => {
-    if (genderFilter === "everyone") {
-      return profiles;
-    }
-    return profiles.filter((candidate) => candidate.gender === genderFilter);
-  }, [profiles, genderFilter]);
+    return applyProfileFilters(
+      profiles,
+      genderFilter,
+      ageRange.min,
+      ageRange.max,
+      selectedInterests,
+    );
+  }, [profiles, genderFilter, ageRange.min, ageRange.max, selectedInterests]);
+
+  const likedProfileIds = useMemo(() => {
+    return new Set(
+      profiles
+        .filter((candidate) => candidate.likedByMe)
+        .map((candidate) => candidate.profile.id),
+    );
+  }, [profiles]);
 
   useEffect(() => {
     setCurrentCardIndex(0);
@@ -162,6 +251,60 @@ export default function MatchesScreen() {
 
   const eventIdRef = useRef<string | null>(null);
   eventIdRef.current = eventId;
+  const currentCardIndexRef = useRef(0);
+  currentCardIndexRef.current = currentCardIndex;
+  const filteredProfilesRef = useRef<SwipeCandidate[]>([]);
+  filteredProfilesRef.current = filteredProfiles;
+  const checkedInEventIdRef = useRef<string | null>(null);
+  const loadingProfilesRef = useRef(false);
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+  const genderFilterRef = useRef(genderFilter);
+  genderFilterRef.current = genderFilter;
+  const ageRangeRef = useRef(ageRange);
+  ageRangeRef.current = ageRange;
+  const selectedInterestsRef = useRef(selectedInterests);
+  selectedInterestsRef.current = selectedInterests;
+
+  const swipeFilters = useMemo<SwipeFilters>(
+    () => ({
+      genderFilter,
+      ageMin: ageRange.min,
+      ageMax: ageRange.max,
+      selectedInterests,
+    }),
+    [genderFilter, ageRange.min, ageRange.max, selectedInterests],
+  );
+
+  useEffect(() => {
+    if (!selectedInterests.length) return;
+    setSelectedInterests((prev) =>
+      prev.filter((interest) => availableInterests.includes(interest)),
+    );
+  }, [availableInterests, selectedInterests.length]);
+
+  useEffect(() => {
+    const eligibleGuestCount = filteredProfiles.length;
+    setLikeStats((prev) => {
+      const nextLikeLimit = calculateEffectiveLikeLimit(
+        eligibleGuestCount,
+        prev.likesUsed,
+      );
+      if (
+        prev.eligibleGuestCount === eligibleGuestCount &&
+        prev.likeLimit === nextLikeLimit
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        eligibleGuestCount,
+        likeLimit: nextLikeLimit,
+      };
+    });
+  }, [filteredProfiles.length]);
+
+  const isLikeDisabled = likeStats.likesUsed >= likeStats.likeLimit;
 
   // ── GPS proximity check ───────────────────────────────────────────────────
   const checkLocation = useCallback(
@@ -207,7 +350,12 @@ export default function MatchesScreen() {
         const end = tk.end_date_time
           ? new Date(tk.end_date_time).getTime()
           : null;
-        return start !== null && end !== null && now >= start && now <= end;
+        return (
+          start !== null &&
+          end !== null &&
+          now >= start - PRE_EVENT_GRACE_MS &&
+          now <= end
+        );
       });
 
       if (!live) {
@@ -242,34 +390,113 @@ export default function MatchesScreen() {
 
   // ── Load swipeable profiles once eligible ─────────────────────────────────
   const loadProfiles = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || loadingProfilesRef.current) return;
+    loadingProfilesRef.current = true;
     setLoadingProfiles(true);
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       if (!token) return;
+      const activeEventId = liveTicket?.event_id;
       // Ensure the backend records this user's active event session (check-in)
-      if (liveTicket?.event_id) {
+      if (activeEventId && checkedInEventIdRef.current !== activeEventId) {
         try {
-          await createEventSession(token, liveTicket.event_id);
+          await createEventSession(token, activeEventId);
+          checkedInEventIdRef.current = activeEventId;
         } catch {
           // ignore check-in failures — still try to load profiles
         }
       }
-      const data = await fetchSwipeableProfiles(token, liveTicket?.event_id);
-      setEventId(data.event_id ?? liveTicket?.event_id ?? null);
-      setProfiles(
-        data.profiles.map((p) => ({
-          profile: mapToProfile(p, data.event_title),
-          gender: p.gender,
-        })),
+      const data = await fetchSwipeableProfiles(token, activeEventId);
+
+      if (activeEventId) {
+        setSwipeableCandidatesForEvent(
+          activeEventId,
+          data.event_title,
+          data.profiles,
+        );
+      }
+
+      const cached = activeEventId
+        ? getSwipeableCandidatesForEvent(activeEventId)
+        : null;
+      const sourceProfiles =
+        cached?.candidates && cached.candidates.length > 0
+          ? cached.candidates
+          : data.profiles;
+      const sourceEventTitle = cached?.eventTitle || data.event_title;
+
+      const activeProfileId =
+        filteredProfilesRef.current[currentCardIndexRef.current]?.profile.id ??
+        null;
+      const nextProfiles = sourceProfiles.map((p) => ({
+        profile: mapToProfile(p, sourceEventTitle),
+        gender: p.gender,
+        likedByMe: Boolean(p.liked_by_me),
+      }));
+
+      setEventId(data.event_id ?? activeEventId ?? null);
+      setProfiles(nextProfiles);
+
+      const nextFiltered = applyProfileFilters(
+        nextProfiles,
+        genderFilterRef.current,
+        ageRangeRef.current.min,
+        ageRangeRef.current.max,
+        selectedInterestsRef.current,
       );
-      setCurrentCardIndex(0);
+
+      if (!nextFiltered.length) {
+        setCurrentCardIndex(0);
+      } else if (activeProfileId) {
+        const nextIndex = nextFiltered.findIndex(
+          (candidate) => candidate.profile.id === activeProfileId,
+        );
+        setCurrentCardIndex(
+          nextIndex >= 0
+            ? nextIndex
+            : Math.min(currentCardIndexRef.current, nextFiltered.length - 1),
+        );
+      } else {
+        setCurrentCardIndex((prev) => Math.min(prev, nextFiltered.length - 1));
+      }
+
+      const likesUsed =
+        typeof data.likes_used === "number"
+          ? data.likes_used
+          : nextProfiles.filter((candidate) => candidate.likedByMe).length;
+
+      const eligibleGuestCount =
+        typeof data.eligible_guest_count === "number"
+          ? data.eligible_guest_count
+          : nextFiltered.length;
+
+      const likeLimit = calculateEffectiveLikeLimit(
+        eligibleGuestCount,
+        likesUsed,
+      );
+
+      const syncedLikeLimit = Math.max(
+        likeLimit,
+        typeof data.like_limit === "number" ? data.like_limit : 0,
+      );
+
+      setLikeStats({
+        likesUsed,
+        likeLimit: syncedLikeLimit,
+        eligibleGuestCount,
+      });
     } catch {
       // Keep empty state on error
     } finally {
       setLoadingProfiles(false);
+      loadingProfilesRef.current = false;
     }
-  }, [userId, liveTicket]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    userId,
+    liveTicket?.event_id,
+    setSwipeableCandidatesForEvent,
+    getSwipeableCandidatesForEvent,
+  ]);
 
   useEffect(() => {
     checkTickets();
@@ -278,30 +505,26 @@ export default function MatchesScreen() {
     if (eligibility === "eligible") loadProfiles();
   }, [eligibility, loadProfiles]);
 
+  useEffect(() => {
+    if (eligibility !== "eligible") return;
+    const id = setInterval(() => {
+      void loadProfiles();
+    }, PROFILE_REFRESH_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [eligibility, loadProfiles]);
+
   // ── Swipe handlers ─────────────────────────────────────────────────────────
-  const handleSwipeLeft = (_profile: Profile) => {
-    if (eventIdRef.current == null) {
-      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+  const handleSwipeRight = async (profile: Profile) => {
+    if (likedProfileIds.has(profile.id)) {
+      toast("You already liked this profile.");
       return;
     }
 
-    void getToken().then((token) => {
-      if (!token) {
-        toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
-        return;
-      }
-      createMatchSwipe(token, _profile.id, eventIdRef.current as string, false)
-        .then(() => {
-          setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
-        })
-        .catch((err) => {
-          const msg = err instanceof Error ? err.message : String(err);
-          toast.error(msg || "Failed to submit swipe.");
-        });
-    });
-  };
+    if (isLikeDisabled) {
+      toast("You have used all Likes for your current filters.");
+      return;
+    }
 
-  const handleSwipeRight = async (profile: Profile) => {
     if (eventIdRef.current == null) {
       toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
       return;
@@ -314,16 +537,57 @@ export default function MatchesScreen() {
     }
 
     let isMutualMatch = false;
+    let reachedLimitAfterLike = false;
     try {
       const result = await createMatchSwipe(
         token,
         profile.id,
         eventIdRef.current,
         true,
+        swipeFilters,
       );
+
+      const likesUsed =
+        typeof result.likes_used === "number"
+          ? result.likes_used
+          : likeStats.likesUsed + 1;
+      const eligibleGuestCount =
+        typeof result.eligible_guest_count === "number"
+          ? result.eligible_guest_count
+          : filteredProfiles.length;
+
+      const calculatedLikeLimit = calculateEffectiveLikeLimit(
+        eligibleGuestCount,
+        likesUsed,
+      );
+      const nextLikeLimit = Math.max(
+        calculatedLikeLimit,
+        typeof result.like_limit === "number" ? result.like_limit : 0,
+      );
+
+      setLikeStats({
+        likesUsed,
+        likeLimit: nextLikeLimit,
+        eligibleGuestCount,
+      });
+
+      reachedLimitAfterLike = likesUsed >= nextLikeLimit;
+
+      setProfiles((prev) =>
+        prev.map((candidate) =>
+          candidate.profile.id === profile.id
+            ? { ...candidate, likedByMe: true }
+            : candidate,
+        ),
+      );
+
       isMutualMatch = result.matched;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Like limit reached")) {
+        toast("You have used all Likes for your current filters.");
+        return;
+      }
       toast.error(msg || "Failed to submit swipe.");
       return;
     }
@@ -332,180 +596,123 @@ export default function MatchesScreen() {
       setMatchedProfile(profile);
       setShowMatch(true);
     }
-    setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 300);
-  };
 
-  const handleSuperLike = () => {
-    if (currentCardIndex < filteredProfiles.length)
-      handleSwipeRight(filteredProfiles[currentCardIndex].profile);
-  };
-  const handlePass = () => {
-    if (currentCardIndex < filteredProfiles.length)
-      handleSwipeLeft(filteredProfiles[currentCardIndex].profile);
-  };
-  const handleLike = () => {
-    if (currentCardIndex < filteredProfiles.length)
-      handleSwipeRight(filteredProfiles[currentCardIndex].profile);
-  };
-  const handleRewind = () => {
-    if (currentCardIndex > 0) setCurrentCardIndex((prev) => prev - 1);
-  };
-
-  const renderCards = () => {
-    const cardsToShow = 3;
-    const visible: React.ReactNode[] = [];
-    for (let i = 0; i < cardsToShow; i++) {
-      const cardIndex = currentCardIndex + i;
-      if (cardIndex >= filteredProfiles.length) break;
-      visible.push(
-        <SwipeCard
-          key={filteredProfiles[cardIndex].profile.id}
-          profile={filteredProfiles[cardIndex].profile}
-          onSwipeLeft={handleSwipeLeft}
-          onSwipeRight={handleSwipeRight}
-          index={i}
-          totalCards={cardsToShow}
-        />,
-      );
+    if (reachedLimitAfterLike) {
+      toast("Like limit reached. You can still browse all profiles.");
     }
-    return visible.reverse();
   };
+
+  const handleVerticalIndexChange = (nextIndex: number) => {
+    setCurrentCardIndex(nextIndex);
+  };
+
+  const handleToggleInterest = (interest: string) => {
+    setSelectedInterests((prev) =>
+      prev.includes(interest)
+        ? prev.filter((item) => item !== interest)
+        : [...prev, interest],
+    );
+    setCurrentCardIndex(0);
+  };
+
+  const handleClearInterests = () => {
+    setSelectedInterests([]);
+    setCurrentCardIndex(0);
+  };
+
+  const handleAgeChange = (next: { min: number; max: number }) => {
+    setAgeRange(next);
+    setCurrentCardIndex(0);
+  };
+
+  useEffect(() => {
+    if (currentCardIndex < filteredProfiles.length) {
+      return;
+    }
+    setCurrentCardIndex(Math.max(filteredProfiles.length - 1, 0));
+  }, [currentCardIndex, filteredProfiles.length]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (eligibility === "checking") {
-    return (
-      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
-        <LoadingIndicator />
-      </View>
-    );
+    return <LoadingStateView />;
   }
 
   if (eligibility === "locked") {
     return (
-      <View className="flex-1 bg-light-background dark:bg-dark-background">
-        <SafeAreaView className="flex-1">
-          <View
-            style={{
-              flex: 1,
-              paddingTop: insets.top,
-              paddingBottom: insets.bottom,
-              paddingHorizontal: 24,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-            }}
-          >
-            <EmptyIndicator
-              title={t("matchesLocked")}
-              subtitle={t("matchesLockedSubtitle")}
-              picture={MatchIcon}
-              onPress={() => router.push("/tickets")}
-              buttonText={t("matchesUnlockButton")}
-            />
-          </View>
-        </SafeAreaView>
-      </View>
+      <LockedStateView
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        title={t("matchesLocked")}
+        subtitle={t("matchesLockedSubtitle")}
+        buttonText={t("matchesUnlockButton")}
+        onUnlock={() => router.push("/tickets")}
+      />
     );
   }
 
   if (eligibility === "location_required" && liveTicket) {
     return (
-      <View className="flex-1 bg-light-background dark:bg-dark-background">
-        {/* Full-screen map — user dot + venue pin */}
-        <MatchLocationMap
-          venueLat={liveTicket.venue_lat}
-          venueLng={liveTicket.venue_lng}
-          userLat={userCoords?.lat ?? liveTicket.venue_lat + 0.003}
-          userLng={userCoords?.lng ?? liveTicket.venue_lng + 0.003}
-        />
-
-        <View
-          pointerEvents="box-none"
-          style={[
-            StyleSheet.absoluteFillObject,
-            { zIndex: 2000, elevation: 2000 },
-          ]}
-        >
-          <MatchesLocationGateCard
-            topInset={insets.top}
-            onBypass={() => setEligibility("eligible")}
-          />
-
-          <MatchesTaxiButton
-            eventId={liveTicket.event_id}
-            venueLat={liveTicket.venue_lat}
-            venueLng={liveTicket.venue_lng}
-            bottomInset={insets.bottom}
-            onCheckLocation={() =>
-              checkLocation(liveTicket.venue_lat, liveTicket.venue_lng)
-            }
-            userCoords={userCoords}
-            setUserCoords={setUserCoords}
-          />
-        </View>
-      </View>
+      <LocationRequiredView
+        liveTicket={liveTicket}
+        userCoords={userCoords}
+        setUserCoords={setUserCoords}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        onBypass={() => setEligibility("eligible")}
+        onCheckLocation={() =>
+          checkLocation(liveTicket.venue_lat, liveTicket.venue_lng)
+        }
+      />
     );
   }
 
-  if (eligibility === "eligible" && loadingProfiles) {
-    return (
-      <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
-        <LoadingIndicator />
-      </View>
-    );
+  if (eligibility === "eligible" && loadingProfiles && profiles.length === 0) {
+    return <LoadingStateView />;
   }
 
-  if (currentCardIndex >= filteredProfiles.length) {
+  if (!filteredProfiles.length) {
     return (
-      <View className="flex-1 bg-light-background dark:bg-dark-background">
-        <SafeAreaView className="flex-1">
-          <View
-            style={{
-              flex: 1,
-              paddingTop: insets.top,
-              paddingBottom: insets.bottom,
-              paddingHorizontal: 16,
-            }}
-          >
-            <View className="flex-1 justify-center items-center px-6">
-              <EmptyIndicator
-                picture={HandsIcon}
-                title={t("noMatchesTitle")}
-                subtitle={t("noMatchesSubtitle")}
-              />
-            </View>
-          </View>
-        </SafeAreaView>
-      </View>
+      <EmptyMatchesView
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        title={t("noMatchesTitle")}
+        subtitle={t("noMatchesSubtitle")}
+      />
     );
   }
 
   return (
-    <View className="flex-1 bg-light-background dark:bg-dark-background">
-      <SafeAreaView className="flex-1">
-        <View style={{ flex: 1, paddingTop: insets.top }}>
-          <MatchesGenderToggle
-            value={genderFilter}
-            onChange={setGenderFilter}
-          />
-
-          <View className="m-2 flex-1 justify-center items-center">
-            {renderCards()}
-          </View>
-          <ActionButtons
-            onPass={handlePass}
-            onLike={handleLike}
-            onSuperLike={handleSuperLike}
-            onRewind={handleRewind}
-          />
-          <MatchModal
-            visible={showMatch}
-            profile={matchedProfile}
-            onClose={() => setShowMatch(false)}
-          />
-        </View>
-      </SafeAreaView>
-    </View>
+    <MatchesDeck
+      topInset={insets.top}
+      bottomInset={insets.bottom}
+      venueName={liveTicket?.venue_name ?? ""}
+      eventTitle={liveTicket?.event_title ?? ""}
+      venuePeopleCount={Math.max(
+        filteredProfiles.length,
+        likeStats.eligibleGuestCount,
+      )}
+      genderFilter={genderFilter}
+      onGenderChange={setGenderFilter}
+      ageMin={ageRange.min}
+      ageMax={ageRange.max}
+      onAgeChange={handleAgeChange}
+      selectedInterests={selectedInterests}
+      availableInterests={availableInterests}
+      onToggleInterest={handleToggleInterest}
+      onClearInterests={handleClearInterests}
+      profiles={filteredProfiles}
+      currentCardIndex={currentCardIndex}
+      onChangeCardIndex={handleVerticalIndexChange}
+      onLike={handleSwipeRight}
+      likedProfileIds={likedProfileIds}
+      likesUsed={likeStats.likesUsed}
+      likeLimit={likeStats.likeLimit}
+      likeLimitReached={isLikeDisabled}
+      likeDisabled={isLikeDisabled}
+      showMatch={showMatch}
+      matchedProfile={matchedProfile}
+      onCloseMatch={() => setShowMatch(false)}
+    />
   );
 }

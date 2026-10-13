@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
-import { User } from "@/types/user";
+import { type LookingForGender, User } from "@/types/user";
 
 const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -788,9 +788,20 @@ export async function fetchMyTickets(token: string, userId: string) {
     throw new Error(`Failed to fetch tickets: ${response.status}`);
   }
   const data = await response.json();
+
+  const normalizeApiTimestamp = (value: unknown): string | null => {
+    if (typeof value !== "string" || !value) return null;
+
+    // Backend may return timestamp-without-timezone strings.
+    // Interpret those as UTC to avoid local timezone drift.
+    const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+    return hasExplicitOffset ? value : `${value}Z`;
+  };
+
   return data.map((t: any) => ({
     ...t,
-    end_date_time: t.end_date_time ?? null,
+    date: normalizeApiTimestamp(t.date),
+    end_date_time: normalizeApiTimestamp(t.end_date_time),
     location: {
       latitude: t.latitude,
       longitude: t.longitude,
@@ -809,6 +820,7 @@ export interface SwipeableProfile {
   picture_urls: string[];
   age: number;
   interests: string[];
+  liked_by_me?: boolean;
 }
 
 export interface SwipeableResponse {
@@ -816,14 +828,43 @@ export interface SwipeableResponse {
   event_title: string;
   event_venue: string;
   profiles: SwipeableProfile[];
+  likes_used?: number;
+  like_limit?: number;
+  eligible_guest_count?: number;
+}
+
+export interface SwipeFilters {
+  genderFilter?: LookingForGender;
+  ageMin?: number;
+  ageMax?: number;
+  selectedInterests?: string[];
 }
 
 export async function fetchSwipeableProfiles(
   token: string,
   eventId?: string,
+  filters?: SwipeFilters,
 ): Promise<SwipeableResponse> {
-  const qs = eventId ? `?event_id=${eventId}` : "";
-  const url = `${TULUM_API_URL}/guests/swipeable${qs}`;
+  const searchParams = new URLSearchParams();
+
+  if (eventId) {
+    searchParams.set("event_id", eventId);
+  }
+  if (filters?.genderFilter) {
+    searchParams.set("gender_filter", filters.genderFilter);
+  }
+  if (typeof filters?.ageMin === "number") {
+    searchParams.set("age_min", String(filters.ageMin));
+  }
+  if (typeof filters?.ageMax === "number") {
+    searchParams.set("age_max", String(filters.ageMax));
+  }
+  if (filters?.selectedInterests?.length) {
+    searchParams.set("selected_interests", filters.selectedInterests.join(","));
+  }
+
+  const qs = searchParams.toString();
+  const url = `${TULUM_API_URL}/guests/swipeable${qs ? `?${qs}` : ""}`;
   const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch swipeable profiles: ${response.status}`);
@@ -836,7 +877,16 @@ export async function createMatchSwipe(
   otherUserId: string,
   eventId: string,
   liked: boolean,
-): Promise<{ matched: boolean; match_id: number | null }> {
+  filters?: SwipeFilters,
+): Promise<{
+  matched: boolean;
+  match_id: number | null;
+  was_already_liked?: boolean;
+  likes_used?: number;
+  like_limit?: number;
+  eligible_guest_count?: number;
+  limit_reached?: boolean;
+}> {
   const url = `${TULUM_API_URL}/matches/swipe`;
   const response = await fetch(url, {
     method: "POST",
@@ -845,15 +895,48 @@ export async function createMatchSwipe(
       other_user_id: otherUserId,
       event_id: eventId,
       liked,
+      gender_filter: filters?.genderFilter,
+      age_min: filters?.ageMin,
+      age_max: filters?.ageMax,
+      selected_interests: filters?.selectedInterests ?? [],
     }),
   });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`Failed to submit swipe: ${response.status} ${body}`);
+    let parsedBody: unknown = null;
+    try {
+      parsedBody = body ? (JSON.parse(body) as unknown) : null;
+    } catch {
+      parsedBody = null;
+    }
+
+    const parsedRecord =
+      parsedBody && typeof parsedBody === "object"
+        ? (parsedBody as Record<string, unknown>)
+        : null;
+    const nestedMessage =
+      parsedRecord &&
+      parsedRecord.message &&
+      typeof parsedRecord.message === "object"
+        ? (parsedRecord.message as Record<string, unknown>).message
+        : null;
+    const apiMessage =
+      (typeof nestedMessage === "string" && nestedMessage) ||
+      (parsedRecord && typeof parsedRecord.message === "string"
+        ? parsedRecord.message
+        : null) ||
+      body;
+
+    throw new Error(apiMessage || `Failed to submit swipe: ${response.status}`);
   }
   return response.json() as Promise<{
     matched: boolean;
     match_id: number | null;
+    was_already_liked?: boolean;
+    likes_used?: number;
+    like_limit?: number;
+    eligible_guest_count?: number;
+    limit_reached?: boolean;
   }>;
 }
 

@@ -10,58 +10,63 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
   /**
-   * POST /seed/mock-chats/:userId
+   * POST /seed/mock-messages/:userId
    *
-   * Creates mock data for the given userId:
-   *  - Mock venue + event (ended, won't appear in active feed)
-   *  - Matches with up to 3 other guests already in the DB
-   *  - A chat per match with realistic seeded messages
-   *
-   * Safe to call multiple times (existing match pairs are skipped).
+   * Full sequential seed chain:
+   *  - Creates/reuses Tulum Test Event and attendance for all existing users
+   *  - Seeds incoming likes from random 50% of other users
+   *  - Creates matches for random 80% of incoming likes
+   *  - Creates chats and incoming messages for those matches
+   */
+  @Post('mock-messages/:userId')
+  @ApiOperation({
+    summary: 'Seed event, swipes, matches and messages for a user (dev only)',
+  })
+  seedMockMessages(@Param('userId') userId: string): Promise<unknown> {
+    return this.seedService.seedMockMessages(userId);
+  }
+
+  /**
+   * Backward compatible alias for mock-messages.
    */
   @Post('mock-chats/:userId')
-  @ApiOperation({ summary: 'Seed mock chat data for a user (dev only)' })
-  seedMockChats(@Param('userId') userId: string) {
+  @ApiOperation({
+    summary: 'Alias: seed mock messages data for a user (dev only)',
+  })
+  seedMockChats(@Param('userId') userId: string): Promise<unknown> {
     return this.seedService.seedMockChats(userId);
   }
 
   /**
    * POST /seed/mock-swipes/:userId
    *
-   * Creates swipeable mock profiles for the given userId:
-   *  - Ensures user has guest + host profiles
-   *  - Creates a mock venue + currently-active event
-   *  - Creates 5 mock user+guest records with real-looking photos (picsum)
-   *  - Checks all mock users AND the requesting user into the event
-   *    so they appear under GET /guests/swipeable
-   *
-   * Safe to call multiple times (generates unique venue/event each call).
+   * Ensures test event is available, then seeds incoming likes and matches:
+   *  - Calls seedMockTestEvent(userId)
+   *  - Randomly selects 50% of other users to like the given user
+   *  - Randomly creates matches for 80% of those likes
    */
   @Post('mock-swipes/:userId')
   @ApiOperation({
     summary: 'Seed mock swipeable profiles for a user (dev only)',
   })
-  seedMockSwipes(@Param('userId') userId: string) {
+  seedMockSwipes(@Param('userId') userId: string): Promise<unknown> {
     return this.seedService.seedMockSwipes(userId);
   }
 
   /**
    * POST /seed/mock-test-event/:userId
    *
-   * Creates a test event for the given userId:
-   *  - Ensures the user has a host profile
-   *  - Creates a unique mock venue
-   *  - Creates an active event starting in 5 minutes
-   *  - Event lasts for 4 hours
-   *  - Checks ALL guests currently in the DB into the event
-   *
-   * Generates a new venue/event each time it is called.
+   * Creates/reuses Tulum Test Event for the given userId.
+   * Uses DEFAULT_VENUE_HOST_ID as venue host.
+   * Uses all existing users as attendees.
+   * Event starts in 5 minutes and lasts 15 minutes on first creation.
+   * Reuses existing event/timestamps on subsequent calls.
    */
   @Post('mock-test-event/:userId')
   @ApiOperation({
     summary: 'Seed a test event with all guests attending (dev only)',
   })
-  seedMockTestEvent(@Param('userId') userId: string) {
+  seedMockTestEvent(@Param('userId') userId: string): Promise<unknown> {
     return this.seedService.seedMockTestEvent(userId);
   }
 }

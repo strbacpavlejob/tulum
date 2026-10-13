@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const MOCK_CONVERSATIONS = [
@@ -53,173 +54,93 @@ const MOCK_CONVERSATIONS = [
   ],
 ];
 
+const TEST_VENUE_NAME = 'Tulum Test Venue';
+const TEST_EVENT_TITLE = 'Tulum Test Event';
+const TEST_VENUE_ADDRESS = 'Test Street 1, Belgrade';
+
+interface SeedEventResult {
+  venue_id: string;
+  event_id: string;
+  event_title: string;
+  starts_at: string;
+  ends_at: string;
+  attendees_total: number;
+  other_guest_user_ids: string[];
+}
+
+interface SeedMatchResult {
+  match_id: number;
+  other_user_id: string;
+}
+
+interface SeedSwipeResult extends SeedEventResult {
+  incoming_likes_target: number;
+  incoming_like_user_ids: string[];
+  matches_target: number;
+  matches: SeedMatchResult[];
+}
+
 @Injectable()
 export class SeedService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly configService: ConfigService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
   }
+
   async seedMockTestEvent(userId: string) {
-    // 1 ── Verify the user exists
-    const { data: user, error: userErr } = await this.db
-      .from('users')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
+    await this.ensureUserExists(userId);
 
-    if (userErr) throw userErr;
-
-    if (!user) {
-      throw new BadRequestException(`User ${userId} not found`);
-    }
-
-    // 2 ── Ensure user has a host profile
-    const { error: hostErr } = await this.db.from('hosts').upsert(
-      {
-        user_id: userId,
-      },
-      {
-        onConflict: 'user_id',
-        ignoreDuplicates: true,
-      },
+    const defaultHostId = this.configService.getOrThrow<string>(
+      'DEFAULT_VENUE_HOST_ID',
     );
+    await this.ensureUserExists(defaultHostId);
 
+    const { error: hostErr } = await this.db
+      .from('hosts')
+      .upsert(
+        { user_id: defaultHostId },
+        { onConflict: 'user_id', ignoreDuplicates: true },
+      );
     if (hostErr) throw hostErr;
 
-    const now = Date.now();
-    const ts = Date.now();
-
-    // 3 ── Create mock venue
-    const { data: venue, error: venueErr } = await this.db
-      .from('venues')
-      .insert({
-        host_id: userId,
-        venue_type: 'nightclub',
-        name: `Tulum Test Venue ${ts}`,
-        description: 'Temporary mock venue for event testing.',
-        latitude: 44.8418626,
-        longitude: 20.3904346,
-        address: 'Test Street 1, Belgrade',
-        capacity: 1000,
-      })
-      .select('id')
-      .single();
-
-    if (venueErr) throw venueErr;
-
-    // 4 ── Event starts in 5 minutes and lasts 4 hours
-    const startDateTime = new Date(now + 5 * 60 * 1000).toISOString();
-
-    const endDateTime = new Date(
-      now + (5 * 60 + 4 * 60 * 60) * 1000,
-    ).toISOString();
-
-    // 5 ── Create test event
-    const { data: event, error: eventErr } = await this.db
-      .from('events')
-      .insert({
-        venue_id: venue.id,
-        title: `Tulum Test Event ${ts}`,
-        description:
-          'Mock event starting in 5 minutes for development/testing.',
-        start_date_time: startDateTime,
-        end_date_time: endDateTime,
-        tags: ['testing', 'techno', 'electronic'],
-        status: 'active',
-      })
-      .select('id, title, start_date_time, end_date_time')
-      .single();
-
-    if (eventErr) throw eventErr;
-
-    // 6 ── Get ALL guests
     const { data: guests, error: guestsErr } = await this.db
       .from('guests')
       .select('user_id');
-
     if (guestsErr) throw guestsErr;
 
-    // 7 ── Make every guest attend + checked-in for swipeability
-    if (guests?.length) {
-      const tickets = guests.map((guest) => ({
-        guest_id: guest.user_id,
-        event_id: event.id,
-      }));
-
-      const sessions = guests.map((guest) => ({
-        user_id: guest.user_id,
-        event_id: event.id,
-      }));
-
-      const { error: ticketsErr } = await this.db
-        .from('tickets')
-        .insert(tickets);
-
-      if (ticketsErr) throw ticketsErr;
-
-      const { error: sessionsErr } = await this.db
-        .from('event_sessions')
-        .insert(sessions);
-
-      if (sessionsErr) throw sessionsErr;
-    }
-
-    return {
-      venue_id: venue.id,
-      event_id: event.id,
-      event_title: event.title,
-      starts_at: event.start_date_time,
-      ends_at: event.end_date_time,
-      guests_attending: guests?.length ?? 0,
-      guests_checked_in: guests?.length ?? 0,
-    };
-  }
-  async seedMockChats(userId: string) {
-    // 1 ── Verify the user exists
-    const { data: user, error: userErr } = await this.db
-      .from('users')
-      .select('id, first_name')
-      .eq('id', userId)
-      .maybeSingle();
-    if (userErr) throw userErr;
-    if (!user) throw new BadRequestException(`User ${userId} not found`);
-
-    // 2 ── Ensure the user has a guest profile (needed for FK on matches)
-    await this.db.from('guests').upsert(
-      {
-        user_id: userId,
-        gender: 'other',
-        seeking: 'party',
-        interested_in: ['male', 'female', 'other'],
-        interests: ['Music', 'Travel', 'Tech'],
-        picture_urls: [],
-        birthday: new Date('1995-01-01').toISOString(),
-      },
-      { onConflict: 'user_id', ignoreDuplicates: true },
+    const attendeeUserIds = Array.from(
+      new Set(
+        ((guests ?? []) as Array<{ user_id: string }>)
+          .map((g) => g.user_id)
+          .filter((id) => id.length > 0),
+      ),
     );
 
-    // 3 ── Ensure the user has a host profile (needed to own a venue)
-    await this.db
-      .from('hosts')
-      .upsert(
-        { user_id: userId },
-        { onConflict: 'user_id', ignoreDuplicates: true },
+    if (!attendeeUserIds.includes(userId)) {
+      throw new BadRequestException(
+        `User ${userId} does not have a guest profile and cannot attend seeded guest-only event.`,
       );
+    }
 
-    // 4 ── Create a mock venue owned by this user (upsert on name to be idempotent)
+    const attendeeCount = attendeeUserIds.length;
+    const venueCapacity = attendeeCount * 2;
+
     const { data: venue, error: venueErr } = await this.db
       .from('venues')
       .upsert(
         {
-          host_id: userId,
+          host_id: defaultHostId,
           venue_type: 'nightclub',
-          name: 'Mock Club Tulum Home',
-          description: 'A fictional venue created for testing purposes.',
+          name: TEST_VENUE_NAME,
+          description: 'Temporary mock venue for event testing.',
           latitude: 44.8418626,
           longitude: 20.3904346,
-          address: 'Knez Mihailova 1, Belgrade',
-          capacity: 300,
+          address: TEST_VENUE_ADDRESS,
+          capacity: venueCapacity,
         },
         { onConflict: 'name' },
       )
@@ -227,284 +148,464 @@ export class SeedService {
       .single();
     if (venueErr) throw venueErr;
 
-    // 5 ── Create a mock event at that venue (already ended so it won't pollute the active feed)
-    const startDt = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
-    const endDt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-
-    const { data: event, error: eventErr } = await this.db
+    const { data: existingEvent, error: existingEventErr } = await this.db
       .from('events')
-      .insert({
-        venue_id: venue.id,
-        title: 'Mock Night — Tulum Test Event',
-        description: 'Seeded event for development/testing purposes.',
-        start_date_time: startDt,
-        end_date_time: endDt,
-        tags: ['electronic', 'techno', 'testing'],
-        status: 'active',
-      })
-      .select('id')
-      .single();
-    if (eventErr) throw eventErr;
+      .select('id, title, start_date_time, end_date_time')
+      .eq('venue_id', venue.id)
+      .eq('title', TEST_EVENT_TITLE)
+      .gte('end_date_time', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingEventErr) throw existingEventErr;
 
-    // 6 ── Get up to 3 other guests (must have a guest profile for the FK to work)
-    const { data: otherGuests, error: guestsErr } = await this.db
-      .from('guests')
-      .select('user_id')
-      .neq('user_id', userId)
-      .limit(3);
-    if (guestsErr) throw guestsErr;
+    const venueId = String(venue.id);
+    const event = existingEvent ?? (await this.createTestEvent(venueId));
+    const eventId = String(event.id);
 
-    if (!otherGuests || otherGuests.length === 0) {
+    await this.ensureTicketsForEvent(eventId, attendeeUserIds);
+    await this.ensureActiveSessionsForEvent(eventId, attendeeUserIds);
+
+    const otherGuestUserIds = attendeeUserIds.filter((id) => id !== userId);
+
+    return {
+      venue_id: venueId,
+      event_id: eventId,
+      event_title: String(event.title),
+      starts_at: String(event.start_date_time),
+      ends_at: String(event.end_date_time),
+      attendees_total: attendeeUserIds.length,
+      other_guest_user_ids: otherGuestUserIds,
+    } satisfies SeedEventResult;
+  }
+  async seedMockSwipes(userId: string) {
+    const eventSeed = await this.seedMockTestEvent(userId);
+
+    const otherGuestIds = eventSeed.other_guest_user_ids;
+    if (otherGuestIds.length === 0) {
       throw new BadRequestException(
-        'No other guest profiles found in the database. ' +
-          'Create at least one other user with a completed guest profile and try again.',
+        'No other existing users found for swipe seeding.',
       );
     }
 
-    const created: {
-      match_id: number;
-      chat_id: number;
-      other_user_id: string;
-      message_count: number;
-    }[] = [];
+    const likeTarget = this.calculatePercentageCount(otherGuestIds.length, 0.5);
 
-    for (let i = 0; i < otherGuests.length; i++) {
-      const otherId = otherGuests[i].user_id as string;
+    const { data: existingIncomingLikes, error: existingLikesErr } =
+      await this.db
+        .from('guest_swipes')
+        .select('swiper_user_id')
+        .eq('event_id', eventSeed.event_id)
+        .eq('swiped_user_id', userId)
+        .eq('liked', true)
+        .in('swiper_user_id', otherGuestIds);
+    if (existingLikesErr) throw existingLikesErr;
 
-      // 7 ── Create match (ignore duplicate if it already exists)
-      const { data: match, error: matchErr } = await this.db
-        .from('matches')
-        .insert({
-          guest_id_1: userId,
-          guest_id_2: otherId,
-          event_id: event.id,
-        })
-        .select('id')
-        .single();
+    const likeUserIds = new Set<string>(
+      ((existingIncomingLikes ?? []) as Array<{ swiper_user_id: string }>).map(
+        (s) => s.swiper_user_id,
+      ),
+    );
 
-      // Skip this pair if a match already exists for this event
-      if (matchErr) {
-        if ((matchErr as { code?: string }).code === '23505') continue; // unique violation
-        throw matchErr;
-      }
+    const missingLikes = Math.max(likeTarget - likeUserIds.size, 0);
+    if (missingLikes > 0) {
+      const availableForLike = this.shuffle(
+        otherGuestIds.filter((id) => !likeUserIds.has(id)),
+      ).slice(0, missingLikes);
 
-      // 8 ── Create chat for the match
-      const { data: chat, error: chatErr } = await this.db
-        .from('chats')
-        .insert({ match_id: match.id, event_id: event.id })
-        .select('id')
-        .single();
-      if (chatErr) throw chatErr;
-
-      // 9 ── Insert mock messages
-      const convo = MOCK_CONVERSATIONS[i % MOCK_CONVERSATIONS.length];
-      const now = Date.now();
-      const messages = convo.map((msg, idx) => ({
-        chat_id: chat.id,
-        sender_id: msg.fromSelf ? userId : otherId,
-        message: msg.text,
-        sent_at: new Date(
-          now - (convo.length - idx) * 5 * 60 * 1000,
-        ).toISOString(),
+      const likeRows = availableForLike.map((swiperId) => ({
+        swiper_user_id: swiperId,
+        swiped_user_id: userId,
+        event_id: eventSeed.event_id,
+        liked: true,
       }));
 
-      const { error: msgsErr } = await this.db
-        .from('chat_messages')
-        .insert(messages);
-      if (msgsErr) throw msgsErr;
+      if (likeRows.length > 0) {
+        const { error: likeErr } = await this.db
+          .from('guest_swipes')
+          .upsert(likeRows, {
+            onConflict: 'swiper_user_id,swiped_user_id,event_id',
+          });
+        if (likeErr) throw likeErr;
 
-      created.push({
-        match_id: match.id as number,
-        chat_id: chat.id as number,
-        other_user_id: otherId,
-        message_count: messages.length,
+        for (const row of likeRows) {
+          likeUserIds.add(row.swiper_user_id);
+        }
+      }
+    }
+
+    const incomingLikeUserIds = Array.from(likeUserIds);
+    const matchesTarget = this.calculatePercentageCount(
+      incomingLikeUserIds.length,
+      0.8,
+    );
+
+    const { data: existingMatches, error: existingMatchesErr } = await this.db
+      .from('matches')
+      .select('id, guest_id_1, guest_id_2')
+      .eq('event_id', eventSeed.event_id)
+      .or(`guest_id_1.eq.${userId},guest_id_2.eq.${userId}`);
+    if (existingMatchesErr) throw existingMatchesErr;
+
+    const matchesByOtherUser = new Map<string, number>();
+    for (const m of (existingMatches ?? []) as Array<{
+      id: number;
+      guest_id_1: string;
+      guest_id_2: string;
+    }>) {
+      const otherUserId = m.guest_id_1 === userId ? m.guest_id_2 : m.guest_id_1;
+      if (!incomingLikeUserIds.includes(otherUserId)) continue;
+      matchesByOtherUser.set(otherUserId, Number(m.id));
+    }
+
+    const matchesToCreate = Math.max(
+      matchesTarget - matchesByOtherUser.size,
+      0,
+    );
+    if (matchesToCreate > 0) {
+      const candidates = this.shuffle(
+        incomingLikeUserIds.filter((id) => !matchesByOtherUser.has(id)),
+      ).slice(0, matchesToCreate);
+
+      for (const otherUserId of candidates) {
+        const { error: selfSwipeErr } = await this.db
+          .from('guest_swipes')
+          .upsert(
+            {
+              swiper_user_id: userId,
+              swiped_user_id: otherUserId,
+              event_id: eventSeed.event_id,
+              liked: true,
+            },
+            { onConflict: 'swiper_user_id,swiped_user_id,event_id' },
+          );
+        if (selfSwipeErr) throw selfSwipeErr;
+
+        const matchId = await this.ensureMatchExists(
+          eventSeed.event_id,
+          userId,
+          otherUserId,
+        );
+        matchesByOtherUser.set(otherUserId, matchId);
+      }
+    }
+
+    const matches: SeedMatchResult[] = Array.from(matchesByOtherUser.entries())
+      .map(([otherUserId, matchId]) => ({
+        match_id: matchId,
+        other_user_id: otherUserId,
+      }))
+      .sort((a, b) => a.other_user_id.localeCompare(b.other_user_id));
+
+    return {
+      ...eventSeed,
+      incoming_likes_target: likeTarget,
+      incoming_like_user_ids: incomingLikeUserIds,
+      matches_target: matchesTarget,
+      matches,
+    } satisfies SeedSwipeResult;
+  }
+
+  async seedMockMessages(userId: string) {
+    const swipeSeed = await this.seedMockSwipes(userId);
+
+    const matchIds = swipeSeed.matches.map((m) => m.match_id);
+    if (matchIds.length === 0) {
+      return {
+        ...swipeSeed,
+        chats_target: 0,
+        chats_seeded: 0,
+        chats: [],
+      };
+    }
+
+    const chatsTarget = this.calculatePercentageCount(
+      swipeSeed.incoming_like_user_ids.length,
+      0.8,
+    );
+
+    const matchById = new Map<number, SeedMatchResult>(
+      swipeSeed.matches.map((m) => [m.match_id, m]),
+    );
+
+    const { data: existingChats, error: existingChatsErr } = await this.db
+      .from('chats')
+      .select('id, match_id')
+      .in('match_id', matchIds);
+    if (existingChatsErr) throw existingChatsErr;
+
+    const chatsByMatchId = new Map<number, string>();
+    for (const row of (existingChats ?? []) as Array<{
+      id: string;
+      match_id: number;
+    }>) {
+      chatsByMatchId.set(Number(row.match_id), row.id);
+    }
+
+    const existingChatMatchIds = Array.from(chatsByMatchId.keys());
+    const chatsToCreate = Math.max(
+      chatsTarget - existingChatMatchIds.length,
+      0,
+    );
+
+    if (chatsToCreate > 0) {
+      const candidates = this.shuffle(
+        swipeSeed.matches.filter((m) => !chatsByMatchId.has(m.match_id)),
+      ).slice(0, chatsToCreate);
+
+      for (const candidate of candidates) {
+        const { data: chat, error: chatErr } = await this.db
+          .from('chats')
+          .insert({
+            match_id: candidate.match_id,
+            event_id: swipeSeed.event_id,
+          })
+          .select('id, match_id')
+          .single();
+
+        if (chatErr) {
+          const isDuplicate = (chatErr as { code?: string }).code === '23505';
+          if (!isDuplicate) throw chatErr;
+
+          const { data: existingChat, error: existingChatErr } = await this.db
+            .from('chats')
+            .select('id, match_id')
+            .eq('match_id', candidate.match_id)
+            .single();
+          if (existingChatErr) throw existingChatErr;
+
+          chatsByMatchId.set(
+            Number(existingChat.match_id),
+            String(existingChat.id),
+          );
+          continue;
+        }
+
+        chatsByMatchId.set(Number(chat.match_id), String(chat.id));
+      }
+    }
+
+    const selectedMatchIds = Array.from(chatsByMatchId.keys()).sort(
+      (a, b) => a - b,
+    );
+
+    const seededChats: Array<{
+      chat_id: string;
+      match_id: number;
+      other_user_id: string;
+      message_count: number;
+      inserted_messages: number;
+    }> = [];
+
+    for (let i = 0; i < selectedMatchIds.length; i++) {
+      const matchId = selectedMatchIds[i];
+      const chatId = chatsByMatchId.get(matchId);
+      const matchInfo = matchById.get(matchId);
+      if (!chatId || !matchInfo) continue;
+
+      const { count: existingMessageCount, error: countErr } = await this.db
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('chat_id', chatId);
+      if (countErr) throw countErr;
+
+      let insertedMessages = 0;
+      if ((existingMessageCount ?? 0) === 0) {
+        const convo = MOCK_CONVERSATIONS[i % MOCK_CONVERSATIONS.length].filter(
+          (msg) => !msg.fromSelf,
+        );
+        const now = Date.now();
+        const messages = convo.map((msg, idx) => ({
+          chat_id: chatId,
+          sender_id: matchInfo.other_user_id,
+          message: msg.text,
+          sent_at: new Date(
+            now - (convo.length - idx) * 5 * 60 * 1000,
+          ).toISOString(),
+        }));
+
+        if (messages.length > 0) {
+          const { error: msgsErr } = await this.db
+            .from('chat_messages')
+            .insert(messages);
+          if (msgsErr) throw msgsErr;
+          insertedMessages = messages.length;
+        }
+      }
+
+      seededChats.push({
+        chat_id: chatId,
+        match_id: matchId,
+        other_user_id: matchInfo.other_user_id,
+        message_count: existingMessageCount ?? 0,
+        inserted_messages: insertedMessages,
       });
     }
 
     return {
-      venue_id: venue.id as number,
-      event_id: event.id as number,
-      matches_created: created.length,
-      matches: created,
+      ...swipeSeed,
+      chats_target: chatsTarget,
+      chats_seeded: seededChats.length,
+      chats: seededChats,
     };
   }
 
-  async seedMockSwipes(userId: string) {
-    // 1 ── Verify the user exists
+  async seedMockChats(userId: string) {
+    return this.seedMockMessages(userId);
+  }
+
+  private async ensureUserExists(userId: string) {
     const { data: user, error: userErr } = await this.db
       .from('users')
       .select('id')
       .eq('id', userId)
       .maybeSingle();
     if (userErr) throw userErr;
-    if (!user) throw new BadRequestException(`User ${userId} not found`);
+    if (!user) {
+      throw new BadRequestException(`User ${userId} not found`);
+    }
+  }
 
-    // 2 ── Ensure user has a guest profile
-    await this.db.from('guests').upsert(
-      {
-        user_id: userId,
-        gender: 'other',
-        seeking: 'party',
-        interested_in: ['male', 'female', 'other'],
-        interests: ['Music', 'Travel', 'Tech'],
-        picture_urls: [],
-        birthday: new Date('1995-01-01').toISOString(),
-      },
-      { onConflict: 'user_id', ignoreDuplicates: true },
-    );
-
-    // 3 ── Ensure user has a host profile (to own the venue)
-    await this.db
-      .from('hosts')
-      .upsert(
-        { user_id: userId },
-        { onConflict: 'user_id', ignoreDuplicates: true },
-      );
-
-    const ts = Date.now();
-
-    // 4 ── Create a mock venue
-    const { data: venue, error: venueErr } = await this.db
-      .from('venues')
-      .insert({
-        host_id: userId,
-        venue_type: 'nightclub',
-        name: `Tulum Swipe Club Home ${ts}`,
-        description: 'Mock venue for swipe-screen testing.',
-        latitude: 44.8418626,
-        longitude: 20.3904346,
-        address: 'Test Street 1, Belgrade',
-        capacity: 200,
-      })
-      .select('id')
-      .single();
-    if (venueErr) throw venueErr;
-
-    // 5 ── Create a currently ACTIVE event (started 2h ago, ends 4h from now)
-    const startDt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const endDt = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+  private async createTestEvent(venueId: string) {
+    const startAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const endAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
 
     const { data: event, error: eventErr } = await this.db
       .from('events')
       .insert({
-        venue_id: venue.id,
-        title: `Swipe Night — Tulum Test ${ts}`,
-        description: 'Seeded event for swipe-screen testing.',
-        start_date_time: startDt,
-        end_date_time: endDt,
-        tags: ['electronic', 'techno', 'testing'],
+        venue_id: venueId,
+        title: TEST_EVENT_TITLE,
+        description:
+          'Mock event starting in 5 minutes for development/testing.',
+        start_date_time: startAt,
+        end_date_time: endAt,
+        tags: ['testing', 'techno', 'electronic'],
         status: 'active',
       })
-      .select('id')
+      .select('id, title, start_date_time, end_date_time')
       .single();
     if (eventErr) throw eventErr;
 
-    // 6 ── Mock profile definitions (using picsum for deterministic photos)
-    const MOCK_PROFILES = [
-      {
-        firstName: 'Ana',
-        lastName: 'Milić',
-        gender: 'female',
-        interests: ['Music', 'Dancing', 'Travel'],
-        dob: '1998-03-15',
-        photoSeed: 'woman10',
-      },
-      {
-        firstName: 'Marko',
-        lastName: 'Jovanović',
-        gender: 'male',
-        interests: ['Fitness', 'Tech', 'Coffee'],
-        dob: '1996-07-22',
-        photoSeed: 'man20',
-      },
-      {
-        firstName: 'Sofia',
-        lastName: 'Petrović',
-        gender: 'female',
-        interests: ['Art', 'Hiking', 'Music'],
-        dob: '2000-11-08',
-        photoSeed: 'woman30',
-      },
-      {
-        firstName: 'Nikola',
-        lastName: 'Đorđević',
-        gender: 'male',
-        interests: ['Gaming', 'Cooking', 'Travel'],
-        dob: '1994-02-28',
-        photoSeed: 'man40',
-      },
-      {
-        firstName: 'Maja',
-        lastName: 'Stojanović',
-        gender: 'female',
-        interests: ['Reading', 'Yoga', 'Dancing'],
-        dob: '1999-06-12',
-        photoSeed: 'woman50',
-      },
-    ];
+    return event;
+  }
 
-    const createdProfiles: {
-      user_id: string;
-      first_name: string;
-    }[] = [];
+  private async ensureTicketsForEvent(eventId: string, guestIds: string[]) {
+    if (guestIds.length === 0) return;
 
-    for (let i = 0; i < MOCK_PROFILES.length; i++) {
-      const p = MOCK_PROFILES[i];
-      const mockId = `mock_swipe_${ts}_${i}`;
+    const { data: existingTickets, error: ticketsErr } = await this.db
+      .from('tickets')
+      .select('guest_id')
+      .eq('event_id', eventId)
+      .in('guest_id', guestIds);
+    if (ticketsErr) throw ticketsErr;
 
-      // Create user row (service role bypasses RLS so explicit IDs work)
-      const { error: uErr } = await this.db.from('users').insert({
-        id: mockId,
-        email: `mock_swipe_${ts}_${i}@tulum.dev`,
-        username: `mock_swipe_${ts}_${i}`,
-        first_name: p.firstName,
-        last_name: p.lastName,
-        avatar_url: `https://picsum.photos/seed/${p.photoSeed}/400/600`,
-      });
-      if (uErr && (uErr as { code?: string }).code !== '23505') throw uErr;
+    const existingGuestIds = new Set(
+      ((existingTickets ?? []) as Array<{ guest_id: string }>).map(
+        (t) => t.guest_id,
+      ),
+    );
 
-      // Create guest profile
-      await this.db.from('guests').upsert(
-        {
-          user_id: mockId,
-          gender: p.gender,
-          seeking: 'party',
-          interested_in: ['male', 'female', 'other'],
-          interests: p.interests,
-          picture_urls: [
-            `https://picsum.photos/seed/${p.photoSeed}/400/600`,
-            `https://picsum.photos/seed/${p.photoSeed}a/400/600`,
-            `https://picsum.photos/seed/${p.photoSeed}b/400/600`,
-          ],
-          birthday: new Date(p.dob).toISOString(),
-        },
-        { onConflict: 'user_id' },
-      );
+    const missingRows = guestIds
+      .filter((guestId) => !existingGuestIds.has(guestId))
+      .map((guestId) => ({
+        guest_id: guestId,
+        event_id: eventId,
+      }));
 
-      // Check mock user into the event
-      await this.db.from('event_sessions').insert({
-        user_id: mockId,
-        event_id: event.id,
-      });
-
-      createdProfiles.push({ user_id: mockId, first_name: p.firstName });
+    if (missingRows.length > 0) {
+      const { error: insertErr } = await this.db
+        .from('tickets')
+        .insert(missingRows);
+      if (insertErr) throw insertErr;
     }
+  }
 
-    // 7 ── Check the requesting user into the event (so they see swipeable profiles)
-    const { error: selfErr } = await this.db
+  private async ensureActiveSessionsForEvent(
+    eventId: string,
+    userIds: string[],
+  ) {
+    if (userIds.length === 0) return;
+
+    const { data: sessions, error: sessionsErr } = await this.db
       .from('event_sessions')
-      .insert({ user_id: userId, event_id: event.id });
-    // Ignore unique violations (already checked in)
-    if (selfErr && (selfErr as { code?: string }).code !== '23505') {
-      throw selfErr;
+      .select('user_id')
+      .eq('event_id', eventId)
+      .is('exited_at', null)
+      .in('user_id', userIds);
+    if (sessionsErr) throw sessionsErr;
+
+    const activeUserSet = new Set(
+      ((sessions ?? []) as Array<{ user_id: string }>).map((s) => s.user_id),
+    );
+
+    const rowsToInsert = userIds
+      .filter((id) => !activeUserSet.has(id))
+      .map((id) => ({ user_id: id, event_id: eventId }));
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertErr } = await this.db
+        .from('event_sessions')
+        .insert(rowsToInsert);
+      if (insertErr) throw insertErr;
+    }
+  }
+
+  private async ensureMatchExists(
+    eventId: string,
+    userId: string,
+    otherUserId: string,
+  ): Promise<number> {
+    const [guestId1, guestId2] = [userId, otherUserId].sort((a, b) =>
+      a.localeCompare(b),
+    );
+
+    const { data: existing, error: existingErr } = await this.db
+      .from('matches')
+      .select('id')
+      .eq('guest_id_1', guestId1)
+      .eq('guest_id_2', guestId2)
+      .eq('event_id', eventId)
+      .maybeSingle();
+    if (existingErr) throw existingErr;
+    if (existing) {
+      return Number(existing.id);
     }
 
-    return {
-      event_id: event.id as number,
-      venue_id: venue.id as number,
-      event_title: `Swipe Night — Tulum Test ${ts}`,
-      profiles_created: createdProfiles.length,
-      profiles: createdProfiles,
-    };
+    const { data: inserted, error: insertErr } = await this.db
+      .from('matches')
+      .insert({ guest_id_1: guestId1, guest_id_2: guestId2, event_id: eventId })
+      .select('id')
+      .single();
+
+    if (insertErr) {
+      const isDuplicate = (insertErr as { code?: string }).code === '23505';
+      if (!isDuplicate) throw insertErr;
+
+      const { data: concurrent, error: concurrentErr } = await this.db
+        .from('matches')
+        .select('id')
+        .eq('guest_id_1', guestId1)
+        .eq('guest_id_2', guestId2)
+        .eq('event_id', eventId)
+        .single();
+      if (concurrentErr) throw concurrentErr;
+
+      return Number(concurrent.id);
+    }
+
+    return Number(inserted.id);
+  }
+
+  private calculatePercentageCount(total: number, ratio: number): number {
+    if (total <= 0) return 0;
+    return Math.max(1, Math.round(total * ratio));
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const out = [...items];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
   }
 }
