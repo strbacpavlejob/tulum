@@ -16,3 +16,10 @@ This is an agent instruction, not an operating-system permission boundary. The C
 - Use read-only MCP operations for information requests. Do not change Clerk data or settings unless the user explicitly asks for that change.
 - Treat Clerk results as sensitive and return only the information needed to answer the request; do not expose credentials or unrelated user data.
 - If the Clerk MCP server or a required read tool is unavailable, use the official Clerk CLI's read-only commands only when the target instance is clear from the current project configuration. Do not log in, change Clerk data/settings, or silently substitute local/Supabase data. If the CLI cannot access the target, state the limitation and ask before using another access method.
+
+## Visual browser testing
+
+- For Expo web checks, use the project `playwright` MCP server with the dedicated browser started by `bash scripts/start-tulum-test-browser.sh`; the Expo app is at `http://localhost:8081`. Trust this repository in Copilot CLI if prompted so the project MCP config loads.
+- Use a 375x667 viewport for iPhone SE checks, inspect screenshots, and do not add E2E tests unless requested.
+- Treat the dedicated browser profile as a credential: use only a development account, and never read, copy, print, or commit Clerk cookies, session tokens, or browser storage.
+- Do not add an application auth bypass or rely on `x-user-id` to test signed-in screens; preserve real Clerk token verification.

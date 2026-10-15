@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "local",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--cdp-endpoint",
+        "http://127.0.0.1:9222",
+        "--image-responses",
+        "allow"
+      ],
+      "tools": [
+        "browser_click",
+        "browser_fill_form",
+        "browser_find",
+        "browser_handle_dialog",
+        "browser_hover",
+        "browser_navigate",
+        "browser_navigate_back",
+        "browser_press_key",
+        "browser_resize",
+        "browser_select_option",
+        "browser_snapshot",
+        "browser_take_screenshot",
+        "browser_tabs",
+        "browser_type",
+        "browser_wait_for"
+      ]
+    }
+  }
+}
