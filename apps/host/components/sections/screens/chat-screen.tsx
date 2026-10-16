@@ -1,7 +1,6 @@
 "use client";
 
 import { SendHorizonal, UserSearch } from "lucide-react";
-import { faker } from "@faker-js/faker";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
 
@@ -10,37 +9,30 @@ export function ChatScreen() {
   const chatLines = t("landingpage.screens.chat.lines", {
     returnObjects: true,
   }) as string[];
-  const avatar = `https://mockmind-api.uifaces.co/content/human/207.jpg`;
-
-  // generate 4–6 messages
-  const messageCount = faker.number.int({ min: 4, max: 6 });
-
-  const messages = Array.from({ length: messageCount }).map((_, i) => {
-    const isAna = i % 2 === 0; // alternate
-    return {
-      id: i,
-      text: faker.helpers.arrayElement(chatLines),
-      isAna,
-    };
-  });
+  const avatar = "https://mockmind-api.uifaces.co/content/human/207.jpg";
+  const messages = chatLines.slice(0, 4).map((text, id) => ({
+    id,
+    text,
+    isAna: id % 2 === 0,
+  }));
 
   return (
     <div className="h-full w-full bg-background/80 flex flex-col font-sans text-foreground overflow-hidden">
       {/* Chat header */}
       <div className="flex items-center gap-3 p-4 pt-14 border-b border-white/10">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={avatar} alt="Ana avatar" className="object-cover" />
+          <AvatarImage
+            src={avatar}
+            alt="Ana avatar"
+            className="object-cover"
+            loading="lazy"
+          />
         </Avatar>
         <div>
           <p className="text-lg font-semibold">Ana</p>
           <p className="text-sm text-foreground/60">
             {t("landingpage.screens.chat.at")}{" "}
-            {faker.helpers.arrayElement([
-              "Ben Akiba",
-              "Freestyler",
-              "Sipaj ne pitaj",
-              "Zappa bar",
-            ])}
+            Neon Terrace
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm text-foreground/60 p-4">

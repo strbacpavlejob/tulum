@@ -27,7 +27,7 @@ export const HeartRipple = React.memo(function HeartRipple({
         return (
           <Heart
             key={i}
-            className="absolute left-1/2 top-1/2 animate-ripple text-primary fill-primary"
+            className="absolute left-1/2 top-1/2 animate-ripple text-primary fill-primary motion-reduce:animate-none"
             style={{
               width: size,
               height: size,

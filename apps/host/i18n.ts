@@ -1,30 +1,28 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
+import enCommon from "./locales/en/common.json";
+import srCommon from "./locales/sr/common.json";
+import ruCommon from "./locales/ru/common.json";
 
 const supportedLanguages = ["en", "sr", "ru"];
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    lng: "en",
     resources: {
       en: {
-        translation: require("./locales/en/common.json"),
+        translation: enCommon,
       },
       sr: {
-        translation: require("./locales/sr/common.json"),
+        translation: srCommon,
       },
       ru: {
-        translation: require("./locales/ru/common.json"),
+        translation: ruCommon,
       },
     },
     supportedLngs: supportedLanguages,
     fallbackLng: "en",
-    detection: {
-      order: ["navigator", "localStorage", "htmlTag"],
-      caches: ["localStorage"],
-    },
     interpolation: {
       escapeValue: false,
     },

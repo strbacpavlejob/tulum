@@ -6,14 +6,21 @@
   "landingpage": {
     "map": {
       "title": "Live Events Map",
-      "subtitle": "Discover trending events happening right now in your area"
+      "subtitle": "Discover trending events happening right now in your area",
+      "error": "We couldn't load events right now.",
+      "retry": "Try again"
     },
     "nav": {
       "benefits": "Benefits",
+      "liveMap": "Live Map",
       "howItWorks": "How It Works",
       "pricing": "Pricing",
+      "faq": "FAQ",
       "postEvent": "Post Event",
-      "login": "Login"
+      "login": "Login",
+      "openNavigation": "Open navigation",
+      "closeNavigation": "Close navigation",
+      "mobileMenu": "Tulum navigation"
     },
     "guest": {
       "hero": {
@@ -23,10 +30,10 @@
         "appStore": "App Store",
         "getItOn": "Get it on",
         "googlePlay": "Google Play",
-        "socialProof": "500+ users already on the app",
         "comingSoon": "Coming Soon",
         "tryWebVersion": "Try Web Version",
-        "openInBrowser": "Open in Browser"
+        "openInBrowser": "Open in Browser",
+        "scrollHint": "Scroll to explore"
       }
     },
     "hero": {
@@ -267,12 +274,6 @@
       "getStarted": "Get Started",
       "startTrial": "Start Free Trial",
       "comingSoon": "Coming Soon",
-      "notifyMe": "Notify Me",
-      "earlyAccessTitle": "Premium is coming soon",
-      "earlyAccessSubtitle": "Sign up now and get your first month of Premium free when it drops.",
-      "earlyAccessEmailPlaceholder": "your@email.com",
-      "earlyAccessCta": "Get Early Access",
-      "earlyAccessSuccess": "You're on the list! We'll reach out when Premium launches.",
       "free": {
         "name": "FREE",
         "description": "For the basic event experience",
@@ -284,7 +285,6 @@
           "See who's going (gender, interests)",
           "Match only at events",
           "Event-based chat (limited)",
-          "Basic verification + report/block",
           "Preview a few people attending"
         ]
       },
@@ -429,16 +429,20 @@
       "helpCenter": "Help Center",
       "contact": "Contact",
       "terms": "Terms of Use",
+      "social": "Social",
+      "legal": "Legal",
       "copyright": "© 2024 Tulum. All rights reserved."
+    },
+    "legal": {
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "privacyPolicyNotice": "The full Privacy Policy has not been published yet.",
+      "termsOfServiceNotice": "The full Terms of Service have not been published yet."
     },
     "ctaGuest": {
       "title": "Find Your Scene Tonight.",
       "subtitle": "Browse events, match with people, and never miss a night out again.",
       "cta": "Get Started"
-    },
-    "testimonials": {
-      "title": "What People Are Saying",
-      "subtitle": "Real stories from real people who found their night out."
     },
     "faqGuest": {
       "title": "Frequently Asked Questions",
@@ -473,7 +477,7 @@
       },
       "q8": {
         "question": "Is it safe?",
-        "answer": "Yes. We use profile verification, reporting tools, and clear community rules to keep the experience safe and respectful."
+        "answer": "Tulum does not currently offer in-app tools to report or block guests, and it cannot verify someone's identity or guarantee your safety. Meet in a public place, tell a friend where you're going, and leave if anything feels off. In an emergency, contact local emergency services."
       },
       "q9": {
         "question": "What makes Tulum different from dating apps?",
@@ -915,6 +919,11 @@
     "duplicate": "This tag already exists"
   },
   "swipeScreen": {
+    "venueName": "Tulum Test Venue",
+    "peopleHere": "{{count}} people here",
+    "matchingLive": "Matching is live",
+    "likesLeft": "likes left",
+    "noLikesLeft": "No Likes left",
     "labels": {
       "like": "LIKE",
       "nope": "NOPE"
@@ -942,8 +951,10 @@
         "name": "Ana",
         "location": "20/44",
         "tags": {
+          "music": "Music",
+          "dancing": "Dancing",
+          "travel": "Travel",
           "spontaneous": "spontaneous",
-          "dancing": "dancing",
           "nightOut": "night out"
         }
       },

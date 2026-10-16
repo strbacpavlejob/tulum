@@ -18,9 +18,15 @@ export interface IphoneProps {
   src?: string;
   videoSrc?: string;
   component?: React.ReactNode;
+  scaleComponentContent?: boolean;
 }
 
-export function Iphone({ src, videoSrc, component }: IphoneProps) {
+export function Iphone({
+  src,
+  videoSrc,
+  component,
+  scaleComponentContent = false,
+}: IphoneProps) {
   const hasVideo = !!videoSrc;
   const hasContent = hasVideo || !!src || !!component;
 
@@ -30,6 +36,16 @@ export function Iphone({ src, videoSrc, component }: IphoneProps) {
     width: `${WIDTH_PCT}%`,
     height: `${HEIGHT_PCT}%`,
     borderRadius: `${RADIUS_H}% / ${RADIUS_V}%`,
+  };
+  const screenContentStyle = {
+    ...screenStyle,
+    containerType: "inline-size" as const,
+  };
+  const scaledComponentStyle = {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    transform: `scale(calc(100cqw / ${SCREEN_WIDTH}px))`,
+    transformOrigin: "top left",
   };
 
   return (
@@ -65,18 +81,6 @@ export function Iphone({ src, videoSrc, component }: IphoneProps) {
         className="absolute inset-0 size-full"
         style={{ transform: "translateZ(0)" }}
       >
-        {component && (
-          <foreignObject
-            x={SCREEN_X}
-            y={SCREEN_Y}
-            width={SCREEN_WIDTH}
-            height={SCREEN_HEIGHT}
-            clipPath="url(#roundedCorners)"
-          >
-            {component}
-          </foreignObject>
-        )}
-
         <g mask={hasContent ? "url(#screenPunch)" : undefined}>
           <path
             d="M2 73C2 32.6832 34.6832 0 75 0H357C397.317 0 430 32.6832 430 73V809C430 849.317 397.317 882 357 882H75C34.6832 882 2 849.317 2 809V73Z"
@@ -160,6 +164,18 @@ export function Iphone({ src, videoSrc, component }: IphoneProps) {
           </clipPath>
         </defs>
       </svg>
+      {component && (
+        <div
+          className="absolute z-10 overflow-hidden"
+          style={screenContentStyle}
+        >
+          {scaleComponentContent ? (
+            <div style={scaledComponentStyle}>{component}</div>
+          ) : (
+            component
+          )}
+        </div>
+      )}
     </>
   );
 }

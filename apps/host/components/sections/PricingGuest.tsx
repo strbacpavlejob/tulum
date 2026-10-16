@@ -3,23 +3,13 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { BorderBeam } from "@/components/ui/border-beam";
+import { MascotSlot } from "./mascot-slot";
 
 export default function PricingGuest() {
   const { t } = useTranslation();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
-  const [earlyAccessOpen, setEarlyAccessOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
 
   const mobileUrl = process.env.NEXT_PUBLIC_TULUM_MOBILE_URL;
 
@@ -47,23 +37,20 @@ export default function PricingGuest() {
       features: t("landingpage.guestPricing.premium.features", {
         returnObjects: true,
       }) as string[],
-      cta: t("landingpage.guestPricing.notifyMe"),
+      cta: t("landingpage.guestPricing.comingSoon"),
       popular: true,
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    // TODO: wire up to your early-access endpoint
-    setSubmitted(true);
-  };
-
   return (
     <section
       id="pricing"
-      className="flex flex-col items-center justify-center gap-10 pb-10 w-full relative"
+      className="scroll-mt-28 relative flex w-full flex-col items-center justify-center gap-10 pb-10"
     >
+      <MascotSlot
+        name="pricing"
+        className="right-6 top-8 size-16 sm:right-10 sm:size-20"
+      />
       <div className="border-b w-full h-full p-10 md:p-14">
         <div className="max-w-xl mx-auto flex flex-col items-center justify-center gap-2">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-center text-balance">
@@ -142,11 +129,6 @@ export default function PricingGuest() {
               <div className="flex flex-col gap-4 p-4">
                 <p className="text-sm">
                   {plan.name}
-                  {plan.isComingSoon && (
-                    <span className="ml-2 text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
-                      {t("landingpage.guestPricing.comingSoon")}
-                    </span>
-                  )}
                   {plan.popular && !plan.isComingSoon && (
                     <span className="bg-linear-to-b from-primary-200 from-[1.92%] to-primary to-100% text-white h-6 inline-flex w-fit items-center justify-center px-2 rounded-full text-sm ml-2 shadow-[0px_6px_6px_-3px_rgba(0,0,0,0.08),0px_3px_3px_-1.5px_rgba(0,0,0,0.08),0px_1px_1px_-0.5px_rgba(0,0,0,0.08),0px_0px_0px_1px_rgba(255,255,255,0.12)_inset,0px_1px_0px_0px_rgba(255,255,255,0.12)_inset]">
                       {t("landingpage.guestPricing.mostPopular")}
@@ -239,69 +221,35 @@ export default function PricingGuest() {
               <div className="flex flex-col gap-2 p-4">
                 {plan.isComingSoon ? (
                   <button
-                    onClick={() => setEarlyAccessOpen(true)}
-                    className="h-10 w-full flex items-center justify-center text-sm font-normal tracking-wide rounded-full px-4 cursor-pointer transition-all ease-out active:scale-95 bg-primary text-white shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)]"
+                    type="button"
+                    disabled
+                    className="h-10 w-full cursor-not-allowed rounded-full bg-muted px-4 text-sm font-normal tracking-wide text-muted-foreground"
                   >
                     {plan.cta}
                   </button>
-                ) : (
+                ) : mobileUrl ? (
                   <a
-                    href={mobileUrl ?? undefined}
+                    href={mobileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`h-10 w-full flex items-center justify-center text-sm font-normal tracking-wide rounded-full px-4 transition-all ease-out active:scale-95 ${
-                      mobileUrl
-                        ? "cursor-pointer bg-accent text-secondary shadow-[0px_1px_2px_0px_rgba(255,255,255,0.16)_inset,0px_3px_3px_-1.5px_rgba(16,24,40,0.24),0px_1px_1px_-0.5px_rgba(16,24,40,0.20)]"
-                        : "cursor-not-allowed bg-muted text-muted-foreground pointer-events-none"
-                    }`}
+                    className="flex h-10 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-normal tracking-wide text-secondary shadow-[0px_1px_2px_0px_rgba(255,255,255,0.16)_inset,0px_3px_3px_-1.5px_rgba(16,24,40,0.24),0px_1px_1px_-0.5px_rgba(16,24,40,0.20)] transition-all ease-out active:scale-95"
                   >
                     {plan.cta}
                   </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="h-10 w-full cursor-not-allowed rounded-full bg-muted px-4 text-sm font-normal tracking-wide text-muted-foreground"
+                  >
+                    {t("landingpage.guestPricing.comingSoon")}
+                  </button>
                 )}
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Early Access Dialog */}
-      <Dialog open={earlyAccessOpen} onOpenChange={setEarlyAccessOpen}>
-        <DialogContent className="max-w-sm overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>
-              {t("landingpage.guestPricing.earlyAccessTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {t("landingpage.guestPricing.earlyAccessSubtitle")}
-            </DialogDescription>
-          </DialogHeader>
-          <BorderBeam duration={8} size={100} />
-          {submitted ? (
-            <p className="text-sm text-center text-muted-foreground py-4">
-              {t("landingpage.guestPricing.earlyAccessSuccess")}
-            </p>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 pt-2">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t(
-                  "landingpage.guestPricing.earlyAccessEmailPlaceholder",
-                )}
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                type="submit"
-                className="h-10 w-full flex items-center justify-center rounded-full bg-primary text-white text-sm font-medium tracking-wide cursor-pointer transition-all ease-out active:scale-95 hover:bg-primary/90"
-              >
-                {t("landingpage.guestPricing.earlyAccessCta")}
-              </button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }

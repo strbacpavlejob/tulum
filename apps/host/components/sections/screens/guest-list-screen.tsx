@@ -2,9 +2,53 @@
 
 import { Mars, UserPlus, Venus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { faker } from "@faker-js/faker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
+
+const guests = [
+  {
+    id: 1,
+    gender: "female",
+    name: "Mia",
+    age: 24,
+    avatar: "https://i.pravatar.cc/150?img=47",
+  },
+  {
+    id: 2,
+    gender: "female",
+    name: "Lena",
+    age: 23,
+    avatar: "https://i.pravatar.cc/150?img=49",
+  },
+  {
+    id: 3,
+    gender: "male",
+    name: "Luka",
+    age: 26,
+    avatar: "https://i.pravatar.cc/150?img=12",
+  },
+  {
+    id: 4,
+    gender: "female",
+    name: "Sara",
+    age: 25,
+    avatar: "https://i.pravatar.cc/150?img=44",
+  },
+  {
+    id: 5,
+    gender: "male",
+    name: "Stefan",
+    age: 27,
+    avatar: "https://i.pravatar.cc/150?img=13",
+  },
+  {
+    id: 6,
+    gender: "male",
+    name: "Nikola",
+    age: 24,
+    avatar: "https://i.pravatar.cc/150?img=14",
+  },
+];
 
 export function GuestListScreen() {
   const { t } = useTranslation();
@@ -12,27 +56,9 @@ export function GuestListScreen() {
   const goingCount = 87;
   const freeSpots = capacity - goingCount;
   const progressValue = (goingCount / capacity) * 100;
-
-  const guests = Array.from({ length: goingCount }).map((_, i) => {
-    const gender = faker.helpers.arrayElement(["female", "male"]);
-    return {
-      id: i,
-      gender,
-      name: faker.person.firstName(gender as "female" | "male"),
-      age: faker.number.int({ min: 21, max: 32 }),
-      avatar: `https://i.pravatar.cc/150?img=${faker.number.int({
-        min: 1,
-        max: 70,
-      })}`,
-    };
-  });
-
-  const femaleCount = guests.filter((g) => g.gender === "female").length;
-  const maleCount = guests.filter((g) => g.gender === "male").length;
-
-  const avgAge = Math.round(
-    guests.reduce((sum, g) => sum + g.age, 0) / guests.length,
-  );
+  const femaleCount = 52;
+  const maleCount = goingCount - femaleCount;
+  const avgAge = 25;
 
   const visibleGuests = guests.slice(0, 6);
 
@@ -42,7 +68,7 @@ export function GuestListScreen() {
       <div className="min-h-0 flex-1">
         {/* Event info */}
         <p className="mb-1 text-xl font-bold">Neon Terrace</p>
-        <p className="mb-5 text-sm text-foreground/50">Friday · 11:00 PM</p>
+        <p className="mb-5 text-sm text-foreground/50">Saturday · 11:00 PM</p>
 
         {/* Capacity */}
         <div className="mb-5 rounded-2xl border border-foreground/10 bg-foreground/5 p-4">
@@ -122,6 +148,7 @@ export function GuestListScreen() {
                       src={guest.avatar}
                       alt={guest.name}
                       className="object-cover"
+                      loading="lazy"
                     />
                     <AvatarFallback>
                       {guest.name.slice(0, 1).toUpperCase()}

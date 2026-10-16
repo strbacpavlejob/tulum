@@ -1,262 +1,104 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { IconHeartFilled, IconMapPin, IconX } from "@tabler/icons-react";
+import { Heart, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-const PROFILES = [
-  {
-    nameKey: "swipeScreen.profiles.milica.name",
-    age: 24,
-    tagKeys: [
-      "swipeScreen.profiles.milica.tags.liveMusic",
-      "swipeScreen.profiles.milica.tags.rooftop",
-      "swipeScreen.profiles.milica.tags.party",
-    ],
-    locationKey: "swipeScreen.profiles.milica.location",
-    image: "https://mockmind-api.uifaces.co/content/human/194.jpg",
-  },
-  {
-    nameKey: "swipeScreen.profiles.stefan.name",
-    age: 27,
-    tagKeys: [
-      "swipeScreen.profiles.stefan.tags.dj",
-      "swipeScreen.profiles.stefan.tags.techno",
-      "swipeScreen.profiles.stefan.tags.coffee",
-    ],
-    locationKey: "swipeScreen.profiles.stefan.location",
-    image: "https://mockmind-api.uifaces.co/content/human/222.jpg",
-  },
-  {
-    nameKey: "swipeScreen.profiles.ana.name",
-    age: 22,
-    tagKeys: [
-      "swipeScreen.profiles.ana.tags.spontaneous",
-      "swipeScreen.profiles.ana.tags.dancing",
-      "swipeScreen.profiles.ana.tags.nightOut",
-    ],
-    locationKey: "swipeScreen.profiles.ana.location",
-    image: "https://mockmind-api.uifaces.co/content/human/127.jpg",
-  },
-  {
-    nameKey: "swipeScreen.profiles.marko.name",
-    age: 26,
-    tagKeys: [
-      "swipeScreen.profiles.marko.tags.festival",
-      "swipeScreen.profiles.marko.tags.rave",
-      "swipeScreen.profiles.marko.tags.summerVibes",
-    ],
-    locationKey: "swipeScreen.profiles.marko.location",
-    image: "https://mockmind-api.uifaces.co/content/human/213.jpg",
-  },
-  {
-    nameKey: "swipeScreen.profiles.jovana.name",
-    age: 25,
-    tagKeys: [
-      "swipeScreen.profiles.jovana.tags.dance",
-      "swipeScreen.profiles.jovana.tags.house",
-      "swipeScreen.profiles.jovana.tags.cocktails",
-    ],
-    locationKey: "swipeScreen.profiles.jovana.location",
-    image: "https://mockmind-api.uifaces.co/content/human/113.jpg",
-  },
-];
+const PROFILE = {
+  age: 28,
+  image: "https://mockmind-api.uifaces.co/content/human/127.jpg",
+  nameKey: "swipeScreen.profiles.ana.name",
+  interestKeys: [
+    "swipeScreen.profiles.ana.tags.music",
+    "swipeScreen.profiles.ana.tags.dancing",
+    "swipeScreen.profiles.ana.tags.travel",
+  ],
+};
 
 export default function SwipeScreen() {
   const { t } = useTranslation();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [dragX, setDragX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(
-    null,
-  );
-
-  const startXRef = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const card = PROFILES[currentIndex % PROFILES.length];
-  const nextCard = PROFILES[(currentIndex + 1) % PROFILES.length];
-
-  const advanceCard = useCallback((direction: "left" | "right") => {
-    setExitDirection(direction);
-
-    setTimeout(() => {
-      setCurrentIndex((i) => i + 1);
-      setExitDirection(null);
-      setDragX(0);
-    }, 300);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging || exitDirection) return;
-
-    const timer = setInterval(() => {
-      advanceCard(Math.random() > 0.3 ? "right" : "left");
-    }, 2500);
-
-    return () => clearInterval(timer);
-  }, [isDragging, exitDirection, currentIndex, advanceCard]);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    startXRef.current = e.clientX;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    setDragX(e.clientX - startXRef.current);
-  };
-
-  const handlePointerUp = () => {
-    if (!isDragging) return;
-
-    setIsDragging(false);
-
-    if (Math.abs(dragX) > 60) {
-      advanceCard(dragX > 0 ? "right" : "left");
-    } else {
-      setDragX(0);
-    }
-  };
-
-  const rotation = isDragging ? dragX * 0.1 : 0;
-  const opacity = isDragging ? Math.max(0.5, 1 - Math.abs(dragX) / 300) : 1;
-
-  const exitX =
-    exitDirection === "left" ? -400 : exitDirection === "right" ? 400 : 0;
-  const exitRotation =
-    exitDirection === "left" ? -30 : exitDirection === "right" ? 30 : 0;
 
   return (
     <div
-      ref={containerRef}
-      className="relative h-full w-full select-none overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950"
-      style={{ touchAction: "none" }}
+      aria-hidden="true"
+      className="relative flex h-full w-full flex-col overflow-hidden bg-[#111015] text-white"
+      style={{
+        backgroundImage: `linear-gradient(180deg, rgba(13, 12, 18, 0.58) 0%, rgba(13, 12, 18, 0.08) 30%, rgba(13, 12, 18, 0.14) 48%, rgba(13, 12, 18, 0.88) 72%, #111015 100%), url("${PROFILE.image}")`,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
     >
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 pt-3 pb-2">
-        <span className="text-[10px] font-medium text-white/70">9:41</span>
-        <div className="flex items-center gap-1">
-          <div className="relative h-2 w-3.5 rounded-sm border border-white/70">
-            <div className="absolute inset-[1px] right-[2px] rounded-[1px] bg-white/70" />
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute inset-0 flex items-center justify-center px-3 pt-10 pb-16">
-        <div className="relative h-full w-full scale-[0.95] overflow-hidden rounded-2xl opacity-60">
-          <img
-            src={nextCard.image}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            draggable={false}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-          <div className="absolute bottom-4 left-4 right-4">
-            <p className="text-lg leading-tight font-bold text-white">
-              {t(nextCard.nameKey)}, {nextCard.age}
+      <div className="flex shrink-0 items-start justify-between gap-[clamp(6px,3cqw,12px)] px-[clamp(12px,5cqw,19px)] pt-[clamp(8px,5.5cqw,21px)]">
+        <div className="min-w-0 flex-1">
+          <h2
+            className="truncate font-black tracking-tight text-white"
+            style={{
+              fontSize: "clamp(8px, 7.5cqw, 28px)",
+              lineHeight: 1.1,
+            }}
+          >
+            {t("swipeScreen.venueName")}
+          </h2>
+          <div className="mt-[clamp(4px,2cqw,8px)] flex items-center gap-[clamp(4px,2cqw,8px)] text-white/90">
+            <span className="size-[clamp(4px,2cqw,8px)] shrink-0 rounded-full bg-[#a6f8ac]" />
+            <p className="truncate text-[clamp(6px,3cqw,12px)] font-medium">
+              {t("swipeScreen.peopleHere", { count: 59 })}
+              <span className="px-[clamp(2px,1.5cqw,6px)] text-white/65">
+                |
+              </span>
+              <span className="text-white/80">
+                {t("swipeScreen.matchingLive")}
+              </span>
             </p>
-
-            <div className="mt-1 flex items-center gap-1 text-xs text-white/80">
-              <IconMapPin className="h-4 w-4" />
-              <span>{t(nextCard.locationKey)}</span>
-            </div>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-              {nextCard.tagKeys.map((tagKey) => (
-                <span
-                  key={tagKey}
-                  className="rounded-full bg-white/10 px-2 py-1 text-[10px] text-white/80"
-                >
-                  {t(tagKey)}
-                </span>
-              ))}
-            </div>
           </div>
+        </div>
+
+        <div className="flex size-[clamp(18px,11cqw,44px)] shrink-0 items-center justify-center rounded-[clamp(6px,4cqw,16px)] border border-white/25 bg-white/15 text-white backdrop-blur-sm">
+          <SlidersHorizontal className="size-[clamp(10px,4.5cqw,18px)]" />
         </div>
       </div>
 
-      <div
-        className="absolute inset-0 z-10 flex items-center justify-center px-3 pt-10 pb-16"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
-      >
-        <div
-          className="relative h-full w-full overflow-hidden rounded-2xl shadow-2xl"
+      <div className="mt-auto shrink-0 px-[clamp(12px,5cqw,19px)] pb-[clamp(6px,4cqw,15px)]">
+        <h3
+          className="font-black tracking-tight text-white"
           style={{
-            transform: exitDirection
-              ? `translateX(${exitX}px) rotate(${exitRotation}deg)`
-              : `translateX(${dragX}px) rotate(${rotation}deg)`,
-            opacity: exitDirection ? 0 : opacity,
-            transition:
-              exitDirection || !isDragging ? "all 0.3s ease-out" : "none",
+            fontSize: "clamp(8px, 9.5cqw, 38px)",
+            lineHeight: 1.05,
           }}
         >
-          <img
-            src={card.image}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            draggable={false}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          {t(PROFILE.nameKey)}, {PROFILE.age}
+        </h3>
 
-          {dragX > 30 && (
-            <div className="absolute top-8 left-4 z-20 -rotate-12 rounded-lg border-2 border-green-400 px-3 py-1">
-              <span className="text-xl font-extrabold tracking-wider text-green-400">
-                {t("swipeScreen.labels.like")}
-              </span>
-            </div>
-          )}
-
-          {dragX < -30 && (
-            <div className="absolute top-8 right-4 z-20 rotate-12 rounded-lg border-2 border-red-400 px-3 py-1">
-              <span className="text-xl font-extrabold tracking-wider text-red-400">
-                {t("swipeScreen.labels.nope")}
-              </span>
-            </div>
-          )}
-
-          <div className="absolute bottom-4 left-4 right-4">
-            <p className="text-xl leading-tight font-bold text-white">
-              {t(card.nameKey)}, {card.age}
-            </p>
-
-            <div className="mt-1 flex items-center gap-1 text-sm text-white/80">
-              <IconMapPin className="h-4 w-4" />
-              <span>{t(card.locationKey)}</span>
-            </div>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-              {card.tagKeys.map((tagKey) => (
-                <span
-                  key={tagKey}
-                  className="rounded-full bg-white/10 px-2 py-1 text-[10px] text-white/80 backdrop-blur-sm"
-                >
-                  {t(tagKey)}
-                </span>
-              ))}
-            </div>
-          </div>
+        <div className="mt-[clamp(4px,3cqw,12px)] flex flex-wrap gap-[clamp(4px,2cqw,8px)]">
+          {PROFILE.interestKeys.map((interestKey) => (
+            <span
+              key={interestKey}
+              className="rounded-full border border-white/40 bg-white/15 px-[clamp(6px,3cqw,11px)] py-[clamp(3px,1.5cqw,6px)] text-[clamp(7px,3cqw,12px)] font-semibold text-white/95"
+            >
+              {t(interestKey)}
+            </span>
+          ))}
         </div>
-      </div>
 
-      <div className="absolute bottom-3 left-0 right-0 z-20 flex items-center justify-center gap-6">
-        <button
-          onClick={() => advanceCard("left")}
-          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-red-400/60 bg-black/30 backdrop-blur-sm transition-transform active:scale-90"
-        >
-          <IconX className="h-5 w-5 text-red-400" stroke={3} />
-        </button>
+        <p className="mt-[clamp(4px,3cqw,12px)] text-[clamp(7px,3.25cqw,13px)] leading-[1.5] text-white/90">
+          {PROFILE.interestKeys.map((interestKey) => t(interestKey)).join(", ")}
+        </p>
 
-        <button
-          onClick={() => advanceCard("right")}
-          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-green-400/60 bg-black/30 backdrop-blur-sm transition-transform active:scale-90"
-        >
-          <IconHeartFilled className="h-5 w-5 text-green-400" />
-        </button>
+        <div className="mt-[clamp(6px,5cqw,19px)] flex flex-wrap items-center justify-between gap-[clamp(4px,2cqw,8px)]">
+          <div className="flex items-center gap-[clamp(4px,2cqw,8px)] whitespace-nowrap text-[#ddd6e7]">
+            <Heart className="size-[clamp(10px,5cqw,20px)] shrink-0" />
+            <span className="text-[clamp(6px,3.5cqw,14px)] font-extrabold">
+              0 {t("swipeScreen.likesLeft")}
+            </span>
+          </div>
+          <button
+            className="flex h-[clamp(18px,15cqw,57px)] min-h-[18px] min-w-[clamp(68px,34cqw,129px)] shrink-0 items-center justify-center gap-[clamp(4px,2cqw,8px)] rounded-[clamp(4px,5cqw,19px)] bg-[#504b58] px-[clamp(8px,4cqw,15px)] text-[clamp(7px,3.5cqw,14px)] font-bold text-[#c7c1cf]"
+            disabled
+            type="button"
+          >
+            <Heart className="size-[clamp(9px,4.5cqw,18px)]" />
+            {t("swipeScreen.noLikesLeft")}
+          </button>
+        </div>
       </div>
     </div>
   );

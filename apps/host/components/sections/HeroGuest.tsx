@@ -1,85 +1,52 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { LightRays } from "../ui/light-rays";
-import SwipeScreen from "../ui/swipe-screen";
-import { AvatarCircles } from "@/components/ui/avatar-circles";
-import { faker } from "@faker-js/faker";
 import MobileStoreButton from "../mobile-store-button";
-import Phone from "../phone";
 
 export default function HeroGuest() {
   const { t } = useTranslation();
+  const heroRef = useRef<HTMLElement | null>(null);
+  const [showScrollHint, setShowScrollHint] = useState(true);
 
   useEffect(() => {
-    let player: any;
+    const hero = heroRef.current;
+    if (!hero) return;
 
-    const createPlayer = () => {
-      if (!(window as any).YT?.Player) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) setShowScrollHint(entry.isIntersecting);
+      },
+      { threshold: 0 },
+    );
 
-      player = new (window as any).YT.Player("youtube-player", {
-        videoId: "V9H0F0pfLNM",
-        playerVars: {
-          autoplay: 1,
-          mute: 1,
-          loop: 1,
-          playlist: "V9H0F0pfLNM",
-          controls: 0,
-          modestbranding: 1,
-          disablekb: 1,
-          fs: 0,
-          rel: 0,
-          playsinline: 1,
-          iv_load_policy: 3,
-        },
-        events: {
-          onReady: (event: any) => {
-            event.target.setPlaybackRate(0.75);
-            event.target.playVideo();
-          },
-        },
-      });
-    };
-
-    if ((window as any).YT?.Player) {
-      createPlayer();
-    } else {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-
-      (window as any).onYouTubeIframeAPIReady = createPlayer;
-    }
-
-    return () => {
-      player?.destroy?.();
-    };
+    observer.observe(hero);
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <section id="hero-guest" className="relative w-full overflow-hidden">
+    <section
+      ref={heroRef}
+      id="hero-guest"
+      className="scroll-mt-28 relative w-full overflow-hidden"
+    >
       <div className="relative flex w-full flex-col items-center px-6">
-        {/* Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {/* Video layer (bottom) */}
-          <div className="pointer-events-none absolute inset-0 z-0 scale-150 blur-sm">
-            <div
-              id="youtube-player"
-              className="absolute left-1/2 top-1/2 h-[300%] w-[300%] -translate-x-1/2 -translate-y-1/2"
-            />
-            <div className="absolute inset-0 bg-background/60" />
+        <div
+          aria-hidden="true"
+          className="nightclub-background absolute inset-0 z-0"
+        >
+          <div className="nightclub-pulse" />
+          <div className="nightclub-dancers">
+            <span className="nightclub-dancer nightclub-dancer-left" />
+            <span className="nightclub-dancer nightclub-dancer-right" />
           </div>
-          {/* Gradient above video (translucent so video remains visible) */}
-          <div className="absolute inset-0 z-10 h-full w-full rounded-b-xl [background:radial-gradient(125%_125%_at_50%_10%,color-mix(in_srgb,var(--background)_55%,transparent)_35%,color-mix(in_srgb,var(--primary)_50%,transparent)_100%)]" />
-          {/* Rays above gradient */}
-          <LightRays className="z-20" />
+          <div className="nightclub-overlay" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 mx-auto mt-4 flex w-full max-w-6xl flex-col md:flex-row items-center justify-between gap-10 pt-16 md:h-[800px]">
-          {/* LEFT SIDE (text + buttons) */}
-          <div className="flex flex-col items-center md:items-start gap-6 text-center md:text-left max-w-md">
+        <div className="relative z-10 mx-auto mt-4 flex w-full max-w-6xl flex-col items-center justify-between gap-10 pt-16 lg:h-[800px] lg:flex-row">
+          <div className="flex max-w-md flex-col items-center gap-6 text-center lg:items-start lg:text-left">
             <h1 className="text-3xl md:text-5xl font-bold text-secondary">
               {t("landingpage.guest.hero.title")}
             </h1>
@@ -89,7 +56,7 @@ export default function HeroGuest() {
             </p>
 
             {/* App Store Download Buttons */}
-            <div className="flex flex-col items-center md:items-start gap-2">
+            <div className="flex flex-col items-center gap-2 lg:items-start">
               <MobileStoreButton
                 variant="web"
                 link={process.env.NEXT_PUBLIC_TULUM_MOBILE_URL}
@@ -105,36 +72,31 @@ export default function HeroGuest() {
                 />
               </div>
             </div>
-
-            {/* Avatar Social Proof
-            <div className="flex items-center justify-center gap-3 md:px-1 px-4">
-              <div className="flex -space-x-2.5">
-                <AvatarCircles
-                  numPeople={99}
-                  avatarUrls={faker.helpers.arrayElements(
-                    Array.from({ length: 5 }, () => ({
-                      imageUrl: faker.image.personPortrait(),
-                      profileUrl: faker.internet.url(),
-                    })),
-                    { min: 5, max: 5 },
-                  )}
-                />
-              </div>
-              <p className="text-xs text-secondary">
-                {t("landingpage.guest.hero.socialProof")}
-              </p>
-            </div> */}
           </div>
 
-          {/* RIGHT SIDE (phone) */}
-          <div className="flex justify-center md:justify-end w-full md:w-auto -md:-translate-x-1/2">
-            <Phone
-              component={<SwipeScreen />}
-              className="w-[220px] md:w-[320px] h-auto  drop-shadow-2xl"
+          <div className="flex w-full max-w-3xl items-center justify-center lg:w-auto lg:max-w-none lg:flex-1 lg:min-w-0">
+            <Image
+              src="/images/mascots/swipe-image.png"
+              alt=""
+              width={1024}
+              height={1536}
+              sizes="(max-width: 639px) 76vw, (max-width: 1023px) 384px, 32vw"
+              className="mx-auto h-auto w-[min(76vw,24rem)] max-w-full object-contain drop-shadow-2xl lg:w-[min(32vw,28rem)]"
+              preload
             />
           </div>
         </div>
       </div>
+
+      {showScrollHint && (
+        <a
+          href="#map"
+          className="fixed bottom-5 left-1/2 z-[2147483647] flex -translate-x-1/2 items-center gap-2 rounded-full border border-secondary/30 bg-background/85 px-4 py-2 text-xs font-semibold text-secondary shadow-lg backdrop-blur-md motion-safe:animate-bounce lg:hidden"
+        >
+          <span>{t("landingpage.guest.hero.scrollHint")}</span>
+          <ChevronDown className="size-4" aria-hidden="true" />
+        </a>
+      )}
     </section>
   );
 }

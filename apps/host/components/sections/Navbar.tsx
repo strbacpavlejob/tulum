@@ -17,15 +17,24 @@ interface NavbarCta {
 
 interface NavbarProps {
   scrollToSection: (id: string) => void;
-  cta?: NavbarCta;
+  cta?: NavbarCta | null;
 }
 
 export default function Navbar({ scrollToSection, cta }: NavbarProps) {
   const { t } = useTranslation();
-  const activeCta: NavbarCta = cta ?? {
-    label: t("landingpage.nav.postEvent"),
-    href: "/sign-up",
-  };
+  const activeCta: NavbarCta | null =
+    cta === undefined
+      ? {
+          label: t("landingpage.nav.postEvent"),
+          href: "/sign-up",
+        }
+      : cta;
+  const navItems = [
+    { id: "map", label: t("landingpage.nav.liveMap") },
+    { id: "how-it-works", label: t("landingpage.nav.howItWorks") },
+    { id: "pricing", label: t("landingpage.nav.pricing") },
+    { id: "faq", label: t("landingpage.nav.faq") },
+  ];
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -69,11 +78,7 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
 
               <div className="w-full hidden md:block">
                 <ul className="relative mx-auto flex w-fit rounded-full h-11 px-2 items-center justify-center">
-                  {[
-                    { id: "features", label: "landingpage.nav.benefits" },
-                    { id: "how-it-works", label: "landingpage.nav.howItWorks" },
-                    { id: "pricing", label: "landingpage.nav.pricing" },
-                  ].map((item) => (
+                  {navItems.map((item) => (
                     <li
                       key={item.id}
                       className="z-10 cursor-pointer h-full flex items-center justify-center px-4 py-2"
@@ -82,7 +87,7 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
                         onClick={() => scrollToSection(item.id)}
                         className="text-sm font-medium transition-colors duration-200 text-neutral/60 hover:text-secondary/80 hover:cursor-pointer tracking-tight"
                       >
-                        {t(item.label)}
+                        {item.label}
                       </button>
                     </li>
                   ))}
@@ -90,17 +95,22 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
               </div>
 
               <div className="flex flex-row items-center gap-1 md:gap-3 shrink-0">
-                <Link href={activeCta.href}>
-                  <Button className="bg-primary h-8 hidden md:flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-white dark:text-white w-full px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-primary/80 transition-all ease-out active:scale-95 cursor-pointer">
-                    {activeCta.label}
-                  </Button>
-                </Link>
+                {activeCta && (
+                  <Link href={activeCta.href}>
+                    <Button className="bg-primary h-8 hidden md:flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-white dark:text-white w-full px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-primary/80 transition-all ease-out active:scale-95 cursor-pointer">
+                      {activeCta.label}
+                    </Button>
+                  </Link>
+                )}
                 <AnimatedThemeToggler />
                 <LanguageSelector />
 
                 <button
                   onClick={() => setIsOpen(true)}
                   className="md:hidden border border-border size-8 rounded-md cursor-pointer flex items-center justify-center"
+                  aria-label={t("landingpage.nav.openNavigation")}
+                  aria-expanded={isOpen}
+                  aria-controls="guest-mobile-navigation"
                 >
                   <Menu className="size-5" />
                 </button>
@@ -127,6 +137,10 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              id="guest-mobile-navigation"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t("landingpage.nav.mobileMenu")}
               className="fixed inset-x-0 w-[95%] mx-auto bottom-3 bg-background border border-border p-4 rounded-xl shadow-lg z-50 md:hidden"
             >
               <div className="flex flex-col gap-4">
@@ -140,44 +154,36 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
                   <button
                     onClick={() => setIsOpen(false)}
                     className="border border-border rounded-md p-1 cursor-pointer"
+                    aria-label={t("landingpage.nav.closeNavigation")}
                   >
                     <X className="size-5" />
                   </button>
                 </div>
 
-                <ul className="flex flex-col text-sm mb-4 border border-border rounded-md">
-                  <li className="p-2.5 border-b border-border last:border-b-0">
-                    <button
-                      onClick={() => handleNavClick("features")}
-                      className="underline-offset-4 hover:text-neutral/80 transition-colors text-neutral/60 w-full text-left font-medium"
+                <ul className="mb-4 flex flex-col rounded-md border border-border text-sm">
+                  {navItems.map((item) => (
+                    <li
+                      key={item.id}
+                      className="border-b border-border p-2.5 last:border-b-0"
                     >
-                      {t("landingpage.nav.benefits")}
-                    </button>
-                  </li>
-                  <li className="p-2.5 border-b border-border last:border-b-0">
-                    <button
-                      onClick={() => handleNavClick("how-it-works")}
-                      className="underline-offset-4 hover:text-neutral/80 transition-colors text-neutral/60 w-full text-left font-medium"
-                    >
-                      {t("landingpage.nav.howItWorks")}
-                    </button>
-                  </li>
-                  <li className="p-2.5 border-b border-border last:border-b-0">
-                    <button
-                      onClick={() => handleNavClick("pricing")}
-                      className="underline-offset-4 hover:text-neutral/80 transition-colors text-neutral/60 w-full text-left font-medium"
-                    >
-                      {t("landingpage.nav.pricing")}
-                    </button>
-                  </li>
+                      <button
+                        onClick={() => handleNavClick(item.id)}
+                        className="w-full text-left font-medium text-neutral/60 transition-colors hover:text-neutral/80"
+                      >
+                        {item.label}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
 
                 <div className="flex flex-col gap-2">
-                  <Link href={activeCta.href} className="w-full">
-                    <Button className="bg-primary h-8 flex items-center justify-center text-sm-white font-normal tracking-wide rounded-full text-background dark:text-secondary-foreground w-full px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-primary/80 transition-all ease-out active:scale-95">
-                      {activeCta.label}
-                    </Button>
-                  </Link>
+                  {activeCta && (
+                    <Link href={activeCta.href} className="w-full">
+                      <Button className="bg-primary h-8 flex items-center justify-center text-sm-white font-normal tracking-wide rounded-full text-background dark:text-secondary-foreground w-full px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-primary/80 transition-all ease-out active:scale-95">
+                        {activeCta.label}
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </motion.div>

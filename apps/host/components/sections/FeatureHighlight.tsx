@@ -1,137 +1,166 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
-
 import {
   EyeIcon,
-  Map,
-  Users,
-  MessageCircle,
   Heart,
+  Map,
+  MessageCircle,
   UserSearch,
+  Users,
 } from "lucide-react";
+import Phone from "../phone";
+import { ChatScreen } from "./screens/chat-screen";
 import { DiscoverScreen } from "./screens/discover-screen";
-import { VibeScreen } from "./screens/vibe-screen";
+import { FindScreen } from "./screens/find-screen";
 import { GuestListScreen } from "./screens/guest-list-screen";
 import { MatchScreen } from "./screens/match-screen";
-import { ChatScreen } from "./screens/chat-screen";
-import { FindScreen } from "./screens/find-screen";
-import Phone from "../phone";
+import { VibeScreen } from "./screens/vibe-screen";
+import { MascotSlot } from "./mascot-slot";
 
 export default function FeatureHighlight() {
   const { t } = useTranslation();
 
   const features = [
     {
-      icon: <Map className="h-12 w-12 text-secondary" />,
+      id: "discover",
+      icon: <Map className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.discover.title"),
       description: t(
         "landingpage.featureHighlight.features.discover.description",
       ),
       screen: <DiscoverScreen />,
+      mascot: "/images/mascots/map-image.png",
     },
     {
-      icon: <EyeIcon className="h-12 w-12 text-secondary" />,
+      id: "vibe",
+      icon: <EyeIcon className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.vibe.title"),
       description: t("landingpage.featureHighlight.features.vibe.description"),
       screen: <VibeScreen />,
+      mascot: "/images/mascots/details-image.png",
     },
     {
-      icon: <Users className="h-12 w-12 text-secondary" />,
+      id: "guest-list",
+      icon: <Users className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.guestList.title"),
       description: t(
         "landingpage.featureHighlight.features.guestList.description",
       ),
       screen: <GuestListScreen />,
+      mascot: "/images/mascots/ticket-image.png",
     },
     {
-      icon: <Heart className="h-12 w-12 text-secondary" />,
+      id: "match",
+      icon: <Heart className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.match.title"),
       description: t("landingpage.featureHighlight.features.match.description"),
       screen: <MatchScreen />,
+      mascot: "/images/mascots/match-image.png",
     },
     {
-      icon: <MessageCircle className="h-12 w-12 text-secondary" />,
+      id: "chat",
+      icon: <MessageCircle className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.chat.title"),
       description: t("landingpage.featureHighlight.features.chat.description"),
       screen: <ChatScreen />,
+      mascot: "/images/mascots/chat-image.png",
     },
     {
-      icon: <UserSearch className="h-12 w-12 text-secondary" />,
+      id: "find",
+      icon: <UserSearch className="size-7 sm:size-8" />,
       title: t("landingpage.featureHighlight.features.find.title"),
       description: t("landingpage.featureHighlight.features.find.description"),
       screen: <FindScreen />,
+      mascot: "/images/mascots/search-image.png",
     },
   ];
 
   return (
     <section
-      id="feature-highlight"
-      className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 w-full"
+      id="features"
+      className="scroll-mt-28 w-full px-5 py-16 sm:px-6 sm:py-20"
     >
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+      <div className="mx-auto max-w-6xl">
+        <div
+          id="how-it-works"
+          className="scroll-mt-28 mx-auto mb-8 max-w-2xl text-center sm:mb-12"
+        >
+          <h2 className="mb-3 text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl">
             {t("landingpage.featureHighlight.title")}
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm text-muted-foreground sm:text-base">
             {t("landingpage.featureHighlight.subtitle")}
           </p>
         </div>
 
-        {/* Feature rows */}
-        <div className="flex flex-col justify-center gap-16 sm:gap-20 lg:gap-28 px-4 sm:px-32">
-          {features.map((feature, idx) => {
-            const isReversed = idx % 2 === 1;
+        <div className="space-y-5 sm:space-y-7">
+          {features.map((feature, index) => {
+            const reversed = index % 2 === 1;
+
             return (
-              <div
-                key={idx}
-                className={`flex flex-col items-center justify-between gap-8 sm:gap-10 lg:gap-16 ${
-                  isReversed ? "lg:flex-row-reverse" : "lg:flex-row"
-                }`}
+              <article
+                key={feature.id}
+                className="relative grid items-center gap-5 overflow-hidden rounded-3xl border border-border bg-card/60 p-5 shadow-sm sm:gap-8 sm:p-8 md:grid-cols-2 md:gap-10 md:p-10"
               >
-                {/* Text */}
-                <div className="w-full lg:w-1/2">
-                  <div
-                    className={`flex flex-col items-center text-center ${
-                      isReversed
-                        ? "lg:items-end lg:text-right"
-                        : "lg:items-start lg:text-left"
-                    }`}
-                  >
-                    <div
-                      className={cn(
-                        "mb-4 sm:mb-6 inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl",
-                        "group relative overflow-hidden",
-                        // light styles
-                        "bg-background [box-shadow:0_0_0_1px_rgba(0,0,0,.03),0_2px_4px_rgba(0,0,0,.05),0_12px_24px_rgba(0,0,0,.05)]",
-                        // dark styles
-                        "dark:bg-background transform-gpu dark:[box-shadow:0_-20px_80px_-20px_#ffffff1f_inset] dark:[border:1px_solid_rgba(255,255,255,.1)]",
-                      )}
-                    >
-                      <div className="flex items-center justify-center">
-                        {feature.icon}
-                      </div>
+                <div className={reversed ? "md:order-2" : ""}>
+                  <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 sm:gap-5">
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary sm:size-16">
+                      {feature.icon}
                     </div>
-                    <h3 className="mb-2 sm:mb-4 text-xl sm:text-2xl font-bold text-foreground">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                      {feature.description}
-                    </p>
+                    <div className="min-w-0">
+                      <h3 className="mb-1.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                        {feature.title}
+                      </h3>
+                      <p className="max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
+                        {feature.description}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Phone */}
-                <div className="w-full lg:w-1/2 flex justify-center">
-                  <Phone
-                    component={feature.screen}
-                    className="w-50 sm:w-58 md:w-65 lg:w-70 h-auto drop-shadow-2xl"
+                <div
+                  className={`relative flex min-h-[430px] items-center justify-center sm:min-h-[490px] ${
+                    reversed ? "md:order-1" : ""
+                  }`}
+                >
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-1/2 size-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl sm:size-64"
                   />
+                  <div
+                    className={`relative z-10 w-[210px] sm:w-[238px] lg:w-[260px] ${
+                      reversed
+                        ? "how-it-works-mascot-anchor-left"
+                        : "how-it-works-mascot-anchor-right"
+                    }`}
+                  >
+                    <Phone
+                      component={feature.screen}
+                      scaleComponentContent
+                      className="w-full drop-shadow-2xl"
+                    />
+                    <MascotSlot
+                      name={`how-it-works-${feature.id}`}
+                      className={`how-it-works-mascot ${
+                        reversed
+                          ? "how-it-works-mascot-left"
+                          : "how-it-works-mascot-right"
+                      }`}
+                    >
+                      <Image
+                        src={feature.mascot}
+                        alt=""
+                        width={1374}
+                        height={1145}
+                        sizes="(max-width: 400px) 104px, (max-width: 600px) 26vw, (max-width: 639px) 156px, (max-width: 1023px) 187px, 208px"
+                        className="drop-shadow-xl"
+                      />
+                    </MascotSlot>
+                  </div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

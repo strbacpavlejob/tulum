@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next";
 import Logo from "../common/logo";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const ArrowIcon = () => (
   <svg
@@ -24,12 +25,34 @@ const ArrowIcon = () => (
 
 export default function Footer() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const heroTarget = pathname === "/host" ? "#hero" : "#hero-guest";
+  const productLinks = [
+    { href: "#map", label: t("landingpage.nav.liveMap") },
+    { href: "#how-it-works", label: t("landingpage.nav.howItWorks") },
+    { href: "#pricing", label: t("landingpage.nav.pricing") },
+    { href: "#faq", label: t("landingpage.nav.faq") },
+  ];
+  const socialLinks = [
+    { href: "https://www.instagram.com/tulum_app/", label: "Instagram" },
+    { href: "https://www.tiktok.com/@tulum.app", label: "TikTok" },
+  ];
+  const legalLinks = [
+    {
+      href: "/privacy-policy",
+      label: t("landingpage.legal.privacyPolicy"),
+    },
+    {
+      href: "/terms-of-service",
+      label: t("landingpage.legal.termsOfService"),
+    },
+  ];
 
   return (
-    <footer id="footer" className="w-full pb-0">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-10">
-        <div className="flex flex-col items-start justify-start gap-y-5 max-w-xs mx-0">
-          <Link className="flex items-center gap-2" href="/">
+    <footer id="footer" className="w-full border-t border-border">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-10 p-8 sm:p-10 lg:grid-cols-4">
+        <div className="col-span-2 flex max-w-xs flex-col items-start justify-start gap-y-5 lg:col-span-1">
+          <Link className="flex items-center gap-2" href={heroTarget}>
             <Logo className="h-8 w-8 text-secondary" />
             <p className="text-xl font-semibold text-secondary">Tulum</p>
           </Link>
@@ -38,75 +61,88 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="pt-5 md:w-1/2">
-          <div className="flex flex-col items-start justify-start md:flex-row md:items-start md:justify-between gap-y-5 lg:pl-10">
-            <ul className="flex flex-col gap-y-2">
-              <li className="mb-2 text-sm font-semibold text-secondary">
-                {t("landingpage.footer.company")}
-              </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">{t("landingpage.footer.about")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
+        <nav aria-label={t("landingpage.footer.product")}>
+          <p className="mb-3 text-sm font-semibold text-secondary">
+            {t("landingpage.footer.product")}
+          </p>
+          <ul className="flex flex-col gap-y-2">
+            {productLinks.map((item) => (
+              <li
+                key={item.href}
+                className="group inline-flex items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
+              >
+                <Link
+                  href={item.href}
+                  className="transition-colors hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+                <span
+                  aria-hidden="true"
+                  className="flex size-4 translate-x-0 items-center justify-center rounded border border-border opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100"
+                >
                   <ArrowIcon />
-                </div>
+                </span>
               </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">{t("landingpage.footer.contact")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                  <ArrowIcon />
-                </div>
-              </li>
-            </ul>
+            ))}
+          </ul>
+        </nav>
 
-            <ul className="flex flex-col gap-y-2">
-              <li className="mb-2 text-sm font-semibold text-secondary">
-                {t("landingpage.footer.product")}
-              </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">{t("landingpage.footer.livemap")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
+        <nav aria-label={t("landingpage.footer.social")}>
+          <p className="mb-3 text-sm font-semibold text-secondary">
+            {t("landingpage.footer.social")}
+          </p>
+          <ul className="flex flex-col gap-y-2">
+            {socialLinks.map((item) => (
+              <li
+                key={item.href}
+                className="group inline-flex items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
+              >
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-foreground"
+                >
+                  {item.label}
+                </a>
+                <span
+                  aria-hidden="true"
+                  className="flex size-4 translate-x-0 items-center justify-center rounded border border-border opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100"
+                >
                   <ArrowIcon />
-                </div>
+                </span>
               </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#features">{t("landingpage.footer.benefits")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                  <ArrowIcon />
-                </div>
-              </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#pricing">{t("landingpage.footer.pricing")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                  <ArrowIcon />
-                </div>
-              </li>
-            </ul>
+            ))}
+          </ul>
+        </nav>
 
-            <ul className="flex flex-col gap-y-2">
-              <li className="mb-2 text-sm font-semibold text-secondary">
-                {t("landingpage.footer.support")}
-              </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">{t("landingpage.footer.helpCenter")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
+        <nav aria-label={t("landingpage.footer.legal")}>
+          <p className="mb-3 text-sm font-semibold text-secondary">
+            {t("landingpage.footer.legal")}
+          </p>
+          <ul className="flex flex-col gap-y-2">
+            {legalLinks.map((item) => (
+              <li
+                key={item.href}
+                className="group inline-flex items-center justify-start gap-1 text-[15px]/snug text-muted-foreground"
+              >
+                <Link
+                  href={item.href}
+                  className="transition-colors hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+                <span
+                  aria-hidden="true"
+                  className="flex size-4 translate-x-0 items-center justify-center rounded border border-border opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100"
+                >
                   <ArrowIcon />
-                </div>
+                </span>
               </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">{t("landingpage.footer.terms")}</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                  <ArrowIcon />
-                </div>
-              </li>
-              <li className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug text-muted-foreground">
-                <Link href="#">Instagram</Link>
-                <div className="flex size-4 items-center justify-center border border-border rounded translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100">
-                  <ArrowIcon />
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
+            ))}
+          </ul>
+        </nav>
       </div>
     </footer>
   );

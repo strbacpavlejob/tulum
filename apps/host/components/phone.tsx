@@ -8,10 +8,17 @@ export interface PhoneProps {
   src?: string;
   videoSrc?: string;
   component?: React.ReactNode;
+  scaleComponentContent?: boolean;
   className?: string;
 }
 
-function Phone({ src, videoSrc, component, className }: PhoneProps) {
+function Phone({
+  src,
+  videoSrc,
+  component,
+  scaleComponentContent = false,
+  className,
+}: PhoneProps) {
   const isApple = useAppleDevice();
 
   return (
@@ -22,9 +29,19 @@ function Phone({ src, videoSrc, component, className }: PhoneProps) {
       }}
     >
       {isApple ? (
-        <Iphone src={src} videoSrc={videoSrc} component={component} />
+        <Iphone
+          src={src}
+          videoSrc={videoSrc}
+          component={component}
+          scaleComponentContent={scaleComponentContent}
+        />
       ) : (
-        <Android src={src} videoSrc={videoSrc} component={component} />
+        <Android
+          src={src}
+          videoSrc={videoSrc}
+          component={component}
+          scaleComponentContent={scaleComponentContent}
+        />
       )}
     </div>
   );

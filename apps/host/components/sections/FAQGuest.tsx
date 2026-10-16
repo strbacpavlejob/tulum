@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useTranslation } from "react-i18next";
+import { MascotSlot } from "./mascot-slot";
 
 export default function FAQGuest() {
   const { t } = useTranslation();
@@ -16,6 +17,10 @@ export default function FAQGuest() {
       id="faq"
       className="flex flex-col items-center justify-center gap-10 pb-10 w-full relative"
     >
+      <MascotSlot
+        name="faq"
+        className="right-6 top-6 size-16 sm:right-10 sm:top-8 sm:size-20"
+      />
       <div className="border-b w-full h-full p-10 md:p-14">
         <div className="max-w-xl mx-auto flex flex-col items-center justify-center gap-2">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-center text-balance">

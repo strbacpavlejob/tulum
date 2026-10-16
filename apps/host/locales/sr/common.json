@@ -6,14 +6,21 @@
   "landingpage": {
     "map": {
       "title": "Mapa svih događaja uživo",
-      "subtitle": "Nađi popularne događaje u svojoj okolini"
+      "subtitle": "Nađi popularne događaje u svojoj okolini",
+      "error": "Trenutno nije moguće učitati podatke o događajima.",
+      "retry": "Pokušaj ponovo"
     },
     "nav": {
       "benefits": "Benefiti",
+      "liveMap": "Mapa uživo",
       "howItWorks": "Kako funkcioniše",
       "pricing": "Paketi",
+      "faq": "Česta pitanja",
       "postEvent": "Postavi događaj",
-      "login": "Prijavi se"
+      "login": "Prijavi se",
+      "openNavigation": "Otvori navigaciju",
+      "closeNavigation": "Zatvori navigaciju",
+      "mobileMenu": "Tulum navigacija"
     },
     "guest": {
       "hero": {
@@ -23,10 +30,10 @@
         "appStore": "App Store",
         "getItOn": "Dostupno na",
         "googlePlay": "Google Play",
-        "socialProof": "500+ korisnika već koristi aplikaciju",
         "comingSoon": "Uskoro",
         "tryWebVersion": "Probaj web verziju",
-        "openInBrowser": "Otvori u pregledaču"
+        "openInBrowser": "Otvori u pregledaču",
+        "scrollHint": "Skroluj nadole da vidiš ostatak"
       }
     },
     "hero": {
@@ -267,12 +274,6 @@
       "getStarted": "Započni",
       "startTrial": "Počni besplatni period",
       "comingSoon": "Uskoro",
-      "notifyMe": "Obavesti me",
-      "earlyAccessTitle": "Premium uskoro stiže",
-      "earlyAccessSubtitle": "Prijavi se i dobij prvi mesec Premiuma besplatno kada bude dostupan.",
-      "earlyAccessEmailPlaceholder": "tvoj@email.com",
-      "earlyAccessCta": "Dobij rani pristup",
-      "earlyAccessSuccess": "Na listi si! Javićemo ti kada Premium bude dostupan.",
       "free": {
         "name": "BESPLATNO",
         "description": "Za odlično iskustvo na događajima",
@@ -284,7 +285,6 @@
           "Ko ide (pol, interesovanja)",
           "Mečevi samo na događajima",
           "Čet po događaju (ograničen)",
-          "Osnovna verifikacija + prijava/blokada",
           "Pregled nekoliko učesnika"
         ]
       },
@@ -429,16 +429,20 @@
       "helpCenter": "Help Center",
       "contact": "Kontakt",
       "terms": "Uslovi korišćenja",
+      "social": "Društvene mreže",
+      "legal": "Pravna dokumenta",
       "copyright": "© 2024 Tulum. Sva prava zadržana."
+    },
+    "legal": {
+      "privacyPolicy": "Politika privatnosti",
+      "termsOfService": "Uslovi korišćenja",
+      "privacyPolicyNotice": "Kompletna Politika privatnosti još nije objavljena.",
+      "termsOfServiceNotice": "Kompletni Uslovi korišćenja još nisu objavljeni."
     },
     "ctaGuest": {
       "title": "Kuda večeras?",
       "subtitle": "Pretraži događaje, upoznaj ljude i ne propusti nijedan dobar provod.",
       "cta": "Započni"
-    },
-    "testimonials": {
-      "title": "Šta kažu korisnici",
-      "subtitle": "Prave priče pravih ljudi koji su pronašli svoj izlazak."
     },
     "faqGuest": {
       "title": "Često postavljana pitanja",
@@ -473,7 +477,7 @@
       },
       "q8": {
         "question": "Da li je bezbedno?",
-        "answer": "Da. Koristimo verifikaciju profila, alate za prijavljivanje i jasna pravila zajednice kako bismo održali bezbedno i pošteno iskustvo."
+        "answer": "Tulum trenutno nema opcije u aplikaciji za prijavu ili blokiranje drugih gostiju i ne može da potvrdi nečiji identitet niti da garantuje tvoju bezbednost. Nađi se na javnom mestu, javi prijatelju gde ideš i udalji se ako ti nešto ne prija. U hitnom slučaju pozovi lokalne hitne službe."
       },
       "q9": {
         "question": "Po čemu se Tulum razlikuje od aplikacija za upoznavanje?",
@@ -915,6 +919,11 @@
     "duplicate": "Ovaj tag već postoji"
   },
   "swipeScreen": {
+    "venueName": "Tulum Test Venue",
+    "peopleHere": "{{count}} ljudi ovde",
+    "matchingLive": "Uparivanje je aktivno",
+    "likesLeft": "lajkova preostalo",
+    "noLikesLeft": "Nema preostalih lajkova",
     "labels": {
       "like": "SVIDJA MI SE",
       "nope": "NE"
@@ -942,8 +951,10 @@
         "name": "Ana",
         "location": "20/44",
         "tags": {
+          "music": "Muzika",
+          "dancing": "Ples",
+          "travel": "Putovanja",
           "spontaneous": "spontana",
-          "dancing": "ples",
           "nightOut": "noćni izlazak"
         }
       },

@@ -129,6 +129,8 @@ export function DiscoverScreen() {
                   <img
                     src={event.picture}
                     className="h-full w-full object-cover"
+                    alt=""
+                    loading="lazy"
                   />
                 </div>
 

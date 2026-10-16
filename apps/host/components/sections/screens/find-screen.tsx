@@ -1,14 +1,11 @@
 "use client";
 
-import { faker } from "@faker-js/faker";
 import { useTranslation } from "react-i18next";
-
-const EMOJIS = ["🍒", "🔥", "🌙", "⚡️", "🍸", "🎧", "💫", "🖤", "🪩", "🍑"];
 
 export function FindScreen() {
   const { t } = useTranslation();
-  const emoji = faker.helpers.arrayElement(EMOJIS);
-  const rgb = faker.color.rgb();
+  const emoji = "🪩";
+  const rgb = "#51318f";
   return (
     <div
       className="relative h-full w-full overflow-hidden font-sans"

@@ -6,8 +6,30 @@ import { AvatarCircles } from "@/components/ui/avatar-circles";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { faker } from "@faker-js/faker";
 import { useTranslation } from "react-i18next";
+
+const DEMO_AVATARS = [
+  {
+    imageUrl: "https://i.pravatar.cc/150?img=47",
+    profileUrl: "/guest",
+  },
+  {
+    imageUrl: "https://i.pravatar.cc/150?img=49",
+    profileUrl: "/guest",
+  },
+  {
+    imageUrl: "https://i.pravatar.cc/150?img=12",
+    profileUrl: "/guest",
+  },
+  {
+    imageUrl: "https://i.pravatar.cc/150?img=44",
+    profileUrl: "/guest",
+  },
+  {
+    imageUrl: "https://i.pravatar.cc/150?img=13",
+    profileUrl: "/guest",
+  },
+];
 
 const EventLogoSVG = () => (
   <svg
@@ -51,6 +73,7 @@ export function VibeScreen() {
           src={`https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`}
           className="h-full w-full object-cover"
           alt="Neon Terrace"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/60" />
 
@@ -90,7 +113,7 @@ export function VibeScreen() {
           </div>
 
           <div className="shrink-0">
-            <DateCard dateString="2026-04-12T23:00:00" />
+            <DateCard dateString="2026-10-31T23:00:00" />
           </div>
         </div>
 
@@ -124,13 +147,7 @@ export function VibeScreen() {
             <div className="flex -space-x-3">
               <AvatarCircles
                 numPeople={82}
-                avatarUrls={faker.helpers.arrayElements(
-                  Array.from({ length: 5 }, () => ({
-                    imageUrl: faker.image.personPortrait(),
-                    profileUrl: faker.internet.url(),
-                  })),
-                  { min: 5, max: 5 },
-                )}
+                avatarUrls={DEMO_AVATARS}
               />
             </div>
           </div>

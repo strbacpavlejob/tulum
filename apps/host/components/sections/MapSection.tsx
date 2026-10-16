@@ -1,11 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { StyledMapWithHandle } from "../styled-map";
 import { useState, useEffect } from "react";
 import { useLocationsStore } from "@/store/locations";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MascotSlot } from "./mascot-slot";
 
 function MapSkeleton() {
   return (
@@ -33,7 +35,14 @@ export default function MapSection() {
   }, [fetchLocations]);
 
   return (
-    <section id="map" className="py-20 px-6 w-full">
+    <section
+      id="map"
+      className="relative scroll-mt-28 w-full px-6 py-20"
+    >
+      <MascotSlot
+        name="map"
+        className="right-8 top-8 size-16 sm:right-12 sm:top-12 sm:size-20"
+      />
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
@@ -48,8 +57,18 @@ export default function MapSection() {
             {isLoading ? (
               <MapSkeleton />
             ) : error ? (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <p>{t("landingpage.map.error", "Failed to load map data")}</p>
+              <div
+                role="alert"
+                className="flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center text-muted-foreground"
+              >
+                <p>{t("landingpage.map.error")}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void fetchLocations()}
+                >
+                  {t("landingpage.map.retry")}
+                </Button>
               </div>
             ) : locations.length === 0 ? (
               <StyledMapWithHandle
