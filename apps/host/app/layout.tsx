@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import { ClerkProviderWithLocalization } from "@/components/clerk-provider-with-localization";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tulum.app"),
+  metadataBase: new URL("https://tulum-app.com"),
   title: "Tulum — Real Events & Dates",
   description:
     "Tulum — Discover Events. Meet People. Go Out Together. Tulum is an event-based social app that helps you discover events, meet people who are already going, and turn nights out into real connections.",
@@ -34,10 +33,14 @@ export const metadata: Metadata = {
     description:
       "Event-based social app where the event is the context, the swipe is the tool, and the connection is real.",
     type: "website",
-    url: "https://tulum.app",
+    url: "https://tulum-app.com",
+    siteName: "Tulum",
     images: [
       {
-        url: "https://tulum.app/og-image.jpg",
+        url: "/guest/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Tulum — discover events, meet people, and go out together.",
       },
     ],
   },
@@ -46,11 +49,7 @@ export const metadata: Metadata = {
     title: "Tulum — Discover Events. Meet People. Go Out Together.",
     description:
       "Event-based social app where the event is the context, the swipe is the tool, and the connection is real.",
-    images: [
-      {
-        url: "https://tulum.app/og-image.jpg",
-      },
-    ],
+    images: ["/guest/opengraph-image"],
   },
   authors: [{ name: "Tulum Team" }],
   icons: {
@@ -76,12 +75,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProviderWithLocalization>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
                 (function() {
                   try {
                     var preferences = localStorage.getItem('tulum-preferences');
@@ -104,31 +102,30 @@ export default function RootLayout({
                   } catch (e) {}
                 })();
               `,
-            }}
-          />
-          <link
-            rel="icon"
-            type="image/png"
-            href="/icon/favicon-96x96.png"
-            sizes="96x96"
-          />
-          <link rel="icon" type="image/svg+xml" href="/icon/favicon.svg" />
-          <link rel="shortcut icon" href="/icon/favicon.ico" />
-          <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="/icon/apple-touch-icon.png"
-          />
-          <meta name="apple-mobile-web-app-title" content="Tulum" />
-          <link rel="manifest" href="/icon/site.webmanifest" />
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster />
-        </body>
-      </html>
-    </ClerkProviderWithLocalization>
+          }}
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          href="/icon/favicon-96x96.png"
+          sizes="96x96"
+        />
+        <link rel="icon" type="image/svg+xml" href="/icon/favicon.svg" />
+        <link rel="shortcut icon" href="/icon/favicon.ico" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/icon/apple-touch-icon.png"
+        />
+        <meta name="apple-mobile-web-app-title" content="Tulum" />
+        <link rel="manifest" href="/icon/site.webmanifest" />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster />
+      </body>
+    </html>
   );
 }

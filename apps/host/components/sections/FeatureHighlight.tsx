@@ -102,7 +102,7 @@ export default function FeatureHighlight() {
             return (
               <article
                 key={feature.id}
-                className="relative grid items-center gap-5 overflow-hidden rounded-3xl border border-border bg-card/60 p-5 shadow-sm sm:gap-8 sm:p-8 md:grid-cols-2 md:gap-10 md:p-10"
+                className="landing-feature-card relative grid items-center gap-5 overflow-hidden rounded-3xl border border-border bg-card/60 p-5 shadow-sm sm:gap-8 sm:p-8 md:grid-cols-2 md:gap-10 md:p-10"
               >
                 <div className={reversed ? "md:order-2" : ""}>
                   <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 sm:gap-5">

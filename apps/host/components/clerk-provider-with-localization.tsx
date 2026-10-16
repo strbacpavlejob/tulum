@@ -29,14 +29,13 @@ export function ClerkProviderWithLocalization({
     getServerLanguageSnapshot,
   );
 
-  const clerkLocalization = (() => {
-    const languageMap = {
-      en: enUS,
-      sr: srRS,
-      ru: ruRU,
-    };
-    return languageMap[currentLanguage as keyof typeof languageMap] || enUS;
-  })();
+  const languageMap = {
+    en: enUS,
+    sr: srRS,
+    ru: ruRU,
+  };
+  const clerkLocalization =
+    languageMap[currentLanguage as keyof typeof languageMap] || enUS;
 
   return (
     <ClerkProvider localization={clerkLocalization}>{children}</ClerkProvider>

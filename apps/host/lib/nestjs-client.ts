@@ -6,6 +6,8 @@ const TULUM_API_URL = process.env.TULUM_API_URL ?? "http://localhost:3001";
 interface ProxyOptions {
   /** Forward the request's search params to the upstream URL */
   forwardSearchParams?: boolean;
+  /** Skip Clerk token lookup for public endpoints that don't need user context */
+  forwardAuth?: boolean;
 }
 
 /**
@@ -26,8 +28,8 @@ export async function callTulumApi(
       );
     }
 
-    const { getToken } = await auth();
-    const token = await getToken();
+    const token =
+      options.forwardAuth === false ? null : await (await auth()).getToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;

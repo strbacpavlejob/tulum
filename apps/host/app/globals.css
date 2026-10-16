@@ -632,3 +632,10 @@
       will-change: auto;
     }
   }
+
+  @supports (content-visibility: auto) {
+    .landing-feature-card {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 38rem;
+    }
+  }
