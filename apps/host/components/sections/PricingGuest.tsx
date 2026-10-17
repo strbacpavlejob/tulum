@@ -14,13 +14,12 @@ export default function PricingGuest() {
 
   const pricingPlans = [
     {
-      name: t("landingpage.guestPricing.free.name"),
-      monthlyPrice: 0,
-      yearlyPrice: 0,
+      name: t("landingpage.guestPricing.basic.name"),
+      price: t("landingpage.guestPricing.basic.price"),
       isFree: true,
       isComingSoon: false,
-      description: t("landingpage.guestPricing.free.description"),
-      features: t("landingpage.guestPricing.free.features", {
+      description: t("landingpage.guestPricing.basic.description"),
+      features: t("landingpage.guestPricing.basic.features", {
         returnObjects: true,
       }) as string[],
       cta: t("landingpage.guestPricing.getStarted"),
@@ -28,15 +27,17 @@ export default function PricingGuest() {
     },
     {
       name: t("landingpage.guestPricing.premium.name"),
-      monthlyPrice: 9,
-      yearlyPrice: 86,
+      monthlyPrice: t("landingpage.guestPricing.premium.monthlyPrice"),
+      yearlyMonthlyPrice: t(
+        "landingpage.guestPricing.premium.yearlyMonthlyPrice",
+      ),
       isFree: false,
       isComingSoon: true,
       description: t("landingpage.guestPricing.premium.description"),
       features: t("landingpage.guestPricing.premium.features", {
         returnObjects: true,
       }) as string[],
-      cta: t("landingpage.guestPricing.comingSoon"),
+      cta: t("landingpage.guestPricing.premium.cta"),
       popular: true,
     },
   ];
@@ -100,7 +101,7 @@ export default function PricingGuest() {
                 }`}
               >
                 {t("landingpage.guestPricing.yearly")}
-              <span className="ml-2 inline-flex rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-white">
+                <span className="ml-2 inline-flex rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-white">
                   {t("landingpage.guestPricing.yearlyBadge")}
                 </span>
               </span>
@@ -109,10 +110,10 @@ export default function PricingGuest() {
         </div>
 
         <div className="grid min-[650px]:grid-cols-2 gap-4 w-full max-w-3xl mx-auto px-6 items-stretch">
-          {pricingPlans.map((plan, idx) => (
+          {pricingPlans.map((plan) => (
             <div
-              key={idx}
-              className={`rounded-xl grid grid-rows-[180px_1fr_auto] relative h-full ${
+              key={plan.name}
+              className={`rounded-xl grid grid-rows-[minmax(210px,auto)_1fr_auto] relative h-full ${
                 plan.isComingSoon ? "opacity-75" : ""
               } ${
                 plan.popular
@@ -132,13 +133,12 @@ export default function PricingGuest() {
                 </p>
                 <div className="flex items-baseline mt-2">
                   {plan.isFree ? (
-                    <span className="text-4xl font-semibold">€0</span>
+                    <span className="text-4xl font-semibold">{plan.price}</span>
                   ) : (
                     <span className="text-4xl font-semibold">
                       {billingCycle === "monthly"
                         ? plan.monthlyPrice
-                        : Math.floor(plan.yearlyPrice / 12)}
-                      €
+                        : plan.yearlyMonthlyPrice}
                     </span>
                   )}
                   {!plan.isFree && (
@@ -147,6 +147,17 @@ export default function PricingGuest() {
                     </span>
                   )}
                 </div>
+                {!plan.isFree && billingCycle === "yearly" && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("landingpage.guestPricing.premium.annualBilling", {
+                      total: t("landingpage.guestPricing.yearlyAnnualTotal"),
+                    })}{" "}
+                    ·{" "}
+                    <span className="font-semibold text-primary">
+                      {t("landingpage.guestPricing.premium.annualSavings")}
+                    </span>
+                  </p>
+                )}
                 <p className="text-sm">{plan.description}</p>
               </div>
 

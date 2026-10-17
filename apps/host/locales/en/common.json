@@ -301,7 +301,7 @@
     },
     "guestPricing": {
       "title": "Plans for Every Night Out",
-      "subtitle": "Start free. Go premium when you're ready.",
+      "subtitle": "Your night starts here. More connections, fewer limits.",
       "monthly": "Monthly",
       "yearly": "Yearly",
       "yearlyBadge": "-20%",
@@ -311,41 +311,42 @@
       "getStarted": "Get Started",
       "startTrial": "Start Free Trial",
       "comingSoon": "Coming Soon",
-      "free": {
-        "name": "FREE",
-        "description": "For the basic event experience",
+      "basic": {
+        "name": "BASIC",
+        "price": "FREE",
+        "description": "Your night starts here.",
         "features": [
-          "Discover events (map + list)",
-          "Basic filters (event type)",
-          "Event details (time, location, description)",
-          "\"Interested / Going\"",
-          "See who's going (gender, interests)",
-          "Match only at events",
-          "Event-based chat (limited)",
-          "Preview a few people attending"
+          "Discover events",
+          "Filter events & people",
+          "Attend events",
+          "Preview who's going",
+          "Browse all attendees at events",
+          "Limited likes per event",
+          "Match at events",
+          "Chat until the event ends"
         ]
       },
       "premium": {
         "name": "PREMIUM",
-        "description": "For better matches and more visibility",
+        "description": "More connections. Fewer limits.",
+        "monthlyPrice": "€8.99",
+        "yearlyMonthlyPrice": "€7.19",
+        "monthlyPricePerMonth": "€8.99/mo",
+        "yearlyPricePerMonth": "€7.19/mo",
+        "annualBilling": "Billed annually at {{total}}",
+        "annualSavings": "Save 20%",
+        "cta": "Get Premium",
         "features": [
-          "Everything in FREE",
+          "Everything in Basic",
           "Unlimited likes",
-          "Unlimited undo",
-          "Incognito mode",
-          "No ads",
-          "1 message before matching",
-          "Super like (1 per day)",
-          "After party chat",
-          "Verified badge",
-          "Advanced filters (active users, serious intent)",
-          "Warm intro (same event, similar people)",
-          "Profile boost during events",
-          "Priority inbox",
-          "See who's interested in you",
-          "Seen status (optional)"
+          "See who likes you",
+          "Advanced people filters",
+          "Extended chats after events",
+          "Full pre-event guest list",
+          "Profile boost during events"
         ]
-      }
+      },
+      "yearlyAnnualTotal": "€86.28"
     },
     "pricing": {
       "title": "Pricing",

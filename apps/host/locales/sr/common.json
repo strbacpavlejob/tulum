@@ -301,7 +301,7 @@
     },
     "guestPricing": {
       "title": "Planovi za svaku noć",
-      "subtitle": "Počni besplatno. Pređi na premium kad budeš spreman.",
+      "subtitle": "Tvoja noć počinje ovde. Više poznanstava, manje ograničenja.",
       "monthly": "Mesečno",
       "yearly": "Godišnje",
       "yearlyBadge": "-20%",
@@ -311,41 +311,42 @@
       "getStarted": "Započni",
       "startTrial": "Počni besplatni period",
       "comingSoon": "Uskoro",
-      "free": {
-        "name": "BESPLATNO",
-        "description": "Za odlično iskustvo na događajima",
+      "basic": {
+        "name": "BASIC",
+        "price": "BESPLATNO",
+        "description": "Tvoja noć počinje ovde.",
         "features": [
-          "Pronalaženje događaja (mapa + lista)",
-          "Osnovni filteri (tip događaja)",
-          "Detalji događaja (vreme, lokacija, opis)",
-          "\"Zanima me / Idem\"",
-          "Ko ide (pol, interesovanja)",
-          "Mečevi samo na događajima",
-          "Čet po događaju (ograničen)",
-          "Pregled nekoliko učesnika"
+          "Otkrij događaje",
+          "Filtriraj događaje i ljude",
+          "Prijavi dolazak na događaje",
+          "Pregledaj ko dolazi",
+          "Pregledaj sve goste na događajima",
+          "Ograničen broj lajkova po događaju",
+          "Mečuj se na događajima",
+          "Ćaskaj do kraja događaja"
         ]
       },
       "premium": {
         "name": "PREMIUM",
-        "description": "Za bolje mečeve i veću vidljivost",
+        "description": "Više poznanstava. Manje ograničenja.",
+        "monthlyPrice": "€8.99",
+        "yearlyMonthlyPrice": "€7.19",
+        "monthlyPricePerMonth": "€8.99/mes.",
+        "yearlyPricePerMonth": "€7.19/mes.",
+        "annualBilling": "Godišnja naplata iznosi {{total}}",
+        "annualSavings": "Uštedi 20%",
+        "cta": "Pređi na Premium",
         "features": [
-          "Sve iz besplatnog",
+          "Sve iz BASIC paketa",
           "Neograničeni lajkovi",
-          "Neograničeno poništavanje",
-          "Inkognito mod",
-          "Bez reklama",
-          "1 poruka pre mečevanja",
-          "Super lajk (1 dnevno)",
-          "After party čet",
-          "Verifikacijska značka",
-          "Napredni filteri (aktivni, ozbiljne namere)",
-          "Toplo upoznavanje (isti događaj, slični ljudi)",
-          "Boost profila tokom događaja",
-          "Prioritetno prijemno sanduče",
-          "Ko je zainteresovan za tebe",
-          "Status viđeno (opciono)"
+          "Vidi ko te lajkuje",
+          "Napredni filteri za ljude",
+          "Produženi čet nakon događaja",
+          "Potpuna lista gostiju pre događaja",
+          "Boost profila tokom događaja"
         ]
-      }
+      },
+      "yearlyAnnualTotal": "€86.28"
     },
     "pricing": {
       "title": "Paketi",
