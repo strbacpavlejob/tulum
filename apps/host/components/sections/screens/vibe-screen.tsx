@@ -27,6 +27,8 @@ const DEMO_AVATARS = [
   },
 ];
 
+const VIBE_TAGS = ["houseMusic", "cocktails", "rooftop"] as const;
+
 const EventLogoSVG = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -47,6 +49,10 @@ const EventLogoSVG = () => (
 
 export function VibeScreen() {
   const { t } = useTranslation();
+  const eventName = t("landingpage.screens.events.neonTerrace.name");
+  const tagLabels = t("landingpage.screens.tags", {
+    returnObjects: true,
+  }) as Record<string, string>;
   const capacity = 120;
   const goingCount = 87;
   const freeSpots = capacity - goingCount;
@@ -58,7 +64,7 @@ export function VibeScreen() {
       <div className="relative h-[32%] shrink-0 overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1570872626485-d8ffea69f463?auto=format&fit=crop&w=640&q=65"
-          alt="Neon Terrace"
+          alt={eventName}
           fill
           sizes="240px"
           quality={65}
@@ -75,14 +81,14 @@ export function VibeScreen() {
             </Avatar>
 
             <div className="min-w-0 pb-1">
-              <p className="text-2xl font-bold leading-tight">Neon Terrace</p>
+              <p className="text-2xl font-bold leading-tight">{eventName}</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {["House music", "Cocktails", "Rooftop"].map((tag) => (
+                {VIBE_TAGS.map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-white/15 px-2.5 py-1 text-xs text-white/90 backdrop-blur-sm"
                   >
-                    {tag}
+                    {tagLabels[tag]}
                   </span>
                 ))}
               </div>

@@ -5,17 +5,17 @@ import Image from "next/image";
 import { Avatar } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
 
+type ChatMessage = {
+  sender: "ana" | "me";
+  text: string;
+};
+
 export function ChatScreen() {
   const { t } = useTranslation();
-  const chatLines = t("landingpage.screens.chat.lines", {
+  const messages = t("landingpage.screens.chat.messages", {
     returnObjects: true,
-  }) as string[];
+  }) as ChatMessage[];
   const avatar = "https://mockmind-api.uifaces.co/content/human/207.jpg";
-  const messages = chatLines.slice(0, 4).map((text, id) => ({
-    id,
-    text,
-    isAna: id % 2 === 0,
-  }));
 
   return (
     <div className="h-full w-full bg-background/80 flex flex-col font-sans text-foreground overflow-hidden">
@@ -24,7 +24,7 @@ export function ChatScreen() {
         <Avatar className="h-16 w-16">
           <Image
             src={avatar}
-            alt="Ana avatar"
+            alt={t("landingpage.screens.chat.avatarAlt")}
             width={128}
             height={128}
             sizes="64px"
@@ -33,9 +33,11 @@ export function ChatScreen() {
           />
         </Avatar>
         <div>
-          <p className="text-lg font-semibold">Ana</p>
+          <p className="text-lg font-semibold">
+            {t("landingpage.screens.chat.name")}
+          </p>
           <p className="text-sm text-foreground/60">
-            {t("landingpage.screens.chat.at")} Neon Terrace
+            {t("landingpage.screens.chat.eventLocation")}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm text-foreground/60 p-4">
@@ -45,11 +47,11 @@ export function ChatScreen() {
 
       {/* Messages */}
       <div className="flex-1 p-4 flex flex-col gap-2.5 justify-end">
-        {messages.map((msg) => (
+        {messages.map((msg, index) => (
           <div
-            key={msg.id}
+            key={index}
             className={`max-w-[75%] rounded-2xl px-3 py-2 text-lg ${
-              msg.isAna
+              msg.sender === "ana"
                 ? "self-start rounded-bl-sm bg-foreground/10 text-foreground/60"
                 : "self-end rounded-br-sm bg-primary text-white"
             }`}

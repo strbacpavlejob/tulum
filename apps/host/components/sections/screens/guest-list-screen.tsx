@@ -61,14 +61,16 @@ export function GuestListScreen() {
   const avgAge = 25;
 
   const visibleGuests = guests.slice(0, 6);
+  const eventName = t("landingpage.screens.events.neonTerrace.name");
+  const eventDate = t("landingpage.screens.events.neonTerrace.dateLong");
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background/80 p-8 pt-4 font-sans text-foreground">
       {/* Top content */}
       <div className="min-h-0 flex-1">
         {/* Event info */}
-        <p className="mb-1 text-xl font-bold">Neon Terrace</p>
-        <p className="mb-5 text-sm text-foreground/50">Saturday · 11:00 PM</p>
+        <p className="mb-1 text-xl font-bold">{eventName}</p>
+        <p className="mb-5 text-sm text-foreground/50">{eventDate}</p>
 
         {/* Capacity */}
         <div className="mb-5 rounded-2xl border border-foreground/10 bg-foreground/5 p-4">

@@ -40,7 +40,7 @@ export function MatchScreen() {
           <Avatar className="absolute left-2.5 top-0 h-28 w-28 border-2 border-background">
             <Image
               src={avatar1}
-              alt="Match profile"
+              alt={t("landingpage.screens.match.matchProfileAlt")}
               width={224}
               height={224}
               sizes="112px"
@@ -52,7 +52,7 @@ export function MatchScreen() {
           <Avatar className="absolute right-2.5 top-0 h-28 w-28 border-2 border-background">
             <Image
               src={avatar2}
-              alt="Your profile"
+              alt={t("landingpage.screens.match.yourProfileAlt")}
               width={224}
               height={224}
               sizes="112px"

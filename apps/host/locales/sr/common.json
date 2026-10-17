@@ -189,21 +189,55 @@
       }
     },
     "screens": {
+      "events": {
+        "neonTerrace": {
+          "name": "Neonska terasa",
+          "locationLine": "na krovnoj terasi Skyline",
+          "date": "Sub · 23:00",
+          "dateLong": "Subota · 23:00"
+        },
+        "clubParagon": {
+          "name": "Klub Paragon",
+          "locationLine": "u klubu Paragon",
+          "date": "Ned · 00:00",
+          "dateLong": "Nedelja · 00:00"
+        },
+        "sunsetSessions": {
+          "name": "Veče uz zalazak sunca",
+          "locationLine": "u klubu na plaži",
+          "date": "Sub · 21:00",
+          "dateLong": "Subota · 21:00"
+        }
+      },
+      "tags": {
+        "rooftop": "Krovna terasa",
+        "house": "Haus",
+        "cocktails": "Kokteli",
+        "deepHouse": "Duboki haus",
+        "houseMusic": "Haus muzika"
+      },
       "chat": {
+        "name": "Ana",
+        "avatarAlt": "Profilna fotografija Ane",
+        "eventLocation": "Na Neonskoj terasi",
         "messagePlaceholder": "Poruka…",
-        "at": "Na",
-        "lines": [
-          "Hej! Vidim da si i ti ovde 👀",
-          "Ovo mesto je prepuno večeras",
-          "DJ je stvarno dobar",
-          "Gde si?",
-          "Kod bara",
-          "Hoćeš piće? 🍹",
-          "Mislim da sam te malo pre video/la",
-          "Dođi na podijum",
-          "Ova pesma je luda 🔥",
-          "Jesi li sa društvom?",
-          "Hajde da se nađemo"
+        "messages": [
+          {
+            "sender": "ana",
+            "text": "Hej! Baš mi je drago što smo se spojili 👋 Jesi li i ti ovde?"
+          },
+          {
+            "sender": "me",
+            "text": "Jesam! Terasa večeras baš kida 🔥"
+          },
+          {
+            "sender": "ana",
+            "text": "Zar ne? DJ pušta samo hitove večeras."
+          },
+          {
+            "sender": "me",
+            "text": "Hoćeš da se nađemo kod šanka pre sledeće pesme? 🥂"
+          }
         ]
       },
       "discover": {
@@ -213,16 +247,15 @@
           "Sve",
           "🔥 Popularno",
           "🎧 Tehno",
-          "🌇 Rooftop",
+          "🌇 Krovne terase",
           "🍸 Kokteli",
           "💃 Ples"
         ],
-        "going": "ide",
-        "by": "od"
+        "going": "ide"
       },
       "find": {
         "title": "Identifikator meča",
-        "pairCode": "Tvoj par kod sa Ana",
+        "pairCode": "Tvoj kod para sa Anom",
         "description": "Ovaj emoji i boja su jedinstveni za tvoj meč. Oboje vidite isti identifikator. Koristite ga da prepoznate jedan drugog u gužvi."
       },
       "guestList": {
@@ -237,15 +270,17 @@
       "match": {
         "title": "MEČ!",
         "description": "Imaš priliku da pišeš svom meču do kraja događaja",
-        "messagePlaceholder": "Poruka…"
+        "messagePlaceholder": "Poruka…",
+        "matchProfileAlt": "Profilna fotografija Ane",
+        "yourProfileAlt": "Tvoja profilna fotografija"
       },
       "vibe": {
-        "eventDescription": "Kasnonoćna žurka na terasi sa house muzikom, koktelima i ekipom koja je došla da se dobro provede.",
+        "eventDescription": "Kasnonoćna žurka na terasi sa haus muzikom, koktelima i ekipom koja je došla da se dobro provede.",
         "going": "Ide",
         "spotsLeft": "Još {{count}} mesta",
         "full": "Popunjeno",
         "attend": "Prisustvuj",
-        "address": "Beograd · Rooftop City Center"
+        "address": "Beograd · Krovna terasa u centru grada"
       }
     },
     "howItWorks": {

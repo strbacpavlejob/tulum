@@ -189,21 +189,55 @@
       }
     },
     "screens": {
+      "events": {
+        "neonTerrace": {
+          "name": "Neon Terrace",
+          "locationLine": "at Skyline Rooftop",
+          "date": "Sat · 11 PM",
+          "dateLong": "Saturday · 11:00 PM"
+        },
+        "clubParagon": {
+          "name": "Club Paragon",
+          "locationLine": "at Paragon Club",
+          "date": "Sun · 12 AM",
+          "dateLong": "Sunday · 12:00 AM"
+        },
+        "sunsetSessions": {
+          "name": "Sunset Sessions",
+          "locationLine": "at the Beach Club",
+          "date": "Sat · 9 PM",
+          "dateLong": "Saturday · 9:00 PM"
+        }
+      },
+      "tags": {
+        "rooftop": "Rooftop",
+        "house": "House",
+        "cocktails": "Cocktails",
+        "deepHouse": "Deep house",
+        "houseMusic": "House music"
+      },
       "chat": {
+        "name": "Ana",
+        "avatarAlt": "Ana's profile picture",
+        "eventLocation": "At Neon Terrace",
         "messagePlaceholder": "Message…",
-        "at": "At",
-        "lines": [
-          "Hey! Saw you're here too 👀",
-          "This place is packed tonight",
-          "The DJ is actually good",
-          "Where are you?",
-          "Near the bar",
-          "Wanna grab a drink? 🍹",
-          "I think I just saw you",
-          "Come to the dance floor",
-          "This song is insane 🔥",
-          "Are you with friends?",
-          "Let's meet up"
+        "messages": [
+          {
+            "sender": "ana",
+            "text": "Hey! So glad we matched 👋 Are you here too?"
+          },
+          {
+            "sender": "me",
+            "text": "Yes! The rooftop is such a vibe tonight 🔥"
+          },
+          {
+            "sender": "ana",
+            "text": "Right? The DJ has been playing all my favorites."
+          },
+          {
+            "sender": "me",
+            "text": "Want to meet by the bar before the next song? 🥂"
+          }
         ]
       },
       "discover": {
@@ -217,8 +251,7 @@
           "🍸 Cocktails",
           "💃 Dance"
         ],
-        "going": "going",
-        "by": "by"
+        "going": "going"
       },
       "find": {
         "title": "Match identifier",
@@ -237,7 +270,9 @@
       "match": {
         "title": "MATCH!",
         "description": "You have a chance to message your match until the end of the event",
-        "messagePlaceholder": "Message…"
+        "messagePlaceholder": "Message…",
+        "matchProfileAlt": "Ana's profile picture",
+        "yourProfileAlt": "Your profile picture"
       },
       "vibe": {
         "eventDescription": "A late-night rooftop party with house music, cocktails, and a crowd that came to have a good time.",

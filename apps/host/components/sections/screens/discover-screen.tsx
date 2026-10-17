@@ -5,41 +5,49 @@ import { Heart, Search, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { MapPreview } from "./map-preview";
 
+type DemoEventKey = "neonTerrace" | "clubParagon" | "sunsetSessions";
+type DemoEventCopy = {
+  name: string;
+  locationLine: string;
+  date: string;
+  dateLong: string;
+};
+
 export function DiscoverScreen() {
   const { t } = useTranslation();
   const filterTags = t("landingpage.screens.discover.filterTags", {
     returnObjects: true,
   }) as string[];
+  const eventCopy = t("landingpage.screens.events", {
+    returnObjects: true,
+  }) as Record<DemoEventKey, DemoEventCopy>;
+  const tagLabels = t("landingpage.screens.tags", {
+    returnObjects: true,
+  }) as Record<string, string>;
   const events = [
     {
       id: "1",
-      name: "Neon Terrace",
-      venue: "Skyline Rooftop",
-      tags: ["Rooftop", "House"],
+      ...eventCopy.neonTerrace,
+      tags: ["rooftop", "house"],
       picture:
         "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?auto=format&fit=crop&w=640&q=65",
       going: 87,
-      date: "Fri · 11PM",
     },
     {
       id: "2",
-      name: "Club Paragon",
-      venue: "Paragon Club",
-      tags: ["Cocktails", "Deep House"],
+      ...eventCopy.clubParagon,
+      tags: ["cocktails", "deepHouse"],
       picture:
         "https://images.unsplash.com/photo-1485872299829-c673f5194813?auto=format&fit=crop&w=640&q=65",
       going: 140,
-      date: "Fri · 12AM",
     },
     {
       id: "3",
-      name: "Sunset Sessions",
-      venue: "Beach Club",
-      tags: ["Cocktails", "Deep House"],
+      ...eventCopy.sunsetSessions,
+      tags: ["cocktails", "deepHouse"],
       picture:
         "https://images.unsplash.com/photo-1605958611031-c91316261ab0?auto=format&fit=crop&w=640&q=65",
       going: 62,
-      date: "Fri · 9PM",
     },
   ];
 
@@ -123,7 +131,7 @@ export function DiscoverScreen() {
                     <p className="text-sm font-semibold">{event.name}</p>
 
                     <p className="text-xs text-foreground/50">
-                      {t("landingpage.screens.discover.by")} {event.venue}
+                      {event.locationLine}
                     </p>
 
                     <p className="mt-1 text-[11px] text-foreground/50">
@@ -139,7 +147,7 @@ export function DiscoverScreen() {
                         key={tag}
                         className="rounded-full bg-foreground/6 px-2 py-1 text-[10px] text-foreground/60"
                       >
-                        {tag}
+                        {tagLabels[tag]}
                       </span>
                     ))}
                   </div>
