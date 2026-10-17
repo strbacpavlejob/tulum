@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { IconMapPin } from "@tabler/icons-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface MarkerProps {
   image?: string;
   size?: "sm" | "md" | "xl";
+  className?: string;
 }
 
 const sizeConfig = {
@@ -28,11 +30,13 @@ const sizeConfig = {
   },
 };
 
-const Marker = ({ image, size = "xl" }: MarkerProps) => {
+const Marker = ({ image, size = "xl", className }: MarkerProps) => {
   const config = sizeConfig[size];
 
   return (
-    <div className="flex items-center justify-center rounded-full ">
+    <div
+      className={cn("flex items-center justify-center rounded-full", className)}
+    >
       <div className="relative w-full h-full flex items-center justify-center">
         <motion.div
           className={`absolute inset-0 ${config.outer} rounded-full bg-primary`}

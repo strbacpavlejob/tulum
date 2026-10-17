@@ -65,6 +65,11 @@ function MobileStoreButton({ variant, link }: MobileStoreButtonProps) {
       </div>
     </>
   );
+  const linkLabel = isWeb
+    ? `${t("landingpage.guest.hero.tryWebVersion")} ${t("landingpage.guest.hero.openInBrowser")}`
+    : variant === "appStore"
+      ? `${t("landingpage.guest.hero.downloadOn")} ${t("landingpage.guest.hero.appStore")}`
+      : `${t("landingpage.guest.hero.getItOn")} ${t("landingpage.guest.hero.googlePlay")}`;
 
   if (isDisabled) {
     return <div className={className}>{inner}</div>;
@@ -75,6 +80,7 @@ function MobileStoreButton({ variant, link }: MobileStoreButtonProps) {
       href={link || "#"}
       target={isWeb ? "_blank" : undefined}
       rel={isWeb ? "noopener noreferrer" : undefined}
+      aria-label={linkLabel}
       className={className}
     >
       {inner}

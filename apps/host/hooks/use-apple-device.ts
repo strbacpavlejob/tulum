@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 
-export function useAppleDevice() {
-  const [isApple] = useState(() => {
-    if (typeof navigator === "undefined") return false;
-    return /iPhone|iPad|iPod|Macintosh|Mac OS/i.test(navigator.userAgent);
-  });
+const subscribe = () => () => {};
 
-  return isApple;
-}
+const getSnapshot = () =>
+  typeof navigator !== "undefined" &&
+  /iPhone|iPad|iPod|Macintosh|Mac OS/i.test(navigator.userAgent);
+
+const getServerSnapshot = () => false;
+
+export const useAppleDevice = () =>
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

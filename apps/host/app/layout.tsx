@@ -95,10 +95,6 @@ export default function RootLayout({
                         }
                       }
                     }
-                    var i18nextLng = localStorage.getItem('i18nextLng');
-                    if (i18nextLng && ['en', 'sr', 'ru'].indexOf(i18nextLng) !== -1) {
-                      document.documentElement.setAttribute('lang', i18nextLng);
-                    }
                   } catch (e) {}
                 })();
               `,

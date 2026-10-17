@@ -15,7 +15,7 @@ export function FindScreen() {
       <div className="absolute inset-0 bg-background/70 backdrop-blur-[2px]" />
 
       {/* Content */}
-      <div className="relative z-10 flex h-full flex-col px-5 pt-14 pb-6">
+      <div className="relative z-10 flex h-full flex-col px-5 pt-4 pb-6">
         {/* Header */}
         <div className="flex flex-col items-center">
           <p className="mb-2 text-xl uppercase tracking-widest">

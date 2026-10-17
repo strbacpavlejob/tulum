@@ -71,13 +71,13 @@ export default function CTAGuest() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-[14rem] sm:max-w-[16rem] md:mx-0 md:max-w-[18rem] md:flex-none">
+        <div className="relative z-10 mx-auto w-full max-w-[7rem] sm:max-w-[8rem] md:mx-0 md:max-w-[18rem] md:flex-none">
           <Image
             src="/images/mascots/cta-image.png"
             alt=""
             width={1024}
             height={1536}
-            sizes="(max-width: 639px) 224px, (max-width: 1023px) 256px, 288px"
+            sizes="(max-width: 639px) 112px, (max-width: 767px) 128px, 288px"
             className="h-auto w-full object-contain"
           />
         </div>

@@ -136,6 +136,9 @@ export function StyledMap({
       <MapMarkerClusterGroup
         radius={60}
         maxZoom={16}
+        getClusterAriaLabel={(count) =>
+          t("landingpage.map.clusterLabel", { count })
+        }
         icon={(count) => <Cluster count={count} />}
       >
         {locations.map((location) => (
@@ -143,6 +146,7 @@ export function StyledMap({
             key={location.id}
             longitude={location.longitude}
             latitude={location.latitude}
+            ariaLabel={location.name}
             onClick={() => onLocationSelect(location.id)}
           >
             <MarkerContent>

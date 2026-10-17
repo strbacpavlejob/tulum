@@ -8,7 +8,8 @@
       "title": "Live Events Map",
       "subtitle": "Discover trending events happening right now in your area",
       "error": "We couldn't load events right now.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "clusterLabel": "{{count}} event locations"
     },
     "nav": {
       "benefits": "Benefits",
@@ -207,6 +208,7 @@
       },
       "discover": {
         "searchPlaceholder": "Search events",
+        "filtersLabel": "Open filters",
         "filterTags": [
           "All",
           "🔥 Popular",

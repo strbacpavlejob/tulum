@@ -74,7 +74,6 @@ export async function getNewLightMapStyle() {
       },
     },
     layers: mergedLayers,
-    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
     name: "Tailwind Light (Custom)",
   };
 }

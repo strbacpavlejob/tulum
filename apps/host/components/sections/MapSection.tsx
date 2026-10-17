@@ -35,13 +35,13 @@ export default function MapSection() {
   const { t } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
-  const sectionRef = useRef<HTMLElement | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapLoadRequested = useRef(false);
   const { locations, isLoading, error, fetchLocations } = useLocationsStore();
 
   useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) return;
 
     const loadMap = () => {
       if (mapLoadRequested.current) return;
@@ -63,16 +63,15 @@ export default function MapSection() {
           observer.disconnect();
         }
       },
-      { rootMargin: "320px 0px" },
+      { rootMargin: "100px 0px" },
     );
 
-    observer.observe(section);
+    observer.observe(mapContainer);
     return () => observer.disconnect();
   }, [fetchLocations]);
 
   return (
     <section
-      ref={sectionRef}
       id="map"
       aria-labelledby="guest-map-title"
       className="relative scroll-mt-28 w-full px-6 py-20"
@@ -95,6 +94,7 @@ export default function MapSection() {
         </div>
         <Card className="p-0 overflow-hidden w-full flex items-center justify-center">
           <div
+            ref={mapContainerRef}
             className="w-full aspect-[16/9] sm:aspect-[4/3] md:aspect-[16/7] lg:aspect-[16/5]"
             role="region"
             aria-labelledby="guest-map-title"

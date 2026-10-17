@@ -63,7 +63,7 @@ export function GuestListScreen() {
   const visibleGuests = guests.slice(0, 6);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-background/80 p-8 pt-14 font-sans text-foreground">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-background/80 p-8 pt-4 font-sans text-foreground">
       {/* Top content */}
       <div className="min-h-0 flex-1">
         {/* Event info */}
@@ -81,7 +81,11 @@ export function GuestListScreen() {
             </p>
           </div>
 
-          <Progress value={progressValue} className="h-2" />
+          <Progress
+            value={progressValue}
+            className="h-2"
+            aria-label={t("landingpage.screens.vibe.going")}
+          />
 
           <p className="mt-2 text-xs text-foreground/50">
             {freeSpots > 0
@@ -168,7 +172,7 @@ export function GuestListScreen() {
       </div>
 
       {/* Attend button */}
-      <div className="mt-4 shrink-0">
+      <div className="mt-4 shrink-0 z-50">
         <button className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-lg font-semibold text-primary-foreground shadow-lg">
           {t("landingpage.screens.guestList.attend")}
           <UserPlus className="h-5 w-5" />

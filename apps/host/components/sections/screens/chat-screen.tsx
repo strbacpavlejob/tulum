@@ -1,7 +1,8 @@
 "use client";
 
 import { SendHorizonal, UserSearch } from "lucide-react";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import Image from "next/image";
+import { Avatar } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
 
 export function ChatScreen() {
@@ -19,20 +20,22 @@ export function ChatScreen() {
   return (
     <div className="h-full w-full bg-background/80 flex flex-col font-sans text-foreground overflow-hidden">
       {/* Chat header */}
-      <div className="flex items-center gap-3 p-4 pt-14 border-b border-white/10">
+      <div className="flex items-center gap-3 p-4 pt-4 border-b border-white/10">
         <Avatar className="h-16 w-16">
-          <AvatarImage
+          <Image
             src={avatar}
             alt="Ana avatar"
-            className="object-cover"
-            loading="lazy"
+            width={128}
+            height={128}
+            sizes="64px"
+            quality={60}
+            className="h-full w-full object-cover"
           />
         </Avatar>
         <div>
           <p className="text-lg font-semibold">Ana</p>
           <p className="text-sm text-foreground/60">
-            {t("landingpage.screens.chat.at")}{" "}
-            Neon Terrace
+            {t("landingpage.screens.chat.at")} Neon Terrace
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm text-foreground/60 p-4">
@@ -48,7 +51,7 @@ export function ChatScreen() {
             className={`max-w-[75%] rounded-2xl px-3 py-2 text-lg ${
               msg.isAna
                 ? "self-start rounded-bl-sm bg-foreground/10 text-foreground/60"
-                : "self-end rounded-br-sm bg-primary text-background/80"
+                : "self-end rounded-br-sm bg-primary text-white"
             }`}
           >
             {msg.text}

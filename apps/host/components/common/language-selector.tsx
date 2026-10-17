@@ -3,23 +3,23 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import { usePreferencesStore } from "@/store";
+import { usePreferencesStore } from "@/store/preferences";
 
 const languages = [
   {
     code: "sr",
     label: "Srpski",
-    flagUrl: "https://hatscripts.github.io/circle-flags/flags/rs.svg",
+    flagSrc: "/images/flags/rs.svg",
   },
   {
     code: "en",
     label: "English",
-    flagUrl: "https://hatscripts.github.io/circle-flags/flags/gb.svg",
+    flagSrc: "/images/flags/gb.svg",
   },
   {
     code: "ru",
     label: "Русский",
-    flagUrl: "https://hatscripts.github.io/circle-flags/flags/ru.svg",
+    flagSrc: "/images/flags/ru.svg",
   },
 ];
 
@@ -36,6 +36,7 @@ export default function LanguageSelector() {
 
     if (storedLanguage) {
       i18n.changeLanguage(storedLanguage);
+      document.documentElement.setAttribute("lang", storedLanguage);
     } else {
       // Detect and set language on first mount
       const browserLang = navigator.language.split("-")[0];
@@ -44,6 +45,7 @@ export default function LanguageSelector() {
         ? browserLang
         : "en";
       i18n.changeLanguage(langToSet);
+      document.documentElement.setAttribute("lang", langToSet);
       setLanguage(langToSet as "en" | "sr" | "ru");
     }
   }, [i18n, setLanguage]);
@@ -77,16 +79,16 @@ export default function LanguageSelector() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 rounded-full bg-primary/10 hover:bg-primary/20 border border-primary/30 flex items-center justify-center transition-all duration-200 hover:scale-110 overflow-hidden p-1"
+        className="w-9 h-9 rounded-full hover:bg-primary/20  flex items-center justify-center transition-all duration-200 hover:scale-110 overflow-hidden p-1"
         aria-label="Select language"
       >
-        {currentLang?.flagUrl && (
+        {currentLang && (
           <Image
-            src={currentLang.flagUrl}
-            alt={currentLang.label}
-            width={32}
-            height={32}
-            className="w-full h-full object-cover rounded-full"
+            src={currentLang.flagSrc}
+            alt=""
+            width={24}
+            height={24}
+            className="size-6 rounded-full"
           />
         )}
       </button>
@@ -104,11 +106,11 @@ export default function LanguageSelector() {
               }`}
             >
               <Image
-                src={lang.flagUrl}
-                alt={lang.label}
+                src={lang.flagSrc}
+                alt=""
                 width={24}
                 height={24}
-                className="w-6 h-6 rounded-full object-cover"
+                className="size-6 rounded-full"
               />
               <span className="text-sm">{lang.label}</span>
             </button>

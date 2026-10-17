@@ -357,6 +357,8 @@ type MapMarkerProps = {
   longitude: number;
   /** Latitude coordinate for marker position */
   latitude: number;
+  /** Accessible name for the marker's button */
+  ariaLabel?: string;
   /** Marker subcomponents (MarkerContent, MarkerPopup, MarkerTooltip, MarkerLabel) */
   children: ReactNode;
   /** Callback when marker is clicked */
@@ -376,6 +378,7 @@ type MapMarkerProps = {
 function MapMarker({
   longitude,
   latitude,
+  ariaLabel = "Map marker",
   children,
   onClick,
   onMouseEnter,
@@ -459,6 +462,10 @@ function MapMarker({
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
+
+  useEffect(() => {
+    marker.getElement()?.setAttribute("aria-label", ariaLabel);
+  }, [marker, ariaLabel]);
 
   if (
     marker.getLngLat().lng !== longitude ||
@@ -760,7 +767,7 @@ function ControlButton({
       aria-label={label}
       type="button"
       className={cn(
-        "flex items-center justify-center size-8 hover:bg-accent dark:hover:bg-accent/40 transition-colors",
+        "flex items-center justify-center size-12 hover:bg-accent dark:hover:bg-accent/40 transition-colors",
         disabled && "opacity-50 pointer-events-none cursor-not-allowed",
       )}
       disabled={disabled}
@@ -1482,6 +1489,8 @@ type MapMarkerClusterGroupProps = {
   children: ReactNode;
   /** Custom render function for cluster icons. Receives the marker count. */
   icon?: (markerCount: number) => ReactNode;
+  /** Localized accessible name for a cluster marker. */
+  getClusterAriaLabel?: (markerCount: number) => string;
   /** Cluster radius in pixels (default: 80) */
   radius?: number;
   /** Maximum zoom level at which clusters are generated (default: 16) */
@@ -1503,6 +1512,7 @@ function DefaultClusterIcon({ count }: { count: number }) {
 function MapMarkerClusterGroup({
   children,
   icon,
+  getClusterAriaLabel,
   radius = 80,
   maxZoom = 16,
 }: MapMarkerClusterGroupProps) {
@@ -1615,6 +1625,9 @@ function MapMarkerClusterGroup({
             key={`cluster-${cluster.id}`}
             longitude={lng}
             latitude={lat}
+            ariaLabel={
+              getClusterAriaLabel?.(count) ?? `${count} event locations`
+            }
             onClick={() => {
               if (!map) return;
               const zoom = index.getClusterExpansionZoom(cluster.id as number);

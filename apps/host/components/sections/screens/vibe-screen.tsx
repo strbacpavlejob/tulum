@@ -1,33 +1,29 @@
 "use client";
 
 import { DateCard } from "@/components/common/date-card";
-import { StyledMap } from "@/components/styled-map";
 import { AvatarCircles } from "@/components/ui/avatar-circles";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, UserPlus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import { MapPreview } from "./map-preview";
 
 const DEMO_AVATARS = [
   {
     imageUrl: "https://i.pravatar.cc/150?img=47",
-    profileUrl: "/guest",
   },
   {
     imageUrl: "https://i.pravatar.cc/150?img=49",
-    profileUrl: "/guest",
   },
   {
     imageUrl: "https://i.pravatar.cc/150?img=12",
-    profileUrl: "/guest",
   },
   {
     imageUrl: "https://i.pravatar.cc/150?img=44",
-    profileUrl: "/guest",
   },
   {
     imageUrl: "https://i.pravatar.cc/150?img=13",
-    profileUrl: "/guest",
   },
 ];
 
@@ -56,24 +52,17 @@ export function VibeScreen() {
   const freeSpots = capacity - goingCount;
   const progressValue = (goingCount / capacity) * 100;
 
-  const location = {
-    id: "1",
-    name: "Neon Terrace",
-    latitude: 44.8125,
-    longitude: 20.4489,
-    capacity,
-    type: "club",
-  };
-
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       {/* Hero */}
       <div className="relative h-[32%] shrink-0 overflow-hidden">
-        <img
-          src={`https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`}
-          className="h-full w-full object-cover"
+        <Image
+          src="https://images.unsplash.com/photo-1570872626485-d8ffea69f463?auto=format&fit=crop&w=640&q=65"
           alt="Neon Terrace"
-          loading="lazy"
+          fill
+          sizes="240px"
+          quality={65}
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/60" />
 
@@ -118,14 +107,8 @@ export function VibeScreen() {
         </div>
 
         {/* Map */}
-        <div className="h-40 w-full overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5">
-          <StyledMap
-            locations={[location]}
-            selectedLocation={null}
-            onLocationSelect={() => {}}
-            markerSize="md"
-            disablePopOver
-          />
+        <div className="h-24 w-full shrink-0 overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5">
+          <MapPreview variant="venue" />
         </div>
 
         {/* Address */}
@@ -152,7 +135,11 @@ export function VibeScreen() {
             </div>
           </div>
 
-          <Progress value={progressValue} className="h-1.5" />
+          <Progress
+            value={progressValue}
+            className="h-1.5"
+            aria-label={t("landingpage.screens.vibe.going")}
+          />
 
           <p className="mt-1 text-xs text-foreground/40">
             {freeSpots > 0

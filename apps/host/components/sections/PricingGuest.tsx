@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { MascotSlot } from "./mascot-slot";
 
@@ -67,15 +66,13 @@ export default function PricingGuest() {
           <div className="relative flex w-fit items-center rounded-full border p-0.5 backdrop-blur-sm cursor-pointer h-9 flex-row bg-muted mx-auto">
             <button
               onClick={() => setBillingCycle("monthly")}
-              className="relative px-2 h-8 flex items-center justify-center cursor-pointer z-0"
+              aria-pressed={billingCycle === "monthly"}
+              className={`relative z-0 flex h-8 cursor-pointer items-center justify-center rounded-full px-2 transition-colors ${
+                billingCycle === "monthly"
+                  ? "border border-border bg-white shadow-md dark:bg-[#3F3F46]"
+                  : ""
+              }`}
             >
-              {billingCycle === "monthly" && (
-                <motion.div
-                  layoutId="guest-pricing-toggle"
-                  className="absolute inset-0 rounded-full bg-white dark:bg-[#3F3F46] shadow-md border border-border"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
               <span
                 className={`relative block text-sm font-medium duration-200 shrink-0 ${
                   billingCycle === "monthly"
@@ -88,15 +85,13 @@ export default function PricingGuest() {
             </button>
             <button
               onClick={() => setBillingCycle("yearly")}
-              className="relative z-1 px-2 h-8 flex items-center justify-center cursor-pointer"
+              aria-pressed={billingCycle === "yearly"}
+              className={`relative z-1 flex h-8 cursor-pointer items-center justify-center rounded-full px-2 transition-colors ${
+                billingCycle === "yearly"
+                  ? "border border-border bg-white shadow-md dark:bg-[#3F3F46]"
+                  : ""
+              }`}
             >
-              {billingCycle === "yearly" && (
-                <motion.div
-                  layoutId="guest-pricing-toggle"
-                  className="absolute inset-0 rounded-full bg-white dark:bg-[#3F3F46] shadow-md border border-border"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
               <span
                 className={`relative block text-sm font-medium duration-200 shrink-0 ${
                   billingCycle === "yearly"
@@ -105,7 +100,7 @@ export default function PricingGuest() {
                 }`}
               >
                 {t("landingpage.guestPricing.yearly")}
-                <span className="ml-2 text-xs font-semibold text-primary bg-primary/15 py-0.5 w-[calc(100%+1rem)] px-1 rounded-full">
+              <span className="ml-2 inline-flex rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-white">
                   {t("landingpage.guestPricing.yearlyBadge")}
                 </span>
               </span>
@@ -139,18 +134,12 @@ export default function PricingGuest() {
                   {plan.isFree ? (
                     <span className="text-4xl font-semibold">€0</span>
                   ) : (
-                    <motion.span
-                      key={billingCycle}
-                      initial={{ opacity: 0, filter: "blur(4px)" }}
-                      animate={{ opacity: 1, filter: "blur(0px)" }}
-                      transition={{ duration: 0.3 }}
-                      className="text-4xl font-semibold"
-                    >
+                    <span className="text-4xl font-semibold">
                       {billingCycle === "monthly"
                         ? plan.monthlyPrice
                         : Math.floor(plan.yearlyPrice / 12)}
                       €
-                    </motion.span>
+                    </span>
                   )}
                   {!plan.isFree && (
                     <span className="ml-2">

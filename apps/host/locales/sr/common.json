@@ -8,7 +8,8 @@
       "title": "Mapa svih događaja uživo",
       "subtitle": "Nađi popularne događaje u svojoj okolini",
       "error": "Trenutno nije moguće učitati podatke o događajima.",
-      "retry": "Pokušaj ponovo"
+      "retry": "Pokušaj ponovo",
+      "clusterLabel": "Grupa od {{count}} lokacija događaja"
     },
     "nav": {
       "benefits": "Benefiti",
@@ -207,6 +208,7 @@
       },
       "discover": {
         "searchPlaceholder": "Pretraži događaje",
+        "filtersLabel": "Otvori filtere",
         "filterTags": [
           "Sve",
           "🔥 Popularno",
