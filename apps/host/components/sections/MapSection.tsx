@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
@@ -26,8 +27,7 @@ function MapSkeleton() {
 }
 
 const LazyStyledMapWithHandle = dynamic(
-  () =>
-    import("../styled-map").then((module) => module.StyledMapWithHandle),
+  () => import("../styled-map").then((module) => module.StyledMapWithHandle),
   { ssr: false, loading: MapSkeleton },
 );
 
@@ -35,6 +35,7 @@ export default function MapSection() {
   const { t } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
+  const [mapUnlocked, setMapUnlocked] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapLoadRequested = useRef(false);
   const { locations, isLoading, error, fetchLocations } = useLocationsStore();
@@ -95,7 +96,7 @@ export default function MapSection() {
         <Card className="p-0 overflow-hidden w-full flex items-center justify-center">
           <div
             ref={mapContainerRef}
-            className="w-full aspect-[16/9] sm:aspect-[4/3] md:aspect-[16/7] lg:aspect-[16/5]"
+            className="relative w-full aspect-[16/9] sm:aspect-[4/3] md:aspect-[16/7] lg:aspect-[16/5]"
             role="region"
             aria-labelledby="guest-map-title"
             aria-busy={!shouldLoadMap || isLoading}
@@ -130,6 +131,31 @@ export default function MapSection() {
                 selectedLocation={selectedLocation}
                 onLocationSelect={setSelectedLocation}
               />
+            )}
+            {!error && !mapUnlocked && (
+              <div
+                aria-label={t("landingpage.map.unlockControls")}
+                onClick={() => setMapUnlocked(true)}
+                className="absolute inset-0 z-20 flex touch-pan-y flex-col items-center justify-center gap-2 bg-background/45 px-6 text-center text-foreground backdrop-blur-[2px] transition-colors hover:bg-background/55 md:hidden"
+              >
+                <span className="flex max-w-xs flex-col items-center gap-2 rounded-2xl border border-border/70 bg-background/90 px-5 py-4 shadow-lg">
+                  <Unlock className="size-4" aria-hidden="true" />
+                  <span className="font-semibold">
+                    {t("landingpage.map.unlockControls")}
+                  </span>
+                </span>
+              </div>
+            )}
+            {!error && mapUnlocked && (
+              <button
+                type="button"
+                aria-label={t("landingpage.map.lockControls")}
+                onClick={() => setMapUnlocked(false)}
+                className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 touch-pan-y items-center gap-2 rounded-full border border-border/70 bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow-lg md:hidden"
+              >
+                <Lock className="size-4" aria-hidden="true" />
+                {t("landingpage.map.lockControls")}
+              </button>
             )}
           </div>
         </Card>

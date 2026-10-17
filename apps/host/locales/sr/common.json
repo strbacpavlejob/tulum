@@ -9,6 +9,8 @@
       "subtitle": "Nađi popularne događaje u svojoj okolini",
       "error": "Trenutno nije moguće učitati podatke o događajima.",
       "retry": "Pokušaj ponovo",
+      "unlockControls": "Dodirni da otključaš kontrole mape",
+      "lockControls": "Zaključaj mapu",
       "clusterLabel": "Grupa od {{count}} lokacija događaja"
     },
     "nav": {

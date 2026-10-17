@@ -9,6 +9,8 @@
       "subtitle": "Discover trending events happening right now in your area",
       "error": "We couldn't load events right now.",
       "retry": "Try again",
+      "unlockControls": "Tap to unlock map controls",
+      "lockControls": "Lock map",
       "clusterLabel": "{{count}} event locations"
     },
     "nav": {
