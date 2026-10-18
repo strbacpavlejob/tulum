@@ -1,0 +1,3069 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Discovery-only manual QA inventory and checklist for the Tulum mobile app."
+    />
+    <title>Tulum — Manual QA Discovery Report</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --purple: #6747f7;
+        --purple-dark: #4d32d7;
+        --ink: #211b35;
+        --muted: #706b80;
+        --line: #e7e3f1;
+        --surface: #ffffff;
+        --surface-alt: #f7f5fc;
+        --canvas: #f4f2f9;
+        --green: #18865b;
+        --green-bg: #e9f7f0;
+        --blue: #3f58a8;
+        --blue-bg: #edf1ff;
+        --amber: #a96a05;
+        --amber-bg: #fff5df;
+        --red: #b33445;
+        --red-bg: #fff0f1;
+        --shadow: 0 16px 40px rgba(41, 30, 83, 0.08);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 92% 0%, rgba(103, 71, 247, 0.08), transparent 23rem),
+          var(--canvas);
+        color: var(--ink);
+        line-height: 1.5;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      a {
+        color: var(--purple-dark);
+      }
+
+      .topbar {
+        position: sticky;
+        z-index: 10;
+        top: 0;
+        border-bottom: 1px solid rgba(231, 227, 241, 0.9);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(16px);
+      }
+
+      .topbar-inner,
+      .page {
+        width: min(1440px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      .topbar-inner {
+        display: flex;
+        min-height: 70px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 22px;
+      }
+
+      .brand {
+        display: flex;
+        min-width: 210px;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: 13px;
+        background: var(--purple);
+        box-shadow: 0 8px 18px rgba(103, 71, 247, 0.25);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .brand-name {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-caption {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .nav a {
+        flex: 0 0 auto;
+        padding: 9px 11px;
+        border-radius: 10px;
+        color: #58536a;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .nav a:hover,
+      .nav a:focus-visible {
+        background: #f0edff;
+        color: var(--purple-dark);
+        outline: none;
+      }
+
+      .page {
+        padding: 30px 0 64px;
+      }
+
+      .hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 24px;
+        overflow: hidden;
+        padding: clamp(24px, 4vw, 48px);
+        border-radius: 26px;
+        background:
+          radial-gradient(circle at 86% 25%, rgba(255, 255, 255, 0.21), transparent 13rem),
+          linear-gradient(120deg, #392290, #6747f7 62%, #9479ff);
+        box-shadow: var(--shadow);
+        color: white;
+      }
+
+      .hero::after {
+        position: absolute;
+        right: 17%;
+        bottom: -170px;
+        width: 300px;
+        height: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.17);
+        border-radius: 50%;
+        content: "";
+      }
+
+      .hero h1 {
+        max-width: 780px;
+        margin: 12px 0 10px;
+        font-size: clamp(27px, 4vw, 46px);
+        letter-spacing: -0.045em;
+        line-height: 1.08;
+      }
+
+      .hero p {
+        max-width: 760px;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 15px;
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+      }
+
+      .hero-badge,
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero-badge {
+        padding: 7px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
+
+      .hero-stamp {
+        position: relative;
+        z-index: 1;
+        width: 116px;
+        padding: 18px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.12);
+        text-align: center;
+        backdrop-filter: blur(10px);
+      }
+
+      .hero-stamp strong {
+        display: block;
+        font-size: 31px;
+        letter-spacing: -0.06em;
+      }
+
+      .hero-stamp span {
+        display: block;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .section {
+        margin-top: 28px;
+        scroll-margin-top: 88px;
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin: 0 0 14px;
+      }
+
+      .section-heading h2 {
+        margin: 3px 0 0;
+        font-size: clamp(21px, 2.7vw, 29px);
+        letter-spacing: -0.035em;
+      }
+
+      .section-heading p {
+        max-width: 750px;
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .eyebrow {
+        color: var(--purple-dark);
+      }
+
+      .panel,
+      .metric,
+      .category-card,
+      .gap-card,
+      .screen-card,
+      .journey-card,
+      .case-card,
+      .category-block {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: 0 5px 16px rgba(41, 30, 83, 0.035);
+      }
+
+      .panel {
+        padding: 20px;
+        border-radius: 18px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 13px;
+      }
+
+      .metric {
+        min-height: 132px;
+        padding: 17px;
+        border-radius: 17px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.075em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin-top: 8px;
+        font-size: 34px;
+        font-weight: 850;
+        letter-spacing: -0.06em;
+        line-height: 1;
+      }
+
+      .metric-note {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .dashboard-lower {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .progress-header,
+      .status-counts,
+      .category-grid,
+      .utility-row,
+      .filter-row,
+      .case-meta,
+      .note-header,
+      .inventory-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .progress-header {
+        justify-content: space-between;
+      }
+
+      .progress-header strong {
+        font-size: 14px;
+      }
+
+      .progress-track {
+        height: 10px;
+        margin: 13px 0 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #ebe8f2;
+      }
+
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--purple), #a28bff);
+        transition: width 180ms ease;
+      }
+
+      .status-counts {
+        margin-top: 10px;
+      }
+
+      .count-pill,
+      .tag,
+      .status-pill,
+      .priority-pill,
+      .discovery-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: fit-content;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .count-pill,
+      .tag {
+        background: var(--surface-alt);
+        color: #5b566e;
+      }
+
+      .status-not-tested {
+        background: #f0eef5;
+        color: #625d70;
+      }
+
+      .status-passed {
+        background: var(--green-bg);
+        color: var(--green);
+      }
+
+      .status-failed {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+
+      .status-blocked {
+        background: var(--amber-bg);
+        color: var(--amber);
+      }
+
+      .discovery-ui {
+        background: #f0ebff;
+        color: var(--purple-dark);
+      }
+
+      .discovery-code {
+        background: var(--blue-bg);
+        color: var(--blue);
+      }
+
+      .discovery-unverified {
+        background: #f0eef5;
+        color: #625d70;
+      }
+
+      .priority-critical {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+
+      .priority-high {
+        background: #fff1e6;
+        color: #a64f00;
+      }
+
+      .priority-medium {
+        background: var(--blue-bg);
+        color: var(--blue);
+      }
+
+      .priority-low {
+        background: #f0eef5;
+        color: #625d70;
+      }
+
+      .dashboard-note,
+      .callout {
+        border-left: 4px solid var(--purple);
+        border-radius: 10px;
+        background: #f4f1ff;
+        color: #4b426d;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .dashboard-note {
+        margin-top: 13px;
+        padding: 11px 13px;
+      }
+
+      .category-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .category-card {
+        padding: 13px;
+        border-radius: 13px;
+      }
+
+      .category-card strong {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 12px;
+      }
+
+      .category-card span {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .flow-scroll {
+        overflow-x: auto;
+        border-radius: 18px;
+      }
+
+      .flow-svg {
+        display: block;
+        width: 100%;
+        min-width: 1020px;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background:
+          linear-gradient(rgba(103, 71, 247, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(103, 71, 247, 0.025) 1px, transparent 1px),
+          #fff;
+        background-size: 24px 24px;
+      }
+
+      .flow-svg .lane {
+        fill: #817b90;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .flow-svg .edge {
+        fill: none;
+        stroke: #9a94aa;
+        stroke-width: 1.8;
+        marker-end: url(#arrow);
+      }
+
+      .flow-svg .edge.conditional {
+        stroke-dasharray: 6 5;
+      }
+
+      .flow-svg .edge-label {
+        fill: #706b80;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .flow-svg .node rect {
+        fill: #fff;
+        stroke: #d8d1eb;
+        stroke-width: 1.5;
+        rx: 12;
+      }
+
+      .flow-svg .node.ui rect {
+        stroke: var(--purple);
+      }
+
+      .flow-svg .node.code rect {
+        stroke: #7385cb;
+      }
+
+      .flow-svg .node.blocked rect {
+        stroke: #d79b37;
+        stroke-dasharray: 5 4;
+      }
+
+      .flow-svg .node-title {
+        fill: #28223b;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .flow-svg .node-subtitle {
+        fill: #777184;
+        font-size: 9px;
+        font-weight: 600;
+      }
+
+      .flow-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 13px;
+        margin-top: 11px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .legend-dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        margin-right: 5px;
+        border-radius: 50%;
+        background: var(--purple);
+      }
+
+      .legend-dot.code {
+        background: #7385cb;
+      }
+
+      .legend-dot.blocked {
+        background: #d79b37;
+      }
+
+      .journeys {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .journey-card {
+        padding: 17px;
+        border-radius: 15px;
+      }
+
+      .journey-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+
+      .journey-card p,
+      .journey-card li {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .journey-card p {
+        margin: 0;
+      }
+
+      .journey-card ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      .screen-grid,
+      .gap-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 11px;
+      }
+
+      .screen-card,
+      .gap-card {
+        padding: 15px;
+        border-radius: 15px;
+      }
+
+      .screen-card h3,
+      .gap-card h3 {
+        margin: 8px 0 5px;
+        font-size: 13px;
+      }
+
+      .screen-card p,
+      .gap-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .route {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 7px;
+        border-radius: 7px;
+        background: var(--surface-alt);
+        color: #5f596d;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+      }
+
+      .callout {
+        margin-top: 13px;
+        padding: 12px 14px;
+      }
+
+      .callout strong {
+        color: #352a5d;
+      }
+
+      .inventory-toolbar,
+      .checklist-toolbar {
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .inventory-toolbar .filter-row,
+      .checklist-toolbar .filter-row {
+        flex: 1;
+      }
+
+      .control {
+        min-height: 40px;
+        padding: 8px 11px;
+        border: 1px solid #dcd7e8;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 12px;
+      }
+
+      .control:focus,
+      .notes:focus {
+        border-color: var(--purple);
+        outline: 3px solid rgba(103, 71, 247, 0.14);
+      }
+
+      .search-control {
+        width: min(360px, 100%);
+      }
+
+      .button {
+        min-height: 38px;
+        padding: 8px 12px;
+        border: 1px solid #dcd7e8;
+        border-radius: 10px;
+        background: #fff;
+        color: #4a445d;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .button:hover {
+        border-color: #b9aaff;
+        color: var(--purple-dark);
+      }
+
+      .button.primary {
+        border-color: var(--purple);
+        background: var(--purple);
+        color: #fff;
+      }
+
+      .button.danger {
+        color: var(--red);
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: #fff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid #efedf4;
+        vertical-align: top;
+        font-size: 11px;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #faf9fd;
+        color: #5a546b;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      td strong {
+        display: block;
+        min-width: 82px;
+        color: #302a42;
+      }
+
+      .case-id {
+        color: var(--purple-dark);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .category-block {
+        overflow: hidden;
+        margin-bottom: 12px;
+        border-radius: 15px;
+      }
+
+      .category-block > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #fbfaff;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 850;
+        list-style: none;
+      }
+
+      .category-block > summary::-webkit-details-marker,
+      .case-card > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .category-block > summary::after {
+        color: var(--purple);
+        content: "+";
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .category-block[open] > summary::after {
+        content: "−";
+      }
+
+      .category-count {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .case-list {
+        display: grid;
+        gap: 8px;
+        padding: 9px;
+      }
+
+      .case-card {
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: none;
+      }
+
+      .case-card > summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .case-card > summary:hover {
+        background: #fbfaff;
+      }
+
+      .case-summary-main {
+        min-width: 0;
+      }
+
+      .case-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .case-title-row h3 {
+        flex: 1 1 240px;
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .case-summary-note {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .case-card > summary::after {
+        color: #827c91;
+        content: "Details";
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .case-card[open] > summary::after {
+        content: "Close";
+      }
+
+      .case-body {
+        padding: 0 15px 16px;
+        border-top: 1px solid #efedf4;
+      }
+
+      .case-description {
+        margin: 13px 0;
+        color: #4e485f;
+        font-size: 12px;
+      }
+
+      .case-meta {
+        align-items: flex-start;
+        gap: 8px 16px;
+        margin: 12px 0;
+      }
+
+      .case-meta div {
+        flex: 1 1 230px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .case-meta strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #454054;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .case-body h4 {
+        margin: 13px 0 5px;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .case-body ol {
+        margin: 5px 0 10px;
+        padding-left: 21px;
+      }
+
+      .case-body li {
+        margin: 4px 0;
+        color: #5d576d;
+        font-size: 11px;
+      }
+
+      .expected {
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #f7f5fc;
+        color: #4e485f;
+        font-size: 11px;
+      }
+
+      .case-controls {
+        display: grid;
+        grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
+        gap: 12px;
+        margin-top: 13px;
+      }
+
+      .case-controls label {
+        display: block;
+        margin-bottom: 5px;
+        color: #514b61;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .case-controls select {
+        width: 100%;
+      }
+
+      .notes {
+        width: 100%;
+        min-height: 74px;
+        resize: vertical;
+        padding: 9px 10px;
+        border: 1px solid #dcd7e8;
+        border-radius: 10px;
+        color: var(--ink);
+        font-size: 11px;
+      }
+
+      .note-help {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .storage-status {
+        min-height: 20px;
+        margin: 6px 0 12px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .storage-status.error {
+        color: var(--red);
+        font-weight: 800;
+      }
+
+      .storage-status.saved {
+        color: var(--green);
+      }
+
+      .gap-card {
+        border-top: 3px solid #c8c0dd;
+      }
+
+      .gap-card .discovery-pill {
+        margin-top: 2px;
+      }
+
+      .missing-title {
+        margin: 0 0 7px;
+        font-size: 14px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 30px;
+        padding: 17px 2px 0;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 1000px) {
+        .topbar-inner {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 4px;
+          padding: 10px 0 7px;
+        }
+
+        .nav {
+          width: 100%;
+        }
+
+        .metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .category-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .screen-grid,
+        .gap-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 680px) {
+        .topbar-inner,
+        .page {
+          width: min(100% - 24px, 1440px);
+        }
+
+        .page {
+          padding-top: 16px;
+        }
+
+        .hero {
+          grid-template-columns: minmax(0, 1fr);
+          border-radius: 20px;
+        }
+
+        .hero-stamp {
+          display: none;
+        }
+
+        .metrics,
+        .dashboard-lower,
+        .journeys,
+        .screen-grid,
+        .gap-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .metric {
+          min-height: 108px;
+        }
+
+        .section-heading {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .checklist-toolbar,
+        .inventory-toolbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .filter-row {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .search-control,
+        .filter-row .control {
+          width: 100%;
+        }
+
+        .case-controls {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .case-card > summary {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .footer {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand" aria-label="Tulum Manual QA Report">
+          <div class="brand-mark" aria-hidden="true">T</div>
+          <div>
+            <div class="brand-name">Tulum QA</div>
+            <span class="brand-caption">Feature discovery</span>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Report sections">
+          <a href="#dashboard">Dashboard</a>
+          <a href="#flow">Flow map</a>
+          <a href="#inventory">Inventory</a>
+          <a href="#checklist">Checklist</a>
+          <a href="#gaps">Gaps</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero" aria-labelledby="report-title">
+        <div>
+          <span class="hero-badge">Discovery only · no QA passes recorded</span>
+          <h1 id="report-title">Tulum mobile app — manual QA discovery report</h1>
+          <p>
+            A reusable screen and feature inventory, flow map, and step-by-step
+            MVP checklist. Browser observations are separated from source-only
+            findings; this discovery did not submit forms, swipe profiles, RSVP,
+            send messages, purchase, log out, or delete an account.
+          </p>
+          <div class="hero-meta">
+            <span class="hero-badge">Prepared 18 Oct 2026</span>
+            <span class="hero-badge">Viewport observed: 375 × 667</span>
+            <span class="hero-badge">Standalone · no external assets</span>
+          </div>
+        </div>
+        <div class="hero-stamp" aria-label="Manual test cases">
+          <strong id="hero-case-count">—</strong>
+          <span>QA cases</span>
+        </div>
+      </section>
+
+      <section id="dashboard" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">01 · Overview</span>
+            <h2>Discovery dashboard</h2>
+            <p>
+              “UI-confirmed” means the surface was visible in the existing
+              authenticated Chromium session. It does not mean the feature
+              passed a test.
+            </p>
+          </div>
+        </div>
+        <div class="metrics">
+          <article class="metric">
+            <div class="metric-label">Route screens</div>
+            <div class="metric-value" id="route-count">—</div>
+            <div class="metric-note">Screen routes and route states inventoried</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label">Overlay surfaces</div>
+            <div class="metric-value" id="overlay-count">—</div>
+            <div class="metric-note">Sheets, dialogs, modal and chat states</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label">Features / test cases</div>
+            <div class="metric-value" id="case-count">—</div>
+            <div class="metric-note">One checklist case per discovered feature</div>
+          </article>
+          <article class="metric">
+            <div class="metric-label">UI-confirmed coverage</div>
+            <div class="metric-value" id="ui-coverage">—</div>
+            <div class="metric-note">Observed surfaces ÷ documented cases</div>
+          </article>
+        </div>
+
+        <div class="dashboard-lower">
+          <article class="panel">
+            <div class="progress-header">
+              <strong>Manual QA execution</strong>
+              <span id="execution-label" class="tag">0% executed</span>
+            </div>
+            <div
+              class="progress-track"
+              role="progressbar"
+              aria-label="Manual QA execution progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <div id="execution-fill" class="progress-fill"></div>
+            </div>
+            <div class="status-counts" id="status-counts"></div>
+            <div class="dashboard-note">
+              Passed + Failed count as executed. Blocked cases describe current
+              prerequisites or discovery limits and are not test results. No
+              case is marked Passed.
+            </div>
+          </article>
+          <article class="panel">
+            <div class="progress-header">
+              <strong>Feature inventory by category</strong>
+              <span class="tag" id="category-total">—</span>
+            </div>
+            <div class="category-grid" id="category-grid"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="flow" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">02 · Navigation</span>
+            <h2>Application flow map</h2>
+            <p>
+              Solid and dashed connectors show the source-defined routes and
+              conditions. Scroll horizontally on narrow screens.
+            </p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="flow-scroll">
+            <svg
+              class="flow-svg"
+              viewBox="0 0 1440 690"
+              role="img"
+              aria-labelledby="flow-title flow-description"
+            >
+              <title id="flow-title">Tulum route and feature flow map</title>
+              <desc id="flow-description">
+                Authentication and onboarding lead to event discovery. Event
+                attendance can unlock ticket-based matching. Matching may lead
+                to a reciprocal match and an expiring conversation. Profile and
+                settings are available from the main tabs.
+              </desc>
+              <defs>
+                <marker
+                  id="arrow"
+                  markerWidth="9"
+                  markerHeight="9"
+                  refX="7"
+                  refY="4.5"
+                  orient="auto"
+                >
+                  <path d="M0,0 L9,4.5 L0,9 z" fill="#9a94aa"></path>
+                </marker>
+              </defs>
+
+              <text class="lane" x="28" y="26">ACCOUNT ENTRY</text>
+              <path class="edge conditional" d="M190 72 L225 72"></path>
+              <text class="edge-label" x="193" y="62">signed out</text>
+              <path class="edge" d="M385 72 L420 72"></path>
+              <text class="edge-label" x="387" y="62">new user</text>
+              <path class="edge" d="M580 72 L615 72"></path>
+              <path class="edge" d="M775 72 L810 72"></path>
+              <path class="edge" d="M1000 72 L1045 72"></path>
+              <text class="edge-label" x="1008" y="62">9-step setup</text>
+              <path class="edge conditional" d="M105 104 C105 142 120 151 150 171"></path>
+              <text class="edge-label" x="110" y="145">signed in + complete</text>
+              <path class="edge conditional" d="M500 104 C500 138 390 145 350 171"></path>
+              <text class="edge-label" x="392" y="143">email link in source</text>
+
+              <g class="node code">
+                <rect x="30" y="42" width="160" height="60"></rect>
+                <text class="node-title" x="45" y="66">Session gate</text>
+                <text class="node-subtitle" x="45" y="84">Clerk + onboarding check</text>
+              </g>
+              <g class="node code">
+                <rect x="225" y="42" width="160" height="60"></rect>
+                <text class="node-title" x="240" y="66">Sign in</text>
+                <text class="node-subtitle" x="240" y="84">Apple / Google in source</text>
+              </g>
+              <g class="node ui">
+                <rect x="420" y="42" width="160" height="60"></rect>
+                <text class="node-title" x="435" y="66">Sign up</text>
+                <text class="node-subtitle" x="435" y="84">Provider choices observed</text>
+              </g>
+              <g class="node code">
+                <rect x="615" y="42" width="160" height="60"></rect>
+                <text class="node-title" x="630" y="66">SSO callback</text>
+                <text class="node-subtitle" x="630" y="84">External provider return</text>
+              </g>
+              <g class="node code">
+                <rect x="810" y="42" width="190" height="60"></rect>
+                <text class="node-title" x="825" y="66">Onboarding wizard</text>
+                <text class="node-subtitle" x="825" y="84">9 steps · age 18+</text>
+              </g>
+              <g class="node ui">
+                <rect x="1045" y="42" width="185" height="60"></rect>
+                <text class="node-title" x="1060" y="66">Discovery map</text>
+                <text class="node-subtitle" x="1060" y="84">Map, search, tags, cards</text>
+              </g>
+
+              <text class="lane" x="28" y="156">EVENTS &amp; TICKETS</text>
+              <path class="edge" d="M220 205 L255 205"></path>
+              <path class="edge" d="M445 205 L480 205"></path>
+              <text class="edge-label" x="448" y="194">Attend</text>
+              <path class="edge conditional" d="M670 205 L705 205"></path>
+              <text class="edge-label" x="673" y="194">if RSVP accepted</text>
+              <path class="edge conditional" d="M895 205 L930 205"></path>
+              <text class="edge-label" x="896" y="194">ticket must be live</text>
+              <path class="edge conditional" d="M1120 205 L1155 205"></path>
+              <text class="edge-label" x="1124" y="194">permission + ≤300m</text>
+              <path class="edge" d="M1350 205 C1390 205 1390 290 1350 320"></path>
+              <path class="edge conditional" d="M1110 102 C1040 140 835 141 800 175"></path>
+              <text class="edge-label" x="850" y="145">Tickets tab / live window</text>
+              <path class="edge conditional" d="M1160 102 C1060 137 430 140 350 175"></path>
+              <text class="edge-label" x="1165" y="145">event card</text>
+              <path class="edge conditional" d="M125 235 C125 310 130 405 130 480"></path>
+              <text class="edge-label" x="138" y="425">Profile tab</text>
+
+              <g class="node ui">
+                <rect x="30" y="175" width="190" height="60"></rect>
+                <text class="node-title" x="45" y="199">Map / event cards</text>
+                <text class="node-subtitle" x="45" y="217">5 icon-only bottom tabs</text>
+              </g>
+              <g class="node ui">
+                <rect x="255" y="175" width="190" height="60"></rect>
+                <text class="node-title" x="270" y="199">Event details</text>
+                <text class="node-subtitle" x="270" y="217">Date · map · capacity</text>
+              </g>
+              <g class="node code">
+                <rect x="480" y="175" width="190" height="60"></rect>
+                <text class="node-title" x="495" y="199">RSVP / reservation</text>
+                <text class="node-subtitle" x="495" y="217">Conditional contact prompt</text>
+              </g>
+              <g class="node ui">
+                <rect x="705" y="175" width="190" height="60"></rect>
+                <text class="node-title" x="720" y="199">Tickets</text>
+                <text class="node-subtitle" x="720" y="217">Live · starting soon · upcoming</text>
+              </g>
+              <g class="node blocked">
+                <rect x="930" y="175" width="190" height="60"></rect>
+                <text class="node-title" x="945" y="199">Matches eligibility</text>
+                <text class="node-subtitle" x="945" y="217">Locked without live ticket</text>
+              </g>
+              <g class="node code">
+                <rect x="1155" y="175" width="195" height="60"></rect>
+                <text class="node-title" x="1170" y="199">Location check</text>
+                <text class="node-subtitle" x="1170" y="217">Foreground permission · 300m</text>
+              </g>
+
+              <text class="lane" x="28" y="300">MATCHING &amp; MESSAGING</text>
+              <path class="edge conditional" d="M220 350 L255 350"></path>
+              <text class="edge-label" x="225" y="340">mutual Like</text>
+              <path class="edge" d="M455 350 L490 350"></path>
+              <path class="edge" d="M690 350 L725 350"></path>
+              <path class="edge" d="M925 350 L960 350"></path>
+              <path class="edge conditional" d="M590 320 C590 277 1315 277 1315 320"></path>
+              <text class="edge-label" x="925" y="270">after six hours</text>
+              <path class="edge conditional" d="M1250 235 C1250 270 125 270 125 320"></path>
+              <text class="edge-label" x="645" y="262">eligible profile deck</text>
+
+              <g class="node code">
+                <rect x="30" y="320" width="190" height="60"></rect>
+                <text class="node-title" x="45" y="344">Swipe deck</text>
+                <text class="node-subtitle" x="45" y="362">Gender + age filters</text>
+              </g>
+              <g class="node code">
+                <rect x="255" y="320" width="200" height="60"></rect>
+                <text class="node-title" x="270" y="344">Like / match modal</text>
+                <text class="node-subtitle" x="270" y="362">Like cap · reciprocal match</text>
+              </g>
+              <g class="node ui">
+                <rect x="490" y="320" width="200" height="60"></rect>
+                <text class="node-title" x="505" y="344">Inbox</text>
+                <text class="node-subtitle" x="505" y="362">New matches + conversations</text>
+              </g>
+              <g class="node code">
+                <rect x="725" y="320" width="200" height="60"></rect>
+                <text class="node-title" x="740" y="344">Chat</text>
+                <text class="node-subtitle" x="740" y="362">6-hour expiry · live location gate</text>
+              </g>
+              <g class="node code">
+                <rect x="960" y="320" width="225" height="60"></rect>
+                <text class="node-title" x="975" y="344">Profile / Find overlays</text>
+                <text class="node-subtitle" x="975" y="362">Read-only profile + pair code</text>
+              </g>
+              <g class="node blocked">
+                <rect x="1220" y="320" width="190" height="60"></rect>
+                <text class="node-title" x="1235" y="344">Expired chat</text>
+                <text class="node-subtitle" x="1235" y="362">Disabled row + expiry alert</text>
+              </g>
+
+              <text class="lane" x="28" y="456">PROFILE &amp; SETTINGS</text>
+              <path class="edge" d="M240 510 L285 510"></path>
+              <path class="edge" d="M495 510 L540 510"></path>
+              <path class="edge" d="M750 510 L795 510"></path>
+              <path class="edge conditional" d="M1005 510 L1050 510"></path>
+              <text class="edge-label" x="1007" y="500">confirmation only</text>
+
+              <g class="node ui">
+                <rect x="30" y="480" width="210" height="60"></rect>
+                <text class="node-title" x="45" y="504">Profile</text>
+                <text class="node-subtitle" x="45" y="522">Photos + profile attributes</text>
+              </g>
+              <g class="node code">
+                <rect x="285" y="480" width="210" height="60"></rect>
+                <text class="node-title" x="300" y="504">Profile editors</text>
+                <text class="node-subtitle" x="300" y="522">Text / single / multi-select</text>
+              </g>
+              <g class="node code">
+                <rect x="540" y="480" width="210" height="60"></rect>
+                <text class="node-title" x="555" y="504">Settings</text>
+                <text class="node-subtitle" x="555" y="522">Theme · language · venue</text>
+              </g>
+              <g class="node code">
+                <rect x="795" y="480" width="210" height="60"></rect>
+                <text class="node-title" x="810" y="504">Feedback forms</text>
+                <text class="node-subtitle" x="810" y="522">Bug report · venue suggestion</text>
+              </g>
+              <g class="node blocked">
+                <rect x="1050" y="480" width="265" height="60"></rect>
+                <text class="node-title" x="1065" y="504">Delete confirmation</text>
+                <text class="node-subtitle" x="1065" y="522">Do not confirm in discovery</text>
+              </g>
+
+              <text class="edge-label" x="30" y="610">
+                Conditions: age ≥18 at onboarding · live ticket for matching · ≤300m location radius · reservation contact only when venue requires it
+              </text>
+              <text class="edge-label" x="30" y="630">
+                Note: location gate for chat is conditional on a currently live event; inactive events or missing venue coordinates follow a different path in source.
+              </text>
+            </svg>
+          </div>
+          <div class="flow-legend" aria-label="Flow diagram legend">
+            <span><i class="legend-dot"></i>UI-confirmed surface</span>
+            <span><i class="legend-dot code"></i>Code-confirmed path</span>
+            <span><i class="legend-dot blocked"></i>Blocked / conditional now</span>
+            <span>Dashed connector = condition or alternate route</span>
+          </div>
+        </div>
+
+        <div class="journeys">
+          <article class="journey-card">
+            <h3>New user → event discovery</h3>
+            <p>
+              Sign-up → Apple/Google SSO → SSO callback → onboarding (name,
+              birthday, gender, interested-in, intent, interests, venue types,
+              optional photos, optional bio) → map. Email on sign-up routes to
+              sign-in in source; a usable email form was not found.
+            </p>
+          </article>
+          <article class="journey-card">
+            <h3>Event → RSVP → match eligibility</h3>
+            <p>
+              Map/card → event details → RSVP. If a venue requires reservation
+              and has contact methods, contact first, then confirm. A current
+              event ticket unlocks Matches only during its live window (with a
+              five-minute pre-start grace period); a location permission and
+              position within 300m are then required.
+            </p>
+          </article>
+          <article class="journey-card">
+            <h3>Matching → reciprocal match → chat</h3>
+            <p>
+              Eligible profiles → gender/age filters → like (subject to dynamic
+              cap) → reciprocal likes show a match modal. The modal can create
+              a chat and send an opening message. Inbox chats expire six hours
+              after the match; a live associated event adds a chat location
+              gate.
+            </p>
+          </article>
+          <article class="journey-card">
+            <h3>Profile → settings and support</h3>
+            <p>
+              Profile tab → edit profile fields or photos; Settings tab →
+              theme, language, default venue, bug report, venue suggestion,
+              logout, or delete confirmation. Changes/submissions were not
+              saved during discovery; account deletion was not confirmed.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="inventory" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">03 · Screens and features</span>
+            <h2>Route screen inventory</h2>
+            <p>
+              Route count excludes overlays, which are listed separately.
+              Route groups are shown with their public paths where applicable.
+            </p>
+          </div>
+          <span class="tag" id="route-summary">—</span>
+        </div>
+        <div class="screen-grid" id="screen-grid"></div>
+
+        <div class="section-heading" style="margin-top: 23px">
+          <div>
+            <span class="eyebrow">Interaction surfaces</span>
+            <h2 style="font-size: 20px">Dialogs, sheets, and modal states</h2>
+            <p>
+              Source-confirmed surfaces not all surfaced in the Chromium web
+              session. Native-device follow-up may be required.
+            </p>
+          </div>
+          <span class="tag" id="overlay-summary">—</span>
+        </div>
+        <div class="screen-grid" id="overlay-grid"></div>
+
+        <div class="section-heading" style="margin-top: 23px">
+          <div>
+            <span class="eyebrow">Feature list</span>
+            <h2 style="font-size: 20px">Feature inventory</h2>
+            <p>One row per checklist case; evidence status is not a test result.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="inventory-toolbar">
+            <div class="filter-row">
+              <input
+                id="inventory-search"
+                class="control search-control"
+                type="search"
+                placeholder="Search feature inventory"
+                aria-label="Search feature inventory"
+              />
+              <select
+                id="inventory-category"
+                class="control"
+                aria-label="Filter inventory by category"
+              >
+                <option value="">All categories</option>
+              </select>
+              <select
+                id="inventory-discovery"
+                class="control"
+                aria-label="Filter inventory by discovery status"
+              >
+                <option value="">All discovery statuses</option>
+                <option>UI-confirmed</option>
+                <option>Code-confirmed</option>
+                <option>Unverified</option>
+              </select>
+            </div>
+            <span class="tag" id="inventory-count">—</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID / category</th>
+                  <th>Feature and purpose</th>
+                  <th>Location / prerequisites</th>
+                  <th>Discovery evidence</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="checklist" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">04 · Manual testing</span>
+            <h2>Interactive manual QA checklist</h2>
+            <p>
+              Detailed steps and expected results are provided for later
+              execution. All statuses start at Not Tested or Blocked; none are
+              Passed. Notes and status changes are saved to this browser's
+              localStorage.
+            </p>
+          </div>
+          <span class="tag" id="checklist-count">—</span>
+        </div>
+        <div class="panel">
+          <div class="checklist-toolbar">
+            <div class="filter-row">
+              <input
+                id="checklist-search"
+                class="control search-control"
+                type="search"
+                placeholder="Search IDs, features, steps, notes…"
+                aria-label="Search checklist"
+              />
+              <select
+                id="checklist-category"
+                class="control"
+                aria-label="Filter checklist by category"
+              >
+                <option value="">All categories</option>
+              </select>
+              <select
+                id="checklist-status"
+                class="control"
+                aria-label="Filter checklist by test status"
+              >
+                <option value="">All test statuses</option>
+                <option>Not Tested</option>
+                <option>Passed</option>
+                <option>Failed</option>
+                <option>Blocked</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button id="expand-all" class="button" type="button">
+                Expand all
+              </button>
+              <button id="collapse-all" class="button" type="button">
+                Collapse all
+              </button>
+            </div>
+          </div>
+          <div class="utility-row">
+            <button id="export-json" class="button primary" type="button">
+              Export JSON
+            </button>
+            <button id="export-csv" class="button" type="button">
+              Export CSV
+            </button>
+            <button id="reset-progress" class="button danger" type="button">
+              Reset progress
+            </button>
+            <span class="tag" id="visible-count">—</span>
+          </div>
+          <div id="storage-status" class="storage-status" role="status" aria-live="polite">
+            Checklist progress has not changed in this browser.
+          </div>
+          <div id="checklist-groups"></div>
+        </div>
+      </section>
+
+      <section id="gaps" class="section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">05 · Discovery gaps</span>
+            <h2>Missing &amp; inaccessible features</h2>
+            <p>
+              These are evidence-based blockers or source observations, not
+              completed defects or assumptions about the product roadmap.
+            </p>
+          </div>
+        </div>
+        <div class="gap-grid" id="gap-grid"></div>
+        <div class="callout">
+          <strong>Manual QA safety:</strong> Use a development account and
+          controlled event/profile data. Do not use the delete confirmation,
+          send real messages, create test accounts with production identity, or
+          trigger external contact/share apps during checklist preparation.
+          The current account had no upcoming ticket, no unlocked matches, and
+          an empty inbox; those dependent flows remain blocked for this
+          discovery.
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Tulum Manual QA Discovery Report · standalone HTML</span>
+        <span>Discovery evidence and QA execution status are intentionally separate.</span>
+      </footer>
+    </main>
+
+    <noscript>
+      <p style="margin: 24px; padding: 16px; background: #fff0f1; color: #8d2634">
+        JavaScript is required to render the inventory and use checklist filters,
+        exports, and localStorage progress.
+      </p>
+    </noscript>
+
+    <script>
+      const ROUTES = [
+        {
+          name: "Launch / session gate",
+          path: "/",
+          discovery: "Code-confirmed",
+          note: "Checks Clerk state and onboarding completion before redirecting.",
+        },
+        {
+          name: "Sign in",
+          path: "/(auth)/sign-in",
+          discovery: "Code-confirmed",
+          note: "Existing authenticated browser redirects to the app; signed-out UI was not opened.",
+        },
+        {
+          name: "Sign up",
+          path: "/(auth)/sign-up",
+          discovery: "UI-confirmed",
+          note: "Apple, Google, Email, Terms, and Privacy copy were visible; no OAuth was started.",
+        },
+        {
+          name: "SSO callback",
+          path: "/(auth)/sso-callback",
+          discovery: "Code-confirmed",
+          note: "Clerk redirect callback; not triggered during discovery.",
+        },
+        {
+          name: "Onboarding wizard",
+          path: "/(auth)/onboarding",
+          discovery: "Code-confirmed",
+          note: "Nine source-defined steps; the complete wizard was not verified in the current browser.",
+        },
+        {
+          name: "Discovery map",
+          path: "/(tabs)/index → public /",
+          discovery: "UI-confirmed",
+          note: "Map, marker cluster, event cards, search, category chips, and icon-only tab bar visible.",
+        },
+        {
+          name: "Event details",
+          path: "/event-details/[id]",
+          discovery: "UI-confirmed",
+          note: "Opened from a discovery card; date, map, and attendee/capacity area appeared.",
+        },
+        {
+          name: "Tickets",
+          path: "/tickets",
+          discovery: "UI-confirmed",
+          note: "Empty state and Go to Map action visible; no ticket details available.",
+        },
+        {
+          name: "Matches",
+          path: "/matches",
+          discovery: "UI-confirmed",
+          note: "Locked state visible because the current account has no upcoming ticket.",
+        },
+        {
+          name: "Inbox",
+          path: "/inbox",
+          discovery: "UI-confirmed",
+          note: "No messages yet empty state visible; no conversation was opened.",
+        },
+        {
+          name: "Profile",
+          path: "/profile",
+          discovery: "UI-confirmed",
+          note: "Profile fields and tabs were present; personal values are not included in this report.",
+        },
+        {
+          name: "Not found",
+          path: "+not-found",
+          discovery: "Code-confirmed",
+          note: "Expo Router fallback route; not visited.",
+        },
+      ];
+
+      const OVERLAYS = [
+        ["Event filters sheet", "Venue type, capacity, date range, favorites; Apply / Reset.", "Code-confirmed"],
+        ["Calendar range modal", "Date-range selection nested in event filters.", "Code-confirmed"],
+        ["Event guest list sheet", "Capacity, free spots, gender counts, average age, guest rows.", "Code-confirmed"],
+        ["Reservation/contact modal", "Conditional phone, SMS, Viber, WhatsApp, Instagram contact choices.", "Code-confirmed"],
+        ["Match filters sheet", "Gender selection and age range 18–60.", "Code-confirmed"],
+        ["Reciprocal match modal", "Match presentation and optional opening-message input.", "Code-confirmed"],
+        ["Chat view", "Messages, composer, typing events, timer, profile and Find actions.", "Code-confirmed"],
+        ["Chat profile sheet", "Read-only matched profile details.", "Code-confirmed"],
+        ["Find overlay", "Pair-code / match prompt with close action.", "Code-confirmed"],
+        ["Profile edit sheet", "Single-select, multi-select, and text editor variants.", "Code-confirmed"],
+        ["Bug report sheet", "Description field and POST submission.", "Code-confirmed"],
+        ["Venue suggestion sheet", "Required name plus optional Instagram and notes.", "Code-confirmed"],
+        ["Delete confirmation", "Confirmation dialog; current confirm handler only clears local user state.", "Code-confirmed"],
+      ];
+
+      const CASES = [
+        {
+          id: "AUTH-001",
+          category: "Authentication",
+          feature: "Signed-in / signed-out session routing",
+          description: "Verify the app entry gate routes signed-out users to authentication and a valid completed session into the tab app.",
+          location: "apps/mobile/app/index.tsx; apps/mobile/app/(tabs)/_layout.tsx",
+          prerequisites: "Development Clerk account; test once signed out and once with onboarding complete.",
+          steps: ["Open the app in a signed-out development context.", "Verify the sign-in route is shown.", "Open again with a valid signed-in, completed profile.", "Verify the app lands on the map/tab shell."],
+          expected: "Signed-out users are redirected to sign-in; signed-in users with completed onboarding reach the tab app. A failed onboarding check shows a retry state.",
+          priority: "Critical",
+          discovery: "UI-confirmed",
+          evidence: "The existing authenticated route redirected /sign-in to /; the signed-out screen itself was not shown.",
+          initialStatus: "Blocked",
+          blocker: "Current Chromium was already authenticated; do not sign out during discovery.",
+        },
+        {
+          id: "AUTH-002",
+          category: "Authentication",
+          feature: "Apple / Google SSO and callback",
+          description: "Exercise the provider buttons and Clerk redirect callback without creating an unintended account.",
+          location: "apps/mobile/app/(auth)/sign-in/index.tsx; sign-up/index.tsx; sso-callback.tsx",
+          prerequisites: "Approved development identity for each provider and access to the provider redirect.",
+          steps: ["Open sign-in and record Apple and Google buttons.", "Start one provider flow using a development identity.", "Complete the provider return to the SSO callback.", "Repeat with the other provider only if a safe test identity is available."],
+          expected: "Clerk activates the returned session and routes to onboarding or the app; callback errors remain visible. Provider flows were not started during discovery.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Provider buttons were visible on sign-up; SSO implementation and callback behavior were read from source.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "AUTH-003",
+          category: "Authentication",
+          feature: "Sign-up options and legal copy",
+          description: "Check the sign-up choices, loading state, CAPTCHA placement, and Terms / Privacy presentation.",
+          location: "apps/mobile/app/(auth)/sign-up/index.tsx",
+          prerequisites: "Sign-up route; do not tap a provider during this check.",
+          steps: ["Open /sign-up.", "Confirm Apple, Google, and Email choices are visible.", "Confirm Terms of Service, Privacy Policy, and CAPTCHA area.", "Do not start OAuth or create an account."],
+          expected: "All three choices and legal copy are visible. Source renders the legal labels as text without link handlers; verify link expectations separately.",
+          priority: "High",
+          discovery: "UI-confirmed",
+          evidence: "Sign-up page and choices were visible in Chromium; no provider was activated.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "AUTH-004",
+          category: "Authentication",
+          feature: "Continue with Email route",
+          description: "Determine whether the Email choice reaches a usable email sign-in or verification flow.",
+          location: "apps/mobile/app/(auth)/sign-up/index.tsx; sign-in/index.tsx",
+          prerequisites: "Signed-out context so sign-in does not immediately redirect to the app.",
+          steps: ["From sign-up, choose Continue with Email.", "Inspect the destination for email entry, verification, or an explicit supported method.", "Do not submit credentials during discovery."],
+          expected: "If email authentication is in MVP scope, a usable email flow should be available. Current source routes Email to sign-in, whose screen only defines Apple and Google controls; clarify expected behavior.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Email button and route target are in source; authenticated browser could not remain on sign-in to inspect the destination.",
+          initialStatus: "Blocked",
+          blocker: "Requires signed-out test context; no email input flow was found in the sign-in component.",
+        },
+        {
+          id: "ONB-001",
+          category: "Onboarding",
+          feature: "Nine-step onboarding navigation and progress",
+          description: "Check progress indicator, Continue gating, Back behavior, and step order.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx",
+          prerequisites: "Fresh development account with incomplete onboarding; do not reset the current account.",
+          steps: ["Enter onboarding with a test account.", "Record the 1/9 through 9/9 progression.", "Verify Continue is disabled until required input is valid.", "Use Back on intermediate steps and verify prior values remain.", "Use Back on the first step and verify router behavior."],
+          expected: "Nine ordered steps are shown; progress advances one step at a time, values remain while navigating, and the first-step Back returns to the prior route.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Step IDs and validation were read in source; the full wizard was not browser-verified.",
+          initialStatus: "Blocked",
+          blocker: "The current authenticated account/session did not provide a safe fresh-onboarding path.",
+        },
+        {
+          id: "ONB-002",
+          category: "Onboarding",
+          feature: "First name validation",
+          description: "Verify the required first-name field accepts non-empty text and rejects whitespace-only input.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx — name step",
+          prerequisites: "Fresh development account at onboarding step 1.",
+          steps: ["Leave the name empty and inspect Continue.", "Enter spaces only and inspect Continue.", "Enter a valid test first name and proceed."],
+          expected: "Continue remains disabled for empty or whitespace-only names and becomes available for a non-empty name.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "canProceed() checks trimmed name length; screen not exercised.",
+          initialStatus: "Blocked",
+          blocker: "Onboarding form was not available for safe editing in the current session.",
+        },
+        {
+          id: "ONB-003",
+          category: "Onboarding",
+          feature: "Birthday and age eligibility",
+          description: "Verify the date picker and minimum 18-year eligibility gate.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx; components/birthday-input.tsx",
+          prerequisites: "Fresh development account; use boundary dates without submitting an under-18 profile.",
+          steps: ["Inspect the default birthday and date bounds.", "Select a date that yields age 17 and verify Continue stays disabled.", "Select the exact 18-year boundary and verify Continue becomes available.", "Confirm the stored date uses YYYY-MM-DD when completing a test profile."],
+          expected: "Age must be at least 18; the maximum selectable date is 18 years before today.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Source sets the date bound and uses differenceInYears >= 18.",
+          initialStatus: "Blocked",
+          blocker: "Requires an incomplete test account; no account state was reset.",
+        },
+        {
+          id: "ONB-004",
+          category: "Onboarding",
+          feature: "Gender and interested-in choices",
+          description: "Verify required identity and matching preference choices.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx — gender and lookingForGender steps",
+          prerequisites: "Fresh development account at the relevant onboarding steps.",
+          steps: ["Inspect Man, Woman, and Other identity choices.", "Select each option and confirm selected styling.", "Inspect Men, Women, and Everyone interest options.", "Verify Continue is disabled until one choice is selected on each step."],
+          expected: "A single required option is selected per step and persists when navigating Back and Continue.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Options and required-state validation are present in source.",
+          initialStatus: "Blocked",
+          blocker: "Onboarding steps not available in the current session.",
+        },
+        {
+          id: "ONB-005",
+          category: "Onboarding",
+          feature: "Looking-for intent",
+          description: "Check the four intent choices and onboarding-to-profile mapping.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx — lookingFor step",
+          prerequisites: "Fresh development account at the intent step.",
+          steps: ["Inspect Casual, Relationship, Friendship, and Party choices.", "Select one choice and continue.", "Complete onboarding on a test account and review the resulting profile intent."],
+          expected: "One intent is required; source maps choices to dating, relationship, friendship/chat, or party profile values.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Option list and mapSeekingToLookingFor() were read in source.",
+          initialStatus: "Blocked",
+          blocker: "Onboarding is not safely exercisable with the existing account.",
+        },
+        {
+          id: "ONB-006",
+          category: "Onboarding",
+          feature: "Interests and preferred venue types",
+          description: "Check multi-select chips, minimum selections, and the available catalog.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx — tags and venueTypes steps",
+          prerequisites: "Fresh development account; no profile submission during discovery.",
+          steps: ["Inspect interest options and select one or more.", "Verify Continue stays disabled with zero interests.", "Inspect bar/pub/nightclub/restaurant/cafe and remaining venue types.", "Verify Continue stays disabled with zero venue types and enables after a selection."],
+          expected: "At least one interest and one preferred venue type are required; selected chips are visibly distinguished.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Source defines 15 interest tags, 10 venue types, and minimum-one validation.",
+          initialStatus: "Blocked",
+          blocker: "Onboarding wizard not available for a non-mutating walk-through.",
+        },
+        {
+          id: "ONB-007",
+          category: "Onboarding",
+          feature: "Onboarding photo permission and upload",
+          description: "Verify media-library permission, optional photo step, upload, removal, and the three-photo maximum.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx — PhotoPickerStep",
+          prerequisites: "Native development build or supported device; safe test image; test account.",
+          steps: ["Open the optional photo step and inspect the three slots.", "Request photo-library permission using the test account.", "Upload one test image, then add up to three total.", "Verify the fourth slot is unavailable and remove one uploaded test image."],
+          expected: "Permission denial explains the requirement; successful uploads appear in slots; no more than three photos are accepted. Do not use a personal image.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "ImagePicker permission, R2 upload/delete calls, and three-photo cap are in source.",
+          initialStatus: "Blocked",
+          blocker: "Native picker and account photo mutation were not used during discovery.",
+        },
+        {
+          id: "ONB-008",
+          category: "Onboarding",
+          feature: "Optional bio and onboarding submission",
+          description: "Verify the optional bio, final submit, API save, and navigation to the tab app.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx",
+          prerequisites: "Fresh development account; controlled test data; safe to create/update that test profile.",
+          steps: ["Leave the optional bio empty and verify the final step can continue.", "Repeat with a short test bio.", "Submit only on a disposable development account.", "Inspect the resulting profile and app route; record any API validation error."],
+          expected: "Bio may be blank; successful submit posts the required profile fields and routes to the tabs. A failed save shows an error and does not report success.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "submitOnboarding() posts profile data and routes to tabs; form not submitted.",
+          initialStatus: "Blocked",
+          blocker: "Would persist account data; discovery intentionally did not submit.",
+        },
+        {
+          id: "ONB-009",
+          category: "Onboarding",
+          feature: "Onboarding language selector",
+          description: "Check the language selector available during onboarding.",
+          location: "apps/mobile/app/(auth)/onboarding.tsx; components/LanguageSelector.tsx",
+          prerequisites: "Onboarding route; no language change required for discovery.",
+          steps: ["Open the language control.", "Inspect English, Serbian, and Russian choices.", "On a test account, choose a language and verify visible copy changes."],
+          expected: "Supported locale changes update onboarding labels consistently; persistence should be checked separately from current-session rendering.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "LanguageSelector is rendered on onboarding; locale list is EN/RS/RU.",
+          initialStatus: "Blocked",
+          blocker: "Onboarding and locale picker were not operable in the current web walk-through.",
+        },
+        {
+          id: "EVT-001",
+          category: "Events",
+          feature: "Map markers, clusters, and event-card synchronization",
+          description: "Check map pins/clusters and the horizontal event card carousel.",
+          location: "apps/mobile/components/ListingsMap.tsx; DiscoverCard.tsx",
+          prerequisites: "Events returned by the active-events endpoint; map tiles available.",
+          steps: ["Open the map at a mobile viewport.", "Observe event markers/clusters and cards.", "Select a marker and verify the matching card becomes selected.", "Scroll the carousel and verify map focus follows the selected card.", "Open a card to reach its event details."],
+          expected: "Map pins and cards represent event/venue results; selection synchronizes, and a card opens the matching details route.",
+          priority: "High",
+          discovery: "UI-confirmed",
+          evidence: "Map, clusters, carousel, and cards were visible; one event-details route was opened. No data correctness was tested.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "EVT-002",
+          category: "Events",
+          feature: "Event category chips",
+          description: "Verify All and the dynamically selected top event tags filter the map and cards.",
+          location: "apps/mobile/components/ListingsMap.tsx",
+          prerequisites: "At least two event tags represented in loaded data.",
+          steps: ["Inspect All and the horizontal category chip row.", "Choose one tag, then choose another.", "Choose All to restore the full set.", "Compare cards and pins after each selection."],
+          expected: "Each category applies its tag filter; All clears the tag selection. The chip list is derived from the most frequent tags.",
+          priority: "Medium",
+          discovery: "UI-confirmed",
+          evidence: "All and tag chips were visible in Chromium; no selection was changed.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "EVT-003",
+          category: "Events",
+          feature: "Event search",
+          description: "Check case-insensitive event, venue, address, and tag search, debounce, submit, and clear.",
+          location: "apps/mobile/components/SearchBox.tsx; store/useStore.ts",
+          prerequisites: "Map loaded with known development events.",
+          steps: ["Enter a unique partial event title and wait for debounce.", "Search by venue/address/tag text.", "Submit with the keyboard search action.", "Clear the query with the clear icon."],
+          expected: "Results update after a 300ms debounce or submit; matching is case-insensitive across title, venue, address, and tags; clear restores the unsearched set.",
+          priority: "High",
+          discovery: "UI-confirmed",
+          evidence: "Search field was visible; no query was entered.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "EVT-004",
+          category: "Events",
+          feature: "Advanced event filters",
+          description: "Check venue type, capacity, date range, favorites-only, Apply, and Reset.",
+          location: "apps/mobile/components/FiltersBottomSheet.tsx; CalendarRangePicker.tsx; lib/api.ts",
+          prerequisites: "Events across multiple venues/dates and at least one favorite; filter sheet available.",
+          steps: ["Open the sliders control.", "Select one or more venue types and adjust capacity bounds.", "Choose a date range in the calendar modal.", "Toggle Only Favorites.", "Apply and compare results; reopen and Reset."],
+          expected: "Venue type, capacity, date range, and favorites are passed to the active-events request; Apply refreshes results, Reset restores defaults. No price-range or guest-limit input is rendered in the current sheet.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Filter icon was visible, but its sheet did not surface in the current Chromium interaction path. Controls and API query parameters were verified in source.",
+          initialStatus: "Blocked",
+          blocker: "Bottom-sheet UI was not exposed in the web inspection; no filter value was changed.",
+        },
+        {
+          id: "EVT-005",
+          category: "Events",
+          feature: "Event details and expandable description",
+          description: "Check event hero, date, description, map/address, guest count, free spots, and back navigation.",
+          location: "apps/mobile/app/event-details/[id].tsx; MiniMap.tsx; DateCard.tsx",
+          prerequisites: "A valid event card.",
+          steps: ["Open an event card.", "Inspect title, tags, date, location map/address, and guest/capacity area.", "Expand and collapse the description.", "Use Back and verify return to the prior discovery state."],
+          expected: "Details correspond to the selected event; description expands/collapses; map/address and capacity data are present; Back returns to map or prior tab.",
+          priority: "High",
+          discovery: "UI-confirmed",
+          evidence: "Event detail route opened; date, map, and attendee/capacity area appeared. No event action was invoked.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "EVT-006",
+          category: "Events",
+          feature: "Save / unsave favorite event",
+          description: "Check the event-heart control from a card and event details.",
+          location: "apps/mobile/components/FavoriteButton.tsx; lib/api.ts",
+          prerequisites: "Development account and event safe to favorite/unfavorite.",
+          steps: ["Record the starting favorite state.", "Toggle the heart once and wait for the server response.", "Verify the icon and Only Favorites result.", "Toggle back to restore the starting state."],
+          expected: "Favorite state updates and remains consistent across card, details, and favorite filtering; the control performs a server toggle.",
+          priority: "Medium",
+          discovery: "UI-confirmed",
+          evidence: "Heart affordance was visible on the event card; its POST action was not activated.",
+          initialStatus: "Blocked",
+          blocker: "Favorite toggles write account state; intentionally not changed during discovery.",
+        },
+        {
+          id: "EVT-007",
+          category: "Events",
+          feature: "Share event",
+          description: "Check event sharing and clipboard fallback.",
+          location: "apps/mobile/app/event-details/[id].tsx",
+          prerequisites: "Native share target or clipboard support; non-sensitive test event.",
+          steps: ["Open event details.", "Activate Share on a development device.", "Cancel the system share sheet without sending.", "If share is unavailable, verify the clipboard fallback and success feedback."],
+          expected: "A deep link and event title are offered to the system share UI; fallback copies the deep link. Do not send the link to a real recipient.",
+          priority: "Low",
+          discovery: "Code-confirmed",
+          evidence: "Share.share() and clipboard fallback are in source; share UI was not opened.",
+          initialStatus: "Blocked",
+          blocker: "Native share/clipboard handoff was not exercised.",
+        },
+        {
+          id: "EVT-008",
+          category: "Events",
+          feature: "Attend / cancel attendance",
+          description: "Check the RSVP CTA, ticket creation, guest-count update, and rollback on API error.",
+          location: "apps/mobile/app/event-details/[id].tsx; lib/api.ts",
+          prerequisites: "Development account and disposable event/test record; permission to create and remove a test ticket.",
+          steps: ["Use a test event and select Attend.", "Verify ticket/guest state updates.", "Select Cancel Attendance and verify removal.", "Simulate a non-destructive API failure only in an approved test environment."],
+          expected: "Successful attendance adds a ticket and updates the local attendee count; cancel removes it. Failed requests roll back optimistic state and show an error.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "RSVP and rollback handlers were read in source; the CTA was not used.",
+          initialStatus: "Blocked",
+          blocker: "RSVP changes account/ticket state; no attendance action was taken.",
+        },
+        {
+          id: "EVT-009",
+          category: "Events",
+          feature: "Reservation-required attendance",
+          description: "Check the contact-first flow for venues that require reservations.",
+          location: "apps/mobile/app/event-details/[id].tsx — ReservationModal",
+          prerequisites: "Test event with requiresReservation and venue contact methods; native call/messaging targets.",
+          steps: ["Open a reservation-required test event.", "Choose Attend to open the contact prompt.", "Inspect the available contact methods without launching a real call/message.", "In a controlled test, confirm becomes available only after contact is marked; cancel instead of attending unless authorized."],
+          expected: "The prompt lists only configured contact methods; attendance confirmation is gated behind a contact action. Do not contact a real venue during manual QA.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Phone/SMS/Viber/WhatsApp/Instagram handlers and confirmation gate are in source; no RSVP was initiated.",
+          initialStatus: "Blocked",
+          blocker: "Requires an event-specific condition and external contact handoff.",
+        },
+        {
+          id: "EVT-010",
+          category: "Events",
+          feature: "Guest list and attendee statistics",
+          description: "Check capacity progress, free spots, gender counts, average age, visible guest rows, and any Attend action in the sheet.",
+          location: "apps/mobile/components/GuestListModal.tsx; event-details/[id].tsx",
+          prerequisites: "Event with attendee data; native/web sheet surface available.",
+          steps: ["Open the guest/capacity area.", "Inspect capacity, free spots, gender counts, average age, and guest list.", "Do not record guest names/photos in QA notes.", "Check the sheet's Attend control carefully: current source assigns it an empty handler."],
+          expected: "Statistics and guest rows reflect event data. The guest-sheet Attend control must not be assumed to RSVP; its current onPress is a no-op in source and should be confirmed/fixed by product implementation before relying on it.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "The sheet trigger was activated but its contents did not appear in Chromium; source shows stats and the no-op button handler.",
+          initialStatus: "Blocked",
+          blocker: "Bottom-sheet did not surface in the browser; guest data was not copied or recorded.",
+        },
+        {
+          id: "TIX-001",
+          category: "Tickets",
+          feature: "No-upcoming-tickets empty state",
+          description: "Check the empty illustration, explanation, and Go to Map navigation.",
+          location: "apps/mobile/app/(tabs)/tickets.tsx",
+          prerequisites: "Account with no tickets.",
+          steps: ["Open Tickets with no ticket records.", "Verify the empty-state title and explanation.", "Use Go to Map and confirm the discovery tab opens."],
+          expected: "A clear no-upcoming-tickets message and Go to Map action are shown; navigation returns to event discovery.",
+          priority: "Medium",
+          discovery: "UI-confirmed",
+          evidence: "Empty message, explanation, and Go to Map button were visible; CTA was not activated.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "TIX-002",
+          category: "Tickets",
+          feature: "Ticket groups, refresh, and event navigation",
+          description: "Check Live Now, Starting Soon, Upcoming grouping, pull-to-refresh, and event-card routing.",
+          location: "apps/mobile/app/(tabs)/tickets.tsx; TicketCard.tsx",
+          prerequisites: "Development account with tickets in each time bucket.",
+          steps: ["Create approved test tickets spanning live, within three hours, and later.", "Open Tickets and verify section grouping.", "Pull to refresh.", "Verify a Live Now card routes to Matches and other ticket cards route to event details."],
+          expected: "Tickets are grouped by start time; records older than the four-hour live window are omitted. Source routes Live Now cards to Matches and Starting Soon/Upcoming cards to event details.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Current account showed no tickets; grouping and callbacks were read in source.",
+          initialStatus: "Blocked",
+          blocker: "No tickets were available to exercise grouped states.",
+        },
+        {
+          id: "MATCH-001",
+          category: "Matching",
+          feature: "Matches locked state and ticket CTA",
+          description: "Check the gate shown when no eligible live event ticket exists.",
+          location: "apps/mobile/app/(tabs)/matches.tsx; MatchesEligibilityViews.tsx",
+          prerequisites: "Account without a live ticket.",
+          steps: ["Open Matches without a current event ticket.", "Verify the locked illustration, explanation, and View Tickets action.", "Do not create or modify a ticket during discovery."],
+          expected: "Matches remain locked and the CTA routes to Tickets.",
+          priority: "Critical",
+          discovery: "UI-confirmed",
+          evidence: "Locked Matches state appeared in Chromium with no live ticket; CTA was not activated.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "MATCH-002",
+          category: "Matching",
+          feature: "Live-event and location eligibility",
+          description: "Check live ticket window, foreground location permission, 300m radius, denied permission, and local-only bypass.",
+          location: "apps/mobile/app/(tabs)/matches.tsx; MatchesLocationGateCard.tsx; MatchesTaxiButton.tsx",
+          prerequisites: "Live test ticket with venue coordinates and a device that can grant/deny location.",
+          steps: ["Test before the five-minute pre-start grace window, within the live window, and after event end.", "For a live ticket, test permission denied and granted.", "Compare a position inside and outside 300m.", "In local environment only, verify whether Show matches anyway is present."],
+          expected: "Matching requires a ticket from five minutes before start through event end and location within 300m. Local environment may expose a bypass; it is not a production expectation.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Eligibility timing, GPS radius, and environment-gated bypass are source-confirmed.",
+          initialStatus: "Blocked",
+          blocker: "No ticket was available; no GPS prompt or permission was triggered.",
+        },
+        {
+          id: "MATCH-003",
+          category: "Matching",
+          feature: "Eligible attendee deck and profile navigation",
+          description: "Check event attendee cards, vertical paging/wrap, photo fallback, and event context.",
+          location: "apps/mobile/components/matches/MatchesDeck.tsx; SwipeCard.tsx",
+          prerequisites: "Live, location-eligible event with eligible profiles.",
+          steps: ["Enter an eligible event session.", "Review card event/name/age/interests presentation.", "Scroll vertically between cards and test wrap at both ends.", "Do not swipe Like/Pass unless the test account and backend records are disposable."],
+          expected: "Eligible profiles load for the active event; card paging and event context remain synchronized.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Deck is only rendered in the eligible branch; current Matches view was locked.",
+          initialStatus: "Blocked",
+          blocker: "No active ticket or eligible attendee deck.",
+        },
+        {
+          id: "MATCH-004",
+          category: "Matching",
+          feature: "Gender and age filters",
+          description: "Check Everyone/Men/Women/Other and age-range filters from 18 to 60.",
+          location: "apps/mobile/components/matches/MatchesFiltersBottomSheet.tsx; MatchesDeck.tsx",
+          prerequisites: "Eligible profile deck with test profiles across age/gender categories.",
+          steps: ["Open Filters.", "Select each gender option and verify the visible profiles update.", "Adjust both age handles and verify the range label and result set.", "Apply and reopen to confirm values remain."],
+          expected: "Only candidates matching the selected gender and age range remain; filter control supports 18–60.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Filter options and local filtering are source-confirmed; matching deck is currently locked.",
+          initialStatus: "Blocked",
+          blocker: "No eligible deck; filter sheet was not reachable.",
+        },
+        {
+          id: "MATCH-005",
+          category: "Matching",
+          feature: "Like limit, duplicate likes, and reciprocal match",
+          description: "Check server/client like-limit synchronization, duplicate protection, limit feedback, and mutual match.",
+          location: "apps/mobile/app/(tabs)/matches.tsx; MatchesDeck.tsx; lib/api.ts",
+          prerequisites: "Disposable development users, eligible profiles, and a live event test record.",
+          steps: ["Record eligible guest count, used likes, and displayed limit.", "Test the boundary and one additional Like.", "Check repeat Like handling.", "Use a controlled reciprocal profile to verify the match modal."],
+          expected: "For eligible count >0, client fallback is min(count, max(3, floor(count × 20%))); server limit is honored and effective cap is never below likes already used. Limit prevents additional likes; a mutual like opens a match modal.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Like-limit calculation and POST swipe handling were read in source; no swipe was performed.",
+          initialStatus: "Blocked",
+          blocker: "No live event/profile deck; likes would mutate account matching data.",
+        },
+        {
+          id: "MATCH-006",
+          category: "Matching",
+          feature: "Match modal opening message",
+          description: "Check the reciprocal-match presentation and optional first-message composer.",
+          location: "apps/mobile/components/MatchModal.tsx",
+          prerequisites: "Controlled mutual match between development accounts.",
+          steps: ["Trigger a mutual match using disposable accounts.", "Inspect match presentation and empty composer.", "Verify blank message does not send.", "Send only a test message between disposable accounts and confirm navigation to Inbox."],
+          expected: "A non-empty opening message creates/opens chat, posts the message, closes the modal, and navigates to Inbox; do not message a real user.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Modal and send handler are source-confirmed; no match was created.",
+          initialStatus: "Blocked",
+          blocker: "No eligible profiles or reciprocal match available.",
+        },
+        {
+          id: "MSG-001",
+          category: "Messaging",
+          feature: "Inbox empty state",
+          description: "Check the no-messages illustration and Go to Matches route.",
+          location: "apps/mobile/app/(tabs)/inbox.tsx",
+          prerequisites: "Account without new matches or active chats.",
+          steps: ["Open Inbox with no matches/messages.", "Verify the empty-state copy and illustration.", "Use Go to Matches and verify the Matches tab opens."],
+          expected: "No messages yet state appears with the Go to Matches CTA.",
+          priority: "Medium",
+          discovery: "UI-confirmed",
+          evidence: "Empty Inbox state was visible; CTA was not activated.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "MSG-002",
+          category: "Messaging",
+          feature: "New matches, message list, and expiry rings",
+          description: "Check new-match bubbles, active chat rows, last-message preview, and the six-hour countdown.",
+          location: "apps/mobile/app/(tabs)/inbox.tsx",
+          prerequisites: "Development matches both without and with message activity.",
+          steps: ["Create test matches with no messages and with messages.", "Verify New Matches and Messages sections.", "Inspect timer and ring at over two hours, one-to-two hours, and under one hour.", "Do not open a real user's conversation."],
+          expected: "New matches are separated from active conversations; timer is calculated from matched_at + six hours and color reflects remaining time.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Inbox was empty; row and timer logic were read in source.",
+          initialStatus: "Blocked",
+          blocker: "No new matches or conversations are present in the current account.",
+        },
+        {
+          id: "MSG-003",
+          category: "Messaging",
+          feature: "Open chat, mark read, and live-event location gate",
+          description: "Check conversation open/read state and the conditional location gate.",
+          location: "apps/mobile/app/(tabs)/inbox.tsx; ChatModal.tsx",
+          prerequisites: "Test match/chat; live and non-live associated event cases; location-capable device.",
+          steps: ["Open a non-live or coordinate-free test chat and verify it opens.", "Open a chat tied to a currently live event.", "Test location permission denied, outside 300m, and inside 300m.", "Verify unread state updates only on the expected open/read path."],
+          expected: "A live event with coordinates requires location permission and proximity within 300m; inactive/missing event conditions follow the source-defined bypass path.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "No chat was available; location-gating branches were read in source.",
+          initialStatus: "Blocked",
+          blocker: "Current inbox has no matches/chats; no location permission was requested.",
+        },
+        {
+          id: "MSG-004",
+          category: "Messaging",
+          feature: "Send messages, typing indicator, and realtime updates",
+          description: "Check composer validation, socket connection, send state, and message rendering.",
+          location: "apps/mobile/components/ChatModal.tsx; hooks/useChatSocket.ts; apps/api/src/chats/chats.gateway.ts",
+          prerequisites: "Disposable matched test accounts and working API/socket connection.",
+          steps: ["Open a test conversation.", "Verify whitespace-only input leaves Send disabled.", "Send a short test message.", "Verify it appears once for sender and recipient and typing state clears."],
+          expected: "Messages persist through the API and arrive over the chat socket; non-empty message appears once and composer clears.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Composer and socket hooks are source-confirmed; no message was sent.",
+          initialStatus: "Blocked",
+          blocker: "No conversation was available; sending would write messages.",
+        },
+        {
+          id: "MSG-005",
+          category: "Messaging",
+          feature: "Chat profile sheet and Find overlay",
+          description: "Check the chat header profile sheet and the Find/pair-code overlay.",
+          location: "apps/mobile/components/ChatModal.tsx; MatchProfileSheet.tsx; FindModal.tsx",
+          prerequisites: "Open development chat.",
+          steps: ["Tap the chat avatar/header and inspect read-only profile details.", "Close it without editing.", "Tap Find and inspect the pair-code overlay.", "Close and confirm the conversation remains intact."],
+          expected: "Profile sheet displays match information; Find overlay displays its match prompt/pair code and can be closed without sending data.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Overlay components and entry controls were read in source; chat was unavailable.",
+          initialStatus: "Blocked",
+          blocker: "No active chat in the current account.",
+        },
+        {
+          id: "MSG-006",
+          category: "Messaging",
+          feature: "Expired chat behavior",
+          description: "Check the expired row appearance and alert after the six-hour chat window ends.",
+          location: "apps/mobile/app/(tabs)/inbox.tsx",
+          prerequisites: "Controlled test match older than six hours.",
+          steps: ["Use an expired development match.", "Verify the row is dimmed and timer reads Expired.", "Tap it and verify the expiry explanation appears.", "Confirm no composer or send path opens."],
+          expected: "Expired chat is not opened; the app shows the expiry alert and keeps the row visibly inactive.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Expiry branch is source-confirmed; no match existed to inspect.",
+          initialStatus: "Blocked",
+          blocker: "No match or expired chat is available.",
+        },
+        {
+          id: "PROF-001",
+          category: "Profile",
+          feature: "Profile display and attribute editing",
+          description: "Review profile identity, photos, bio, tags, work, education, intent, and attribute rows.",
+          location: "apps/mobile/app/(tabs)/profile.tsx; ProfileInfoView.tsx",
+          prerequisites: "Completed development profile; do not copy personal values into the report.",
+          steps: ["Open Profile and inspect the profile and Profile/Settings tabs.", "Review the available attributes: height, children, drinking, languages, relationship, sexuality, smoking, star sign, pets, religion.", "Open one editor and cancel without saving.", "On a controlled test profile, edit one field and check behavior after app restart."],
+          expected: "Profile renders its fields and edit affordances. Source edit callbacks currently patch the in-memory store; no profile-update API is called from these field editors, so persistence must be explicitly verified.",
+          priority: "High",
+          discovery: "UI-confirmed",
+          evidence: "Profile surface and field labels were present; personal values were not retained.",
+          initialStatus: "Not Tested",
+          blocker: "",
+        },
+        {
+          id: "PROF-002",
+          category: "Profile",
+          feature: "Profile photo add/remove",
+          description: "Check photo library permissions, image upload/delete, and the three-photo cap.",
+          location: "apps/mobile/app/(tabs)/profile.tsx; components/ProfileInfoView.tsx",
+          prerequisites: "Native device and test profile/photos.",
+          steps: ["Open the photo editor.", "Test permission denial and grant with a safe test image.", "Add/remove a photo and verify slots update.", "Verify behavior at three photos."],
+          expected: "Permission and upload errors are visible; successful add/remove updates profile photo state; no more than three photos are added.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "Image picker and photo API calls were inspected; no profile photo was changed.",
+          initialStatus: "Blocked",
+          blocker: "Native media permission and profile mutation were intentionally avoided.",
+        },
+        {
+          id: "PROF-003",
+          category: "Profile",
+          feature: "Tags, work, education, intent, and bio editors",
+          description: "Check multi-select and text-editor controls for editable profile fields.",
+          location: "apps/mobile/app/(tabs)/profile.tsx; components/ProfileInfoView.tsx",
+          prerequisites: "Development profile and editor sheets available.",
+          steps: ["Open tags and looking-for multi-select editors; cancel.", "Open work, education, and bio text editors; cancel.", "On a test profile, confirm edits and verify immediate profile rendering.", "Reload/reopen to check persistence."],
+          expected: "Multi-select and text fields behave as expected; source updates local Zustand state only, so backend persistence is not assumed.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Editor variants and local patch callbacks are in source; sheet was not surfaced in the browser.",
+          initialStatus: "Blocked",
+          blocker: "Profile editor bottom sheet did not surface in the current web inspection.",
+        },
+        {
+          id: "SET-001",
+          category: "Settings",
+          feature: "Theme setting",
+          description: "Check Light, Dark, and System choices, current appearance, and remote persistence.",
+          location: "apps/mobile/components/SettingsTab.tsx; app/(tabs)/profile.tsx; lib/api.ts",
+          prerequisites: "Profile Settings tab and safe development account.",
+          steps: ["Open Settings and the Theme row.", "Inspect Light/Dark/System options.", "Choose a test value and verify app appearance.", "Restore the prior value after the check."],
+          expected: "Selected theme updates UI and is sent through settings PATCH; do not leave the account in a changed theme.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Settings options and PATCH call are source-confirmed; settings subtab did not expose its rows in the current browser interaction.",
+          initialStatus: "Blocked",
+          blocker: "Settings subtab/modal was not visually accessible through the available web interaction path.",
+        },
+        {
+          id: "SET-002",
+          category: "Settings",
+          feature: "App language setting",
+          description: "Check English, Serbian, and Russian selection and translated app copy.",
+          location: "apps/mobile/components/SettingsTab.tsx; constants/options.ts; lib/api.ts",
+          prerequisites: "Profile Settings tab; record and restore current locale.",
+          steps: ["Open the Language row.", "Select each supported locale on a test account.", "Verify tab and screen labels update.", "Restore the original locale."],
+          expected: "Locale updates consistently; source persists language with a settings PATCH.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Locale options and remote settings call are in source; no setting was changed.",
+          initialStatus: "Blocked",
+          blocker: "Settings subtab was not visually opened.",
+        },
+        {
+          id: "SET-003",
+          category: "Settings",
+          feature: "Default venue type",
+          description: "Check selecting and displaying a default venue category.",
+          location: "apps/mobile/components/SettingsTab.tsx; app/(tabs)/profile.tsx",
+          prerequisites: "Profile Settings tab.",
+          steps: ["Open Default Venue Type.", "Inspect the venue catalog.", "Choose a test value and verify the subtitle.", "Reopen the app and check whether the value persists."],
+          expected: "The chosen value is reflected in Settings. Current screen updates local settings state; remote PATCH only includes language/theme.",
+          priority: "Low",
+          discovery: "Code-confirmed",
+          evidence: "Venue selector and local patch are in source; no value was changed.",
+          initialStatus: "Blocked",
+          blocker: "Settings subtab was not visually opened.",
+        },
+        {
+          id: "SET-004",
+          category: "Settings",
+          feature: "Report a bug",
+          description: "Check the bug description form and validation/submission feedback.",
+          location: "apps/mobile/app/(tabs)/profile.tsx; lib/api.ts; apps/api/src/reports",
+          prerequisites: "Test account and permission to create a test report record.",
+          steps: ["Open Report Bug.", "Inspect the description field.", "Use an approved test report only; do not submit during discovery.", "Verify success closes/resets the form and failure shows an error."],
+          expected: "A valid report is sent once; success clears the draft; failure remains visible. The route uses POST, so avoid production or discovery submissions.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Form and POST helper were source-confirmed; form was not submitted.",
+          initialStatus: "Blocked",
+          blocker: "Would create backend report data; settings sheet was also not accessible.",
+        },
+        {
+          id: "SET-005",
+          category: "Settings",
+          feature: "Suggest a venue",
+          description: "Check required venue name and optional Instagram/notes fields.",
+          location: "apps/mobile/app/(tabs)/profile.tsx; lib/api.ts; apps/api/src/reports",
+          prerequisites: "Test account and permission to create a test suggestion.",
+          steps: ["Open Suggest Venue.", "Submit nothing and verify the required-name message without sending.", "Fill a disposable test venue name and optional fields in an approved test environment.", "Verify success clears/closes and failure is visible."],
+          expected: "Name is required; Instagram handle and notes are optional; successful submission posts once. Do not submit during discovery.",
+          priority: "Medium",
+          discovery: "Code-confirmed",
+          evidence: "Required-name guard and POST helper are source-confirmed; no suggestion was submitted.",
+          initialStatus: "Blocked",
+          blocker: "Would write backend report data; form sheet was not opened.",
+        },
+        {
+          id: "SET-006",
+          category: "Settings",
+          feature: "Logout",
+          description: "Check explicit logout behavior and signed-out route.",
+          location: "apps/mobile/components/SettingsTab.tsx; app/(tabs)/profile.tsx",
+          prerequisites: "Disposable development session; preserve an alternative login path.",
+          steps: ["Open Settings and choose Log Out only in an approved QA session.", "Verify Clerk signs out and routes to sign-in.", "Verify protected tabs redirect while signed out."],
+          expected: "Session ends and sign-in becomes the app entry; the existing authenticated discovery session was not logged out.",
+          priority: "High",
+          discovery: "Code-confirmed",
+          evidence: "signOut() and router replacement are in source; action not invoked.",
+          initialStatus: "Blocked",
+          blocker: "Logging out would destroy the required active authenticated browser context.",
+        },
+        {
+          id: "SET-007",
+          category: "Settings",
+          feature: "Delete account confirmation",
+          description: "Document the visible delete action without executing deletion.",
+          location: "apps/mobile/app/(tabs)/profile.tsx — AlertDialog",
+          prerequisites: "Product-approved deletion contract and disposable account; never use the current account.",
+          steps: ["Only if explicitly authorized, open the confirmation dialog.", "Verify Cancel closes it.", "Do not confirm until a server-side deletion flow and recovery policy are confirmed."],
+          expected: "Account deletion should have an explicitly verified backend/auth deletion outcome. Current confirm handler only closes the dialog and sets local user state to null; no Clerk or API deletion call is present in this screen.",
+          priority: "Critical",
+          discovery: "Code-confirmed",
+          evidence: "Dialog exists; its confirmation handler only clears local Zustand user state. It was not opened or confirmed.",
+          initialStatus: "Blocked",
+          blocker: "Destructive action is out of scope; source does not show a server-side deletion call.",
+        },
+        {
+          id: "PREM-001",
+          category: "Premium / scope",
+          feature: "Confirm whether Premium is in MVP scope",
+          description: "No subscription, paywall, upgrade, or purchase surface was found in the mobile routes/components/lib search or observed tabs.",
+          location: "apps/mobile/app; components; lib",
+          prerequisites: "MVP product requirements or explicit product-owner confirmation.",
+          steps: ["Compare the expected MVP scope with the current route/tab inventory.", "If Premium is intended, identify the entry point and acceptance criteria before testing.", "If not in scope, mark N/A in the product QA plan; do not invent a purchase flow."],
+          expected: "Product scope is confirmed. This report makes no claim that a Premium flow exists or should exist.",
+          priority: "Low",
+          discovery: "Unverified",
+          evidence: "No matching premium/subscription/upgrade/paywall/purchase strings or routes were found in mobile source; intent is unknown.",
+          initialStatus: "Blocked",
+          blocker: "Requires product-scope confirmation; no feature behavior to execute.",
+        },
+      ];
+
+      const GAPS = [
+        {
+          title: "Premium scope is unknown",
+          status: "Unverified",
+          text: "No Premium, subscription, upgrade, paywall, billing, or purchase flow surfaced in the mobile routes/components/lib. Confirm MVP scope before adding acceptance expectations.",
+        },
+        {
+          title: "Email auth path is incomplete or unclear",
+          status: "Code-confirmed",
+          text: "Sign-up displays Continue with Email, but its handler routes to sign-in. The sign-in component defines Apple and Google SSO controls only; no email input/OTP form was found. Terms and Privacy are rendered as text without href/onPress handlers.",
+        },
+        {
+          title: "Filter fields absent from the rendered sheet",
+          status: "Code-confirmed",
+          text: "The filter type/defaults include priceRange and guestsLimit, but no controls for either are rendered in FiltersBottomSheet. The API accepts venue type, capacity, date, and favorites; price range is not wired in the inspected mobile path.",
+        },
+        {
+          title: "Profile text edits and deletion persistence",
+          status: "Code-confirmed",
+          text: "Profile edit callbacks patch the in-memory Zustand user; this screen does not call a profile-update API for those fields. Delete confirmation currently clears local user state only and has no visible Clerk/API deletion call.",
+        },
+        {
+          title: "Guest-sheet Attend action",
+          status: "Code-confirmed",
+          text: "GuestListModal renders an Attend button with an empty onPress. The separate event-details RSVP CTA has an API handler; do not assume the guest-sheet button performs attendance.",
+        },
+        {
+          title: "Settings rows hidden in source",
+          status: "Code-confirmed",
+          text: "Notifications is marked hidden, and Location is both disabled and hidden in SettingsTab. They were not surfaced as accessible settings in the current walk-through.",
+        },
+        {
+          title: "Current account prerequisites",
+          status: "UI-confirmed",
+          text: "Tickets showed the no-upcoming-tickets empty state; Matches showed the locked state; Inbox showed no messages. Live ticket, GPS gate, eligible profiles, mutual match, and chat flows could not be exercised.",
+        },
+        {
+          title: "Web / native interaction limits",
+          status: "Code-confirmed",
+          text: "The current browser could not expose the Gorhom filter and guest sheets or the Profile Settings options using available web interactions. Media-library picker, location permissions, system share, phone/SMS/Viber/WhatsApp/Instagram handoffs, Yandex route, and device haptics require native/device follow-up.",
+        },
+        {
+          title: "Browser automation configuration",
+          status: "Code-confirmed",
+          text: "The repository .vscode/mcp.json lists Supabase, Clerk, and Cloudflare, but no Playwright server. The existing authenticated Chromium session was reused through its already-running local DevTools connection; no Clerk tokens, cookies, or browser storage were inspected.",
+        },
+      ];
+
+      const STORAGE_KEY = "tulum-manual-qa-progress-v1";
+      const VALID_STATUSES = new Set(["Not Tested", "Passed", "Failed", "Blocked"]);
+      let progress = {};
+      let saveTimer = null;
+      const escapeHTML = (value) =>
+        String(value ?? "").replace(/[&<>"']/g, (character) => {
+          const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          };
+          return entities[character];
+        });
+
+      const discoveryClass = (status) =>
+        status === "UI-confirmed"
+          ? "discovery-ui"
+          : status === "Code-confirmed"
+            ? "discovery-code"
+            : "discovery-unverified";
+
+      const statusClass = (status) =>
+        status === "Passed"
+          ? "status-passed"
+          : status === "Failed"
+            ? "status-failed"
+            : status === "Blocked"
+              ? "status-blocked"
+              : "status-not-tested";
+
+      const priorityClass = (priority) => `priority-${priority.toLowerCase()}`;
+
+      function readProgress() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return {};
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
+            throw new Error("Saved checklist data has an unexpected format.");
+          }
+          return saved;
+        } catch (error) {
+          showStorageStatus(
+            `Saved progress could not be read: ${error instanceof Error ? error.message : "storage error"}`,
+            true,
+          );
+          return {};
+        }
+      }
+
+      function showStorageStatus(message, isError = false, isSaved = false) {
+        const element = document.getElementById("storage-status");
+        if (!element) return;
+        element.textContent = message;
+        element.className = `storage-status${isError ? " error" : ""}${isSaved ? " saved" : ""}`;
+      }
+
+      function getCaseState(testCase) {
+        const saved = progress[testCase.id];
+        const status =
+          saved && VALID_STATUSES.has(saved.status)
+            ? saved.status
+            : testCase.initialStatus;
+        return {
+          status,
+          notes: typeof saved?.notes === "string" ? saved.notes : "",
+        };
+      }
+
+      function persistProgress(message = "Progress saved in this browser.") {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+          showStorageStatus(message, false, true);
+          return true;
+        } catch (error) {
+          showStorageStatus(
+            `Progress could not be saved: ${error instanceof Error ? error.message : "storage error"}`,
+            true,
+          );
+          return false;
+        }
+      }
+
+      function queueSave() {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => persistProgress(), 180);
+      }
+
+      function renderCase(testCase) {
+        const current = getCaseState(testCase);
+        const blocker = testCase.blocker
+          ? `<div class="callout"><strong>Current blocker:</strong> ${escapeHTML(testCase.blocker)}</div>`
+          : "";
+        return `
+          <details class="case-card" data-case-id="${escapeHTML(testCase.id)}">
+            <summary>
+              <div class="case-summary-main">
+                <div class="case-title-row">
+                  <span class="case-id">${escapeHTML(testCase.id)}</span>
+                  <span class="priority-pill ${priorityClass(testCase.priority)}">${escapeHTML(testCase.priority)}</span>
+                  <span class="discovery-pill ${discoveryClass(testCase.discovery)}">${escapeHTML(testCase.discovery)}</span>
+                  <h3>${escapeHTML(testCase.feature)}</h3>
+                  <span class="status-pill ${statusClass(current.status)}" data-status-badge>${escapeHTML(current.status)}</span>
+                </div>
+                <div class="case-summary-note">${escapeHTML(testCase.description)}</div>
+              </div>
+            </summary>
+            <div class="case-body">
+              <p class="case-description">${escapeHTML(testCase.description)}</p>
+              <div class="case-meta">
+                <div><strong>Location</strong>${escapeHTML(testCase.location)}</div>
+                <div><strong>Preconditions</strong>${escapeHTML(testCase.prerequisites)}</div>
+                <div><strong>Discovery evidence</strong>${escapeHTML(testCase.evidence)}</div>
+              </div>
+              ${blocker}
+              <h4>Step-by-step instructions</h4>
+              <ol>${testCase.steps.map((step) => `<li>${escapeHTML(step)}</li>`).join("")}</ol>
+              <h4>Expected result / observation target</h4>
+              <div class="expected">${escapeHTML(testCase.expected)}</div>
+              <div class="case-controls">
+                <div>
+                  <label for="status-${escapeHTML(testCase.id)}">Test status</label>
+                  <select id="status-${escapeHTML(testCase.id)}" class="control" data-status>
+                    ${["Not Tested", "Passed", "Failed", "Blocked"]
+                      .map(
+                        (status) =>
+                          `<option${current.status === status ? " selected" : ""}>${status}</option>`,
+                      )
+                      .join("")}
+                  </select>
+                </div>
+                <div>
+                  <div class="note-header"><label for="notes-${escapeHTML(testCase.id)}">Editable notes</label></div>
+                  <textarea id="notes-${escapeHTML(testCase.id)}" class="notes" data-notes placeholder="Add observations, build/device, account type, and evidence references…">${escapeHTML(current.notes)}</textarea>
+                  <div class="note-help">Saved locally in this browser; notes are included in JSON/CSV export.</div>
+                </div>
+              </div>
+            </div>
+          </details>`;
+      }
+
+      function renderChecklist() {
+        const groups = [...new Set(CASES.map((item) => item.category))];
+        document.getElementById("checklist-groups").innerHTML = groups
+          .map((category) => {
+            const groupCases = CASES.filter((item) => item.category === category);
+            const uiCount = groupCases.filter((item) => item.discovery === "UI-confirmed").length;
+            return `
+              <details class="category-block" data-category="${escapeHTML(category)}" open>
+                <summary>
+                  <span>${escapeHTML(category)}</span>
+                  <span class="category-count">${groupCases.length} cases · ${uiCount} UI-confirmed</span>
+                </summary>
+                <div class="case-list">${groupCases.map(renderCase).join("")}</div>
+              </details>`;
+          })
+          .join("");
+
+        document.querySelectorAll(".case-card").forEach((card) => {
+          const id = card.dataset.caseId;
+          const testCase = CASES.find((item) => item.id === id);
+          const statusInput = card.querySelector("[data-status]");
+          const notesInput = card.querySelector("[data-notes]");
+          statusInput.addEventListener("change", () => {
+            progress[id] = {
+              ...getCaseState(testCase),
+              status: statusInput.value,
+            };
+            card.querySelector("[data-status-badge]").textContent = statusInput.value;
+            card.querySelector("[data-status-badge]").className =
+              `status-pill ${statusClass(statusInput.value)}`;
+            persistProgress();
+            updateMetrics();
+            applyChecklistFilters();
+          });
+          notesInput.addEventListener("input", () => {
+            progress[id] = {
+              ...getCaseState(testCase),
+              notes: notesInput.value,
+            };
+            queueSave();
+            applyChecklistFilters();
+          });
+        });
+      }
+
+      function fillCategoryOptions(selectId) {
+        const select = document.getElementById(selectId);
+        [...new Set(CASES.map((item) => item.category))].forEach((category) => {
+          const option = document.createElement("option");
+          option.value = category;
+          option.textContent = category;
+          select.append(option);
+        });
+      }
+
+      function renderScreens() {
+        document.getElementById("screen-grid").innerHTML = ROUTES.map(
+          (screen) => `
+            <article class="screen-card">
+              <span class="discovery-pill ${discoveryClass(screen.discovery)}">${escapeHTML(screen.discovery)}</span>
+              <h3>${escapeHTML(screen.name)}</h3>
+              <p>${escapeHTML(screen.note)}</p>
+              <span class="route">${escapeHTML(screen.path)}</span>
+            </article>`,
+        ).join("");
+
+        document.getElementById("overlay-grid").innerHTML = OVERLAYS.map(
+          ([name, description, discovery]) => `
+            <article class="screen-card">
+              <span class="discovery-pill ${discoveryClass(discovery)}">${escapeHTML(discovery)}</span>
+              <h3>${escapeHTML(name)}</h3>
+              <p>${escapeHTML(description)}</p>
+            </article>`,
+        ).join("");
+
+        document.getElementById("route-count").textContent = ROUTES.length;
+        document.getElementById("overlay-count").textContent = OVERLAYS.length;
+        document.getElementById("route-summary").textContent = `${ROUTES.length} routes`;
+        document.getElementById("overlay-summary").textContent = `${OVERLAYS.length} overlays`;
+      }
+
+      function renderGaps() {
+        document.getElementById("gap-grid").innerHTML = GAPS.map(
+          (gap) => `
+            <article class="gap-card">
+              <span class="discovery-pill ${discoveryClass(gap.status)}">${escapeHTML(gap.status)}</span>
+              <h3>${escapeHTML(gap.title)}</h3>
+              <p>${escapeHTML(gap.text)}</p>
+            </article>`,
+        ).join("");
+      }
+
+      function renderInventory() {
+        document.getElementById("inventory-body").innerHTML = CASES.map(
+          (testCase) => `
+            <tr data-inventory-id="${escapeHTML(testCase.id)}" data-inventory-category="${escapeHTML(testCase.category)}" data-inventory-discovery="${escapeHTML(testCase.discovery)}">
+              <td><strong>${escapeHTML(testCase.id)}</strong><span>${escapeHTML(testCase.category)}</span></td>
+              <td><strong>${escapeHTML(testCase.feature)}</strong><span>${escapeHTML(testCase.description)}</span></td>
+              <td><span>${escapeHTML(testCase.location)}</span><br /><span>${escapeHTML(testCase.prerequisites)}</span></td>
+              <td><span class="discovery-pill ${discoveryClass(testCase.discovery)}">${escapeHTML(testCase.discovery)}</span><br /><span>${escapeHTML(testCase.evidence)}</span></td>
+            </tr>`,
+        ).join("");
+        document.getElementById("inventory-count").textContent = `${CASES.length} features`;
+      }
+
+      function updateMetrics() {
+        const counts = {
+          "Not Tested": 0,
+          Passed: 0,
+          Failed: 0,
+          Blocked: 0,
+        };
+        CASES.forEach((testCase) => {
+          counts[getCaseState(testCase).status] += 1;
+        });
+        const executed = counts.Passed + counts.Failed;
+        const percent = CASES.length ? Math.round((executed / CASES.length) * 100) : 0;
+        const uiConfirmed = CASES.filter((item) => item.discovery === "UI-confirmed").length;
+        const codeConfirmed = CASES.filter((item) => item.discovery === "Code-confirmed").length;
+        const unverified = CASES.filter((item) => item.discovery === "Unverified").length;
+
+        document.getElementById("hero-case-count").textContent = CASES.length;
+        document.getElementById("case-count").textContent = CASES.length;
+        document.getElementById("ui-coverage").textContent = `${uiConfirmed}/${CASES.length}`;
+        document.getElementById("execution-label").textContent =
+          `${percent}% executed · ${executed}/${CASES.length}`;
+        document.getElementById("execution-fill").style.width = `${percent}%`;
+        document
+          .querySelector('[role="progressbar"]')
+          .setAttribute("aria-valuenow", String(percent));
+        document.getElementById("checklist-count").textContent = `${CASES.length} cases`;
+        document.getElementById("status-counts").innerHTML = `
+          <span class="count-pill status-not-tested">Not Tested · ${counts["Not Tested"]}</span>
+          <span class="count-pill status-passed">Passed · ${counts.Passed}</span>
+          <span class="count-pill status-failed">Failed · ${counts.Failed}</span>
+          <span class="count-pill status-blocked">Blocked · ${counts.Blocked}</span>
+          <span class="count-pill">Discovery: UI ${uiConfirmed} · Code ${codeConfirmed} · Unverified ${unverified}</span>`;
+
+        const group = document.getElementById("category-grid");
+        const categories = [...new Set(CASES.map((item) => item.category))];
+        group.innerHTML = categories
+          .map((category) => {
+            const items = CASES.filter((item) => item.category === category);
+            const ui = items.filter((item) => item.discovery === "UI-confirmed").length;
+            return `<article class="category-card"><strong>${escapeHTML(category)}</strong><span>${items.length} features · ${ui} UI-confirmed</span></article>`;
+          })
+          .join("");
+        applyCategoryFilters();
+        document.getElementById("category-total").textContent = `${categories.length} categories`;
+      }
+
+      function applyChecklistFilters() {
+        const query = document.getElementById("checklist-search").value.trim().toLowerCase();
+        const category = document.getElementById("checklist-category").value;
+        const status = document.getElementById("checklist-status").value;
+        let shown = 0;
+        document.querySelectorAll(".category-block").forEach((group) => {
+          const groupCategory = group.dataset.category;
+          let groupShown = 0;
+          group.querySelectorAll(".case-card").forEach((card) => {
+            const testCase = CASES.find((item) => item.id === card.dataset.caseId);
+            const current = getCaseState(testCase);
+            const haystack = [
+              testCase.id,
+              testCase.category,
+              testCase.feature,
+              testCase.description,
+              testCase.location,
+              testCase.prerequisites,
+              testCase.steps.join(" "),
+              testCase.expected,
+              testCase.evidence,
+              testCase.blocker,
+              current.notes,
+            ]
+              .join(" ")
+              .toLowerCase();
+            const visible =
+              (!query || haystack.includes(query)) &&
+              (!category || testCase.category === category) &&
+              (!status || current.status === status);
+            card.hidden = !visible;
+            if (visible) {
+              shown += 1;
+              groupShown += 1;
+            }
+          });
+          group.hidden = groupShown === 0 || (category && groupCategory !== category);
+        });
+        document.getElementById("visible-count").textContent =
+          `Showing ${shown} of ${CASES.length}`;
+      }
+
+      function applyInventoryFilters() {
+        const query = document.getElementById("inventory-search").value.trim().toLowerCase();
+        const category = document.getElementById("inventory-category").value;
+        const discovery = document.getElementById("inventory-discovery").value;
+        let shown = 0;
+        document.querySelectorAll("[data-inventory-id]").forEach((row) => {
+          const testCase = CASES.find((item) => item.id === row.dataset.inventoryId);
+          const haystack = [
+            testCase.id,
+            testCase.category,
+            testCase.feature,
+            testCase.description,
+            testCase.location,
+            testCase.prerequisites,
+            testCase.evidence,
+          ]
+            .join(" ")
+            .toLowerCase();
+          const visible =
+            (!query || haystack.includes(query)) &&
+            (!category || row.dataset.inventoryCategory === category) &&
+            (!discovery || row.dataset.inventoryDiscovery === discovery);
+          row.hidden = !visible;
+          if (visible) shown += 1;
+        });
+        document.getElementById("inventory-count").textContent =
+          `Showing ${shown} of ${CASES.length}`;
+      }
+
+      function currentExportRows() {
+        return CASES.map((testCase) => ({
+          id: testCase.id,
+          category: testCase.category,
+          feature: testCase.feature,
+          description: testCase.description,
+          location: testCase.location,
+          prerequisites: testCase.prerequisites,
+          steps: testCase.steps,
+          expected: testCase.expected,
+          priority: testCase.priority,
+          discovery: testCase.discovery,
+          status: getCaseState(testCase).status,
+          notes: getCaseState(testCase).notes,
+        }));
+      }
+
+      function downloadFile(filename, content, type) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.hidden = true;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      function exportJSON() {
+        const payload = {
+          report: "Tulum Manual QA Discovery Report",
+          exportedAt: new Date().toISOString(),
+          testExecution: "Discovery only; no cases were marked Passed by this report.",
+          summary: {
+            routes: ROUTES.length,
+            overlays: OVERLAYS.length,
+            featuresAndCases: CASES.length,
+            statuses: CASES.reduce((result, item) => {
+              const status = getCaseState(item).status;
+              result[status] = (result[status] ?? 0) + 1;
+              return result;
+            }, {}),
+          },
+          cases: currentExportRows(),
+        };
+        downloadFile(
+          "tulum-manual-qa-progress.json",
+          JSON.stringify(payload, null, 2),
+          "application/json;charset=utf-8",
+        );
+      }
+
+      function csvCell(value) {
+        const text = Array.isArray(value) ? value.join(" | ") : String(value ?? "");
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+
+      function exportCSV() {
+        const columns = [
+          "id",
+          "category",
+          "feature",
+          "description",
+          "location",
+          "prerequisites",
+          "steps",
+          "expected",
+          "priority",
+          "discovery",
+          "status",
+          "notes",
+        ];
+        const rows = currentExportRows();
+        const csv = [
+          columns.map(csvCell).join(","),
+          ...rows.map((row) => columns.map((column) => csvCell(row[column])).join(",")),
+        ].join("\r\n");
+        downloadFile(
+          "tulum-manual-qa-progress.csv",
+          `\uFEFF${csv}`,
+          "text/csv;charset=utf-8",
+        );
+      }
+
+      function resetProgress() {
+        if (!window.confirm("Reset all checklist statuses and notes to the discovery defaults?")) return;
+        progress = Object.fromEntries(
+          CASES.map((testCase) => [
+            testCase.id,
+            { status: testCase.initialStatus, notes: "" },
+          ]),
+        );
+        renderChecklist();
+        persistProgress("Checklist reset to discovery defaults.");
+        updateMetrics();
+        applyChecklistFilters();
+      }
+
+      function applyCategoryFilters() {
+        document.querySelectorAll(".category-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const category = card.querySelector("strong").textContent;
+            document.getElementById("checklist-category").value = category;
+            applyChecklistFilters();
+            document.getElementById("checklist").scrollIntoView({ behavior: "smooth" });
+          });
+        });
+      }
+
+      progress = readProgress();
+      renderScreens();
+      renderGaps();
+      renderChecklist();
+      renderInventory();
+      fillCategoryOptions("checklist-category");
+      fillCategoryOptions("inventory-category");
+      updateMetrics();
+      applyChecklistFilters();
+      applyInventoryFilters();
+
+      document.getElementById("checklist-search").addEventListener("input", applyChecklistFilters);
+      document.getElementById("checklist-category").addEventListener("change", applyChecklistFilters);
+      document.getElementById("checklist-status").addEventListener("change", applyChecklistFilters);
+      document.getElementById("inventory-search").addEventListener("input", applyInventoryFilters);
+      document.getElementById("inventory-category").addEventListener("change", applyInventoryFilters);
+      document.getElementById("inventory-discovery").addEventListener("change", applyInventoryFilters);
+      document.getElementById("expand-all").addEventListener("click", () => {
+        document.querySelectorAll(".category-block, .case-card").forEach((item) => {
+          if (!item.hidden) item.open = true;
+        });
+      });
+      document.getElementById("collapse-all").addEventListener("click", () => {
+        document.querySelectorAll(".category-block, .case-card").forEach((item) => {
+          item.open = false;
+        });
+      });
+      document.getElementById("export-json").addEventListener("click", exportJSON);
+      document.getElementById("export-csv").addEventListener("click", exportCSV);
+      document.getElementById("reset-progress").addEventListener("click", resetProgress);
+    </script>
+  </body>
+</html>
