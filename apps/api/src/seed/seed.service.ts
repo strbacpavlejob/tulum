@@ -58,6 +58,25 @@ const TEST_VENUE_NAME = 'Tulum Test Venue';
 const TEST_EVENT_TITLE = 'Tulum Test Event';
 const TEST_VENUE_ADDRESS = 'Test Street 1, Belgrade';
 
+export interface SeedEventOptions {
+  /** Minutes until a newly created test event starts (default 5). */
+  startsInMinutes?: number;
+  /** Duration in minutes of a newly created test event (default 15). */
+  durationMinutes?: number;
+  /**
+   * When false, the target user gets no active event session so the app's
+   * own check-in (POST /events/sessions) creates it (default true).
+   */
+  includeTargetSession?: boolean;
+  /** Create a new test event even if an active one already exists (default false). */
+  forceNew?: boolean;
+  /**
+   * Fraction of incoming likes turned into matches (default 0.8). 0 leaves the
+   * target user with unused likes so a manual Like can produce a match.
+   */
+  matchRatio?: number;
+}
+
 interface SeedEventResult {
   venue_id: string;
   event_id: string;
@@ -91,7 +110,7 @@ export class SeedService {
     return this.supabaseService.getClient();
   }
 
-  async seedMockTestEvent(userId: string) {
+  async seedMockTestEvent(userId: string, options: SeedEventOptions = {}) {
     await this.ensureUserExists(userId);
 
     const defaultHostId = this.configService.getOrThrow<string>(
@@ -148,23 +167,36 @@ export class SeedService {
       .single();
     if (venueErr) throw venueErr;
 
-    const { data: existingEvent, error: existingEventErr } = await this.db
-      .from('events')
-      .select('id, title, start_date_time, end_date_time')
-      .eq('venue_id', venue.id)
-      .eq('title', TEST_EVENT_TITLE)
-      .gte('end_date_time', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data: existingEvent, error: existingEventErr } = options.forceNew
+      ? { data: null, error: null }
+      : await this.db
+          .from('events')
+          .select('id, title, start_date_time, end_date_time')
+          .eq('venue_id', venue.id)
+          .eq('title', TEST_EVENT_TITLE)
+          .gte('end_date_time', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
     if (existingEventErr) throw existingEventErr;
 
     const venueId = String(venue.id);
-    const event = existingEvent ?? (await this.createTestEvent(venueId));
+    const event =
+      existingEvent ??
+      (await this.createTestEvent(
+        venueId,
+        options.startsInMinutes,
+        options.durationMinutes,
+      ));
     const eventId = String(event.id);
 
     await this.ensureTicketsForEvent(eventId, attendeeUserIds);
-    await this.ensureActiveSessionsForEvent(eventId, attendeeUserIds);
+    await this.ensureActiveSessionsForEvent(
+      eventId,
+      options.includeTargetSession === false
+        ? attendeeUserIds.filter((id) => id !== userId)
+        : attendeeUserIds,
+    );
 
     const otherGuestUserIds = attendeeUserIds.filter((id) => id !== userId);
 
@@ -178,8 +210,8 @@ export class SeedService {
       other_guest_user_ids: otherGuestUserIds,
     } satisfies SeedEventResult;
   }
-  async seedMockSwipes(userId: string) {
-    const eventSeed = await this.seedMockTestEvent(userId);
+  async seedMockSwipes(userId: string, options: SeedEventOptions = {}) {
+    const eventSeed = await this.seedMockTestEvent(userId, options);
 
     const otherGuestIds = eventSeed.other_guest_user_ids;
     if (otherGuestIds.length === 0) {
@@ -234,10 +266,11 @@ export class SeedService {
     }
 
     const incomingLikeUserIds = Array.from(likeUserIds);
-    const matchesTarget = this.calculatePercentageCount(
-      incomingLikeUserIds.length,
-      0.8,
-    );
+    const matchRatio = options.matchRatio ?? 0.8;
+    const matchesTarget =
+      matchRatio <= 0
+        ? 0
+        : this.calculatePercentageCount(incomingLikeUserIds.length, matchRatio);
 
     const { data: existingMatches, error: existingMatchesErr } = await this.db
       .from('matches')
@@ -305,8 +338,8 @@ export class SeedService {
     } satisfies SeedSwipeResult;
   }
 
-  async seedMockMessages(userId: string) {
-    const swipeSeed = await this.seedMockSwipes(userId);
+  async seedMockMessages(userId: string, options: SeedEventOptions = {}) {
+    const swipeSeed = await this.seedMockSwipes(userId, options);
 
     const matchIds = swipeSeed.matches.map((m) => m.match_id);
     if (matchIds.length === 0) {
@@ -449,8 +482,8 @@ export class SeedService {
     };
   }
 
-  async seedMockChats(userId: string) {
-    return this.seedMockMessages(userId);
+  async seedMockChats(userId: string, options: SeedEventOptions = {}) {
+    return this.seedMockMessages(userId, options);
   }
 
   private async ensureUserExists(userId: string) {
@@ -465,9 +498,14 @@ export class SeedService {
     }
   }
 
-  private async createTestEvent(venueId: string) {
-    const startAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    const endAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+  private async createTestEvent(
+    venueId: string,
+    startsInMinutes = 5,
+    durationMinutes = 15,
+  ) {
+    const startMs = Date.now() + startsInMinutes * 60 * 1000;
+    const startAt = new Date(startMs).toISOString();
+    const endAt = new Date(startMs + durationMinutes * 60 * 1000).toISOString();
 
     const { data: event, error: eventErr } = await this.db
       .from('events')
