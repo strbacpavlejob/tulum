@@ -3,171 +3,96 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { SupabaseService } from '../supabase/supabase.service';
 import { TicketsService } from './tickets.service';
 
-type ScriptedResult = { data: unknown; error: unknown };
-type ScriptMap = Record<string, ScriptedResult[]>;
+type RpcResult = { data: unknown; error: unknown };
 
 const GUEST_ID = 'guest-user';
 const EVENT_ID = '7d0f6c2a-3b4e-4f51-9a6b-2c8d1e0f3a45';
+const ATTEND_EVENT_FUNCTION = 'attend_event_with_overlap_check';
 
-function createServiceWithScript(script: ScriptMap) {
-  const consume = (key: string): Promise<ScriptedResult> => {
-    const next = script[key]?.shift();
-    return Promise.resolve(next ?? { data: null, error: null });
-  };
-
-  const queries: Array<{ table: string; query: Record<string, jest.Mock> }> =
-    [];
-
+function createServiceWithRpcResult(result: RpcResult) {
+  const single = jest.fn(() => Promise.resolve(result));
   const db = {
-    from: jest.fn((table: string) => {
-      const query: Record<string, jest.Mock> = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        neq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        insert: jest.fn().mockReturnThis(),
-        maybeSingle: jest.fn(async () => consume(`${table}.maybeSingle`)),
-        single: jest.fn(async () => consume(`${table}.single`)),
-        // Awaiting the builder itself resolves a list query.
-        then: jest.fn(
-          (
-            resolve: (value: ScriptedResult) => unknown,
-            reject: (reason: unknown) => unknown,
-          ) => consume(`${table}.list`).then(resolve, reject),
-        ),
-      };
-      queries.push({ table, query });
-      return query;
-    }),
+    rpc: jest.fn(() => ({ single })),
+    from: jest.fn(),
   };
 
   const supabaseService = {
     getClient: () => db,
   } as unknown as SupabaseService;
 
-  return {
-    service: new TicketsService(supabaseService),
-    callsTo: (table: string, method: string) =>
-      queries
-        .filter((q) => q.table === table)
-        .flatMap((q) => q.query[method].mock.calls),
-  };
+  return { service: new TicketsService(supabaseService), db, single };
 }
 
-const targetEvent = {
-  id: EVENT_ID,
-  title: 'Target night',
-  start_date_time: '2026-10-24T20:00:00',
-  end_date_time: '2026-10-25T02:00:00',
+const ticket = {
+  id: 'ticket-1',
+  event_id: EVENT_ID,
+  guest_id: GUEST_ID,
+  created_at: '2026-10-19T18:31:58.085686+00:00',
+  updated_at: '2026-10-19T18:31:58.085686+00:00',
 };
 
 describe('TicketsService attendEvent', () => {
-  it('returns the existing ticket without inserting another', async () => {
-    const ticket = { id: 'ticket-1', guest_id: GUEST_ID, event_id: EVENT_ID };
-    const { service, callsTo } = createServiceWithScript({
-      'tickets.maybeSingle': [{ data: ticket, error: null }],
-    });
-
-    await expect(service.attendEvent(GUEST_ID, EVENT_ID)).resolves.toEqual({
-      ticket,
-      isNew: false,
-    });
-    expect(callsTo('tickets', 'insert')).toHaveLength(0);
-  });
-
-  it('creates a ticket when the guest has none and nothing overlaps', async () => {
-    const ticket = { id: 'ticket-1', guest_id: GUEST_ID, event_id: EVENT_ID };
-    const { service, callsTo } = createServiceWithScript({
-      'tickets.maybeSingle': [{ data: null, error: null }],
-      'events.single': [{ data: targetEvent, error: null }],
-      'tickets.list': [{ data: [], error: null }],
-      'tickets.single': [{ data: ticket, error: null }],
+  it('creates the ticket with one call to the database function', async () => {
+    const { service, db, single } = createServiceWithRpcResult({
+      data: { ticket, is_new: true, conflicting_event_title: null },
+      error: null,
     });
 
     await expect(service.attendEvent(GUEST_ID, EVENT_ID)).resolves.toEqual({
       ticket,
       isNew: true,
     });
-    expect(callsTo('tickets', 'insert')).toEqual([
-      [{ guest_id: GUEST_ID, event_id: EVENT_ID }],
+    expect(db.rpc.mock.calls).toEqual([
+      [ATTEND_EVENT_FUNCTION, { p_guest_id: GUEST_ID, p_event_id: EVENT_ID }],
     ]);
+    expect(single).toHaveBeenCalledTimes(1);
+    // The overlap check and the insert must not run as separate requests:
+    // concurrent RSVPs to two overlapping events could both pass the check.
+    expect(db.from).not.toHaveBeenCalled();
   });
 
-  it('returns the concurrently created ticket when the insert hits the unique constraint', async () => {
-    const concurrentTicket = {
-      id: 'ticket-from-parallel-request',
-      guest_id: GUEST_ID,
-      event_id: EVENT_ID,
-    };
-    const { service, callsTo } = createServiceWithScript({
-      'tickets.maybeSingle': [
-        { data: null, error: null },
-        { data: concurrentTicket, error: null },
-      ],
-      'events.single': [{ data: targetEvent, error: null }],
-      'tickets.list': [{ data: [], error: null }],
-      'tickets.single': [{ data: null, error: { code: '23505' } }],
+  it('returns the existing ticket when the guest already attends', async () => {
+    const { service, db } = createServiceWithRpcResult({
+      data: { ticket, is_new: false, conflicting_event_title: null },
+      error: null,
     });
 
     await expect(service.attendEvent(GUEST_ID, EVENT_ID)).resolves.toEqual({
-      ticket: concurrentTicket,
+      ticket,
       isNew: false,
     });
-    // A same-event ticket from a parallel RSVP must not count as an overlap.
-    expect(callsTo('tickets', 'neq')).toEqual([['event_id', EVENT_ID]]);
+    expect(db.from).not.toHaveBeenCalled();
   });
 
   it('rejects an RSVP that overlaps another attended event', async () => {
-    const { service, callsTo } = createServiceWithScript({
-      'tickets.maybeSingle': [{ data: null, error: null }],
-      'events.single': [{ data: targetEvent, error: null }],
-      'tickets.list': [
-        {
-          data: [
-            {
-              event_id: 'other-event',
-              events: {
-                title: 'Other night',
-                start_date_time: '2026-10-24T22:00:00',
-                end_date_time: '2026-10-25T01:00:00',
-              },
-            },
-          ],
-          error: null,
-        },
-      ],
+    const { service } = createServiceWithRpcResult({
+      data: {
+        ticket: null,
+        is_new: false,
+        conflicting_event_title: 'Other night',
+      },
+      error: null,
     });
 
-    await expect(
-      service.attendEvent(GUEST_ID, EVENT_ID),
-    ).rejects.toBeInstanceOf(ConflictException);
-    expect(callsTo('tickets', 'insert')).toHaveLength(0);
-  });
-
-  it('rethrows insert errors other than a unique violation', async () => {
-    const insertError = { code: '23503', message: 'foreign key violation' };
-    const { service } = createServiceWithScript({
-      'tickets.maybeSingle': [{ data: null, error: null }],
-      'events.single': [{ data: targetEvent, error: null }],
-      'tickets.list': [{ data: [], error: null }],
-      'tickets.single': [{ data: null, error: insertError }],
-    });
-
-    await expect(service.attendEvent(GUEST_ID, EVENT_ID)).rejects.toBe(
-      insertError,
+    const attempt = service.attendEvent(GUEST_ID, EVENT_ID);
+    await expect(attempt).rejects.toBeInstanceOf(ConflictException);
+    await expect(attempt).rejects.toThrow(
+      'This event overlaps with "Other night" that you are already attending',
     );
   });
 
-  it('fails instead of inserting when the existing-ticket lookup errors', async () => {
-    const lookupError = { code: 'PGRST000', message: 'lookup failed' };
-    const { service, callsTo } = createServiceWithScript({
-      'tickets.maybeSingle': [{ data: null, error: lookupError }],
+  it('rethrows errors from the database function', async () => {
+    const rpcError = {
+      code: 'P0002',
+      message: `Event ${EVENT_ID} not found`,
+    };
+    const { service } = createServiceWithRpcResult({
+      data: null,
+      error: rpcError,
     });
 
     await expect(service.attendEvent(GUEST_ID, EVENT_ID)).rejects.toBe(
-      lookupError,
+      rpcError,
     );
-    expect(callsTo('tickets', 'insert')).toHaveLength(0);
   });
 });
