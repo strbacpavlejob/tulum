@@ -99,9 +99,87 @@ describe('MatchesService submitSwipeDecision', () => {
 
     const { service } = createServiceWithScript(script);
 
+    const error = await service
+      .submitSwipeDecision('me-user', baseSwipe)
+      .catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).getResponse()).toEqual({
+      message: 'Like limit reached for current eligible guests',
+      likes_used: 4,
+      like_limit: 4,
+      eligible_guest_count: 20,
+    });
+  });
+
+  it('rejects a pass that would withdraw an earlier like', async () => {
+    const script = {
+      ...attendingScript(),
+      'rpc.submit_guest_swipe_with_limit': [
+        {
+          data: {
+            allowed: false,
+            was_already_liked: true,
+            likes_used: 3,
+            like_limit: 3,
+            eligible_guest_count: 10,
+            limit_reached: true,
+          },
+          error: null,
+        },
+      ],
+    };
+
+    const { service, rpc } = createServiceWithScript(script);
+
+    const error = await service
+      .submitSwipeDecision('me-user', { ...baseSwipe, liked: false })
+      .catch((err: unknown) => err);
+
+    expect(rpc).toHaveBeenCalledWith(
+      'submit_guest_swipe_with_limit',
+      expect.objectContaining({ p_liked: false }),
+    );
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).getResponse()).toEqual({
+      message: 'A like cannot be changed to a pass',
+      likes_used: 3,
+      like_limit: 3,
+      eligible_guest_count: 10,
+    });
+  });
+
+  it('records a pass on a guest that was not liked', async () => {
+    const script = {
+      ...attendingScript(),
+      'rpc.submit_guest_swipe_with_limit': [
+        {
+          data: {
+            allowed: true,
+            was_already_liked: false,
+            likes_used: 3,
+            like_limit: 3,
+            eligible_guest_count: 10,
+            limit_reached: true,
+          },
+          error: null,
+        },
+      ],
+    };
+
+    const { service } = createServiceWithScript(script);
+
     await expect(
-      service.submitSwipeDecision('me-user', baseSwipe),
-    ).rejects.toBeInstanceOf(BadRequestException);
+      service.submitSwipeDecision('me-user', { ...baseSwipe, liked: false }),
+    ).resolves.toEqual({
+      matched: false,
+      match_id: null,
+      was_already_liked: false,
+      likes_used: 3,
+      like_limit: 3,
+      eligible_guest_count: 10,
+      limit_reached: true,
+    });
   });
 
   it('passes the other gender filter to the atomic like-limit decision', async () => {

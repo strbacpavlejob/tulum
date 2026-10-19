@@ -27,7 +27,8 @@ export class SwipeDecisionDto {
   event_id!: string;
 
   @ApiProperty({
-    description: 'true for like, false for dislike',
+    description:
+      'true for like, false for dislike. A like is final: a later dislike of the same guest at the same event is rejected.',
   })
   @IsBoolean()
   liked!: boolean;

@@ -259,8 +259,12 @@ export class MatchesService {
     }
 
     if (!swipeDecision.allowed) {
+      // A pass never needs a free slot. It is refused only when it would turn
+      // an earlier like into a pass, which would hand that slot back.
       throw new BadRequestException({
-        message: 'Like limit reached for current eligible guests',
+        message: liked
+          ? 'Like limit reached for current eligible guests'
+          : 'A like cannot be changed to a pass',
         likes_used: swipeDecision.likes_used,
         like_limit: swipeDecision.like_limit,
         eligible_guest_count: swipeDecision.eligible_guest_count,
