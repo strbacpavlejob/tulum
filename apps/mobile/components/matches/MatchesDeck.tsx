@@ -43,6 +43,7 @@ type MatchesDeckProps = {
   likeDisabled: boolean;
   showMatch: boolean;
   matchedProfile: Profile | null;
+  matchId: number | null;
   onCloseMatch: () => void;
 };
 export default function MatchesDeck({
@@ -66,6 +67,7 @@ export default function MatchesDeck({
   likeDisabled,
   showMatch,
   matchedProfile,
+  matchId,
   onCloseMatch,
 }: MatchesDeckProps) {
   const { height: windowHeight } = useWindowDimensions();
@@ -362,6 +364,7 @@ export default function MatchesDeck({
           <MatchModal
             visible={showMatch}
             profile={matchedProfile}
+            matchId={matchId}
             onClose={onCloseMatch}
           />
           <MatchesFiltersBottomSheet

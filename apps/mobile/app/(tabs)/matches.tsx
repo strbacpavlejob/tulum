@@ -193,6 +193,7 @@ export default function MatchesScreen() {
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [matchedProfile, setMatchedProfile] = useState<Profile | null>(null);
+  const [matchId, setMatchId] = useState<number | null>(null);
   const [showMatch, setShowMatch] = useState(false);
   const [genderFilter, setGenderFilter] = useState<GenderFilter>(
     lookingForGenderFromProfile,
@@ -506,6 +507,7 @@ export default function MatchesScreen() {
     }
 
     let isMutualMatch = false;
+    let mutualMatchId: number | null = null;
     let reachedLimitAfterLike = false;
     try {
       const result = await createMatchSwipe(
@@ -551,6 +553,7 @@ export default function MatchesScreen() {
       );
 
       isMutualMatch = result.matched;
+      mutualMatchId = result.match_id;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("Like limit reached")) {
@@ -563,6 +566,7 @@ export default function MatchesScreen() {
 
     if (isMutualMatch) {
       setMatchedProfile(profile);
+      setMatchId(mutualMatchId);
       setShowMatch(true);
     }
 
@@ -663,6 +667,7 @@ export default function MatchesScreen() {
       likeDisabled={isLikeDisabled}
       showMatch={showMatch}
       matchedProfile={matchedProfile}
+      matchId={matchId}
       onCloseMatch={() => setShowMatch(false)}
     />
   );
