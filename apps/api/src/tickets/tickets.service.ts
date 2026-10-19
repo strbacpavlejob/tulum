@@ -59,12 +59,7 @@ export class TicketsService {
 
   async attendEvent(guestId: string, eventId: string) {
     // Return existing ticket if already attending (idempotent)
-    const { data: existing } = await this.db
-      .from(TICKETS_TABLE)
-      .select('*')
-      .eq('guest_id', guestId)
-      .eq('event_id', eventId)
-      .maybeSingle();
+    const existing = await this.findTicket(guestId, eventId);
     if (existing) return { ticket: existing, isNew: false };
 
     // Fetch the target event's time window
@@ -78,11 +73,14 @@ export class TicketsService {
     const targetStart = new Date(targetEvent.start_date_time);
     const targetEnd = new Date(targetEvent.end_date_time);
 
-    // Fetch all existing tickets for this guest joined with their event times
+    // Fetch the guest's other tickets joined with their event times. The target
+    // event is skipped: a concurrent RSVP may have just created its ticket, and
+    // that is the same attendance, not an overlap.
     const { data: existingTickets, error: ticketsError } = await this.db
       .from(TICKETS_TABLE)
       .select('event_id, events(title, start_date_time, end_date_time)')
-      .eq('guest_id', guestId);
+      .eq('guest_id', guestId)
+      .neq('event_id', eventId);
     if (ticketsError) throw ticketsError;
 
     for (const t of existingTickets ?? []) {
@@ -103,8 +101,33 @@ export class TicketsService {
       .insert({ guest_id: guestId, event_id: eventId })
       .select()
       .single();
-    if (error) throw error;
+
+    // tickets_guest_id_event_id_key: a concurrent RSVP inserted first.
+    if (error) {
+      const isUniqueViolation = (error as { code?: string }).code === '23505';
+      if (!isUniqueViolation) throw error;
+
+      const concurrent = await this.findTicket(guestId, eventId);
+      if (!concurrent) throw error;
+      return { ticket: concurrent, isNew: false };
+    }
+
     return { ticket: data, isNew: true };
+  }
+
+  private async findTicket(guestId: string, eventId: string) {
+    // Oldest first, limit 1: duplicates created before the unique constraint
+    // existed must not make this lookup error and read as "not attending".
+    const { data, error } = await this.db
+      .from(TICKETS_TABLE)
+      .select('*')
+      .eq('guest_id', guestId)
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
   }
 
   async unattendEvent(guestId: string, eventId: string) {
