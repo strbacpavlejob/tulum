@@ -2,6 +2,14 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const TICKETS_TABLE = 'tickets';
+// supabase/migrations/20261019182832_attend_event_with_overlap_check.sql
+const ATTEND_EVENT_FUNCTION = 'attend_event_with_overlap_check';
+
+type AttendEventResult = {
+  ticket: Record<string, unknown> | null;
+  is_new: boolean;
+  conflicting_event_title: string | null;
+};
 
 @Injectable()
 export class TicketsService {
@@ -58,76 +66,25 @@ export class TicketsService {
   }
 
   async attendEvent(guestId: string, eventId: string) {
-    // Return existing ticket if already attending (idempotent)
-    const existing = await this.findTicket(guestId, eventId);
-    if (existing) return { ticket: existing, isNew: false };
-
-    // Fetch the target event's time window
-    const { data: targetEvent, error: targetError } = await this.db
-      .from('events')
-      .select('id, title, start_date_time, end_date_time')
-      .eq('id', eventId)
-      .single();
-    if (targetError) throw targetError;
-
-    const targetStart = new Date(targetEvent.start_date_time);
-    const targetEnd = new Date(targetEvent.end_date_time);
-
-    // Fetch the guest's other tickets joined with their event times. The target
-    // event is skipped: a concurrent RSVP may have just created its ticket, and
-    // that is the same attendance, not an overlap.
-    const { data: existingTickets, error: ticketsError } = await this.db
-      .from(TICKETS_TABLE)
-      .select('event_id, events(title, start_date_time, end_date_time)')
-      .eq('guest_id', guestId)
-      .neq('event_id', eventId);
-    if (ticketsError) throw ticketsError;
-
-    for (const t of existingTickets ?? []) {
-      const ev = (t as any).events;
-      if (!ev) continue;
-      const start = new Date(ev.start_date_time);
-      const end = new Date(ev.end_date_time);
-      // Two windows overlap when start1 < end2 AND start2 < end1
-      if (targetStart < end && start < targetEnd) {
-        throw new ConflictException(
-          `This event overlaps with "${ev.title}" that you are already attending`,
-        );
-      }
-    }
-
+    // One database call: the function locks the guest, returns an existing
+    // ticket, re-checks overlaps and inserts in a single transaction. Checking
+    // and inserting in separate requests let concurrent RSVPs to two
+    // overlapping events both pass the check.
     const { data, error } = await this.db
-      .from(TICKETS_TABLE)
-      .insert({ guest_id: guestId, event_id: eventId })
-      .select()
-      .single();
-
-    // tickets_guest_id_event_id_key: a concurrent RSVP inserted first.
-    if (error) {
-      const isUniqueViolation = (error as { code?: string }).code === '23505';
-      if (!isUniqueViolation) throw error;
-
-      const concurrent = await this.findTicket(guestId, eventId);
-      if (!concurrent) throw error;
-      return { ticket: concurrent, isNew: false };
-    }
-
-    return { ticket: data, isNew: true };
-  }
-
-  private async findTicket(guestId: string, eventId: string) {
-    // Oldest first, limit 1: duplicates created before the unique constraint
-    // existed must not make this lookup error and read as "not attending".
-    const { data, error } = await this.db
-      .from(TICKETS_TABLE)
-      .select('*')
-      .eq('guest_id', guestId)
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .rpc(ATTEND_EVENT_FUNCTION, {
+        p_guest_id: guestId,
+        p_event_id: eventId,
+      })
+      .single<AttendEventResult>();
     if (error) throw error;
-    return data;
+
+    if (data.conflicting_event_title !== null) {
+      throw new ConflictException(
+        `This event overlaps with "${data.conflicting_event_title}" that you are already attending`,
+      );
+    }
+
+    return { ticket: data.ticket, isNew: data.is_new };
   }
 
   async unattendEvent(guestId: string, eventId: string) {
