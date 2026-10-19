@@ -226,6 +226,7 @@ const resources = {
       itsAMatch: "It's a Match!",
       youAndLikedEachOther: "You and {{name}} have liked each other",
       saySomethingNice: "Say something nice...",
+      matchMessageFailed: "Couldn't send your message. Please try again.",
 
       // Map / Search
       searchEvents: "Search events...",
@@ -591,6 +592,7 @@ const resources = {
       itsAMatch: "Meč!",
       youAndLikedEachOther: "Ti i {{name}} ste se svideli jedno drugom",
       saySomethingNice: "Reci nešto lepo...",
+      matchMessageFailed: "Poruka nije poslata. Pokušaj ponovo.",
 
       // Map / Search
       searchEvents: "Traži događaje...",
@@ -953,6 +955,7 @@ const resources = {
       itsAMatch: "Это матч!",
       youAndLikedEachOther: "Вы и {{name}} понравились друг другу",
       saySomethingNice: "Скажите что-нибудь приятное...",
+      matchMessageFailed: "Не удалось отправить сообщение. Попробуйте ещё раз.",
 
       // Map / Search
       searchEvents: "Поиск мероприятий...",

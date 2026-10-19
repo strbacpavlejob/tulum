@@ -26,6 +26,7 @@ import { useRouter } from "expo-router";
 interface MatchModalProps {
   visible: boolean;
   profile: Profile | null;
+  matchId: number | null;
   onClose: () => void;
 }
 
@@ -133,23 +134,27 @@ function RippleHeart({
 export default function MatchModal({
   visible,
   profile,
+  matchId,
   onClose,
 }: MatchModalProps) {
   const theme = useAppTheme();
   const { t } = useTranslation();
   const { user } = useStore();
 
-  const { getToken } = useAuth();
+  const { userId, getToken } = useAuth();
   const router = useRouter();
 
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
 
   const contentOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.8);
 
   useEffect(() => {
     if (visible) {
+      setSendError(false);
+
       if (Platform.OS !== "web") {
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
@@ -267,52 +272,64 @@ export default function MatchModal({
         </View>
 
         {/* Bottom message input */}
-        <View className="absolute bottom-6 left-5 right-5 z-10 ios:bottom-10 flex-row items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 gap-2">
-          <Input
-            inputMode="text"
-            value={text}
-            onChangeText={setText}
-            placeholder={t("saySomethingNice")}
-            placeholderClassName="text-base text-white/50"
-            className="flex-1 rounded-full bg-[transparent] px-4 py-3 border-0 focus:border-[transparent] focus:ring-0"
-            style={{ color: "#fff" }}
-          />
+        <View className="absolute bottom-6 left-5 right-5 z-10 ios:bottom-10 gap-2">
+          {sendError ? (
+            <Text role="alert" className="text-center text-[13px] text-red-400">
+              {t("matchMessageFailed")}
+            </Text>
+          ) : null}
 
-          <TouchableOpacity
-            onPress={async () => {
-              const trimmed = (text ?? "").trim();
-              if (!trimmed || sending || !profile) return;
-              setSending(true);
-              try {
-                const token = await getToken();
-                if (!token) {
+          <View className="flex-row items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 gap-2">
+            <Input
+              inputMode="text"
+              value={text}
+              onChangeText={setText}
+              placeholder={t("saySomethingNice")}
+              placeholderClassName="text-base text-white/50"
+              className="flex-1 rounded-full bg-[transparent] px-4 py-3 border-0 focus:border-[transparent] focus:ring-0"
+              style={{ color: "#fff" }}
+            />
+
+            <TouchableOpacity
+              onPress={async () => {
+                const trimmed = (text ?? "").trim();
+                if (!trimmed || sending || !profile) return;
+                setSending(true);
+                setSendError(false);
+                try {
+                  const token = await getToken();
+                  if (!token || matchId == null) {
+                    setSending(false);
+                    setSendError(true);
+                    return;
+                  }
+
+                  // Ensure chat exists on the server. The route takes the
+                  // numeric match id, not the matched user's id.
+                  const { chat } = await fetchOrCreateChat(matchId, token);
+
+                  // Persist message immediately so it always appears in chat.
+                  await sendChatMessage(token, {
+                    chatId: chat.id,
+                    senderId: userId,
+                    text: trimmed,
+                  });
+
+                  setText("");
                   setSending(false);
-                  return;
+                  onClose();
+                  router.push("/inbox");
+                } catch {
+                  setSending(false);
+                  setSendError(true);
                 }
-
-                // Ensure chat exists on the server
-                const { chat } = await fetchOrCreateChat(profile.id, token);
-
-                // Persist message immediately so it always appears in chat.
-                await sendChatMessage(token, {
-                  chatId: chat.id,
-                  senderId: user?.id,
-                  text: trimmed,
-                });
-
-                setText("");
-                setSending(false);
-                onClose();
-                router.push("/inbox");
-              } catch {
-                setSending(false);
-              }
-            }}
-            disabled={sending}
-            accessibilityLabel="Send message"
-          >
-            <SendHorizonal size={20} color="rgba(255,255,255,0.5)" />
-          </TouchableOpacity>
+              }}
+              disabled={sending}
+              accessibilityLabel="Send message"
+            >
+              <SendHorizonal size={20} color="rgba(255,255,255,0.5)" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
