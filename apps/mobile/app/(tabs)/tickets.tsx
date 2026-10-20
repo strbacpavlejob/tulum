@@ -26,7 +26,7 @@ const noTicketsIllustration = require("@/assets/images/tulum-no-tickets.webp");
 const LIVE_WINDOW_MS = 4 * 60 * 60 * 1000;
 const SOON_WINDOW_MS = 3 * 60 * 60 * 1000;
 
-function ticketToEvent(ticket: Ticket): EventSummary {
+function ticketToEvent(ticket: Ticket, isFavorite: boolean): EventSummary {
   return {
     id: ticket.event_id,
     image: ticket.image ?? "",
@@ -36,7 +36,7 @@ function ticketToEvent(ticket: Ticket): EventSummary {
     date: ticket.date,
     tags: ticket.tags,
     location: ticket.location,
-    isFavorite: false,
+    isFavorite,
     guestCount: 0,
   };
 }
@@ -147,7 +147,7 @@ function NoTicketsIllustration() {
 }
 
 export default function TicketsScreen() {
-  const { tickets, setTickets } = useStore();
+  const { tickets, setTickets, events } = useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
   const { userId, getToken } = useAuth();
@@ -185,6 +185,14 @@ export default function TicketsScreen() {
   const { live, soon, rest } = useMemo(() => {
     const now = Date.now();
 
+    // Tickets don't say whether the event is saved; the map's events do, and
+    // FavoriteButton keeps them up to date.
+    const favoriteEventIds = new Set(
+      (events ?? [])
+        .filter((event: EventSummary) => event.isFavorite)
+        .map((event: EventSummary) => event.id),
+    );
+
     const live: EventSummary[] = [];
     const soon: EventSummary[] = [];
     const rest: EventSummary[] = [];
@@ -194,7 +202,10 @@ export default function TicketsScreen() {
 
       if (start < now - LIVE_WINDOW_MS) return;
 
-      const event = ticketToEvent(ticket);
+      const event = ticketToEvent(
+        ticket,
+        favoriteEventIds.has(ticket.event_id),
+      );
 
       if (start <= now) {
         live.push(event);
@@ -206,7 +217,7 @@ export default function TicketsScreen() {
     });
 
     return { live, soon, rest };
-  }, [tickets]);
+  }, [tickets, events]);
 
   const handlePress = (event: EventSummary) => {
     router.push(`/event-details/${event.id}`);

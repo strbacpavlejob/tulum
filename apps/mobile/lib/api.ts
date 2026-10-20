@@ -702,18 +702,28 @@ export async function trackEventSeen(
   });
 }
 
-export async function toggleFavorite(
+/**
+ * Saves the event as a favorite or removes it. It sends the state the user
+ * chose instead of a toggle, so a heart that showed a saved event as not
+ * saved can't remove the favorite.
+ */
+export async function setEventFavorite(
   token: string,
   eventId: string | number,
+  isFavorite: boolean,
 ): Promise<{ isFavorite: boolean }> {
-  const url = `${TULUM_API_URL}/favorites/toggle`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ event_id: eventId }),
-  });
+  const response = isFavorite
+    ? await fetch(`${TULUM_API_URL}/favorites`, {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ event_id: eventId }),
+      })
+    : await fetch(
+        `${TULUM_API_URL}/favorites?event_id=${encodeURIComponent(eventId)}`,
+        { method: "DELETE", headers: authHeaders(token) },
+      );
   if (!response.ok) {
-    throw new Error(`Failed to toggle favorite: ${response.status}`);
+    throw new Error(`Failed to update favorite: ${response.status}`);
   }
   return response.json() as Promise<{ isFavorite: boolean }>;
 }

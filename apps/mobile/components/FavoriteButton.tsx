@@ -1,9 +1,9 @@
-import { toggleFavorite } from "@/lib/api";
+import { setEventFavorite } from "@/lib/api";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { Heart } from "lucide-react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TouchableOpacity } from "react-native";
 
 interface FavoriteButtonProps {
@@ -25,6 +25,8 @@ const FavoriteButton = ({
   const { updateEventFavorite } = useStore();
   const { getToken } = useAuth();
   const [favorite, setFavorite] = useState(isFavorite);
+  // One request at a time, so quick taps can't reach the server out of order.
+  const saving = useRef(false);
 
   useEffect(() => {
     setFavorite(isFavorite);
@@ -32,21 +34,25 @@ const FavoriteButton = ({
   const defaultColor = customTheme ? customTheme.color : theme.color;
 
   const handlePress = async () => {
+    if (saving.current) return;
     const next = !favorite;
     setFavorite(next);
     if (eventId != null) {
+      saving.current = true;
       try {
         const token = await getToken();
         if (!token) {
           setFavorite(!next);
           return;
         }
-        const result = await toggleFavorite(token, eventId);
+        const result = await setEventFavorite(token, eventId, next);
         setFavorite(result.isFavorite);
         updateEventFavorite(String(eventId), result.isFavorite);
       } catch {
         // revert on error
         setFavorite(!next);
+      } finally {
+        saving.current = false;
       }
     }
     if (onPress) onPress();
