@@ -316,9 +316,14 @@ export default function MatchesDeck({
                     </View>
                   ))}
                 </View>
-                <Text className="mt-3 max-w-[340px] text-[13px] leading-5 text-[#eee9f0]">
-                  {currentProfile.bio}
-                </Text>
+                {currentProfile.bio ? (
+                  <Text
+                    numberOfLines={3}
+                    className="mt-3 max-w-[340px] text-[13px] leading-5 text-[#eee9f0]"
+                  >
+                    {currentProfile.bio}
+                  </Text>
+                ) : null}
                 <View className="mt-5 flex-row items-center justify-between">
                   <View className="flex-row items-center gap-2">
                     <Heart size={20} color="#d7c6fa" />

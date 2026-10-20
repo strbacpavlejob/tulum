@@ -17,6 +17,7 @@ interface SwipeableCandidate {
   picture_urls: string[];
   age: number;
   interests: string[];
+  bio?: string | null;
   liked_by_me?: boolean;
 }
 

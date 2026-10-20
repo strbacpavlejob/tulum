@@ -5,6 +5,7 @@ import {
   MIN_LIKE_LIMIT,
   normalizeLikeFilters,
 } from '../common/like-limit';
+import { matchProfileDetails } from '../guests/shared-profile';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SwipeDecisionDto } from './dto/swipe-decision.dto';
 
@@ -64,6 +65,9 @@ export class MatchesService {
   }
 
   async getMyMatches(userId: string) {
+    // The guests rows are read whole (*) so this works before and after the
+    // add_guest_profile_details migration; matchProfileDetails picks what is
+    // sent.
     const { data, error } = await this.db
       .from(MATCHES_TABLE)
       .select(
@@ -73,17 +77,11 @@ export class MatchesService {
         guest_id_2,
         matched_at,
         guest1:guests!matches_guest_id_1_fkey(
-          user_id,
-          picture_urls,
-          birthday,
-          interests,
+          *,
           user:users!guests_user_id_fkey(first_name, last_name, avatar_url)
         ),
         guest2:guests!matches_guest_id_2_fkey(
-          user_id,
-          picture_urls,
-          birthday,
-          interests,
+          *,
           user:users!guests_user_id_fkey(first_name, last_name, avatar_url)
         ),
         event:events!matches_event_id_fkey(
@@ -149,6 +147,7 @@ export class MatchesService {
             picture_urls: (other?.picture_urls ?? []) as string[],
             birthday: (other?.birthday ?? null) as string | null,
             interests: (other?.interests ?? []) as string[],
+            ...matchProfileDetails(other as Record<string, unknown> | null),
           },
           event: match.event
             ? {

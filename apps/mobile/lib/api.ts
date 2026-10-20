@@ -234,6 +234,29 @@ export async function fetchEventDetails(
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
+/**
+ * The profile details of a guests row: your own (GET /users/me) or those of a
+ * guest you matched with (GET /matches/mine). bio and seeking always exist;
+ * the rest are missing until the add_guest_profile_details migration is
+ * applied.
+ */
+export interface GuestProfileDetails {
+  bio?: string | null;
+  seeking?: string | null;
+  work?: string | null;
+  education?: string | null;
+  height_cm?: number | null;
+  has_children?: User["hasChildren"] | null;
+  drinking?: User["drinking"] | null;
+  smoking?: User["smoking"] | null;
+  languages?: string[];
+  relationship_status?: User["relationship"] | null;
+  sexuality?: User["sexuality"] | null;
+  star_sign?: User["starSign"] | null;
+  pets?: string[];
+  religion?: User["religion"] | null;
+}
+
 interface MyProfileResponse {
   id: string;
   email: string;
@@ -241,30 +264,17 @@ interface MyProfileResponse {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  guest: {
-    gender: "male" | "female" | "other" | null;
-    seeking: string | null;
-    interested_in: ("male" | "female" | "other")[];
-    interests: string[];
-    venue_types?: string[];
-    bio?: string | null;
-    picture_urls: string[];
-    birthday: string | null;
-    // Profile details. Missing until the add_guest_profile_details
-    // migration is applied.
-    work?: string | null;
-    education?: string | null;
-    height_cm?: number | null;
-    has_children?: User["hasChildren"] | null;
-    drinking?: User["drinking"] | null;
-    smoking?: User["smoking"] | null;
-    languages?: string[];
-    relationship_status?: User["relationship"] | null;
-    sexuality?: User["sexuality"] | null;
-    star_sign?: User["starSign"] | null;
-    pets?: string[];
-    religion?: User["religion"] | null;
-  } | null;
+  guest:
+    | ({
+        gender: "male" | "female" | "other" | null;
+        seeking: string | null;
+        interested_in: ("male" | "female" | "other")[];
+        interests: string[];
+        venue_types?: string[];
+        picture_urls: string[];
+        birthday: string | null;
+      } & GuestProfileDetails)
+    | null;
 }
 
 function mapSeekingToLookingFor(
@@ -314,6 +324,28 @@ function mapInterestedInToLookingForGender(
   return undefined;
 }
 
+/** A guest's profile details as the User fields the Profile views show. */
+export function mapGuestDetails(
+  guest: GuestProfileDetails | null | undefined,
+): Partial<User> {
+  return {
+    info: guest?.bio ?? undefined,
+    lookingFor: mapSeekingToLookingFor(guest?.seeking),
+    work: guest?.work ?? undefined,
+    education: guest?.education ?? undefined,
+    height: guest?.height_cm ?? undefined,
+    hasChildren: guest?.has_children ?? undefined,
+    drinking: guest?.drinking ?? undefined,
+    smoking: guest?.smoking ?? undefined,
+    languages: guest?.languages ?? [],
+    relationship: guest?.relationship_status ?? undefined,
+    sexuality: guest?.sexuality ?? undefined,
+    starSign: guest?.star_sign ?? undefined,
+    pets: guest?.pets ?? [],
+    religion: guest?.religion ?? undefined,
+  };
+}
+
 export function mapProfileToUser(raw: MyProfileResponse): User {
   const birthday = raw.guest?.birthday
     ? raw.guest.birthday.split("T")[0]
@@ -339,25 +371,12 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
     lookingForGender: mapInterestedInToLookingForGender(
       raw.guest?.interested_in,
     ),
-    lookingFor: mapSeekingToLookingFor(raw.guest?.seeking),
     preferredVenueTypes: raw.guest?.venue_types ?? [],
-    info: raw.guest?.bio ?? undefined,
     birthday,
     age,
     interests: raw.guest?.interests ?? [],
     tags: raw.guest?.interests ?? [],
-    work: raw.guest?.work ?? undefined,
-    education: raw.guest?.education ?? undefined,
-    height: raw.guest?.height_cm ?? undefined,
-    hasChildren: raw.guest?.has_children ?? undefined,
-    drinking: raw.guest?.drinking ?? undefined,
-    smoking: raw.guest?.smoking ?? undefined,
-    languages: raw.guest?.languages ?? [],
-    relationship: raw.guest?.relationship_status ?? undefined,
-    sexuality: raw.guest?.sexuality ?? undefined,
-    starSign: raw.guest?.star_sign ?? undefined,
-    pets: raw.guest?.pets ?? [],
-    religion: raw.guest?.religion ?? undefined,
+    ...mapGuestDetails(raw.guest),
   };
 }
 
@@ -760,7 +779,7 @@ export interface MatchListItem {
     picture_urls: string[];
     birthday: string | null;
     interests: string[];
-  };
+  } & GuestProfileDetails;
   event: {
     id: string;
     title: string;
@@ -911,6 +930,8 @@ export interface SwipeableProfile {
   picture_urls: string[];
   age: number;
   interests: string[];
+  // The only profile detail the deck gets; the rest come after a match.
+  bio?: string | null;
   liked_by_me?: boolean;
 }
 

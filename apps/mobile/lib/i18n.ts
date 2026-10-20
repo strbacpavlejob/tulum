@@ -241,6 +241,8 @@ const resources = {
       workAndEducation: "Work & Education",
       select: "Select…",
       tellOthersAboutYourself: "Tell others about yourself…",
+      profileVisibilityNote:
+        "Guests you match with see your whole profile. Before that, guests at the same event see your photos, name, age, interests and bio.",
       height: "Height",
       relationship: "Relationship",
 
@@ -609,6 +611,8 @@ const resources = {
       workAndEducation: "Posao i obrazovanje",
       select: "Izaberi…",
       tellOthersAboutYourself: "Reci drugima o sebi…",
+      profileVisibilityNote:
+        "Gosti sa kojima imaš meč vide ceo tvoj profil. Pre toga gosti na istom događaju vide tvoje fotografije, ime, godine, interesovanja i biografiju.",
       height: "Visina",
       relationship: "Veza",
 
@@ -974,6 +978,8 @@ const resources = {
       workAndEducation: "Работа и образование",
       select: "Выберите…",
       tellOthersAboutYourself: "Расскажите о себе…",
+      profileVisibilityNote:
+        "Гости, с которыми у вас матч, видят весь ваш профиль. До этого гости того же события видят ваши фото, имя, возраст, интересы и раздел «О себе».",
       height: "Рост",
       relationship: "Отношения",
 

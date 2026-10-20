@@ -129,7 +129,8 @@ function ProfileRow({
  * BottomSheetScrollView in the parent as needed.
  *
  * Pass `editCallbacks` to enable editable mode (chevrons + onPress).
- * Omit `editCallbacks` for a fully read-only view.
+ * Omit `editCallbacks` for a read-only view of someone else's profile, which
+ * leaves out the details they haven't filled in.
  */
 export default function ProfileInfoView({
   user,
@@ -203,6 +204,16 @@ export default function ProfileInfoView({
         value: user.religion ? capitalize(user.religion) : undefined,
       },
     ] satisfies ProfileInfoField[]);
+
+  // On someone else's profile, leave out what they haven't filled in.
+  const visibleProfileFields = editable
+    ? resolvedProfileFields
+    : resolvedProfileFields.filter((field) => field.value);
+  const showTags = editable || (user.tags ?? []).length > 0;
+  const showWork = editable || !!user.work;
+  const showEducation = editable || !!user.education;
+  const showLookingFor = editable || (user.lookingFor ?? []).length > 0;
+  const showBio = editable || !!user.info;
 
   return (
     <View>
@@ -320,113 +331,133 @@ export default function ProfileInfoView({
       <Separator className="mx-4 mt-3" />
 
       {/* Interests */}
-      <Pressable
-        onPress={editCallbacks?.onEditTags}
-        disabled={!editable}
-        className="mx-4 mt-3 pb-3"
-      >
-        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
-          {t("interests")}
-        </Text>
-        <View className="flex-row flex-wrap gap-2 mt-2">
-          {(user.tags ?? []).map((tag, i) => (
-            <View
-              key={i}
-              className="rounded-full bg-light-color025 px-3 py-1 dark:bg-dark-color025"
-            >
-              <Text className="text-[13px] text-light-color dark:text-dark-color">
-                {tag}
-              </Text>
-            </View>
-          ))}
-          {(user.tags ?? []).length === 0 && (
-            <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
-              {editable ? t("addInterests") : "—"}
+      {showTags && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditTags}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("interests")}
             </Text>
-          )}
-        </View>
-      </Pressable>
+            <View className="flex-row flex-wrap gap-2 mt-2">
+              {(user.tags ?? []).map((tag, i) => (
+                <View
+                  key={i}
+                  className="rounded-full bg-light-color025 px-3 py-1 dark:bg-dark-color025"
+                >
+                  <Text className="text-[13px] text-light-color dark:text-dark-color">
+                    {tag}
+                  </Text>
+                </View>
+              ))}
+              {(user.tags ?? []).length === 0 && (
+                <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
+                  {t("addInterests")}
+                </Text>
+              )}
+            </View>
+          </Pressable>
 
-      <Separator className="mx-4" />
+          <Separator className="mx-4" />
+        </>
+      )}
 
       {/* Work & Education */}
-      <View className="mx-4 mt-1">
-        <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
-          {t("workAndEducation")}
-        </Text>
-        <ProfileRow
-          icon={Briefcase}
-          label={t("work")}
-          value={user.work}
-          onPress={editCallbacks?.onEditWork}
-        />
-        <Separator />
-        <ProfileRow
-          icon={BookOpen}
-          label={t("education")}
-          value={user.education}
-          onPress={editCallbacks?.onEditEducation}
-        />
-      </View>
+      {(showWork || showEducation) && (
+        <>
+          <View className="mx-4 mt-1">
+            <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("workAndEducation")}
+            </Text>
+            {showWork && (
+              <ProfileRow
+                icon={Briefcase}
+                label={t("work")}
+                value={user.work}
+                onPress={editCallbacks?.onEditWork}
+              />
+            )}
+            {showWork && showEducation && <Separator />}
+            {showEducation && (
+              <ProfileRow
+                icon={BookOpen}
+                label={t("education")}
+                value={user.education}
+                onPress={editCallbacks?.onEditEducation}
+              />
+            )}
+          </View>
 
-      <Separator className="mx-4 mt-1" />
+          <Separator className="mx-4 mt-1" />
+        </>
+      )}
 
       {/* Why you're here */}
-      <Pressable
-        onPress={editCallbacks?.onEditLookingFor}
-        disabled={!editable}
-        className="mx-4 mt-3 pb-3"
-      >
-        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
-          {t("whyYoureHere")}
-        </Text>
-        <View className="flex-row flex-wrap gap-2 mt-2">
-          {(user.lookingFor ?? []).map((item, i) => (
-            <View
-              key={i}
-              className="rounded-full bg-light-color px-3.5 py-1.5 dark:bg-dark-color"
-            >
-              <Text style={{ fontSize: 13, color: "#fff" }}>
-                {capitalize(item)}
-              </Text>
-            </View>
-          ))}
-          {(user.lookingFor ?? []).length === 0 && (
-            <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
-              {editable ? t("select") : "—"}
+      {showLookingFor && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditLookingFor}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("whyYoureHere")}
             </Text>
-          )}
-        </View>
-      </Pressable>
+            <View className="flex-row flex-wrap gap-2 mt-2">
+              {(user.lookingFor ?? []).map((item, i) => (
+                <View
+                  key={i}
+                  className="rounded-full bg-light-color px-3.5 py-1.5 dark:bg-dark-color"
+                >
+                  <Text style={{ fontSize: 13, color: "#fff" }}>
+                    {capitalize(item)}
+                  </Text>
+                </View>
+              ))}
+              {(user.lookingFor ?? []).length === 0 && (
+                <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
+                  {t("select")}
+                </Text>
+              )}
+            </View>
+          </Pressable>
 
-      <Separator className="mx-4" />
+          <Separator className="mx-4" />
+        </>
+      )}
 
       {/* Bio */}
-      <Pressable
-        onPress={editCallbacks?.onEditBio}
-        disabled={!editable}
-        className="mx-4 mt-3 pb-3"
-      >
-        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
-          {t("bio")}
-        </Text>
-        <Text
-          className={cn(
-            "mt-1 text-[15px] leading-[22px]",
-            user.info
-              ? "text-light-colorStrong dark:text-dark-colorStrong"
-              : "text-light-colorMuted dark:text-dark-colorMuted",
-          )}
-        >
-          {user.info ?? (editable ? t("tellOthersAboutYourself") : "—")}
-        </Text>
-      </Pressable>
+      {showBio && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditBio}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("bio")}
+            </Text>
+            <Text
+              className={cn(
+                "mt-1 text-[15px] leading-[22px]",
+                user.info
+                  ? "text-light-colorStrong dark:text-dark-colorStrong"
+                  : "text-light-colorMuted dark:text-dark-colorMuted",
+              )}
+            >
+              {user.info ?? t("tellOthersAboutYourself")}
+            </Text>
+          </Pressable>
 
-      <Separator className="mx-4" />
+          <Separator className="mx-4" />
+        </>
+      )}
 
       {/* Attribute rows */}
       <View className="mx-4 mt-1">
-        {resolvedProfileFields.map((field, index) => (
+        {visibleProfileFields.map((field, index) => (
           <React.Fragment key={`${field.key}-${index}`}>
             <ProfileRow
               icon={field.icon}
@@ -438,7 +469,7 @@ export default function ProfileInfoView({
                   : undefined
               }
             />
-            {index < resolvedProfileFields.length - 1 && <Separator />}
+            {index < visibleProfileFields.length - 1 && <Separator />}
           </React.Fragment>
         ))}
       </View>

@@ -7,6 +7,7 @@ import {
   fetchMyMatches,
   fetchMyTickets,
   fetchOrCreateChat,
+  mapGuestDetails,
   type ChatMessage,
   type MatchListItem,
 } from "@/lib/api";
@@ -143,6 +144,12 @@ function mapToMatch(item: MatchListItem): Match {
       : matchedAt,
     expiresAt,
     messages: [],
+    // For the profile sheet in the chat.
+    profile: {
+      photos: item.other_guest.picture_urls,
+      tags: item.other_guest.interests,
+      ...mapGuestDetails(item.other_guest),
+    },
   };
 }
 

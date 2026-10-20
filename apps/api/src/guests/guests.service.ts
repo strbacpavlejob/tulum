@@ -10,6 +10,7 @@ import {
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
+import { deckProfileDetails } from './shared-profile';
 
 const GUESTS_TABLE = 'guests';
 const GUEST_SWIPES_TABLE = 'guest_swipes';
@@ -191,7 +192,7 @@ export class GuestsService {
       const { data: guests, error } = await this.db
         .from(GUESTS_TABLE)
         .select(
-          'user_id, gender, picture_urls, birthday, interests, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
+          'user_id, gender, picture_urls, birthday, interests, bio, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
         )
         .in('user_id', candidateIds);
       if (error) throw error;
@@ -214,6 +215,7 @@ export class GuestsService {
           picture_urls: (g.picture_urls ?? []) as string[],
           age,
           interests: (g.interests ?? []) as string[],
+          ...deckProfileDetails(g),
           liked_by_me: likedByMeIds.has(g.user_id as string),
         };
       });

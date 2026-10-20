@@ -73,7 +73,7 @@ function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
     id: p.user_id,
     name: p.first_name ?? "Unknown",
     age: p.age,
-    bio: p.interests.join(", "),
+    bio: p.bio ?? "",
     images,
     distance: 1, // any truthy value so SwipeCard shows event title
     hobbies: p.interests,
