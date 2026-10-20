@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/expo";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import type { Message } from "@/types/chat";
@@ -10,6 +11,11 @@ export function useChatSocket(
   userId: string | null | undefined,
   initialMessages: Message[] = [],
 ) {
+  const { getToken } = useAuth();
+  // useAuth returns a new getToken on every render; reading it through a ref
+  // keeps the socket from reconnecting each time.
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
@@ -24,7 +30,15 @@ export function useChatSocket(
     if (!chatId || !userId) return;
 
     const socket = io(TULUM_API_URL, {
-      auth: { userId },
+      // The API verifies this Clerk session token in the handshake and takes
+      // the user from it. socket.io calls this on every connection attempt,
+      // so a reconnect sends a current token, not the first one.
+      auth: (cb) => {
+        getTokenRef.current().then(
+          (token) => cb({ token }),
+          () => cb({}),
+        );
+      },
       transports: ["websocket"],
     });
     socketRef.current = socket;

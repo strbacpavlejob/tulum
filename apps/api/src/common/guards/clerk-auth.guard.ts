@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { createClerkClient } from '@clerk/backend';
 import type { Request } from 'express';
+import { verifySessionUserId } from '../clerk-session';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
@@ -24,7 +25,8 @@ export class ClerkAuthGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // WebSocket — skip Clerk auth (handled separately if needed)
+    // WebSocket — ChatsGateway verifies the Clerk token in the socket
+    // handshake, before any event reaches a handler.
     if (context.getType() === 'ws') return true;
 
     const request = context
@@ -57,10 +59,6 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     try {
-      const authorizedParties = process.env.CLERK_AUTHORIZED_PARTIES
-        ? process.env.CLERK_AUTHORIZED_PARTIES.split(',').map((p) => p.trim())
-        : undefined;
-
       // authenticateRequest requires a Web Fetch API Request, not an Express Request.
       // Build one from the incoming Express request so Clerk can inspect headers/cookies.
       const url = `${request.protocol}://${request.get('host') ?? 'localhost'}${request.originalUrl}`;
@@ -78,22 +76,7 @@ export class ClerkAuthGuard implements CanActivate {
         headers: webHeaders,
       });
 
-      const requestState = await this.clerkClient.authenticateRequest(
-        webRequest,
-        { ...(authorizedParties ? { authorizedParties } : {}) },
-      );
-
-      if (!requestState.isAuthenticated) {
-        throw new UnauthorizedException('Invalid or expired session token');
-      }
-
-      const auth = requestState.toAuth();
-      // `userId` exists on session token auth objects (`SignedInAuthObject`).
-      // Reject m2m/api_key token types that do not carry a user context.
-      if (!('userId' in auth) || !auth.userId) {
-        throw new UnauthorizedException('Not a valid user session token');
-      }
-      return auth.userId;
+      return await verifySessionUserId(this.clerkClient, webRequest);
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Token verification failed');

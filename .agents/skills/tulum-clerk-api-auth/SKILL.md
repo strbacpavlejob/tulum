@@ -9,7 +9,8 @@ Use the official `clerk-expo` and `clerk-nextjs-patterns` skills for their frame
 
 Before changing auth behavior, inspect the relevant callers and contracts in:
 
-- `apps/api/src/common/guards/clerk-auth.guard.ts`
+- `apps/api/src/common/guards/clerk-auth.guard.ts` and `apps/api/src/common/clerk-session.ts`
+- `apps/api/src/chats/chats.gateway.ts` and `apps/mobile/hooks/useChatSocket.ts` for the chat WebSocket
 - `apps/api/src/common/decorators/public.decorator.ts` and `user-id.decorator.ts`
 - `apps/api/src/common/guards/admin.guard.ts` and `apps/api/src/app.module.ts`
 - `apps/api/src/main.ts`
@@ -20,6 +21,7 @@ Before changing auth behavior, inspect the relevant callers and contracts in:
 
 - The NestJS API expects a Clerk session token in `Authorization: Bearer <token>`. Derive the API user identity from the verified Clerk auth result, not from client-supplied profile fields.
 - Keep `CLERK_AUTHORIZED_PARTIES` handling and the distinction between public routes, HTTP requests, and WebSocket connections explicit. Do not assume HTTP guards authenticate WebSocket events.
+- `ChatsGateway` authenticates each socket in a handshake middleware: the client sends its Clerk session token as `auth: { token }`, and the gateway verifies it with the same `verifySessionUserId` check as `ClerkAuthGuard` and stores the result in `socket.data.userId`. Never take a socket's identity from `handshake.auth.userId` or a header, and check chat membership in every event handler.
 - `@Public()` is an intentional route opt-out. Review the route and its data exposure before changing its status or adding public routes. On a public route a valid Bearer token still sets the user id; an invalid or missing one leaves the caller anonymous.
 - `UserId` and `AdminGuard` read only the Clerk-verified user id; the legacy `x-user-id` fallback was removed. Do not reintroduce it or take the acting user from query or body parameters. A route that reads or changes another user's records must check ownership or use `AdminGuard`.
 - Mobile and host NestJS clients forward Clerk session tokens to the API. The host Supabase integration requests its configured `supabase` JWT template; do not substitute that token flow for the NestJS API token without verifying the Clerk and Supabase configuration.
