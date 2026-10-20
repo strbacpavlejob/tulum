@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { parseDbTimestampMs } from '../common/db-timestamp';
 import {
   MAX_LIKE_PERCENTAGE,
   MIN_LIKE_LIMIT,
@@ -32,18 +33,6 @@ interface SwipeDecisionResult {
   like_limit: number;
   eligible_guest_count: number;
   limit_reached: boolean;
-}
-
-function parseDbTimestampMs(value: unknown): number | null {
-  if (typeof value !== 'string' || !value) return null;
-
-  // Postgres "timestamp without time zone" values often come back without
-  // an offset (e.g. 2026-10-08T19:55:35.587). Treat those as UTC.
-  const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
-  const iso = hasExplicitOffset ? value : `${value}Z`;
-  const ms = new Date(iso).getTime();
-
-  return Number.isFinite(ms) ? ms : null;
 }
 
 @Injectable()

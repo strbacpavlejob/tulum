@@ -1,4 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { toUtcIsoString } from '../common/db-timestamp';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const TICKETS_TABLE = 'tickets';
@@ -46,8 +47,8 @@ export class TicketsService {
       event_id: String(t.event_id),
       title: t.events?.title ?? '',
       description: t.events?.description ?? '',
-      date: t.events?.start_date_time ?? t.created_at,
-      end_date_time: t.events?.end_date_time ?? null,
+      date: toUtcIsoString(t.events?.start_date_time ?? t.created_at),
+      end_date_time: toUtcIsoString(t.events?.end_date_time),
       tags: t.events?.tags ?? [],
       image: t.events?.picture_url ?? t.events?.venues?.picture_url ?? null,
       venue_name: t.events?.venues?.name ?? '',

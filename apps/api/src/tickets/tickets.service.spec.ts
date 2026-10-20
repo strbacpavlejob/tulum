@@ -96,3 +96,46 @@ describe('TicketsService attendEvent', () => {
     );
   });
 });
+
+describe('TicketsService getTickets', () => {
+  it('sends event times as UTC instants (BUG-009)', async () => {
+    // supabase-js returns the event's timestamp without time zone columns,
+    // which hold UTC, with no offset. 19:00 UTC is 20:00 in Belgrade.
+    const row = {
+      id: 'ticket-1',
+      event_id: EVENT_ID,
+      guest_id: GUEST_ID,
+      created_at: ticket.created_at,
+      events: {
+        title: 'Pat Todd & The Rankoutsiders',
+        start_date_time: '2026-10-29T19:00:00',
+        end_date_time: '2026-10-30T00:00:00',
+        tags: [],
+        venues: { name: 'Zappa Baza', latitude: 44.8, longitude: 20.45 },
+      },
+    };
+    interface Query extends PromiseLike<RpcResult> {
+      eq(): Query;
+    }
+    const query: Query = {
+      eq: () => query,
+      then: (onfulfilled, onrejected) =>
+        Promise.resolve({ data: [row], error: null }).then(
+          onfulfilled,
+          onrejected,
+        ),
+    };
+    const db = { from: jest.fn(() => ({ select: () => query })) };
+    const service = new TicketsService({
+      getClient: () => db,
+    } as unknown as SupabaseService);
+
+    await expect(service.getTickets(GUEST_ID)).resolves.toEqual([
+      expect.objectContaining({
+        event_id: EVENT_ID,
+        date: '2026-10-29T19:00:00.000Z',
+        end_date_time: '2026-10-30T00:00:00.000Z',
+      }),
+    ]);
+  });
+});

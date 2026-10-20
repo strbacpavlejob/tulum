@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { toUtcIsoString } from '../common/db-timestamp';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -146,7 +147,7 @@ export class EventsCrudService {
           address: venue.address as string,
           latitude: venue.latitude as number,
           longitude: venue.longitude as number,
-          date: event.start_date_time as string,
+          date: toUtcIsoString(event.start_date_time),
           tags: (event.tags as string[]) ?? [],
           isFavorite: savedEventIds.has(event.id as string),
           guest_count: guestCountMap.get(event.id as string) ?? 0,
@@ -258,7 +259,7 @@ export class EventsCrudService {
         (venue as Record<string, unknown>).picture_url,
       venue_name: venueTyped.name,
       venue_picture: venueTyped.picture_url ?? null,
-      date: (event as Record<string, unknown>).start_date_time,
+      date: toUtcIsoString((event as Record<string, unknown>).start_date_time),
       tags: ((event as Record<string, unknown>).tags as string[]) ?? [],
       isFavorite,
       isSeen,

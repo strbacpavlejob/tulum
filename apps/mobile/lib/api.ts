@@ -70,6 +70,18 @@ interface ActiveEventDetailResponse {
   venue_contact: ActiveEventVenueContact | null;
 }
 
+/**
+ * Event start and end times are stored in UTC. Older API versions send them
+ * without an offset (2026-10-29T19:00:00), which new Date() and date-fns read
+ * as local time, so this adds the "Z". Every event time from the API goes
+ * through here, so all screens show the same local time.
+ */
+function normalizeApiTimestamp(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+  return hasExplicitOffset ? value : `${value}Z`;
+}
+
 function mapActiveEventSummaryToEventSummary(
   item: ActiveEventSummaryResponse,
 ): EventSummary {
@@ -85,7 +97,7 @@ function mapActiveEventSummaryToEventSummary(
       longitude: item.longitude,
       address: item.address,
     },
-    date: item.date,
+    date: normalizeApiTimestamp(item.date) ?? item.date,
     tags: item.tags ?? [],
     isFavorite: item.isFavorite ?? false,
     guestCount: item.guest_count ?? 0,
@@ -121,7 +133,7 @@ function mapActiveEventDetailToEvent(item: ActiveEventDetailResponse): Event {
       longitude: item.longitude,
       address: item.address,
     },
-    date: item.date,
+    date: normalizeApiTimestamp(item.date) ?? item.date,
     tags: item.tags ?? [],
     isFavorite: item.isFavorite ?? false,
     guestCount: 0,
@@ -797,15 +809,6 @@ export async function fetchMyTickets(token: string, userId: string) {
     throw new Error(`Failed to fetch tickets: ${response.status}`);
   }
   const data = await response.json();
-
-  const normalizeApiTimestamp = (value: unknown): string | null => {
-    if (typeof value !== "string" || !value) return null;
-
-    // Backend may return timestamp-without-timezone strings.
-    // Interpret those as UTC to avoid local timezone drift.
-    const hasExplicitOffset = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
-    return hasExplicitOffset ? value : `${value}Z`;
-  };
 
   return data.map((t: any) => ({
     ...t,
