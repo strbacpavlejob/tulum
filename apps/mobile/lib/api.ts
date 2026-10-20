@@ -250,6 +250,20 @@ interface MyProfileResponse {
     bio?: string | null;
     picture_urls: string[];
     birthday: string | null;
+    // Profile details. Missing until the add_guest_profile_details
+    // migration is applied.
+    work?: string | null;
+    education?: string | null;
+    height_cm?: number | null;
+    has_children?: User["hasChildren"] | null;
+    drinking?: User["drinking"] | null;
+    smoking?: User["smoking"] | null;
+    languages?: string[];
+    relationship_status?: User["relationship"] | null;
+    sexuality?: User["sexuality"] | null;
+    star_sign?: User["starSign"] | null;
+    pets?: string[];
+    religion?: User["religion"] | null;
   } | null;
 }
 
@@ -265,6 +279,23 @@ function mapSeekingToLookingFor(
       return ["open to chat"];
     case "party":
       return ["to party"];
+    default:
+      return undefined;
+  }
+}
+
+function mapLookingForToSeeking(
+  lookingFor: User["lookingFor"],
+): SeekingValue | undefined {
+  switch (lookingFor?.[0]) {
+    case "to date":
+      return "casual";
+    case "ready for a relationship":
+      return "relationship";
+    case "open to chat":
+      return "friendship";
+    case "to party":
+      return "party";
     default:
       return undefined;
   }
@@ -315,7 +346,55 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
     age,
     interests: raw.guest?.interests ?? [],
     tags: raw.guest?.interests ?? [],
+    work: raw.guest?.work ?? undefined,
+    education: raw.guest?.education ?? undefined,
+    height: raw.guest?.height_cm ?? undefined,
+    hasChildren: raw.guest?.has_children ?? undefined,
+    drinking: raw.guest?.drinking ?? undefined,
+    smoking: raw.guest?.smoking ?? undefined,
+    languages: raw.guest?.languages ?? [],
+    relationship: raw.guest?.relationship_status ?? undefined,
+    sexuality: raw.guest?.sexuality ?? undefined,
+    starSign: raw.guest?.star_sign ?? undefined,
+    pets: raw.guest?.pets ?? [],
+    religion: raw.guest?.religion ?? undefined,
   };
+}
+
+/**
+ * The guest columns for PATCH /users/me that store a Profile tab edit. Only
+ * the fields in the patch are sent. A cleared value is sent as null, or as
+ * an empty list for a list, so the server clears it too.
+ */
+export function mapUserPatchToGuestUpdates(
+  patch: Partial<User>,
+): Record<string, unknown> {
+  const updates: Record<string, unknown> = {};
+
+  if ("tags" in patch) updates.interests = patch.tags ?? [];
+  if ("info" in patch) updates.bio = patch.info || null;
+  if ("lookingFor" in patch) {
+    // Onboarding only counts as complete while seeking is set, so an empty
+    // choice is never sent.
+    const seeking = mapLookingForToSeeking(patch.lookingFor);
+    if (seeking) updates.seeking = seeking;
+  }
+  if ("work" in patch) updates.work = patch.work || null;
+  if ("education" in patch) updates.education = patch.education || null;
+  if ("height" in patch) updates.height_cm = patch.height ?? null;
+  if ("hasChildren" in patch) updates.has_children = patch.hasChildren || null;
+  if ("drinking" in patch) updates.drinking = patch.drinking || null;
+  if ("smoking" in patch) updates.smoking = patch.smoking || null;
+  if ("languages" in patch) updates.languages = patch.languages ?? [];
+  if ("relationship" in patch) {
+    updates.relationship_status = patch.relationship || null;
+  }
+  if ("sexuality" in patch) updates.sexuality = patch.sexuality || null;
+  if ("starSign" in patch) updates.star_sign = patch.starSign || null;
+  if ("pets" in patch) updates.pets = patch.pets ?? [];
+  if ("religion" in patch) updates.religion = patch.religion || null;
+
+  return updates;
 }
 
 export async function fetchMyProfile(

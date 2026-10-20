@@ -21,3 +21,22 @@ export function toUtcIsoString(value: unknown): string | null {
   const ms = parseDbTimestampMs(value);
   return ms === null ? null : new Date(ms).toISOString();
 }
+
+/**
+ * The timestamp as a Date, read the same way. Use it instead of new Date() on
+ * these columns; an unreadable value gives an invalid Date.
+ */
+export function parseDbTimestamp(value: unknown): Date {
+  return new Date(parseDbTimestampMs(value) ?? NaN);
+}
+
+/** An events row with start_date_time and end_date_time sent as UTC. */
+export function withUtcEventTimes<T extends Record<string, unknown>>(
+  row: T,
+): T {
+  return {
+    ...row,
+    start_date_time: toUtcIsoString(row.start_date_time),
+    end_date_time: toUtcIsoString(row.end_date_time),
+  };
+}

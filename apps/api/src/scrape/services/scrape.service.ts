@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable, Logger } from '@nestjs/common';
 
+import { parseDbTimestamp } from '../../common/db-timestamp';
 import { Scraper } from '../domain/scraper.interface';
 import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { GuestListSerbiaScraperService } from '../scrapers/guest-list/guest-list-serbia-scraper.service';
@@ -79,8 +80,8 @@ export class ScraperService {
       venueId: e.venue_id as string,
       title: e.title as string,
       description: (e.description as string | null) ?? null,
-      startDateTime: new Date(e.start_date_time as string),
-      endDateTime: new Date(e.end_date_time as string),
+      startDateTime: parseDbTimestamp(e.start_date_time),
+      endDateTime: parseDbTimestamp(e.end_date_time),
     }));
   }
 

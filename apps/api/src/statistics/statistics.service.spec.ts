@@ -60,3 +60,31 @@ describe('StatisticsService venue ownership', () => {
     expect(from).toHaveBeenCalledWith('events');
   });
 });
+
+describe('StatisticsService event status', () => {
+  // events.start_date_time and end_date_time hold UTC without an offset, as
+  // supabase-js returns them. Run with TZ=Europe/Belgrade and
+  // TZ=America/New_York to catch a value read as local time.
+  const utcWallTime = (minutesFromNow: number) =>
+    new Date(Date.now() + minutesFromNow * 60 * 1000)
+      .toISOString()
+      .slice(0, 19);
+  const statusOf = (startsInMinutes: number, endsInMinutes: number) => {
+    const { service } = createService({});
+    return service['getDisplayStatus']({
+      id: 'event',
+      title: 'Event',
+      status: 'active',
+      venue_id: 'venue',
+      venues: null,
+      start_date_time: utcWallTime(startsInMinutes),
+      end_date_time: utcWallTime(endsInMinutes),
+    });
+  };
+
+  it('reads the stored start and end as UTC', () => {
+    expect(statusOf(30, 300)).toBe('active');
+    expect(statusOf(-60, 240)).toBe('live');
+    expect(statusOf(-300, -30)).toBe('completed');
+  });
+});

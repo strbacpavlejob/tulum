@@ -48,7 +48,7 @@ export default async function OpenGraphImage() {
         backgroundImage:
           "radial-gradient(ellipse at 79% 32%, rgba(236, 72, 153, 0.3) 0%, transparent 38%), radial-gradient(ellipse at 70% 78%, rgba(37, 99, 235, 0.2) 0%, transparent 38%), radial-gradient(ellipse at 15% 12%, rgba(124, 58, 237, 0.18) 0%, transparent 36%)",
         color: "#ffffff",
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "Geist Mono, sans-serif",
       }}
     >
       <img
@@ -183,8 +183,8 @@ export default async function OpenGraphImage() {
               lineHeight: 1.38,
             }}
           >
-            Discover events and match with people already there. Start the night
-            with something in common.
+            Discover events, meet people who are actually there, and turn nights
+            out into real connections.
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div
@@ -199,9 +199,9 @@ export default async function OpenGraphImage() {
                 fontWeight: 700,
               }}
             >
-              Try Web Version
+              Join Tulum for Free
             </div>
-            <span
+            {/* <span
               style={{
                 color: "#d0c9dd",
                 fontSize: 14,
@@ -209,7 +209,7 @@ export default async function OpenGraphImage() {
               }}
             >
               App Store · Google Play
-            </span>
+            </span> */}
           </div>
         </div>
 
@@ -223,7 +223,7 @@ export default async function OpenGraphImage() {
             fontSize: 18,
           }}
         >
-          <span>Discover. Match. Go out.</span>
+          <span>Discover. Match. Meet.</span>
           <span>tulum-app.com</span>
         </div>
       </div>

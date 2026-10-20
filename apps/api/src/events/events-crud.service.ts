@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { toUtcIsoString } from '../common/db-timestamp';
+import { toUtcIsoString, withUtcEventTimes } from '../common/db-timestamp';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -297,7 +297,7 @@ export class EventsCrudService {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map(withUtcEventTimes);
   }
 
   /** GET /events/:id */
@@ -309,7 +309,7 @@ export class EventsCrudService {
       .single();
     if (error) throw error;
     if (!data) throw new NotFoundException('Event not found');
-    return data;
+    return withUtcEventTimes(data);
   }
 
   /** POST /events */
@@ -338,7 +338,7 @@ export class EventsCrudService {
       .select()
       .single();
     if (error) throw error;
-    return data;
+    return withUtcEventTimes(data);
   }
 
   /** PATCH /events/:id */
@@ -377,7 +377,7 @@ export class EventsCrudService {
       .select()
       .single();
     if (error) throw error;
-    return data;
+    return withUtcEventTimes(data);
   }
 
   /** DELETE /events/:id */

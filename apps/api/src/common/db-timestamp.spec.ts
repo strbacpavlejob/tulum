@@ -1,5 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
-import { parseDbTimestampMs, toUtcIsoString } from './db-timestamp';
+import {
+  parseDbTimestamp,
+  parseDbTimestampMs,
+  toUtcIsoString,
+  withUtcEventTimes,
+} from './db-timestamp';
 
 // The result must not depend on the server's time zone; run with a non-UTC
 // TZ (e.g. TZ=Europe/Belgrade) to catch a value parsed as local time.
@@ -34,6 +39,29 @@ describe('db-timestamp helpers', () => {
     for (const value of [null, undefined, '', 'not a date', 1761764400000]) {
       expect(parseDbTimestampMs(value)).toBeNull();
       expect(toUtcIsoString(value)).toBeNull();
+      expect(parseDbTimestamp(value).getTime()).toBeNaN();
     }
+  });
+
+  it('parses a value without an offset into the UTC instant', () => {
+    expect(parseDbTimestamp('2026-10-29T19:00:00').toISOString()).toBe(
+      '2026-10-29T19:00:00.000Z',
+    );
+  });
+
+  it('sends the start and end of an events row as UTC', () => {
+    expect(
+      withUtcEventTimes({
+        id: 'event',
+        title: 'Pat Todd & The Rankoutsiders',
+        start_date_time: '2026-10-29T19:00:00',
+        end_date_time: '2026-10-30T00:00:00',
+      }),
+    ).toEqual({
+      id: 'event',
+      title: 'Pat Todd & The Rankoutsiders',
+      start_date_time: '2026-10-29T19:00:00.000Z',
+      end_date_time: '2026-10-30T00:00:00.000Z',
+    });
   });
 });

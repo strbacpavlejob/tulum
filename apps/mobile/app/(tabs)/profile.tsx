@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   deleteGuestPhoto,
+  mapUserPatchToGuestUpdates,
+  updateMyProfile,
   updateSettings,
   uploadGuestPhoto,
   submitBugReport,
@@ -187,14 +189,61 @@ export default function ProfileScreen() {
   };
 
   const patchUser = (patch: Partial<User>) => {
-    if (!user) {
+    // The store's user, not this render's: a save or an upload may have
+    // finished since.
+    const currentUser = useStore.getState().user;
+
+    if (!currentUser) {
       return;
     }
 
     setUser({
-      ...user,
+      ...currentUser,
       ...patch,
     });
+  };
+
+  // Shows the edit at once, saves it with PATCH /users/me and puts the old
+  // values back if the save fails.
+  const saveProfile = async (patch: Partial<User>) => {
+    const previousUser = useStore.getState().user;
+
+    if (!previousUser || !userId) {
+      return;
+    }
+
+    patchUser(patch);
+
+    try {
+      const token = await getToken();
+
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+
+      await updateMyProfile(
+        token,
+        userId,
+        {},
+        mapUserPatchToGuestUpdates(patch),
+      );
+    } catch (error) {
+      console.error("Failed to save profile", error);
+
+      // Only the fields that still show this edit, so a newer edit stays.
+      const currentUser = useStore.getState().user;
+      const fields = (Object.keys(patch) as (keyof User)[]).filter(
+        (field) => currentUser?.[field] === patch[field],
+      );
+
+      patchUser(
+        Object.fromEntries(
+          fields.map((field) => [field, previousUser[field]]),
+        ) as Partial<User>,
+      );
+
+      Alert.alert(t("saveFailed"), t("profileChangeNotSaved"));
+    }
   };
 
   const patchSettings = async (patch: Partial<Settings>) => {
@@ -455,7 +504,7 @@ export default function ProfileScreen() {
         openTextEdit(t("heightCm"), user.height?.toString() ?? "", (value) => {
           const parsedHeight = Number.parseInt(value, 10);
 
-          patchUser({
+          void saveProfile({
             height: Number.isNaN(parsedHeight) ? undefined : parsedHeight,
           });
         });
@@ -468,7 +517,7 @@ export default function ProfileScreen() {
           childrenOptions,
           user.hasChildren ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               hasChildren: value as User["hasChildren"],
             });
           },
@@ -482,7 +531,7 @@ export default function ProfileScreen() {
           drinkingOptions,
           user.drinking ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               drinking: value as User["drinking"],
             });
           },
@@ -496,7 +545,7 @@ export default function ProfileScreen() {
           languageOptions,
           user.languages ?? [],
           (value) => {
-            patchUser({
+            void saveProfile({
               languages: value,
             });
           },
@@ -510,7 +559,7 @@ export default function ProfileScreen() {
           relationshipOptions,
           user.relationship ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               relationship: value as User["relationship"],
             });
           },
@@ -524,7 +573,7 @@ export default function ProfileScreen() {
           sexualityOptions,
           user.sexuality ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               sexuality: value as User["sexuality"],
             });
           },
@@ -538,7 +587,7 @@ export default function ProfileScreen() {
           smokingOptions,
           user.smoking ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               smoking: value as User["smoking"],
             });
           },
@@ -552,7 +601,7 @@ export default function ProfileScreen() {
           starSignOptions,
           user.starSign ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               starSign: value as User["starSign"],
             });
           },
@@ -562,7 +611,7 @@ export default function ProfileScreen() {
 
       case "pets": {
         openMultiSelect(t("pets"), petsOptions, user.pets ?? [], (value) => {
-          patchUser({
+          void saveProfile({
             pets: value,
           });
         });
@@ -575,7 +624,7 @@ export default function ProfileScreen() {
           religionOptions,
           user.religion ?? "",
           (value) => {
-            patchUser({
+            void saveProfile({
               religion: value as User["religion"],
             });
           },
@@ -703,7 +752,7 @@ export default function ProfileScreen() {
                   tagsOptions,
                   user.tags ?? [],
                   (value) => {
-                    patchUser({
+                    void saveProfile({
                       tags: value,
                     });
                   },
@@ -712,28 +761,30 @@ export default function ProfileScreen() {
 
               onEditWork: () => {
                 openTextEdit(t("work"), user.work ?? "", (value) => {
-                  patchUser({
-                    work: value,
+                  void saveProfile({
+                    work: value.trim() || undefined,
                   });
                 });
               },
 
               onEditEducation: () => {
                 openTextEdit(t("education"), user.education ?? "", (value) => {
-                  patchUser({
-                    education: value,
+                  void saveProfile({
+                    education: value.trim() || undefined,
                   });
                 });
               },
 
               onEditLookingFor: () => {
-                openMultiSelect(
+                // One choice: it is stored as the "seeking" answer from
+                // onboarding.
+                openSingleSelect(
                   t("whyYoureHere"),
                   lookingForOptions,
-                  user.lookingFor ?? [],
+                  user.lookingFor?.[0] ?? "",
                   (value) => {
-                    patchUser({
-                      lookingFor: value as User["lookingFor"],
+                    void saveProfile({
+                      lookingFor: [value] as User["lookingFor"],
                     });
                   },
                 );
@@ -741,8 +792,8 @@ export default function ProfileScreen() {
 
               onEditBio: () => {
                 openTextEdit(t("bio"), user.info ?? "", (value) => {
-                  patchUser({
-                    info: value,
+                  void saveProfile({
+                    info: value.trim() || undefined,
                   });
                 });
               },

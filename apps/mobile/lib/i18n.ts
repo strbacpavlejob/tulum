@@ -122,6 +122,8 @@ const resources = {
       nameRequired: "Name required",
       pleaseProvideVenueName: "Please provide a venue name",
       sendFailed: "Failed to send",
+      saveFailed: "Save failed",
+      profileChangeNotSaved: "Your change wasn't saved. Please try again.",
 
       // Profile edit labels
       tags: "Tags",
@@ -488,6 +490,8 @@ const resources = {
       nameRequired: "Ime je obavezno",
       pleaseProvideVenueName: "Molimo unesite naziv lokala",
       sendFailed: "Slanje nije uspelo",
+      saveFailed: "Čuvanje nije uspelo",
+      profileChangeNotSaved: "Izmena nije sačuvana. Pokušaj ponovo.",
 
       // Profile edit labels
       tags: "Oznake",
@@ -852,6 +856,8 @@ const resources = {
       nameRequired: "Требуется имя",
       pleaseProvideVenueName: "Пожалуйста, укажите название заведения",
       sendFailed: "Не удалось отправить",
+      saveFailed: "Не удалось сохранить",
+      profileChangeNotSaved: "Изменение не сохранено. Попробуйте ещё раз.",
 
       // Profile edit labels
       tags: "Теги",

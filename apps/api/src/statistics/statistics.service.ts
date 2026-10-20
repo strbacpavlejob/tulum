@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { parseDbTimestamp } from '../common/db-timestamp';
 import { SupabaseService } from '../supabase/supabase.service';
 
 enum EventStatus {
@@ -295,8 +296,8 @@ export class StatisticsService {
 
   private getDisplayStatus(event: EventWithVenue): string {
     const now = new Date();
-    const start = new Date(event.start_date_time);
-    const end = new Date(event.end_date_time);
+    const start = parseDbTimestamp(event.start_date_time);
+    const end = parseDbTimestamp(event.end_date_time);
 
     if (event.status.toLowerCase() === 'canceled') return EventStatus.Canceled;
     if (event.status.toLowerCase() === 'draft') return EventStatus.Draft;

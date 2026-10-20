@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { parseDbTimestamp, toUtcIsoString } from '../common/db-timestamp';
 import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
@@ -35,7 +36,7 @@ export class CleanupService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const expired = (data ?? []).filter((m: any) => {
       const endDt = m.event?.end_date_time;
-      return endDt && new Date(endDt as string) < new Date();
+      return endDt && parseDbTimestamp(endDt) < new Date();
     });
 
     // Group by event for a clear summary
@@ -44,7 +45,7 @@ export class CleanupService {
       {
         event_id: number;
         event_title: string;
-        end_date_time: string;
+        end_date_time: string | null;
         match_ids: number[];
       }
     >();
@@ -56,7 +57,7 @@ export class CleanupService {
         byEvent.set(eid, {
           event_id: eid,
           event_title: (m.event?.title ?? '') as string,
-          end_date_time: m.event?.end_date_time as string,
+          end_date_time: toUtcIsoString(m.event?.end_date_time),
           match_ids: [],
         });
       }
