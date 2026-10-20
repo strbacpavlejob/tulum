@@ -102,7 +102,13 @@ export class MatchesService {
       `,
       )
       .or(`guest_id_1.eq.${userId},guest_id_2.eq.${userId}`)
-      .order('matched_at', { ascending: false });
+      .order('matched_at', { ascending: false })
+      // Only each chat's newest message is read; it is the inbox preview.
+      .order('sent_at', {
+        referencedTable: 'chats.chat_messages',
+        ascending: false,
+      })
+      .limit(1, { referencedTable: 'chats.chat_messages' });
 
     if (error) throw error;
 
@@ -117,23 +123,22 @@ export class MatchesService {
       .map((match: any) => {
         const isGuest1 = match.guest_id_1 === userId;
         const other = isGuest1 ? match.guest2 : match.guest1;
-        const chat = match.chats?.[0] ?? null;
+        // chats.match_id is unique (chats_unique_match), so PostgREST embeds
+        // the chat as one object or null. An array is still read in case the
+        // relationship is ever seen as one-to-many again.
+        const chat =
+          (Array.isArray(match.chats) ? match.chats[0] : match.chats) ?? null;
         const chatId: string | null = chat?.id ?? null;
-        const msgs: any[] = chat?.chat_messages ?? [];
-        const sortedMsgs = [...msgs].sort(
-          (a, b) =>
-            new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
-        );
-        const lastMsg = sortedMsgs[0] ?? null;
+        const lastMsg = chat?.chat_messages?.[0] ?? null;
 
         return {
           id: match.id as number,
           matched_at: match.matched_at as string,
           chat_id: chatId,
-          has_messages: msgs.length > 0,
+          has_messages: lastMsg !== null,
           last_message: lastMsg
             ? {
-                id: lastMsg.id as number,
+                id: lastMsg.id as string,
                 text: lastMsg.message as string,
                 sender_id: lastMsg.sender_id as string,
                 sent_at: lastMsg.sent_at as string,

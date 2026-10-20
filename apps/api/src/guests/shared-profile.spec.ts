@@ -162,7 +162,7 @@ describe('Profile details other guests see', () => {
             end_date_time: hoursFromNow(3),
             venue: { name: 'Bar', latitude: 44.8, longitude: 20.4 },
           },
-          chats: [],
+          chats: null,
         },
       ],
     });
@@ -212,7 +212,7 @@ describe('Profile details other guests see', () => {
             end_date_time: hoursFromNow(3),
             venue: null,
           },
-          chats: [],
+          chats: null,
         },
       ],
     });

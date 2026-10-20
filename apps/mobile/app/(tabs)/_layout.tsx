@@ -1,11 +1,5 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
-import {
-  fetchMyMatches,
-  fetchMyProfile,
-  fetchOrCreateChat,
-  fetchSettings,
-  type MatchListItem,
-} from "@/lib/api";
+import { fetchMyMatches, fetchMyProfile, fetchSettings } from "@/lib/api";
 import { getUnreadChatsCount } from "@/lib/inboxUnread";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
@@ -108,38 +102,7 @@ export default function TabLayout() {
       const token = await getTokenRef.current();
       if (!token) return;
       const items = await fetchMyMatches(token);
-
-      const hydratedItems: MatchListItem[] = await Promise.all(
-        items.map(async (item) => {
-          const hasActivityFromMatches =
-            item.has_messages ||
-            Boolean(item.last_message) ||
-            Boolean(item.chat_id);
-          if (hasActivityFromMatches) return item;
-
-          try {
-            const opened = await fetchOrCreateChat(item.id, token);
-            const last = opened.messages[opened.messages.length - 1];
-            if (!last) return item;
-
-            return {
-              ...item,
-              chat_id: opened.chat.id,
-              has_messages: true,
-              last_message: {
-                id: String(last.id),
-                text: last.text,
-                sender_id: last.sender_id,
-                sent_at: last.sent_at,
-              },
-            };
-          } catch {
-            return item;
-          }
-        }),
-      );
-
-      const unreadCount = await getUnreadChatsCount(hydratedItems, userId);
+      const unreadCount = await getUnreadChatsCount(items, userId);
       if (unreadCount !== unreadCountRef.current) {
         unreadCountRef.current = unreadCount;
         setInboxUnreadCount(unreadCount);

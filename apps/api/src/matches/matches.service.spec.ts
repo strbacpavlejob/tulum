@@ -322,3 +322,126 @@ describe('MatchesService submitSwipeDecision', () => {
     });
   });
 });
+
+describe('MatchesService getMyMatches', () => {
+  const hoursFromNow = (hours: number) =>
+    new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+
+  // One of me-user's matches, at an event that is still on, with the chat
+  // embedded as given.
+  function matchRow(id: number, chats: unknown) {
+    return {
+      id,
+      guest_id_1: 'me-user',
+      guest_id_2: `other-${id}`,
+      matched_at: hoursFromNow(-1),
+      guest1: { user_id: 'me-user', user: { first_name: 'Me' } },
+      guest2: { user_id: `other-${id}`, user: { first_name: 'Ana' } },
+      event: {
+        id: 'event-1',
+        title: 'Jazz night',
+        end_date_time: hoursFromNow(3),
+        venue: null,
+      },
+      chats,
+    };
+  }
+
+  // Awaiting the matches query gives these rows, as supabase-js does.
+  function createServiceWithRows(rows: unknown[]) {
+    const query = {
+      select: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ data: rows, error: null }).then(resolve),
+    };
+    const supabaseService = {
+      getClient: () => ({ from: () => query }),
+    } as unknown as SupabaseService;
+    return { service: new MatchesService(supabaseService), query };
+  }
+
+  const newestMessage = {
+    id: '7f9d3c1e-2a4b-4c5d-8e6f-0a1b2c3d4e5f',
+    message: 'See you at the bar',
+    sender_id: 'other-1',
+    sent_at: '2026-10-20T18:30:00+00:00',
+  };
+
+  // chats.match_id is unique, so PostgREST sends the chat as one object.
+  it('returns the chat and its newest message', async () => {
+    const { service } = createServiceWithRows([
+      matchRow(1, { id: 'chat-1', chat_messages: [newestMessage] }),
+    ]);
+
+    const [match] = await service.getMyMatches('me-user');
+
+    expect(match).toMatchObject({
+      id: 1,
+      chat_id: 'chat-1',
+      has_messages: true,
+      last_message: {
+        id: '7f9d3c1e-2a4b-4c5d-8e6f-0a1b2c3d4e5f',
+        text: 'See you at the bar',
+        sender_id: 'other-1',
+        sent_at: '2026-10-20T18:30:00+00:00',
+      },
+    });
+  });
+
+  it('returns the chat id and no message for a chat with no messages', async () => {
+    const { service } = createServiceWithRows([
+      matchRow(2, { id: 'chat-2', chat_messages: [] }),
+    ]);
+
+    const [match] = await service.getMyMatches('me-user');
+
+    expect(match).toMatchObject({
+      chat_id: 'chat-2',
+      has_messages: false,
+      last_message: null,
+    });
+  });
+
+  it('returns no chat for a match without one', async () => {
+    const { service } = createServiceWithRows([matchRow(3, null)]);
+
+    const [match] = await service.getMyMatches('me-user');
+
+    expect(match).toMatchObject({
+      chat_id: null,
+      has_messages: false,
+      last_message: null,
+    });
+  });
+
+  it('also reads a chat embedded as an array', async () => {
+    const { service } = createServiceWithRows([
+      matchRow(4, [{ id: 'chat-4', chat_messages: [newestMessage] }]),
+    ]);
+
+    const [match] = await service.getMyMatches('me-user');
+
+    expect(match).toMatchObject({
+      chat_id: 'chat-4',
+      has_messages: true,
+      last_message: { text: 'See you at the bar' },
+    });
+  });
+
+  it("reads only each chat's newest message", async () => {
+    const { service, query } = createServiceWithRows([]);
+
+    await service.getMyMatches('me-user');
+
+    expect(query.order).toHaveBeenCalledWith('sent_at', {
+      referencedTable: 'chats.chat_messages',
+      ascending: false,
+    });
+    expect(query.limit).toHaveBeenCalledWith(1, {
+      referencedTable: 'chats.chat_messages',
+    });
+  });
+});

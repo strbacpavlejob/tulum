@@ -391,63 +391,13 @@ export default function InboxScreen() {
       if (!token) return;
       const items = await fetchMyMatches(token);
 
-      // Some backends can temporarily return stale has_messages/chat_id fields.
-      // Probe chat activity for "fresh" matches so existing conversations still
-      // appear in the messages list.
-      const activityByMatchId = new Map<
-        string,
-        {
-          chatId: string;
-          lastMessageId: string;
-          lastMessageText: string;
-          lastMessageSenderId: string;
-          lastMessageSentAt: string;
-        }
-      >();
-
-      await Promise.all(
-        items.map(async (item) => {
-          const hasActivityFromMatches =
-            item.has_messages ||
-            Boolean(item.last_message) ||
-            Boolean(item.chat_id);
-          if (hasActivityFromMatches) return;
-
-          try {
-            const opened = await fetchOrCreateChat(item.id, token);
-            const last = opened.messages[opened.messages.length - 1];
-            if (last) {
-              activityByMatchId.set(String(item.id), {
-                chatId: opened.chat.id,
-                lastMessageId: String(last.id),
-                lastMessageText: last.text,
-                lastMessageSenderId: last.sender_id,
-                lastMessageSentAt: last.sent_at,
-              });
-            }
-          } catch {
-            // Ignore per-item fallback errors and rely on /matches/mine fields.
-          }
-        }),
-      );
-
       const active: Match[] = [];
       const fresh: NewMatch[] = [];
       for (const item of items) {
-        const activityHint = activityByMatchId.get(String(item.id));
         const mapped = mapToMatch(item);
-        if (activityHint) {
-          mapped.chatId = activityHint.chatId;
-          mapped.lastMessage = activityHint.lastMessageText;
-          mapped.lastMessageTime = new Date(activityHint.lastMessageSentAt);
-        }
-        const hasChatActivity =
-          item.has_messages ||
-          Boolean(item.last_message) ||
-          Boolean(item.chat_id) ||
-          Boolean(activityHint);
-        if (!hasChatActivity) {
-          // No messages yet → show in "New Matches" bubbles
+        if (!item.has_messages) {
+          // No messages yet → show in "New Matches" bubbles. That includes a
+          // chat that was opened but has nothing in it yet.
           fresh.push({
             id: mapped.id,
             name: mapped.name,
@@ -461,23 +411,7 @@ export default function InboxScreen() {
         }
       }
 
-      const hydratedItems: MatchListItem[] = items.map((item) => {
-        const activityHint = activityByMatchId.get(String(item.id));
-        if (!activityHint) return item;
-        return {
-          ...item,
-          chat_id: activityHint.chatId,
-          has_messages: true,
-          last_message: {
-            id: activityHint.lastMessageId,
-            text: activityHint.lastMessageText,
-            sender_id: activityHint.lastMessageSenderId,
-            sent_at: activityHint.lastMessageSentAt,
-          },
-        };
-      });
-
-      const unreadCount = await getUnreadChatsCount(hydratedItems, userId);
+      const unreadCount = await getUnreadChatsCount(items, userId);
       setInboxUnreadCount(unreadCount);
       setMatches(active);
       setNewMatches(fresh);
