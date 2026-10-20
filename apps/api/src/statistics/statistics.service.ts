@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 enum EventStatus {
@@ -40,6 +40,9 @@ export class StatisticsService {
     }
 
     const venueIds = venues.map((v) => v.id as string);
+    if (venueId && !venueIds.includes(venueId)) {
+      throw new ForbiddenException('You do not own this venue');
+    }
     const targetVenueIds = venueId ? [venueId] : venueIds;
 
     // 2. Get event IDs

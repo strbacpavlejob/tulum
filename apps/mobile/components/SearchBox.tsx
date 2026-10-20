@@ -1,5 +1,6 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
+import { useAuth } from "@clerk/expo";
 import { CircleX, Search, SlidersHorizontal } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,7 @@ const SearchBox: React.FC = () => {
   } = useStore();
   const theme = useAppTheme();
   const { t } = useTranslation();
+  const { getToken } = useAuth();
   const ref = useRef<FiltersBottomSheetRef>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -88,7 +90,7 @@ const SearchBox: React.FC = () => {
 
       <FiltersBottomSheet
         ref={ref}
-        onApply={() => refreshEvents()}
+        onApply={async () => refreshEvents((await getToken()) ?? undefined)}
         onReset={() => resetEventsFilter()}
       />
     </>

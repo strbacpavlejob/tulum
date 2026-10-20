@@ -6,11 +6,15 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { CleanupService } from './cleanup.service';
 
+// Maintenance over every user's matches — admin-only.
 @ApiTags('cleanup')
+@UseGuards(AdminGuard)
 @Controller('cleanup')
 export class CleanupController {
   constructor(private readonly cleanupService: CleanupService) {}

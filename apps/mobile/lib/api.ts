@@ -149,13 +149,12 @@ function mapActiveEventDetailToEvent(item: ActiveEventDetailResponse): Event {
 export interface FetchActiveEventsParams {
   filter?: Partial<Filter>;
   token?: string;
-  userId?: string;
 }
 
 export async function fetchActiveEvents(
   params?: FetchActiveEventsParams,
 ): Promise<{ events: EventSummary[]; pins: EventPin[] }> {
-  const { filter, token, userId } = params ?? {};
+  const { filter, token } = params ?? {};
   const query = new URLSearchParams();
 
   if (filter?.venueType?.length) {
@@ -169,8 +168,8 @@ export async function fetchActiveEvents(
     query.set("date_start", new Date(filter.dateRange.start).toISOString());
   if (filter?.dateRange?.end)
     query.set("date_end", new Date(filter.dateRange.end).toISOString());
-  if (userId) query.set("user_id", userId);
-  if (filter?.isOnlyFavorite && userId) {
+  // The API reads the user from the token; favorites need one.
+  if (filter?.isOnlyFavorite && token) {
     query.set("only_favorites", "true");
   }
 

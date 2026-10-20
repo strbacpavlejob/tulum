@@ -50,17 +50,13 @@ export class GetActiveEventsDto {
   @IsISO8601()
   date_end?: string;
 
+  // There is deliberately no user_id parameter: the caller comes from the
+  // Bearer token, so nobody can read another user's favorites.
   @ApiPropertyOptional({
-    description: 'Return only favorited events (requires user_id)',
+    description:
+      "Return only the signed-in caller's favorited events (needs a Bearer token)",
   })
   @IsOptional()
   @IsString()
   only_favorites?: string;
-
-  @ApiPropertyOptional({
-    description: 'User ID — required when only_favorites is true',
-  })
-  @IsOptional()
-  @IsString()
-  user_id?: string;
 }

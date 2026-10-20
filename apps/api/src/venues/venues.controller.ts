@@ -11,11 +11,13 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { VenuesService } from './venues.service';
 
 @ApiTags('venues')
@@ -128,7 +130,10 @@ export class VenuesController {
 
   // ─── Instagram Picture Refresh ───────────────────────────────────────────────
 
+  // Refreshes every venue through paid scrapes — admin-only. Hosts refresh
+  // their own venue with the :id route below.
   @Post('refresh-instagram-picture')
+  @UseGuards(AdminGuard)
   async refreshAllGoOutInstagramPictures() {
     return this.venuesService.refreshAllGoOutInstagramPictures();
   }

@@ -5,9 +5,11 @@ import {
   Delete,
   Get,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CleanupEventsDto } from './dto/cleanup-events.dto';
 
@@ -17,8 +19,9 @@ export class EventsController {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   @Delete('cleanup')
+  @UseGuards(AdminGuard)
   @ApiOperation({
-    summary: 'Delete past events',
+    summary: 'Delete past events (admin only)',
     description:
       'Deletes events whose end_date_time is older than now, or older than a provided cutoff date.',
   })

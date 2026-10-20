@@ -1,6 +1,9 @@
-import { Controller, Post, Param, Logger } from '@nestjs/common';
+import { Controller, Post, Param, Logger, UseGuards } from '@nestjs/common';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { InstagramVenueScraperService } from './instagram-venue-scraper.service';
 
+// Every route here starts paid Apify scrapes and writes venue data — admin-only.
+@UseGuards(AdminGuard)
 @Controller('instagram')
 export class InstagramScraperController {
   private readonly logger = new Logger(InstagramScraperController.name);

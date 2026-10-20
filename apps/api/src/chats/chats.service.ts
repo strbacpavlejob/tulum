@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const CHATS_TABLE = 'chats';
@@ -12,14 +12,48 @@ export class ChatsService {
     return this.supabaseService.getClient();
   }
 
-  async getChatById(chatId: string) {
+  // ── Access checks ─────────────────────────────────────────────────────
+  // Only the two guests of a match may open its chat or touch its messages.
+  // Someone else's chat, match or message is reported as not found, so ids
+  // cannot be probed.
+
+  private async isMatchParticipant(matchId: number, userId: string) {
     const { data, error } = await this.db
-      .from(CHATS_TABLE)
-      .select('*')
-      .eq('id', chatId)
-      .single();
+      .from('matches')
+      .select('guest_id_1, guest_id_2')
+      .eq('id', matchId)
+      .maybeSingle();
     if (error) throw error;
-    return data;
+    return data?.guest_id_1 === userId || data?.guest_id_2 === userId;
+  }
+
+  async assertMatchParticipant(matchId: number, userId: string) {
+    if (!(await this.isMatchParticipant(matchId, userId))) {
+      throw new NotFoundException('Match not found');
+    }
+  }
+
+  private async findChatForParticipant(chatId: string, userId: string) {
+    const { data: chat, error } = await this.db
+      .from(CHATS_TABLE)
+      .select('id, match_id, event_id, created_at')
+      .eq('id', chatId)
+      .maybeSingle();
+    if (error) throw error;
+    if (
+      !chat ||
+      !(await this.isMatchParticipant(chat.match_id as number, userId))
+    ) {
+      return null;
+    }
+    return chat;
+  }
+
+  /** The chat, if the user is one of its match's guests; otherwise 404. */
+  async getChatForParticipant(chatId: string, userId: string) {
+    const chat = await this.findChatForParticipant(chatId, userId);
+    if (!chat) throw new NotFoundException('Chat not found');
+    return chat;
   }
 
   async getChatByMatchId(matchId: number) {
@@ -92,7 +126,18 @@ export class ChatsService {
     return data;
   }
 
-  async markMessageRead(messageId: string) {
+  async markMessageRead(messageId: string, userId: string) {
+    const { data: message, error: messageError } = await this.db
+      .from(MESSAGES_TABLE)
+      .select('chat_id')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (messageError) throw messageError;
+    const chatId = message?.chat_id as string | undefined;
+    if (!chatId || !(await this.findChatForParticipant(chatId, userId))) {
+      throw new NotFoundException('Message not found');
+    }
+
     const { data, error } = await this.db
       .from(MESSAGES_TABLE)
       .update({ is_read: true })

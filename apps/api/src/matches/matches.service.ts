@@ -10,6 +10,11 @@ import { SwipeDecisionDto } from './dto/swipe-decision.dto';
 const MATCHES_TABLE = 'matches';
 const GUEST_SWIPES_TABLE = 'guest_swipes';
 
+export type MatchRow = Record<string, unknown> & {
+  guest_id_1: string;
+  guest_id_2: string;
+};
+
 interface SwipeLimitDecision {
   allowed: boolean;
   was_already_liked: boolean;
@@ -49,14 +54,14 @@ export class MatchesService {
     return this.supabaseService.getClient();
   }
 
-  async getMatchById(matchId: number) {
+  async getMatchById(matchId: number): Promise<MatchRow | null> {
     const { data, error } = await this.db
       .from(MATCHES_TABLE)
       .select('*')
       .eq('id', matchId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
-    return data;
+    return data as MatchRow | null;
   }
 
   async getMatches(guestId?: string, eventId?: string) {

@@ -26,7 +26,10 @@ import { EventsCrudService } from './events-crud.service';
 export class EventsCrudController {
   constructor(private readonly eventsCrudService: EventsCrudService) {}
 
-  /** Public — no authentication required */
+  /**
+   * Public — no authentication required. With a valid Bearer token,
+   * isFavorite and only_favorites refer to that caller.
+   */
   @Get('active')
   @Public()
   @ApiSecurity({})

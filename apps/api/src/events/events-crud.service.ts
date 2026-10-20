@@ -23,7 +23,10 @@ export class EventsCrudService {
     return this.supabaseService.getClient();
   }
 
-  /** GET /events/active — public, no auth required */
+  /**
+   * GET /events/active — public, no auth required. userId is the verified
+   * caller, if any; favorites are never looked up for anyone else.
+   */
   async getActiveEvents(filters: GetActiveEventsDto = {}, userId?: string) {
     const venueTypes = filters.venue_type
       ? filters.venue_type
@@ -62,13 +65,12 @@ export class EventsCrudService {
     if (!events || events.length === 0) return [];
 
     // Fetch saved event IDs for the current user
-    const effectiveUserId = userId ?? filters.user_id;
     const savedEventIds: Set<string> = new Set();
-    if (effectiveUserId) {
+    if (userId) {
       const { data: engagements, error: engagementsError } = await this.db
         .from('event_engagements')
         .select('event_id')
-        .eq('user_id', effectiveUserId)
+        .eq('user_id', userId)
         .eq('engagement_type', 'saved');
       if (engagementsError) throw engagementsError;
       for (const e of engagements ?? []) {
@@ -76,9 +78,7 @@ export class EventsCrudService {
       }
     }
     const favoriteEventIds: Set<string> | null =
-      filters.only_favorites === 'true' && effectiveUserId
-        ? savedEventIds
-        : null;
+      filters.only_favorites === 'true' && userId ? savedEventIds : null;
 
     // Optionally filter by favorites
     const uniqueEvents = events.filter((event) => {

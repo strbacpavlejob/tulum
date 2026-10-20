@@ -5,6 +5,10 @@ const USERS_TABLE = 'users';
 const GUESTS_TABLE = 'guests';
 const HOSTS_TABLE = 'hosts';
 const SETTINGS_TABLE = 'settings';
+// Users columns a caller gets back about themselves. is_admin and push_token
+// stay server-side.
+const MY_PROFILE_USER_COLUMNS =
+  'id, email, username, first_name, last_name, avatar_url, created_at, updated_at';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +28,17 @@ export class UsersService {
       .single();
     if (error) throw error;
     return data;
+  }
+
+  /** True only when the user's row exists and has is_admin = true. */
+  async isAdmin(userId: string): Promise<boolean> {
+    const { data, error } = await this.db
+      .from(USERS_TABLE)
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.is_admin === true;
   }
 
   async searchUsersByEmail(email: string) {
@@ -173,7 +188,11 @@ export class UsersService {
 
   async getMyProfile(userId: string) {
     const [userResult, guestResult] = await Promise.all([
-      this.db.from(USERS_TABLE).select('*').eq('id', userId).single(),
+      this.db
+        .from(USERS_TABLE)
+        .select(MY_PROFILE_USER_COLUMNS)
+        .eq('id', userId)
+        .single(),
       this.db
         .from(GUESTS_TABLE)
         .select('*')

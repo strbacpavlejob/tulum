@@ -17,13 +17,12 @@ export class AdminGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { clerkUserId?: string }>();
 
-    const userId = req.clerkUserId ?? req.headers['x-user-id'];
+    // Only the id ClerkAuthGuard verified counts; x-user-id is not trusted.
+    const userId = req.clerkUserId;
     if (!userId) throw new UnauthorizedException('Missing user id');
 
-    const user = await this.usersService.getUserById(String(userId));
-    const isAdmin = (user && (user.is_admin ?? user.isAdmin)) === true;
-
-    if (!isAdmin) throw new ForbiddenException('Admin access required');
+    if (!(await this.usersService.isAdmin(userId)))
+      throw new ForbiddenException('Admin access required');
 
     return true;
   }

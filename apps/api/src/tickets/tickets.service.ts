@@ -19,14 +19,16 @@ export class TicketsService {
     return this.supabaseService.getClient();
   }
 
-  async getTicketById(ticketId: string) {
+  async getTicketById(
+    ticketId: string,
+  ): Promise<(Record<string, unknown> & { guest_id: string }) | null> {
     const { data, error } = await this.db
       .from(TICKETS_TABLE)
       .select('*')
       .eq('id', ticketId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
-    return data;
+    return data as (Record<string, unknown> & { guest_id: string }) | null;
   }
 
   async getTickets(guestId?: string, eventId?: string) {

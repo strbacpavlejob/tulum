@@ -23,13 +23,32 @@ export class ClerkAuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) return true;
 
     // WebSocket — skip Clerk auth (handled separately if needed)
     if (context.getType() === 'ws') return true;
 
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { clerkUserId?: string }>();
 
+    if (isPublic) {
+      // Public routes also answer anonymous callers. A valid token still
+      // identifies the caller (favorites on /events/active); an invalid one
+      // is treated as anonymous instead of failing the request.
+      if (request.headers['authorization']?.startsWith('Bearer ')) {
+        request.clerkUserId = await this.verifyUserId(request).catch(
+          () => undefined,
+        );
+      }
+      return true;
+    }
+
+    request.clerkUserId = await this.verifyUserId(request);
+    return true;
+  }
+
+  /** Returns the user id of a valid Clerk session token, or throws 401. */
+  private async verifyUserId(request: Request): Promise<string> {
     const authHeader = request.headers['authorization'];
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException(
@@ -74,12 +93,10 @@ export class ClerkAuthGuard implements CanActivate {
       if (!('userId' in auth) || !auth.userId) {
         throw new UnauthorizedException('Not a valid user session token');
       }
-      (request as Request & { clerkUserId: string }).clerkUserId = auth.userId;
+      return auth.userId;
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Token verification failed');
     }
-
-    return true;
   }
 }

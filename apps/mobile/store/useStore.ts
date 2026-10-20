@@ -60,7 +60,7 @@ interface MyStore {
   getFilter: () => Filter;
   applyEventsFilter: () => void;
   resetEventsFilter: () => void;
-  refreshEvents: () => Promise<void>;
+  refreshEvents: (token?: string) => Promise<void>;
   updateEventFavorite: (eventId: string, isFavorite: boolean) => void;
   updateEventAttendance: (eventId: string, isAttending: boolean) => void;
   addTicket: (ticket: Ticket) => void;
@@ -259,9 +259,9 @@ const useStore = create<MyStore>((set) => ({
     set({ filteredEvents: events, filteredPins: pins });
   },
 
-  async refreshEvents() {
-    const { filter, user } = useStore.getState();
-    const fresh = await fetchActiveEvents({ filter, userId: user?.id });
+  async refreshEvents(token?: string) {
+    const { filter } = useStore.getState();
+    const fresh = await fetchActiveEvents({ filter, token });
     set({
       events: fresh.events,
       filteredEvents: fresh.events,

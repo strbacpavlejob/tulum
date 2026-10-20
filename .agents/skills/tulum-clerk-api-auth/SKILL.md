@@ -20,8 +20,8 @@ Before changing auth behavior, inspect the relevant callers and contracts in:
 
 - The NestJS API expects a Clerk session token in `Authorization: Bearer <token>`. Derive the API user identity from the verified Clerk auth result, not from client-supplied profile fields.
 - Keep `CLERK_AUTHORIZED_PARTIES` handling and the distinction between public routes, HTTP requests, and WebSocket connections explicit. Do not assume HTTP guards authenticate WebSocket events.
-- `@Public()` is an intentional route opt-out. Review the route and its data exposure before changing its status or adding public routes.
-- `UserId` and `AdminGuard` retain a legacy `x-user-id` fallback. Do not add new reliance on this header or treat it as equivalent to a verified Clerk identity; account for the compatibility path explicitly when changing identity behavior.
+- `@Public()` is an intentional route opt-out. Review the route and its data exposure before changing its status or adding public routes. On a public route a valid Bearer token still sets the user id; an invalid or missing one leaves the caller anonymous.
+- `UserId` and `AdminGuard` read only the Clerk-verified user id; the legacy `x-user-id` fallback was removed. Do not reintroduce it or take the acting user from query or body parameters. A route that reads or changes another user's records must check ownership or use `AdminGuard`.
 - Mobile and host NestJS clients forward Clerk session tokens to the API. The host Supabase integration requests its configured `supabase` JWT template; do not substitute that token flow for the NestJS API token without verifying the Clerk and Supabase configuration.
 - Never expose Clerk secret keys in mobile or browser bundles, and do not log bearer tokens or full authentication headers.
 
