@@ -1,4 +1,4 @@
-import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -80,10 +80,13 @@ export class UpdateMyUserDto {
 
 /**
  * Guest fields follow the onboarding rules, but each one is optional. The
- * profile details below are not asked during onboarding. null clears a
- * single value; an empty list clears a list.
+ * onboarding first_name is left out because it is a users column; it goes
+ * under user. The profile details below are not asked during onboarding.
+ * null clears a single value; an empty list clears a list.
  */
-export class UpdateMyGuestDto extends PartialType(OnboardingDto) {
+export class UpdateMyGuestDto extends PartialType(
+  OmitType(OnboardingDto, ['first_name'] as const),
+) {
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsString()

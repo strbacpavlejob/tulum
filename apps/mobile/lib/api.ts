@@ -478,6 +478,7 @@ export interface GuestMeResponse {
 }
 
 export interface OnboardingPayload {
+  first_name: string;
   gender: GenderValue;
   seeking: SeekingValue;
   interested_in: GenderValue[];

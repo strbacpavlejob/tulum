@@ -280,4 +280,15 @@ describe('Profile details on /users/me (BUG-010)', () => {
       .expect(401);
     expect(callerGuest()).toStrictEqual(seedTables().guests[0]);
   });
+
+  // The guest fields reuse the onboarding rules, but first_name is a users
+  // column (BUG-011); the guests table has none.
+  it('drops a first_name sent with the guest fields', async () => {
+    await http()
+      .patch('/users/me')
+      .set(AS_CALLER)
+      .send({ guest: { first_name: 'Ana' } })
+      .expect(200);
+    expect(tables).toStrictEqual(seedTables());
+  });
 });

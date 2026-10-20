@@ -35,6 +35,10 @@ import { differenceInYears, format, subYears } from "date-fns";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// The API refuses a longer first name (apps/api/src/guests/dto/
+// onboarding.dto.ts). Change both together.
+const FIRST_NAME_MAX_LENGTH = 50;
+
 const TAGS_OPTIONS = [
   { value: "Photography", labelKey: "photography" },
   { value: "Travel", labelKey: "travel" },
@@ -551,6 +555,7 @@ export default function OnboardingScreen() {
         return;
       }
       await submitOnboarding(token, {
+        first_name: firstName.trim(),
         gender: gender as GenderValue,
         seeking: seeking as SeekingValue,
         interested_in: interestedIn,
@@ -599,6 +604,7 @@ export default function OnboardingScreen() {
             value={firstName}
             onChangeText={setFirstName}
             placeholder={t("onboardingFirstNamePlaceholder")}
+            maxLength={FIRST_NAME_MAX_LENGTH}
             autoFocus
             autoCapitalize="words"
             className="rounded-xl px-4 py-3 text-xl text-light-colorStrong dark:text-dark-colorStrong"

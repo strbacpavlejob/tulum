@@ -12,6 +12,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { deckProfileDetails } from './shared-profile';
 
+const USERS_TABLE = 'users';
 const GUESTS_TABLE = 'guests';
 const GUEST_SWIPES_TABLE = 'guest_swipes';
 const MAX_PHOTOS = 3;
@@ -250,6 +251,15 @@ export class GuestsService {
   }
 
   async upsertOnboarding(userId: string, dto: OnboardingDto) {
+    // The name is a users column; the users row is made at sign-up. It is
+    // saved before the guest row, because that row is what marks onboarding
+    // complete: if this write fails, onboarding stays open to submit again.
+    const { error: nameError } = await this.db
+      .from(USERS_TABLE)
+      .update({ first_name: dto.first_name })
+      .eq('id', userId);
+    if (nameError) throw nameError;
+
     const payload = {
       user_id: userId,
       gender: dto.gender,

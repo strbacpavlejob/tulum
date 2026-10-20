@@ -1,13 +1,20 @@
 import {
   IsArray,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   ArrayMinSize,
+  MaxLength,
   registerDecorator,
   ValidationOptions,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+
+// The onboarding name field allows the same length
+// (apps/mobile/app/(auth)/onboarding.tsx). Change both together.
+const FIRST_NAME_MAX_LENGTH = 50;
 
 function IsRealDate(options?: ValidationOptions) {
   return (object: object, propertyName: string) => {
@@ -50,6 +57,19 @@ export enum SeekingEnum {
 }
 
 export class OnboardingDto {
+  @ApiProperty({
+    maxLength: FIRST_NAME_MAX_LENGTH,
+    description:
+      'Saved as first_name on the users row. Surrounding spaces are trimmed.',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(FIRST_NAME_MAX_LENGTH)
+  first_name!: string;
+
   @ApiProperty({ enum: GenderEnum })
   @IsEnum(GenderEnum)
   gender!: GenderEnum;
