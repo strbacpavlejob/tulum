@@ -140,6 +140,13 @@ export default function SignInScreen() {
         redirectUrl,
       });
 
+      if (
+        result.authSessionResult?.type === "cancel" ||
+        result.authSessionResult?.type === "dismiss"
+      ) {
+        return;
+      }
+
       if (result.createdSessionId && result.setActive) {
         await result.setActive({
           session: result.createdSessionId,
@@ -154,7 +161,7 @@ export default function SignInScreen() {
       if (didCompleteSignUp) {
         router.replace("/onboarding");
       } else {
-        toast.error(t("authSocialAutoSignInFailed"));
+        toast.error(t("authSsoSignInFailed"));
       }
     } catch (err) {
       console.error(`${strategy} sign-in error:`, err);

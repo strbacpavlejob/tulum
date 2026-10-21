@@ -43,8 +43,6 @@ const resources = {
       authTermsOfService: "Terms of Service",
       authTermsAnd: "and",
       authPrivacyPolicy: "Privacy Policy",
-      authSocialAutoSignInFailed:
-        "We could not complete social sign in automatically. Continue with email or try sign up.",
       authSsoSignInFailed: "SSO sign in failed.",
       authEnterEmailOrUsername: "Enter your email or username.",
       authSignInLoading: "Sign in is still loading. Please try again.",
@@ -432,8 +430,6 @@ const resources = {
       authTermsOfService: "Uslovima korišćenja",
       authTermsAnd: "i",
       authPrivacyPolicy: "Politikom privatnosti",
-      authSocialAutoSignInFailed:
-        "Nismo mogli automatski da završimo prijavu preko društvene mreže. Nastavi e-poštom ili pokušaj registraciju.",
       authSsoSignInFailed: "SSO prijava nije uspela.",
       authEnterEmailOrUsername: "Unesi svoj email ili korisničko ime.",
       authSignInLoading: "Prijava se još učitava. Pokušaj ponovo.",
@@ -824,8 +820,6 @@ const resources = {
       authTermsOfService: "Условиями использования",
       authTermsAnd: "и",
       authPrivacyPolicy: "Политикой конфиденциальности",
-      authSocialAutoSignInFailed:
-        "Не удалось автоматически завершить вход через соцсеть. Продолжите через email или попробуйте регистрацию.",
       authSsoSignInFailed: "SSO вход не удался.",
       authEnterEmailOrUsername: "Введите email или имя пользователя.",
       authSignInLoading: "Вход все еще загружается. Попробуйте снова.",
