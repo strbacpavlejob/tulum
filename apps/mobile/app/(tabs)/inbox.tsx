@@ -356,7 +356,7 @@ export default function InboxScreen() {
   const setInboxUnreadCount = useStore((s) => s.setInboxUnreadCount);
 
   const [matches, setMatches] = useState<Match[]>([]);
-  const [newMatches, setNewMatches] = useState<NewMatch[]>([]);
+  const [newMatches, setNewMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [openingChat, setOpeningChat] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -392,20 +392,14 @@ export default function InboxScreen() {
       const items = await fetchMyMatches(token);
 
       const active: Match[] = [];
-      const fresh: NewMatch[] = [];
+      const fresh: Match[] = [];
       for (const item of items) {
         const mapped = mapToMatch(item);
         if (!item.has_messages) {
           // No messages yet → show in "New Matches" bubbles. That includes a
-          // chat that was opened but has nothing in it yet.
-          fresh.push({
-            id: mapped.id,
-            name: mapped.name,
-            age: mapped.age,
-            photo: mapped.photo,
-            venue: mapped.venue,
-            expiresAt: mapped.expiresAt,
-          });
+          // chat that was opened but has nothing in it yet. Keep the whole
+          // match: opening a bubble needs the same data as a Messages row.
+          fresh.push(mapped);
         } else {
           active.push(mapped);
         }
@@ -587,21 +581,10 @@ export default function InboxScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationStatus]);
 
-  const openNewMatch = (nm: NewMatch) => {
-    const asMatch: Match = {
-      id: nm.id,
-      name: nm.name,
-      age: nm.age,
-      photo: nm.photo,
-      venue: nm.venue,
-      lastMessage: "",
-      lastMessageTime: new Date(),
-      expiresAt: nm.expiresAt,
-      messages: [],
-    };
-    setNewMatches((prev) => prev.filter((m) => m.id !== nm.id));
-    setMatches((prev) => [asMatch, ...prev]);
-    checkChatLocation(asMatch);
+  const openNewMatch = (match: Match) => {
+    setNewMatches((prev) => prev.filter((m) => m.id !== match.id));
+    setMatches((prev) => [match, ...prev]);
+    checkChatLocation(match);
   };
 
   if (loading || openingChat) {
