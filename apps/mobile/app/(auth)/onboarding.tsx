@@ -584,8 +584,9 @@ export default function OnboardingScreen() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[onboarding] submitOnboarding failed:", msg);
-      Alert.alert(t("onboardingSaveFailed"), msg);
-      setSubmitError(msg);
+      const userMessage = t("onboardingSubmitError");
+      Alert.alert(t("onboardingSaveFailed"), userMessage);
+      setSubmitError(userMessage);
     } finally {
       setSubmitting(false);
     }

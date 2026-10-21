@@ -101,6 +101,8 @@ const resources = {
       onboardingMissingRequiredFields: "Missing required fields",
       onboardingAuthError: "Authentication error. Please sign in again.",
       onboardingSaveFailed: "Save failed",
+      onboardingSubmitError:
+        "We couldn't save your profile. Please try again.",
       onboardingBioPlaceholder: "Tell others a little about yourself...",
       onboardingContinue: "Continue",
       onboardingCompleteProfile: "Complete Profile",
@@ -491,6 +493,8 @@ const resources = {
       onboardingMissingRequiredFields: "Nedostaju obavezna polja",
       onboardingAuthError: "Greška pri autentikaciji. Prijavi se ponovo.",
       onboardingSaveFailed: "Čuvanje nije uspelo",
+      onboardingSubmitError:
+        "Nije moguće sačuvati tvoj profil. Pokušaj ponovo.",
       onboardingBioPlaceholder: "Reci drugima nešto o sebi...",
       onboardingContinue: "Nastavi",
       onboardingCompleteProfile: "Završi profil",
@@ -879,6 +883,8 @@ const resources = {
       onboardingMissingRequiredFields: "Не заполнены обязательные поля",
       onboardingAuthError: "Ошибка аутентификации. Войдите снова.",
       onboardingSaveFailed: "Не удалось сохранить",
+      onboardingSubmitError:
+        "Не удалось сохранить ваш профиль. Попробуйте ещё раз.",
       onboardingBioPlaceholder: "Расскажите немного о себе...",
       onboardingContinue: "Продолжить",
       onboardingCompleteProfile: "Завершить профиль",
