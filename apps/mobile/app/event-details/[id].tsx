@@ -1,3 +1,4 @@
+import AttendButton from "@/components/AttendButton";
 import { AvatarList } from "@/components/AvatarList";
 import { useTranslation } from "react-i18next";
 import { DateCard } from "@/components/DateCard";
@@ -6,7 +7,6 @@ import GuestListModal from "@/components/GuestListModal";
 import { MiniMap } from "@/components/MiniMap";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   EventAttendeesData,
@@ -31,8 +31,6 @@ import {
   MessageCircle,
   Phone,
   Send,
-  UserMinus,
-  UserPlus,
   Share2,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -819,31 +817,7 @@ const EventDetailsScreen = () => {
 
         {/* Bottom CTA */}
         <View className="px-5 pb-5">
-          <Button
-            variant={isAttending ? "destructive" : "default"}
-            size="lg"
-            className="w-full h-14 rounded-full"
-            style={{
-              backgroundColor: isAttending ? theme.destructive : theme.color,
-              borderRadius: 999,
-            }}
-            onPress={handleAttend}
-          >
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "600",
-                fontSize: 18,
-              }}
-            >
-              {isAttending ? t("cancelAttendance") : t("attend")}
-            </Text>
-            {isAttending ? (
-              <UserMinus size={20} color="#fff" />
-            ) : (
-              <UserPlus size={20} color="#fff" />
-            )}
-          </Button>
+          <AttendButton isAttending={isAttending} onPress={handleAttend} />
         </View>
 
         <GuestListModal
@@ -855,6 +829,8 @@ const EventDetailsScreen = () => {
           averageAge={averageAge}
           females={females}
           males={males}
+          isAttending={isAttending}
+          onAttend={handleAttend}
         />
 
         {/* Reservation modal — shown when attending requires reservation */}
