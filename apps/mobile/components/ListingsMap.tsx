@@ -137,9 +137,11 @@ const ListingsMap = memo(() => {
   const TAG_SKELETON_WIDTHS = [72, 88, 64, 96, 76];
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
-  const [activeTag, setActiveTag] = useState("All");
   const [mapReady, setMapReady] = useState(false);
   const prevSelectedIndexRef = useRef<number | null>(0);
+
+  // The chosen chip is the filter's tag, so Reset and Apply keep it right.
+  const activeTag = filter.tags?.[0] ?? "All";
 
   const filterTags = useMemo(() => {
     const counts = new Map<string, number>();
@@ -150,8 +152,13 @@ const ListingsMap = memo(() => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([tag]) => tag);
+    // Keep the chosen chip when the latest list has few or none of its
+    // events, so the filter stays visible and can be switched off.
+    if (activeTag !== "All" && !top10.includes(activeTag)) {
+      top10.unshift(activeTag);
+    }
     return ["All", ...top10];
-  }, [events]);
+  }, [events, activeTag]);
 
   /* ── Leaflet map refs ─────────────────────────────── */
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -245,7 +252,6 @@ const ListingsMap = memo(() => {
 
   const handleTagPress = useCallback(
     (tag: string) => {
-      setActiveTag(tag);
       if (tag === "All") {
         setFilter({ ...filter, tags: [] });
       } else {

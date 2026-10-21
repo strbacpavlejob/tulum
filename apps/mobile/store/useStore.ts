@@ -254,12 +254,10 @@ const useStore = create<MyStore>((set) => ({
   async refreshEvents(token?: string) {
     const { filter } = useStore.getState();
     const fresh = await fetchActiveEvents({ filter, token });
-    set({
-      events: fresh.events,
-      filteredEvents: fresh.events,
-      pins: fresh.pins,
-      filteredPins: fresh.pins,
-    });
+    set({ events: fresh.events, pins: fresh.pins });
+    // The API applies the sheet's filters but not the search text or the tag
+    // chip, so filter the new list here, with the filter as it is now.
+    useStore.getState().applyEventsFilter();
   },
 
   updateEventFavorite(eventId: string, isFavorite: boolean) {
