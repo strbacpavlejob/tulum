@@ -12,6 +12,31 @@ type AttendEventResult = {
   conflicting_event_title: string | null;
 };
 
+interface TicketRow {
+  id: string;
+  event_id: string;
+  created_at: string;
+  events: {
+    title: string | null;
+    description: string | null;
+    start_date_time: string | null;
+    end_date_time: string | null;
+    tags: string[] | null;
+    picture_url: string | null;
+    venues: {
+      name: string | null;
+      picture_url: string | null;
+      address: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    } | null;
+  } | null;
+}
+
+interface TicketCountRow {
+  event_id: string;
+}
+
 @Injectable()
 export class TicketsService {
   constructor(private readonly supabaseService: SupabaseService) {}
@@ -40,9 +65,28 @@ export class TicketsService {
       );
     if (guestId) query = query.eq('guest_id', guestId);
     if (eventId) query = query.eq('event_id', eventId);
-    const { data, error } = await query;
+    const { data, error } = await query.returns<TicketRow[]>();
     if (error) throw error;
-    return (data ?? []).map((t: any) => ({
+
+    const tickets = data ?? [];
+    const eventIds = [...new Set(tickets.map((ticket) => ticket.event_id))];
+    const guestCountMap = new Map<string, number>();
+
+    if (eventIds.length > 0) {
+      const { data: ticketCounts, error: ticketCountsError } = await this.db
+        .from(TICKETS_TABLE)
+        .select('event_id')
+        .in('event_id', eventIds)
+        .returns<TicketCountRow[]>();
+      if (ticketCountsError) throw ticketCountsError;
+
+      for (const ticketCount of ticketCounts ?? []) {
+        const id = ticketCount.event_id;
+        guestCountMap.set(id, (guestCountMap.get(id) ?? 0) + 1);
+      }
+    }
+
+    return tickets.map((t) => ({
       id: String(t.id),
       event_id: String(t.event_id),
       title: t.events?.title ?? '',
@@ -55,6 +99,7 @@ export class TicketsService {
       address: t.events?.venues?.address ?? '',
       latitude: t.events?.venues?.latitude ?? 0,
       longitude: t.events?.venues?.longitude ?? 0,
+      guest_count: guestCountMap.get(String(t.event_id)) ?? 0,
     }));
   }
 

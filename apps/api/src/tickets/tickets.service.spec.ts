@@ -31,6 +31,23 @@ const ticket = {
   updated_at: '2026-10-19T18:31:58.085686+00:00',
 };
 
+interface Query extends PromiseLike<RpcResult> {
+  eq(): Query;
+  in(): Query;
+  returns(): Query;
+}
+
+function queryWithResult(result: RpcResult): Query {
+  const query: Query = {
+    eq: () => query,
+    in: () => query,
+    returns: () => query,
+    then: (onfulfilled, onrejected) =>
+      Promise.resolve(result).then(onfulfilled, onrejected),
+  };
+  return query;
+}
+
 describe('TicketsService attendEvent', () => {
   it('creates the ticket with one call to the database function', async () => {
     const { service, db, single } = createServiceWithRpcResult({
@@ -114,18 +131,18 @@ describe('TicketsService getTickets', () => {
         venues: { name: 'Zappa Baza', latitude: 44.8, longitude: 20.45 },
       },
     };
-    interface Query extends PromiseLike<RpcResult> {
-      eq(): Query;
-    }
-    const query: Query = {
-      eq: () => query,
-      then: (onfulfilled, onrejected) =>
-        Promise.resolve({ data: [row], error: null }).then(
-          onfulfilled,
-          onrejected,
-        ),
+    const ticketQuery = queryWithResult({ data: [row], error: null });
+    const countQuery = queryWithResult({
+      data: Array.from({ length: 99 }, () => ({ event_id: EVENT_ID })),
+      error: null,
+    });
+    const queries = [ticketQuery, countQuery];
+    let queryIndex = 0;
+    const db = {
+      from: () => ({
+        select: () => queries[queryIndex++],
+      }),
     };
-    const db = { from: jest.fn(() => ({ select: () => query })) };
     const service = new TicketsService({
       getClient: () => db,
     } as unknown as SupabaseService);
@@ -135,6 +152,7 @@ describe('TicketsService getTickets', () => {
         event_id: EVENT_ID,
         date: '2026-10-29T19:00:00.000Z',
         end_date_time: '2026-10-30T00:00:00.000Z',
+        guest_count: 99,
       }),
     ]);
   });

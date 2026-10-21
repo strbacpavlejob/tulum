@@ -37,7 +37,7 @@ function ticketToEvent(ticket: Ticket, isFavorite: boolean): EventSummary {
     tags: ticket.tags,
     location: ticket.location,
     isFavorite,
-    guestCount: 0,
+    guestCount: ticket.guest_count ?? 0,
   };
 }
 
