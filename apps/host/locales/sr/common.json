@@ -466,6 +466,7 @@
       "blog": "Blog",
       "careers": "Karijera",
       "support": "Podrška",
+      "legalAndSupport": "Pravna dokumenta i podrška",
       "helpCenter": "Help Center",
       "contact": "Kontakt",
       "terms": "Uslovi korišćenja",
@@ -475,9 +476,7 @@
     },
     "legal": {
       "privacyPolicy": "Politika privatnosti",
-      "termsOfService": "Uslovi korišćenja",
-      "privacyPolicyNotice": "Kompletna Politika privatnosti još nije objavljena.",
-      "termsOfServiceNotice": "Kompletni Uslovi korišćenja još nisu objavljeni."
+      "termsOfService": "Uslovi korišćenja"
     },
     "ctaGuest": {
       "title": "Kuda večeras?",

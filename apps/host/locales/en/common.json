@@ -466,6 +466,7 @@
       "blog": "Blog",
       "careers": "Careers",
       "support": "Support",
+      "legalAndSupport": "Legal & support",
       "helpCenter": "Help Center",
       "contact": "Contact",
       "terms": "Terms of Use",
@@ -475,9 +476,7 @@
     },
     "legal": {
       "privacyPolicy": "Privacy Policy",
-      "termsOfService": "Terms of Service",
-      "privacyPolicyNotice": "The full Privacy Policy has not been published yet.",
-      "termsOfServiceNotice": "The full Terms of Service have not been published yet."
+      "termsOfService": "Terms of Service"
     },
     "ctaGuest": {
       "title": "Find Your Scene Tonight.",

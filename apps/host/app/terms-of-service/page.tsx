@@ -1,8 +1,5 @@
-"use client";
-
-import "../../i18n";
-import LegalDocumentPage from "@/components/sections/LegalDocumentPage";
+import { redirect } from "next/navigation";
 
 export default function TermsOfServicePage() {
-  return <LegalDocumentPage document="termsOfService" />;
+  redirect("/terms");
 }

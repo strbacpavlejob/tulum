@@ -6,7 +6,7 @@ import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
 
 import { useSSO } from "@clerk/expo";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
@@ -149,13 +149,23 @@ export default function SignUpScreen() {
           {/* Legal */}
           <Text className="mt-5 text-center leading-[18px] text-light-colorMuted dark:text-dark-colorMuted">
             By continuing, you agree to our{" "}
-            <Text className="text-light-color dark:text-dark-color">
-              Terms of Service
-            </Text>{" "}
+            <Link href="https://tulum-app.com/terms" asChild>
+              <Text
+                accessibilityRole="link"
+                className="text-light-color underline dark:text-dark-color"
+              >
+                Terms of Service
+              </Text>
+            </Link>{" "}
             and{" "}
-            <Text className="text-light-color dark:text-dark-color">
-              Privacy Policy
-            </Text>
+            <Link href="https://tulum-app.com/privacy" asChild>
+              <Text
+                accessibilityRole="link"
+                className="text-light-color underline dark:text-dark-color"
+              >
+                Privacy Policy
+              </Text>
+            </Link>
           </Text>
 
           <ClerkCaptcha />

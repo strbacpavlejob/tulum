@@ -39,12 +39,16 @@ export default function Footer() {
   ];
   const legalLinks = [
     {
-      href: "/privacy-policy",
+      href: "/privacy",
       label: t("landingpage.legal.privacyPolicy"),
     },
     {
-      href: "/terms-of-service",
+      href: "/terms",
       label: t("landingpage.legal.termsOfService"),
+    },
+    {
+      href: "/support",
+      label: t("landingpage.footer.support"),
     },
   ];
 
@@ -117,9 +121,9 @@ export default function Footer() {
           </ul>
         </nav>
 
-        <nav aria-label={t("landingpage.footer.legal")}>
+        <nav aria-label={t("landingpage.footer.legalAndSupport")}>
           <p className="mb-3 text-sm font-semibold text-secondary">
-            {t("landingpage.footer.legal")}
+            {t("landingpage.footer.legalAndSupport")}
           </p>
           <ul className="flex flex-col gap-y-2">
             {legalLinks.map((item) => (

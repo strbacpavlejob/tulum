@@ -300,14 +300,14 @@ export default function AuthForm() {
                 <p className="text-xs text-center text-muted-foreground mt-2">
                   {t("auth.termsText")}{" "}
                   <Link
-                    href="/terms-of-service"
+                    href="/terms"
                     className="underline hover:text-secondary"
                   >
                     {t("auth.termsOfService")}
                   </Link>{" "}
                   {t("auth.and")}{" "}
                   <Link
-                    href="/privacy-policy"
+                    href="/privacy"
                     className="underline hover:text-secondary"
                   >
                     {t("auth.privacyPolicy")}
