@@ -496,13 +496,13 @@ export default function MatchesScreen() {
     }
 
     if (eventIdRef.current == null) {
-      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+      toast.error(t("matchesRetrySoon"));
       return;
     }
 
     const token = await getToken();
     if (!token) {
-      toast.error(t("matchesRetrySoon") || "Please try again in a moment.");
+      toast.error(t("matchesRetrySoon"));
       return;
     }
 

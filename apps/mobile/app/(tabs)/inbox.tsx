@@ -290,7 +290,7 @@ function LocationGateScreen({
         <Text className="text-[13px] leading-5 text-light-gray10 dark:text-dark-gray10">
           {t("chatLocationRequiredSubtitle")}
         </Text>
-        <View className="mt-1 flex-row gap-2">
+        <View className="mt-1 flex-row flex-wrap gap-2">
           <TouchableOpacity
             onPress={onCheckLocation}
             className="rounded-full bg-light-color px-5 py-2.5 dark:bg-dark-color"

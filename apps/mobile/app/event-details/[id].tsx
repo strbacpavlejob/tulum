@@ -459,7 +459,7 @@ const EventDetailsScreen = () => {
           ...prev,
           guestList: [
             {
-              name: t("you") ?? "You",
+              name: t("you"),
               age: null,
               gender: null,
               uri: "__local_you__",
@@ -506,7 +506,7 @@ const EventDetailsScreen = () => {
     };
     // add optimistic placeholder guest so details screen updates immediately
     const placeholderGuest = {
-      name: t("you") ?? "You",
+      name: t("you"),
       age: null,
       gender: null,
       uri: "__local_you__",

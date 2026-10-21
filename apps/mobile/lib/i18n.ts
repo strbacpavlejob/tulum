@@ -129,6 +129,13 @@ const resources = {
       saveFailed: "Save failed",
       profileChangeNotSaved: "Your change wasn't saved. Please try again.",
 
+      // Profile photos
+      permissionRequired: "Permission required",
+      photoLibraryPermissionDescription:
+        "Please allow access to your photo library.",
+      uploadFailed: "Upload failed",
+      removeFailed: "Remove failed",
+
       // Profile edit labels
       tags: "Tags",
       work: "Work",
@@ -166,6 +173,7 @@ const resources = {
       callYandexTaxi: "Call Yandex Taxi",
       matchesYourLocation: "Your location",
       matchesEventVenue: "Event venue",
+      matchesRetrySoon: "Please try again in a moment.",
 
       // Inbox
       newMatches: "New Matches",
@@ -178,6 +186,12 @@ const resources = {
       chatExpiredDescription:
         "This conversation has expired and can no longer be accessed.",
       sayHello: "Say hello!",
+
+      // Chat location gate
+      chatLocationRequired: "You need to be at the venue",
+      chatLocationRequiredSubtitle:
+        "While the event is live, chats only open at the event venue. Once you're there, allow location access and tap the location button below.",
+      back: "Back",
 
       // Event details
       guestList: "Guest List",
@@ -212,6 +226,7 @@ const resources = {
       eventIsFull: "Event is full",
       avgAge: "Avg age",
       attend: "Attend",
+      you: "You",
 
       // Swipe card
       like: "LIKE",
@@ -503,6 +518,13 @@ const resources = {
       saveFailed: "Čuvanje nije uspelo",
       profileChangeNotSaved: "Izmena nije sačuvana. Pokušaj ponovo.",
 
+      // Profile photos
+      permissionRequired: "Potrebna dozvola",
+      photoLibraryPermissionDescription:
+        "Dozvoli pristup svojoj galeriji fotografija.",
+      uploadFailed: "Otpremanje nije uspelo",
+      removeFailed: "Uklanjanje nije uspelo",
+
       // Profile edit labels
       tags: "Oznake",
       work: "Posao",
@@ -540,6 +562,7 @@ const resources = {
       callYandexTaxi: "Pozovi Yandex Taxi",
       matchesYourLocation: "Tvoja lokacija",
       matchesEventVenue: "Mesto događaja",
+      matchesRetrySoon: "Pokušaj ponovo za trenutak.",
 
       // Inbox
       newMatches: "Novi mečevi",
@@ -552,6 +575,12 @@ const resources = {
       chatExpiredDescription:
         "Ovaj razgovor je istekao i više mu nije moguće pristupiti.",
       sayHello: "Pozdravite se!",
+
+      // Chat location gate
+      chatLocationRequired: "Moraš biti na lokaciji događaja",
+      chatLocationRequiredSubtitle:
+        "Dok događaj traje, razgovori se otvaraju samo na lokaciji događaja. Kada stigneš, dozvoli pristup lokaciji i dodirni dugme za lokaciju ispod.",
+      back: "Nazad",
 
       // Event details
       guestList: "Lista gostiju",
@@ -586,6 +615,7 @@ const resources = {
       eventIsFull: "Događaj je popunjen",
       avgAge: "Prosečne godine",
       attend: "Prisustvuj",
+      you: "Ti",
 
       // Swipe card
       like: "SVIĐA MI SE",
@@ -875,6 +905,13 @@ const resources = {
       saveFailed: "Не удалось сохранить",
       profileChangeNotSaved: "Изменение не сохранено. Попробуйте ещё раз.",
 
+      // Profile photos
+      permissionRequired: "Требуется разрешение",
+      photoLibraryPermissionDescription:
+        "Разрешите доступ к вашей фотогалерее.",
+      uploadFailed: "Не удалось загрузить",
+      removeFailed: "Не удалось удалить",
+
       // Profile edit labels
       tags: "Теги",
       work: "Работа",
@@ -912,6 +949,7 @@ const resources = {
       callYandexTaxi: "Вызвать Яндекс.Такси",
       matchesYourLocation: "Ваше местоположение",
       matchesEventVenue: "Место проведения",
+      matchesRetrySoon: "Попробуйте ещё раз чуть позже.",
 
       // Inbox
       newMatches: "Новые совпадения",
@@ -923,6 +961,12 @@ const resources = {
       chatExpiredTitle: "Чат истёк",
       chatExpiredDescription: "Этот разговор истёк и больше недоступен.",
       sayHello: "Поздоровайтесь!",
+
+      // Chat location gate
+      chatLocationRequired: "Нужно быть на площадке мероприятия",
+      chatLocationRequiredSubtitle:
+        "Пока идёт мероприятие, чат доступен только на площадке. Когда будете на месте, разрешите доступ к местоположению и нажмите кнопку геолокации ниже.",
+      back: "Назад",
 
       // Event details
       guestList: "Список гостей",
@@ -957,6 +1001,7 @@ const resources = {
       eventIsFull: "Мероприятие заполнено",
       avgAge: "Средний возраст",
       attend: "Посетить",
+      you: "Вы",
 
       // Swipe card
       like: "НРАВИТСЯ",
