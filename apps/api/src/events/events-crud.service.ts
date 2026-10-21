@@ -1,9 +1,14 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { toUtcIsoString, withUtcEventTimes } from '../common/db-timestamp';
+import {
+  parseDbTimestampMs,
+  toUtcIsoString,
+  withUtcEventTimes,
+} from '../common/db-timestamp';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -11,6 +16,22 @@ import { GetActiveEventsDto } from './dto/get-active-events.dto';
 
 const EVENTS_TABLE = 'events';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * A date_start or date_end value in milliseconds. Like the events columns, a
+ * value without an offset is UTC; Date.parse covers offsets without a colon
+ * (+0200). Postgres ignores the offset when it compares a value with these
+ * columns, so the query gets the instant in UTC instead.
+ */
+function parseRangeBound(value: string, name: string): number {
+  const ms = parseDbTimestampMs(value) ?? Date.parse(value);
+  if (!Number.isFinite(ms)) {
+    throw new BadRequestException(
+      `${name} must be a valid ISO 8601 date string`,
+    );
+  }
+  return ms;
+}
 
 @Injectable()
 export class EventsCrudService {
@@ -36,10 +57,17 @@ export class EventsCrudService {
           .filter(Boolean)
       : [];
 
-    const now = new Date().toISOString();
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
     const tenDaysFromNow = new Date(
-      Date.now() + 10 * 24 * 60 * 60 * 1000,
+      nowMs + 10 * 24 * 60 * 60 * 1000,
     ).toISOString();
+    const rangeStart = filters.date_start
+      ? parseRangeBound(filters.date_start, 'date_start')
+      : null;
+    const rangeEnd = filters.date_end
+      ? parseRangeBound(filters.date_end, 'date_end')
+      : null;
 
     let eventsQuery = this.db
       .from(EVENTS_TABLE)
@@ -49,14 +77,22 @@ export class EventsCrudService {
       .eq('status', 'active')
       .gte('end_date_time', now);
 
-    // Date range filter
-    if (filters.date_start) {
-      eventsQuery = eventsQuery.gte('start_date_time', filters.date_start);
-    } else {
+    // Date range filter: events that start within the range. Once the range
+    // has begun, events that started before it and are still on are kept,
+    // so a range starting today doesn't hide live events.
+    if (rangeStart === null) {
       eventsQuery = eventsQuery.lte('start_date_time', tenDaysFromNow);
+    } else if (rangeStart > nowMs) {
+      eventsQuery = eventsQuery.gte(
+        'start_date_time',
+        new Date(rangeStart).toISOString(),
+      );
     }
-    if (filters.date_end) {
-      eventsQuery = eventsQuery.lte('start_date_time', filters.date_end);
+    if (rangeEnd !== null) {
+      eventsQuery = eventsQuery.lte(
+        'start_date_time',
+        new Date(rangeEnd).toISOString(),
+      );
     }
 
     eventsQuery = eventsQuery.order('start_date_time', { ascending: true });

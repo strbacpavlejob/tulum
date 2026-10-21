@@ -20,7 +20,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { PanResponder, Pressable, View } from "react-native";
-import { addDays } from "date-fns";
+import { createDefaultDateRange } from "@/lib/dateRange";
 import CalendarRangePicker from "./CalendarRangePicker";
 
 const CAPACITY_MIN = 0;
@@ -59,7 +59,7 @@ const defaultFilters: Filter = {
   title: "",
   tags: [],
   venueType: [],
-  dateRange: { start: new Date(), end: addDays(new Date(), 7) },
+  dateRange: createDefaultDateRange(),
   guestsLimit: null,
   isOnlyFavorite: false,
   priceRange: { min: null, max: null },
@@ -265,7 +265,11 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
     };
 
     const reset = useCallback(() => {
-      const cleared = { ...defaultFilters };
+      // Today's range, not the one defaultFilters got when the app loaded.
+      const cleared = {
+        ...defaultFilters,
+        dateRange: createDefaultDateRange(),
+      };
       setFilters(cleared);
       setFilterInStore(cleared);
       onApply?.(cleared);

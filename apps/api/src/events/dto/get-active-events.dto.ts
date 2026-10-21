@@ -37,14 +37,16 @@ export class GetActiveEventsDto {
   capacity_max?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter events starting on or after this ISO date',
+    description:
+      'Start of the range (ISO 8601, UTC without an offset): events starting before it are left out. Once it has passed, events that are on now are kept.',
   })
   @IsOptional()
   @IsISO8601()
   date_start?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter events starting on or before this ISO date',
+    description:
+      'End of the range (ISO 8601, UTC without an offset): events starting after it are left out.',
   })
   @IsOptional()
   @IsISO8601()

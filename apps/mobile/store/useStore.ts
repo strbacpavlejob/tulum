@@ -1,10 +1,14 @@
 import { fetchActiveEvents } from "@/lib/api";
+import {
+  createDefaultDateRange,
+  getDateRangeBounds,
+  isInDateRange,
+} from "@/lib/dateRange";
 import { EventPin, EventSummary } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { Ticket } from "@/types/ticket";
 import { User } from "@/types/user";
-import { addDays } from "date-fns";
 import { create } from "zustand";
 
 interface SwipeableCandidate {
@@ -89,10 +93,7 @@ const useStore = create<MyStore>((set) => ({
     title: "",
     tags: [],
     venueType: [],
-    dateRange: {
-      start: new Date(),
-      end: addDays(new Date(), 7),
-    },
+    dateRange: createDefaultDateRange(),
     guestsLimit: null,
     isOnlyFavorite: false,
     priceRange: {
@@ -172,11 +173,8 @@ const useStore = create<MyStore>((set) => ({
     const q = title?.trim().toLowerCase() ?? "";
     const tagSet = new Set((tags ?? []).map((t) => t.toLowerCase()));
 
-    const start = dateRange.start ? new Date(dateRange.start) : null;
-    if (start) start.setHours(0, 0, 0, 0);
-
-    const end = dateRange.end ? new Date(dateRange.end) : null;
-    if (end) end.setHours(23, 59, 59, 999);
+    const dateBounds = getDateRangeBounds(dateRange);
+    const now = new Date();
 
     const filtered = events.filter((event) => {
       // Search match (case-insensitive, substring) across event title + venue fields
@@ -205,12 +203,8 @@ const useStore = create<MyStore>((set) => ({
         if (!hasOverlap) return false;
       }
 
-      // Date range (guard invalid/missing dates)
-      const eventDate = event.date ? new Date(event.date) : null;
-      if (start && (!eventDate || isNaN(+eventDate) || eventDate < start))
-        return false;
-      if (end && (!eventDate || isNaN(+eventDate) || eventDate > end))
-        return false;
+      // Date range (the same rule as the API; live events stay listed)
+      if (!isInDateRange(event.date, dateBounds, now)) return false;
 
       // Guests limit (by guestCount)
       if (typeof guestsLimit === "number") {
@@ -241,10 +235,7 @@ const useStore = create<MyStore>((set) => ({
         title: "",
         tags: [],
         venueType: [],
-        dateRange: {
-          start: new Date(),
-          end: addDays(new Date(), 7),
-        },
+        dateRange: createDefaultDateRange(),
         guestsLimit: null,
         isOnlyFavorite: false,
         priceRange: {

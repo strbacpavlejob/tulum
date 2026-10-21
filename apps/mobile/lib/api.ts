@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { getDateRangeBounds } from "@/lib/dateRange";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import { type GenderFilter, User } from "@/types/user";
@@ -176,10 +177,11 @@ export async function fetchActiveEvents(
     query.set("capacity_min", String(filter.capacityRange.min));
   if (filter?.capacityRange?.max != null)
     query.set("capacity_max", String(filter.capacityRange.max));
-  if (filter?.dateRange?.start)
-    query.set("date_start", new Date(filter.dateRange.start).toISOString());
-  if (filter?.dateRange?.end)
-    query.set("date_end", new Date(filter.dateRange.end).toISOString());
+  // Whole days, so the first day's early events and the last day's late ones
+  // are included.
+  const { from, to } = getDateRangeBounds(filter?.dateRange);
+  if (from) query.set("date_start", from.toISOString());
+  if (to) query.set("date_end", to.toISOString());
   // The API reads the user from the token; favorites need one.
   if (filter?.isOnlyFavorite && token) {
     query.set("only_favorites", "true");
