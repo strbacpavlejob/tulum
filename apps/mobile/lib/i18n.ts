@@ -65,7 +65,8 @@ const resources = {
       onboardingStepInterestedTitle: "Who are you interested in?",
       onboardingStepInterestedSubtitle: "We'll tailor your matches accordingly",
       onboardingStepLookingForTitle: "Why are you here?",
-      onboardingStepLookingForSubtitle: "Select everything that applies",
+      onboardingStepLookingForSubtitle:
+        "Choose the one option that best describes why you're here.",
       onboardingStepTagsTitle: "What are your interests?",
       onboardingStepTagsSubtitle: "Pick things you enjoy to find your crowd",
       onboardingStepVenuesTitle: "What venues do you love?",
@@ -453,7 +454,8 @@ const resources = {
       onboardingStepInterestedTitle: "Ko te zanima?",
       onboardingStepInterestedSubtitle: "Prilagodićemo tvoje mečeve tome",
       onboardingStepLookingForTitle: "Šta tražiš ovde?",
-      onboardingStepLookingForSubtitle: "Izaberi sve što se odnosi na tebe",
+      onboardingStepLookingForSubtitle:
+        "Izaberi jednu opciju koja najbolje opisuje zašto si ovde.",
       onboardingStepTagsTitle: "Koja su tvoja interesovanja?",
       onboardingStepTagsSubtitle:
         "Izaberi stvari koje voliš kako bi našao/la svoju ekipu",
@@ -843,7 +845,8 @@ const resources = {
       onboardingStepInterestedSubtitle:
         "Мы подберем совпадения под ваши предпочтения",
       onboardingStepLookingForTitle: "Зачем вы здесь?",
-      onboardingStepLookingForSubtitle: "Выберите все подходящие варианты",
+      onboardingStepLookingForSubtitle:
+        "Выберите один вариант, который лучше всего описывает, зачем вы здесь.",
       onboardingStepTagsTitle: "Какие у вас интересы?",
       onboardingStepTagsSubtitle:
         "Выберите то, что вам нравится, чтобы найти свою компанию",
