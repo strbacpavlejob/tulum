@@ -82,6 +82,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner-native";
 import SettingsTab from "@/components/SettingsTab";
 import ProfileTab from "@/components/ProfileTab";
 import { cn } from "@/lib/utils";
@@ -104,9 +105,11 @@ export default function ProfileScreen() {
   const [textValue, setTextValue] = useState("");
 
   const [bugText, setBugText] = useState("");
+  const [sendingBug, setSendingBug] = useState(false);
   const [venueName, setVenueName] = useState("");
   const [venueInstagram, setVenueInstagram] = useState("");
   const [venueNotes, setVenueNotes] = useState("");
+  const [sendingVenue, setSendingVenue] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const editSheetRef = useRef<BottomSheetModal>(null);
@@ -1058,22 +1061,37 @@ export default function ProfileScreen() {
           />
 
           <Button
+            disabled={!bugText.trim() || sendingBug}
             onPress={async () => {
-              const token = await getToken();
+              const description = bugText.trim();
+
+              if (!description || sendingBug) {
+                return;
+              }
+
+              setSendingBug(true);
 
               try {
+                const token = await getToken();
+
                 await submitBugReport(token ?? undefined, {
-                  description: bugText,
+                  description,
                   additional_info: null,
                 });
 
                 setBugText("");
                 bugSheetRef.current?.close();
+                toast.success(t("bugReportSent"));
               } catch (error) {
-                Alert.alert(
-                  t("sendFailed"),
-                  error instanceof Error ? error.message : String(error),
-                );
+                console.error("Failed to send bug report", error);
+
+                // A toast, not Alert.alert: Alert.alert does nothing on web.
+                // The draft stays in the sheet for another try.
+                toast.error(t("sendFailed"), {
+                  description: t("bugReportNotSent"),
+                });
+              } finally {
+                setSendingBug(false);
               }
             }}
             className="mt-4 w-full gap-2"
@@ -1145,18 +1163,33 @@ export default function ProfileScreen() {
           />
 
           <Button
+            disabled={sendingVenue}
             onPress={async () => {
-              if (!venueName.trim()) {
-                Alert.alert(t("nameRequired"), t("pleaseProvideVenueName"));
+              if (sendingVenue) {
                 return;
               }
 
-              const token = await getToken();
+              const name = venueName.trim();
+
+              // Toasts, not Alert.alert: Alert.alert does nothing on web.
+              if (!name) {
+                toast.error(t("nameRequired"), {
+                  description: t("pleaseProvideVenueName"),
+                });
+                return;
+              }
+
+              setSendingVenue(true);
 
               try {
+                const token = await getToken();
+
                 await submitVenueSuggestion(token ?? undefined, {
-                  name: venueName.trim(),
-                  instagram_handle: venueInstagram.trim() || null,
+                  name,
+                  // The field asks for the handle without "@"; drop one
+                  // typed anyway.
+                  instagram_handle:
+                    venueInstagram.trim().replace(/^@+/, "").trim() || null,
                   additionalInfo: venueNotes.trim() || null,
                 });
 
@@ -1164,11 +1197,16 @@ export default function ProfileScreen() {
                 setVenueInstagram("");
                 setVenueNotes("");
                 venueSheetRef.current?.close();
+                toast.success(t("venueSuggestionSent"));
               } catch (error) {
-                Alert.alert(
-                  t("sendFailed"),
-                  error instanceof Error ? error.message : String(error),
-                );
+                console.error("Failed to send venue suggestion", error);
+
+                // The draft stays in the sheet for another try.
+                toast.error(t("sendFailed"), {
+                  description: t("venueSuggestionNotSent"),
+                });
+              } finally {
+                setSendingVenue(false);
               }
             }}
             className="mt-4 w-full gap-2"

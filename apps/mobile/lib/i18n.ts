@@ -114,6 +114,8 @@ const resources = {
 
       // Bug report
       bugReportPlaceholder: "Describe the bug...",
+      bugReportSent: "Thanks! Your bug report was sent.",
+      bugReportNotSent: "Your report wasn't sent. Please try again.",
       send: "Send",
       suggestVenue: "Suggest a venue",
       venueNamePlaceholder: "Venue name",
@@ -121,6 +123,8 @@ const resources = {
       additionalInfoPlaceholder: "Additional info (optional)",
       nameRequired: "Name required",
       pleaseProvideVenueName: "Please provide a venue name",
+      venueSuggestionSent: "Thanks! Your venue suggestion was sent.",
+      venueSuggestionNotSent: "Your suggestion wasn't sent. Please try again.",
       sendFailed: "Failed to send",
       saveFailed: "Save failed",
       profileChangeNotSaved: "Your change wasn't saved. Please try again.",
@@ -484,6 +488,8 @@ const resources = {
 
       // Bug report
       bugReportPlaceholder: "Opiši grešku...",
+      bugReportSent: "Hvala! Prijava greške je poslata.",
+      bugReportNotSent: "Prijava nije poslata. Pokušaj ponovo.",
       send: "Pošalji",
       suggestVenue: "Predloži lokal",
       venueNamePlaceholder: "Naziv lokala",
@@ -491,6 +497,8 @@ const resources = {
       additionalInfoPlaceholder: "Dodatne informacije (opciono)",
       nameRequired: "Ime je obavezno",
       pleaseProvideVenueName: "Molimo unesite naziv lokala",
+      venueSuggestionSent: "Hvala! Predlog lokala je poslat.",
+      venueSuggestionNotSent: "Predlog nije poslat. Pokušaj ponovo.",
       sendFailed: "Slanje nije uspelo",
       saveFailed: "Čuvanje nije uspelo",
       profileChangeNotSaved: "Izmena nije sačuvana. Pokušaj ponovo.",
@@ -852,6 +860,8 @@ const resources = {
 
       // Bug report
       bugReportPlaceholder: "Опишите ошибку...",
+      bugReportSent: "Спасибо! Сообщение об ошибке отправлено.",
+      bugReportNotSent: "Сообщение не отправлено. Попробуйте ещё раз.",
       send: "Отправить",
       suggestVenue: "Предложить заведение",
       venueNamePlaceholder: "Название заведения",
@@ -859,6 +869,8 @@ const resources = {
       additionalInfoPlaceholder: "Дополнительная информация (необязательно)",
       nameRequired: "Требуется имя",
       pleaseProvideVenueName: "Пожалуйста, укажите название заведения",
+      venueSuggestionSent: "Спасибо! Предложение заведения отправлено.",
+      venueSuggestionNotSent: "Предложение не отправлено. Попробуйте ещё раз.",
       sendFailed: "Не удалось отправить",
       saveFailed: "Не удалось сохранить",
       profileChangeNotSaved: "Изменение не сохранено. Попробуйте ещё раз.",
