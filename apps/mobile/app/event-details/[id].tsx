@@ -316,7 +316,8 @@ const EventDetailsScreen = () => {
       .then((data) => {
         setEvent(data);
         // If backend reports user is attending but local store lacks the ticket,
-        // add a minimal ticket so UI stays in sync.
+        // add a minimal ticket so UI stays in sync. The going count already
+        // includes you, so it stays as it is.
         if (data.isAttending) {
           const has = useStore
             .getState()
@@ -333,7 +334,6 @@ const EventDetailsScreen = () => {
               venue_name: String(data.venueName ?? ""),
               location: data.location,
             });
-            updateEventAttendance(data.id, true);
           }
         }
       })
@@ -380,6 +380,7 @@ const EventDetailsScreen = () => {
 
         // If backend indicates the user is in the guest list but local tickets
         // don't have the event, add a minimal ticket to keep UI consistent.
+        // The going count already includes you.
         const isUserInList = data.guestList.some(
           (g: any) => g.id === userId || g.user_id === userId,
         );
@@ -402,8 +403,6 @@ const EventDetailsScreen = () => {
             venue_name: String(currentEvent.venueName ?? ""),
             location: currentEvent.location,
           });
-
-          updateEventAttendance(id, true);
         }
       } catch {
         // ignore
@@ -442,6 +441,7 @@ const EventDetailsScreen = () => {
         null;
       // Optimistically remove locally
       removeTicketByEventId(event.id);
+      updateEventAttendance(event.id, false);
       // remove optimistic placeholder guest if present
       setAttendeesData((prev) => ({
         ...prev,
@@ -452,6 +452,7 @@ const EventDetailsScreen = () => {
       } catch {
         // rollback
         if (prevTicket) addTicket(prevTicket);
+        updateEventAttendance(event.id, true);
         // rollback guest placeholder removal by re-adding a placeholder
         setAttendeesData((prev) => ({
           ...prev,
@@ -514,9 +515,10 @@ const EventDetailsScreen = () => {
       guestList: [placeholderGuest, ...prev.guestList],
     }));
     addTicket(tempTicket);
+    updateEventAttendance(event.id, true);
     try {
       const { ticket: raw } = await attendEvent(token, event.id);
-      // Replace temp with real ticket
+      // Replace temp with real ticket; the going count has already moved.
       addTicket({
         id: String(raw.id ?? tempTicket.id),
         event_id: event.id,
@@ -533,6 +535,7 @@ const EventDetailsScreen = () => {
     } catch {
       // rollback optimistic add
       removeTicketByEventId(event.id);
+      updateEventAttendance(event.id, false);
       // remove optimistic placeholder guest
       setAttendeesData((prev) => ({
         ...prev,

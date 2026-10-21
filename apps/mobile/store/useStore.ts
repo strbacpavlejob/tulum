@@ -269,6 +269,12 @@ const useStore = create<MyStore>((set) => ({
     }));
   },
 
+  /**
+   * Moves the event's going count by one when you start or stop attending it.
+   * Call it once per change: replacing your ticket, or adding one the server
+   * already counts, leaves the count as it is. Map pins count events per
+   * venue, not guests, so they don't change.
+   */
   updateEventAttendance(eventId: string, isAttending: boolean) {
     const patch = (list: EventSummary[] = []) =>
       list.map((e) =>
@@ -284,37 +290,13 @@ const useStore = create<MyStore>((set) => ({
           : e,
       );
 
-    set((s) => {
-      const updatedEvents = patch(s.events);
-      const updatedFilteredEvents = patch(s.filteredEvents);
-
-      // If we can find the event in current events, adjust the pin instances
-      const evt = (s.events ?? []).find((e) => e.id === eventId);
-      if (evt && evt.venueId) {
-        const venueId = evt.venueId;
-        const delta = isAttending ? 1 : -1;
-        const updatePinsList = (pinsList: EventPin[] | undefined) =>
-          (pinsList ?? []).map((pin) =>
-            pin.venueId === venueId
-              ? { ...pin, instances: Math.max(0, (pin.instances ?? 0) + delta) }
-              : pin,
-          );
-
-        return {
-          events: updatedEvents,
-          filteredEvents: updatedFilteredEvents,
-          pins: updatePinsList(s.pins),
-          filteredPins: updatePinsList(s.filteredPins),
-        } as any;
-      }
-
-      return {
-        events: updatedEvents,
-        filteredEvents: updatedFilteredEvents,
-      } as any;
-    });
+    set((s) => ({
+      events: patch(s.events),
+      filteredEvents: patch(s.filteredEvents),
+    }));
   },
 
+  // Only the list of your tickets; the going count is updateEventAttendance's.
   addTicket(ticket: Ticket) {
     set((s) => ({
       tickets: [
@@ -322,16 +304,12 @@ const useStore = create<MyStore>((set) => ({
         ...(s.tickets ?? []).filter((t) => t.event_id !== ticket.event_id),
       ],
     }));
-    // Keep event attendance in sync
-    useStore.getState().updateEventAttendance(ticket.event_id, true);
   },
 
   removeTicketByEventId(eventId: string) {
     set((s) => ({
       tickets: (s.tickets ?? []).filter((t) => t.event_id !== eventId),
     }));
-    // Keep event attendance in sync
-    useStore.getState().updateEventAttendance(eventId, false);
   },
 }));
 
