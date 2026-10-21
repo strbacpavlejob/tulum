@@ -251,6 +251,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Search events...",
+      noEventsMatchSearch: "No events match your search.",
       openInMaps: "Open in Maps",
 
       // Profile info sections
@@ -640,6 +641,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Traži događaje...",
+      noEventsMatchSearch: "Nijedan događaj ne odgovara tvojoj pretrazi.",
       openInMaps: "Otvori u mapama",
 
       // Profile info sections
@@ -1026,6 +1028,7 @@ const resources = {
 
       // Map / Search
       searchEvents: "Поиск мероприятий...",
+      noEventsMatchSearch: "Ни одно событие не соответствует вашему запросу.",
       openInMaps: "Открыть в картах",
 
       // Profile info sections

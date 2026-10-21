@@ -249,6 +249,8 @@ const ListingsMap = memo(() => {
   );
 
   const showLoadingCards = !mapReady || events === undefined;
+  const showNoSearchResults =
+    filter.title.trim().length > 0 && (listings?.length ?? 0) === 0;
 
   const handleTagPress = useCallback(
     (tag: string) => {
@@ -639,6 +641,15 @@ const ListingsMap = memo(() => {
               renderItem={renderSkeletonItem}
               pointerEvents="none"
             />
+          ) : showNoSearchResults ? (
+            <View
+              className="mx-4 items-center justify-center rounded-2xl border border-light-gray4 bg-light-background075 px-4 py-6 dark:border-dark-gray4 dark:bg-dark-background075"
+              pointerEvents="none"
+            >
+              <Text className="text-center text-sm font-medium text-light-gray12 dark:text-dark-gray12">
+                {t("noEventsMatchSearch")}
+              </Text>
+            </View>
           ) : (
             <FlatList
               key="listings-data"
