@@ -26,8 +26,9 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { toast } from "sonner-native";
 import useStore from "@/store/useStore";
 
@@ -38,6 +39,9 @@ const PROXIMITY_RADIUS_M = 300;
 
 /** How often (ms) to re-check position on the location verification screen */
 const LOCATION_POLL_INTERVAL_MS = 5_000;
+
+/** How often (ms) the locked screen checks again for a ticket whose event is live */
+const LOCKED_RECHECK_INTERVAL_MS = 30_000;
 
 const PROFILE_REFRESH_INTERVAL_MS = 15_000;
 const MAX_LIKE_PERCENTAGE = 0.2;
@@ -181,6 +185,9 @@ export default function MatchesScreen() {
 
   // ── Eligibility ────────────────────────────────────────────────────────────
   const [eligibility, setEligibility] = useState<EligibilityState>("checking");
+  const eligibilityRef = useRef(eligibility);
+  eligibilityRef.current = eligibility;
+  const checkingTicketsRef = useRef(false);
   const [liveTicket, setLiveTicket] = useState<LiveTicket | null>(null);
   const [userCoords, setUserCoords] = useState<{
     lat: number;
@@ -306,7 +313,8 @@ export default function MatchesScreen() {
 
   // ── Find live-event ticket then check GPS ─────────────────────────────────
   const checkTickets = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || checkingTicketsRef.current) return;
+    checkingTicketsRef.current = true;
     try {
       const token = await getToken();
       if (!token) {
@@ -342,12 +350,41 @@ export default function MatchesScreen() {
         event_title: live.title ?? "",
       };
       setLiveTicket(ticket);
+      // A re-check from the locked screen shows the loading view while the
+      // location is read, as the first check does.
+      setEligibility("checking");
 
       await checkLocation(ticket.venue_lat, ticket.venue_lng);
     } catch {
       setEligibility("locked");
+    } finally {
+      checkingTicketsRef.current = false;
     }
   }, [userId, checkLocation]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Re-check while locked ─────────────────────────────────────────────────
+  // The tab stays mounted while other tabs are open, so checking only on
+  // mount would keep it locked after the event goes live. While it is locked,
+  // check again when the tab regains focus, when the app returns to the
+  // foreground, and every LOCKED_RECHECK_INTERVAL_MS while the tab is shown.
+  useFocusEffect(
+    useCallback(() => {
+      const recheckIfLocked = () => {
+        if (AppState.currentState !== "active") return;
+        if (eligibilityRef.current === "locked") void checkTickets();
+      };
+      recheckIfLocked();
+      const interval = setInterval(recheckIfLocked, LOCKED_RECHECK_INTERVAL_MS);
+      const appStateSubscription = AppState.addEventListener(
+        "change",
+        recheckIfLocked,
+      );
+      return () => {
+        clearInterval(interval);
+        appStateSubscription.remove();
+      };
+    }, [checkTickets]),
+  );
 
   // ── Periodic re-check while on location_required screen ──────────────────
   useEffect(() => {
