@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import { getDateRangeBounds } from "@/lib/dateRange";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
+import type { VenueType } from "@/types/filter";
 import { type GenderFilter, User } from "@/types/user";
 
 const TULUM_API_URL =
@@ -485,7 +486,7 @@ export interface OnboardingPayload {
   seeking: SeekingValue;
   interested_in: GenderValue[];
   interests?: string[];
-  venue_types?: string[];
+  venue_types?: VenueType[];
   bio?: string;
   picture_urls?: string[];
   birthday: string;

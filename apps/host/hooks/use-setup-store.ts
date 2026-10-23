@@ -2,20 +2,17 @@ import { useEffect } from "react";
 import { faker } from "@faker-js/faker";
 import { useEventsStore, type Event } from "@/store/events";
 import { useVenuesStore, type Venue } from "@/store/venues";
+import type { VenueType } from "@/lib/types/database";
 
 const EVENT_STATUSES: Event["status"][] = ["draft", "active", "cancelled"];
 
-const VENUE_TYPES = [
-  "Restaurant",
-  "Bar",
-  "Club",
-  "Lounge",
-  "Beach Club",
-  "Rooftop Bar",
-  "Concert Hall",
-  "Conference Center",
-  "Hotel",
-  "Gallery",
+const VENUE_TYPES: VenueType[] = [
+  "bar",
+  "club",
+  "restaurant",
+  "tavern",
+  "cafe",
+  "event_venue",
 ];
 
 const generateMockVenues = (count: number = 10): Venue[] => {

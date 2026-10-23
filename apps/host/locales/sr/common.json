@@ -838,15 +838,11 @@
     },
     "types": {
       "bar": "Bar",
-      "pub": "Pab",
-      "nightclub": "Noćni klub",
+      "club": "Klub",
       "restaurant": "Restoran",
-      "cafe": "Kafić",
-      "cocktail_bar": "Koktel bar",
-      "wine_bar": "Vinski bar",
-      "brewery": "Pivara",
       "tavern": "Kafana",
-      "raft": "Splav"
+      "cafe": "Kafić",
+      "event_venue": "Prostor za događaje"
     },
     "validation": {
       "nameRequired": "Naziv je obavezan",

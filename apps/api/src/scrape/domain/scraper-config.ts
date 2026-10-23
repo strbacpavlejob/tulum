@@ -93,11 +93,11 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
         },
         {
           queryValue: 7060,
-          venueType: VenueTypeEnum.NIGHTCLUB,
+          venueType: VenueTypeEnum.CLUB,
         },
         {
           queryValue: 7061,
-          venueType: VenueTypeEnum.RAFT,
+          venueType: VenueTypeEnum.CLUB,
         },
         {
           queryValue: 7062,
@@ -139,7 +139,7 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
       venueTypeMapping: [
         {
           queryValue: 'Nightclub',
-          venueType: VenueTypeEnum.NIGHTCLUB,
+          venueType: VenueTypeEnum.CLUB,
         },
         {
           queryValue: 'Tavern',
@@ -167,7 +167,7 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
       defaultCapacity: 100,
       imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
       venueTypeMapping: [
-        { queryValue: 'Nightclub', venueType: VenueTypeEnum.NIGHTCLUB },
+        { queryValue: 'Nightclub', venueType: VenueTypeEnum.CLUB },
       ],
       defaultAgeRestriction: {
         male: 18,

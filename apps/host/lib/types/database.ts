@@ -9,15 +9,11 @@ export type TransactionMode = "transfer" | "purchase";
 export type TransactionStatus = "pending" | "completed" | "failed";
 export type VenueType =
   | "bar"
-  | "pub"
-  | "nightclub"
+  | "club"
   | "restaurant"
-  | "cafe"
-  | "cocktail_bar"
-  | "wine_bar"
-  | "brewery"
   | "tavern"
-  | "raft";
+  | "cafe"
+  | "event_venue";
 
 export interface User {
   id: string;

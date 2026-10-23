@@ -178,7 +178,7 @@ Posts that are NOT events include:
 - photos from events that already happened
 - general branding content
 
-A venue being a nightclub, bar, restaurant, cultural center or event venue
+A venue being a bar, club, restaurant, tavern, cafe, or event venue
 does NOT automatically mean the post represents an event.
 
 Examples:

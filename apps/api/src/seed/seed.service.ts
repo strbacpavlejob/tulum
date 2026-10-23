@@ -153,7 +153,7 @@ export class SeedService {
       .upsert(
         {
           host_id: defaultHostId,
-          venue_type: 'nightclub',
+          venue_type: 'club',
           name: TEST_VENUE_NAME,
           description: 'Temporary mock venue for event testing.',
           latitude: 44.8418626,

@@ -46,15 +46,11 @@ import { useAuth } from "@clerk/nextjs";
 
 const VENUE_TYPE_OPTIONS = [
   { value: "bar", label: "Bar" },
-  { value: "pub", label: "Pub" },
-  { value: "nightclub", label: "Nightclub" },
+  { value: "club", label: "Club" },
   { value: "restaurant", label: "Restaurant" },
-  { value: "cafe", label: "Cafe" },
-  { value: "cocktail_bar", label: "Cocktail Bar" },
-  { value: "wine_bar", label: "Wine Bar" },
-  { value: "brewery", label: "Brewery" },
   { value: "tavern", label: "Tavern" },
-  { value: "raft", label: "Raft" },
+  { value: "cafe", label: "Cafe" },
+  { value: "event_venue", label: "Event Venue" },
 ] as const;
 
 type VenueType = (typeof VENUE_TYPE_OPTIONS)[number]["value"];

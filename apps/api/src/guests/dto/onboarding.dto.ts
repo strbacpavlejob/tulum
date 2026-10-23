@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { VenueTypeEnum } from '../../scrape/domain/scraper-venue.interfaces';
 
 // The onboarding name field allows the same length
 // (apps/mobile/app/(auth)/onboarding.tsx). Change both together.
@@ -96,11 +97,11 @@ export class OnboardingDto {
   @IsString({ each: true })
   picture_urls?: string[];
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiPropertyOptional({ enum: VenueTypeEnum, isArray: true })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  venue_types?: string[];
+  @IsEnum(VenueTypeEnum, { each: true })
+  venue_types?: VenueTypeEnum[];
 
   @ApiPropertyOptional()
   @IsOptional()

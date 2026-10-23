@@ -41,15 +41,11 @@ import "../i18n";
 // Venue type options for the select dropdown
 const VENUE_TYPE_OPTIONS: { value: VenueType; key: string }[] = [
   { value: "bar", key: "bar" },
-  { value: "pub", key: "pub" },
-  { value: "nightclub", key: "nightclub" },
+  { value: "club", key: "club" },
   { value: "restaurant", key: "restaurant" },
-  { value: "cafe", key: "cafe" },
-  { value: "cocktail_bar", key: "cocktail_bar" },
-  { value: "wine_bar", key: "wine_bar" },
-  { value: "brewery", key: "brewery" },
   { value: "tavern", key: "tavern" },
-  { value: "raft", key: "raft" },
+  { value: "cafe", key: "cafe" },
+  { value: "event_venue", key: "event_venue" },
 ];
 
 // Form validation schema factory
@@ -168,7 +164,7 @@ export function CreateVenueDialog({
     defaultValues: {
       name: "",
       description: "",
-      venue_type: "nightclub",
+      venue_type: "club",
       latitude: "",
       longitude: "",
       address: "",
@@ -288,7 +284,7 @@ export function CreateVenueDialog({
       reset({
         name: "",
         description: "",
-        venue_type: "nightclub",
+        venue_type: "club",
         latitude: defaultLat.toString(),
         longitude: defaultLng.toString(),
         address: "",

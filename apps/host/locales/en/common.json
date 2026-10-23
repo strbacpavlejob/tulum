@@ -838,15 +838,11 @@
     },
     "types": {
       "bar": "Bar",
-      "pub": "Pub",
-      "nightclub": "Nightclub",
+      "club": "Club",
       "restaurant": "Restaurant",
+      "tavern": "Tavern",
       "cafe": "Café",
-      "cocktail_bar": "Cocktail Bar",
-      "wine_bar": "Wine Bar",
-      "brewery": "Brewery",
-      "tavern": "Tavern (Kafana)",
-      "raft": "Floating Club (Splav)"
+      "event_venue": "Event Venue"
     },
     "validation": {
       "nameRequired": "Name is required",

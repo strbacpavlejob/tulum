@@ -8,14 +8,10 @@ export const mockedSettings: Settings = {
   lookingFor: faker.helpers.arrayElement(["friends", "dates", "both", "none"]),
   defaultVenueType: faker.helpers.arrayElement([
     "bar",
-    "pub",
-    "nightclub",
+    "club",
     "restaurant",
-    "cafe",
-    "cocktail_bar",
-    "wine_bar",
-    "brewery",
     "tavern",
-    "raft",
+    "cafe",
+    "event_venue",
   ]),
 };

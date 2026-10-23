@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getVenues as apiGetVenues } from "@/lib/api-client";
-import type { Venue as DBVenue } from "@/lib/types/database";
+import type { Venue as DBVenue, VenueType } from "@/lib/types/database";
 
 export interface Venue {
   id: string;
@@ -8,7 +8,7 @@ export interface Venue {
   name: string;
   longitude: number;
   latitude: number;
-  type: string;
+  type: VenueType;
   capacity: number;
   address?: string;
   description?: string;

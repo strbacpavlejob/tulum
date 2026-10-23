@@ -348,15 +348,11 @@ const resources = {
 
       // Venue type options
       bar: "Bar",
-      pub: "Pub",
-      nightclub: "Nightclub",
+      club: "Club",
       restaurant: "Restaurant",
-      cafe: "Cafe",
-      cocktailBar: "Cocktail Bar",
-      wineBar: "Wine Bar",
-      brewery: "Brewery",
       tavern: "Tavern",
-      raft: "Raft",
+      cafe: "Cafe",
+      eventVenue: "Event Venue",
 
       // Filter / map
       all: "All",
@@ -739,15 +735,11 @@ const resources = {
 
       // Venue type options
       bar: "Bar",
-      pub: "Kafana",
-      nightclub: "Noćni klub",
+      club: "Klub",
       restaurant: "Restoran",
-      cafe: "Kafić",
-      cocktailBar: "Koktel bar",
-      wineBar: "Vinski bar",
-      brewery: "Pivara",
       tavern: "Kafana",
-      raft: "Splav",
+      cafe: "Kafić",
+      eventVenue: "Prostor za događaje",
 
       // Filter / map
       all: "Sve",
@@ -1127,15 +1119,11 @@ const resources = {
 
       // Venue type options
       bar: "Бар",
-      pub: "Паб",
-      nightclub: "Ночной клуб",
+      club: "Клуб",
       restaurant: "Ресторан",
-      cafe: "Кафе",
-      cocktailBar: "Коктейль-бар",
-      wineBar: "Винный бар",
-      brewery: "Пивоварня",
       tavern: "Таверна",
-      raft: "Плот",
+      cafe: "Кафе",
+      eventVenue: "Площадка для мероприятий",
 
       // Filter / map
       all: "Все",

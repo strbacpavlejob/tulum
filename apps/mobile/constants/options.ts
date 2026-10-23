@@ -1,4 +1,4 @@
-import { VenueType } from "@/types/filter";
+import type { VenueType } from "@/types/filter";
 
 export type SelectOption = {
   name: string;
@@ -309,51 +309,23 @@ export const tagsOptions: SelectOption[] = [
   },
 ];
 
-export const venueOptions: {
-  name: string;
+export const VENUE_TYPES: {
+  emoji: string;
+  labelKey: string;
   value: VenueType;
 }[] = [
-  {
-    name: "bar",
-    value: "bar",
-  },
-  {
-    name: "pub",
-    value: "pub",
-  },
-  {
-    name: "nightclub",
-    value: "nightclub",
-  },
-  {
-    name: "restaurant",
-    value: "restaurant",
-  },
-  {
-    name: "cafe",
-    value: "cafe",
-  },
-  {
-    name: "cocktailBar",
-    value: "cocktail_bar",
-  },
-  {
-    name: "wineBar",
-    value: "wine_bar",
-  },
-  {
-    name: "brewery",
-    value: "brewery",
-  },
-  {
-    name: "tavern",
-    value: "tavern",
-  },
-  {
-    name: "raft",
-    value: "raft",
-  },
+  { emoji: "🍺", labelKey: "bar", value: "bar" },
+  { emoji: "🕺", labelKey: "club", value: "club" },
+  { emoji: "🍽️", labelKey: "restaurant", value: "restaurant" },
+  { emoji: "🏮", labelKey: "tavern", value: "tavern" },
+  { emoji: "☕", labelKey: "cafe", value: "cafe" },
+  { emoji: "🎉", labelKey: "eventVenue", value: "event_venue" },
 ];
+
+export const venueOptions = VENUE_TYPES.map(({ labelKey, value }) => ({
+  name: labelKey,
+  value,
+}));
 
 export const themeOptions: SelectOption[] = [
   {

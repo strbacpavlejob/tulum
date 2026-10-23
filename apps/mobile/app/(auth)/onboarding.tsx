@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
+import { VENUE_TYPES } from "@/constants/options";
 import { cn } from "@/lib/utils";
 import {
   deleteGuestPhoto,
@@ -18,6 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
+import type { VenueType } from "@/types/filter";
 import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import {
@@ -78,19 +80,6 @@ function mapSeekingToLookingFor(
       return "to party";
   }
 }
-
-const VENUE_OPTIONS: { emoji: string; labelKey: string; value: string }[] = [
-  { emoji: "🍺", labelKey: "bar", value: "bar" },
-  { emoji: "🍻", labelKey: "pub", value: "pub" },
-  { emoji: "🕺", labelKey: "nightclub", value: "nightclub" },
-  { emoji: "🍽️", labelKey: "restaurant", value: "restaurant" },
-  { emoji: "☕", labelKey: "cafe", value: "cafe" },
-  { emoji: "🍸", labelKey: "cocktailBar", value: "cocktail_bar" },
-  { emoji: "🍷", labelKey: "wineBar", value: "wine_bar" },
-  { emoji: "🍺", labelKey: "brewery", value: "brewery" },
-  { emoji: "🏮", labelKey: "tavern", value: "tavern" },
-  { emoji: "⛵", labelKey: "raft", value: "raft" },
-];
 
 const GENDER_OPTIONS: {
   labelKey: string;
@@ -461,7 +450,7 @@ export default function OnboardingScreen() {
   >("");
   const [seeking, setSeeking] = useState<SeekingValue | "">("");
   const [tags, setTags] = useState<string[]>([]);
-  const [venueTypes, setVenueTypes] = useState<string[]>([]);
+  const [venueTypes, setVenueTypes] = useState<VenueType[]>([]);
   // Uploaded R2 URLs (up to 3); populated as photos are picked and uploaded
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -685,7 +674,7 @@ export default function OnboardingScreen() {
       case "venueTypes":
         return (
           <View className="flex-row flex-wrap">
-            {VENUE_OPTIONS.map((opt) => (
+            {VENUE_TYPES.map((opt) => (
               <ChipOption
                 key={opt.value}
                 label={`${opt.emoji} ${t(opt.labelKey)}`}

@@ -13,11 +13,11 @@ describe('InstagramScraperService', () => {
   const makeVenue = (
     id: string,
     handle: string | null,
-    scraper: string | null = ScraperSource.GOOUT,
+    scraper: string | null = ScraperSource.GUEST_LIST,
   ) => ({
     id,
     hostId: 'host-1',
-    venueType: VenueTypeEnum.NIGHTCLUB,
+    venueType: VenueTypeEnum.CLUB,
     name: `Venue ${id}`,
     description: 'desc',
     latitude: 44.8,

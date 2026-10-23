@@ -6,22 +6,10 @@ import {
   IsString,
 } from 'class-validator';
 import type { VenueType } from '../../scrape/interfaces/venue.interface';
-
-const VENUE_TYPES = [
-  'bar',
-  'pub',
-  'nightclub',
-  'restaurant',
-  'cafe',
-  'cocktail_bar',
-  'wine_bar',
-  'brewery',
-  'tavern',
-  'raft',
-] as const;
+import { VenueTypeEnum } from '../../scrape/domain/scraper-venue.interfaces';
 
 export class GetActiveEventsDto {
-  @ApiPropertyOptional({ enum: VENUE_TYPES })
+  @ApiPropertyOptional({ enum: Object.values(VenueTypeEnum) })
   @IsOptional()
   @IsString()
   venue_type?: VenueType;

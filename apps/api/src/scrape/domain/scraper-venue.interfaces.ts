@@ -2,15 +2,11 @@ import { VenueContact } from './scraper-venue-contact.interfaces';
 
 export enum VenueTypeEnum {
   BAR = 'bar',
-  PUB = 'pub',
-  NIGHTCLUB = 'nightclub',
+  CLUB = 'club',
   RESTAURANT = 'restaurant',
-  CAFE = 'cafe',
-  COCKTAIL_BAR = 'cocktail_bar',
-  WINE_BAR = 'wine_bar',
-  BREWERY = 'brewery',
   TAVERN = 'tavern',
-  RAFT = 'raft',
+  CAFE = 'cafe',
+  EVENT_VENUE = 'event_venue',
 }
 
 export interface Venue {

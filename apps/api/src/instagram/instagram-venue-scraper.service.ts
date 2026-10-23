@@ -399,7 +399,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       name: venueName,
       longitude,
       latitude,
-      type: 'nightclub',
+      type: 'club',
       capacity: 100,
       address: streetAddress,
       description: profile.biography ?? undefined,

@@ -1,6 +1,7 @@
 // FiltersBottomSheet.tsx
 
 import { Text } from "@/components/ui/text";
+import { VENUE_TYPES } from "@/constants/options";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import useStore from "@/store/useStore";
 import { Filter, VenueType } from "@/types/filter";
@@ -41,19 +42,6 @@ type Props = {
   onReset?: () => void;
   snapPoints?: (string | number)[];
 };
-
-const VENUE_OPTIONS: { emoji: string; labelKey: string; value: string }[] = [
-  { emoji: "🍺", labelKey: "bar", value: "bar" },
-  { emoji: "🍻", labelKey: "pub", value: "pub" },
-  { emoji: "🕺", labelKey: "nightclub", value: "nightclub" },
-  { emoji: "🍽️", labelKey: "restaurant", value: "restaurant" },
-  { emoji: "☕", labelKey: "cafe", value: "cafe" },
-  { emoji: "🍸", labelKey: "cocktailBar", value: "cocktail_bar" },
-  { emoji: "🍷", labelKey: "wineBar", value: "wine_bar" },
-  { emoji: "🍺", labelKey: "brewery", value: "brewery" },
-  { emoji: "🏮", labelKey: "tavern", value: "tavern" },
-  { emoji: "⛵", labelKey: "raft", value: "raft" },
-];
 
 const defaultFilters: Filter = {
   title: "",
@@ -340,14 +328,12 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
                   {t("filterVenueType")}
                 </Text>
                 <View className="flex-row flex-wrap">
-                  {VENUE_OPTIONS.map((opt) => {
-                    const selected = filters.venueType.includes(
-                      opt.value as VenueType,
-                    );
+                  {VENUE_TYPES.map((opt) => {
+                    const selected = filters.venueType.includes(opt.value);
                     return (
                       <Pressable
                         key={opt.value}
-                        onPress={() => toggleVenueType(opt.value as VenueType)}
+                        onPress={() => toggleVenueType(opt.value)}
                         className="rounded-2xl px-4 py-3 mb-2 mr-2"
                         style={{
                           backgroundColor: selected
