@@ -77,6 +77,7 @@ export default function TabLayout() {
             ...currentSettings,
             language: remoteSettings.language,
             theme: remoteSettings.theme,
+            defaultVenueType: remoteSettings.default_venue_type ?? undefined,
           });
         }
       })

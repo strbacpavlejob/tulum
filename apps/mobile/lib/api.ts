@@ -624,6 +624,8 @@ export async function deleteGuestPhoto(
 export interface RemoteSettings {
   language: "EN" | "RS" | "RU";
   theme: "light" | "dark" | "system";
+  /** null when not chosen; absent from APIs older than BUG-029's fix. */
+  default_venue_type?: VenueType | null;
 }
 
 export async function fetchSettings(

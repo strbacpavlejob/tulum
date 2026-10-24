@@ -258,7 +258,9 @@ export default function ProfileScreen() {
     setSettings(nextSettings);
 
     const shouldUpdateRemote =
-      patch.language !== undefined || patch.theme !== undefined;
+      patch.language !== undefined ||
+      patch.theme !== undefined ||
+      patch.defaultVenueType !== undefined;
 
     if (!userId || !shouldUpdateRemote) {
       return;
@@ -278,6 +280,10 @@ export default function ProfileScreen() {
 
     if (patch.theme !== undefined) {
       remoteSettings.theme = patch.theme;
+    }
+
+    if (patch.defaultVenueType !== undefined) {
+      remoteSettings.default_venue_type = patch.defaultVenueType;
     }
 
     try {

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
+import { UpdateMySettingsDto } from './dto/update-my-settings.dto';
 import { SettingsService } from './settings.service';
 
 // Always the signed-in caller's settings. The user_id query parameter older
@@ -18,7 +19,7 @@ export class SettingsController {
   @Patch('me')
   async updateMySettings(
     @UserId() userId: string,
-    @Body() body: { language?: string; theme?: string } = {},
+    @Body() body: UpdateMySettingsDto = {},
   ) {
     return this.settingsService.upsertSettings(userId, body);
   }
