@@ -439,6 +439,11 @@ const EventDetailsScreen = () => {
       const prevTicket =
         useStore.getState().tickets?.find((t) => t.event_id === event.id) ??
         null;
+      // Your row in the guest list is either the "You" placeholder added when
+      // you attended on this screen, or a row from the server.
+      const hadPlaceholder = attendeesData.guestList.some(
+        (g) => g.uri === "__local_you__",
+      );
       // Optimistically remove locally
       removeTicketByEventId(event.id);
       updateEventAttendance(event.id, false);
@@ -454,20 +459,34 @@ const EventDetailsScreen = () => {
         if (prevTicket) addTicket(prevTicket);
         updateEventAttendance(event.id, true);
         // rollback guest placeholder removal by re-adding a placeholder
-        setAttendeesData((prev) => ({
-          ...prev,
-          guestList: [
-            {
-              name: t("you"),
-              age: null,
-              gender: null,
-              uri: "__local_you__",
-            },
-            ...prev.guestList,
-          ],
-        }));
+        if (hadPlaceholder) {
+          setAttendeesData((prev) => ({
+            ...prev,
+            guestList: [
+              {
+                name: t("you"),
+                age: null,
+                gender: null,
+                uri: "__local_you__",
+              },
+              ...prev.guestList,
+            ],
+          }));
+        }
         toast.error("Could not cancel attendance. Please try again.");
+        return;
       }
+      // The server's guest list has no user ids, so a row of yours that came
+      // from it can't be picked out here: load the list again, without you.
+      // Skip the answer if you have attended again in the meantime.
+      fetchEventAttendees(event.id, token)
+        .then((data) => {
+          const attendingAgain = useStore
+            .getState()
+            .tickets?.some((t: Ticket) => t.event_id === event.id);
+          if (!attendingAgain) setAttendeesData(data);
+        })
+        .catch(() => {});
       return;
     }
 
