@@ -508,6 +508,11 @@ export default function OnboardingScreen() {
     }
   };
 
+  // Onboarding is opened with replace (sign-in, the SSO callback, the index
+  // redirect), so the first step usually has no screen to go back to. Back
+  // only shows when it can do something.
+  const canGoBack = step > 0 || router.canGoBack();
+
   const handleBack = () => {
     if (step > 0) {
       setStep((s) => s - 1);
@@ -754,16 +759,21 @@ export default function OnboardingScreen() {
         <View className="px-5 pt-3 pb-2">
           {/* Back button + progress bar */}
           <View className="flex-row items-center gap-4 mb-4">
-            <Pressable
-              onPress={handleBack}
-              hitSlop={12}
-              className="h-9 w-9 items-center justify-center rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
-            >
-              <ArrowLeft
-                size={18}
-                className="color-light-colorStrong dark:color-dark-colorStrong"
-              />
-            </Pressable>
+            {canGoBack ? (
+              <Pressable
+                onPress={handleBack}
+                hitSlop={12}
+                className="h-9 w-9 items-center justify-center rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
+              >
+                <ArrowLeft
+                  size={18}
+                  className="color-light-colorStrong dark:color-dark-colorStrong"
+                />
+              </Pressable>
+            ) : (
+              // Same size as the button, so the progress bar doesn't move.
+              <View className="h-9 w-9" />
+            )}
 
             {/* Progress bar */}
             <View
