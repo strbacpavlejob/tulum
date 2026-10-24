@@ -842,6 +842,11 @@ export async function setEventFavorite(
   return response.json() as Promise<{ isFavorite: boolean }>;
 }
 
+/** POST /tickets/attend refused: the event overlaps one you already attend. */
+export class AttendConflictError extends Error {
+  name = "AttendConflictError";
+}
+
 export async function attendEvent(
   token: string,
   eventId: string | number,
@@ -856,6 +861,8 @@ export async function attendEvent(
     const body = await response.json().catch(() => ({}));
     const message =
       body?.message ?? `Failed to attend event: ${response.status}`;
+    // A 409's message is meant for the guest: it names the overlapping event.
+    if (response.status === 409) throw new AttendConflictError(message);
     throw new Error(message);
   }
   return response.json();

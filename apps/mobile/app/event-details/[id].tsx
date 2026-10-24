@@ -9,6 +9,7 @@ import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
+  AttendConflictError,
   EventAttendeesData,
   attendEvent,
   fetchEventAttendees,
@@ -551,7 +552,7 @@ const EventDetailsScreen = () => {
         ),
         location: event.location,
       });
-    } catch {
+    } catch (err) {
       // rollback optimistic add
       removeTicketByEventId(event.id);
       updateEventAttendance(event.id, false);
@@ -560,7 +561,12 @@ const EventDetailsScreen = () => {
         ...prev,
         guestList: prev.guestList.filter((g) => g.uri !== "__local_you__"),
       }));
-      const message = "Something went wrong. Please try again.";
+      // An overlap comes with the server's reason, which names the event you
+      // already attend; any other failure gets the generic message.
+      const message =
+        err instanceof AttendConflictError
+          ? err.message
+          : "Something went wrong. Please try again.";
       Alert.alert("Can't attend", message);
       toast.error(message);
     }
