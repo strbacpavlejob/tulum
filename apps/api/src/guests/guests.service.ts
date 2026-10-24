@@ -114,13 +114,17 @@ export class GuestsService {
       // is actually attending that event (active session OR valid ticket).
       // If they're not attending, return an empty result — we should only
       // return guests who are at the same event as the requester.
-      const { data: userSession } = await this.db
+      // limit(1): a user may still have more than one active session, and
+      // maybeSingle errors on two.
+      const { data: userSession, error: userSessionError } = await this.db
         .from('event_sessions')
         .select('id')
         .eq('event_id', targetEventId)
         .eq('user_id', userId)
         .is('exited_at', null)
+        .limit(1)
         .maybeSingle();
+      if (userSessionError) throw userSessionError;
 
       let isAttending = Boolean(userSession);
 

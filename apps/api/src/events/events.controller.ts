@@ -13,6 +13,16 @@ import { AdminGuard } from '../common/guards/admin.guard';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CleanupEventsDto } from './dto/cleanup-events.dto';
 
+interface EventSessionRow {
+  id: number;
+  user_id: string;
+  event_id: string;
+  ticket_id: string | null;
+  entered_at: string;
+  exited_at: string | null;
+  created_at: string;
+}
+
 @ApiTags('events')
 @Controller('events')
 export class EventsController {
@@ -44,8 +54,9 @@ export class EventsController {
 
   /**
    * POST /events/sessions
-   * Create an event session (check-in) for the current user.
-   * Body: { event_id: string }
+   * Check the current user in to an event. Body: { event_id: string }
+   * One active session per user and event: when one is open, it is returned
+   * instead of adding another (the app checks in on every load of Matches).
    */
   @Post('sessions')
   async createSession(
@@ -57,13 +68,42 @@ export class EventsController {
     const eventId = body?.event_id;
     if (!eventId)
       throw new BadRequestException('Missing required field: event_id');
+
+    const open = await this.findActiveSession(userId, eventId);
+    if (open) return { session: open };
+
     const { data, error } = await this.supabaseService
       .getClient()
       .from('event_sessions')
       .insert({ user_id: userId, event_id: eventId })
       .select()
-      .single();
-    if (error) throw error;
+      .single<EventSessionRow>();
+    if (error) {
+      // A parallel check-in won the race: the unique index on active
+      // sessions refused this one, so return that check-in's session.
+      if ((error as { code?: string }).code === '23505') {
+        const winner = await this.findActiveSession(userId, eventId);
+        if (winner) return { session: winner };
+      }
+      throw error;
+    }
     return { session: data };
+  }
+
+  /** The user's earliest open session at the event, if any. */
+  private async findActiveSession(userId: string, eventId: string) {
+    const { data, error } = await this.supabaseService
+      .getClient()
+      .from('event_sessions')
+      .select()
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+      .is('exited_at', null)
+      .order('entered_at', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(1)
+      .maybeSingle<EventSessionRow>();
+    if (error) throw error;
+    return data;
   }
 }

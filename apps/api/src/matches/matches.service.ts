@@ -191,27 +191,31 @@ export class MatchesService {
       throw new BadRequestException('Cannot swipe on yourself');
     }
 
-    const { data: swipeSession } = await this.db
-      .from('event_sessions')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('user_id', userId)
-      .is('exited_at', null)
-      .maybeSingle();
+    // An active session each. A user can have more than one (older check-ins
+    // weren't idempotent), so take the earliest instead of erroring on two.
+    const activeSession = async (sessionUserId: string) => {
+      const { data, error } = await this.db
+        .from('event_sessions')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', sessionUserId)
+        .is('exited_at', null)
+        .order('entered_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    };
+    const swipeSession = await activeSession(userId);
+    const targetSession = await activeSession(otherUserId);
 
-    const { data: targetSession } = await this.db
-      .from('event_sessions')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('user_id', otherUserId)
-      .maybeSingle();
-
-    const { data: targetTicket } = await this.db
+    const { data: targetTicket, error: targetTicketError } = await this.db
       .from('tickets')
       .select('id')
       .eq('event_id', eventId)
       .eq('guest_id', otherUserId)
       .maybeSingle();
+    if (targetTicketError) throw targetTicketError;
 
     if (!swipeSession || (!targetSession && !targetTicket)) {
       throw new BadRequestException(
