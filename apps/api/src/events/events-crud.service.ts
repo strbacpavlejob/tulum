@@ -190,9 +190,13 @@ export class EventsCrudService {
         },
       ];
     });
-    const mapPinListing = uniqueEvents
-      .flatMap((event) => {
-        const venue = venueMap.get(event.venue_id as string);
+    // One pin per venue, in the order of its first listed event; instances is
+    // how many listed events are there. A pin per event stacked a duplicate
+    // marker on the venue for each of its events.
+    const pinVenueIds = [...new Set(eventsListing.map((e) => e.venue_id))];
+    const mapPinListing = pinVenueIds
+      .flatMap((venueId) => {
+        const venue = venueMap.get(venueId);
         if (!venue) return [];
         return [
           {
