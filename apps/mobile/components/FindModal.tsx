@@ -1,6 +1,5 @@
 import { Text } from "@/components/ui/text";
 import { EMOJIS } from "@/constants/options";
-import { faker } from "@faker-js/faker";
 import { X } from "lucide-react-native";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,8 +8,26 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type FindModalProps = {
   onClose: () => void;
-  matchId?: string;
+  matchId: string;
 };
+
+// Crockford's base32: no I, L, O or U, so a code can't be misread.
+const PAIR_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+// Six characters from the match's hash. Match ids are sequential, so their
+// hashes differ only in the low bits; mixing the hash first (murmur3's
+// finalizer) gives neighboring matches unrelated codes.
+function pairCodeFromHash(hash: number) {
+  let h = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h = (h ^ (h >>> 16)) >>> 0;
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += PAIR_CODE_ALPHABET[h & 31];
+    h >>>= 5;
+  }
+  return code;
+}
 
 export default function FindModal({ onClose, matchId }: FindModalProps) {
   const insets = useSafeAreaInsets();
@@ -40,21 +57,17 @@ export default function FindModal({ onClose, matchId }: FindModalProps) {
     return `#${f(0)}${f(8)}${f(4)}`;
   };
 
-  // Derive deterministic emoji + background color from `matchId` so both
-  // matched users get the same representation. Fall back to faker when
-  // no matchId provided (keeps existing behavior for callers that don't pass it).
-  const { emoji, bgColor } = useMemo(() => {
-    if (matchId) {
-      const h = hashString(matchId);
-      const emojiIndex = h % EMOJIS.length;
-      const hue = h % 360;
-      const color = hslToHex(hue, 70, 50);
-      return { emoji: EMOJIS[emojiIndex], bgColor: color };
-    }
-
+  // Derive the emoji, background color and pair code from `matchId`, so both
+  // matched users see the same ones every time the screen opens.
+  const { emoji, bgColor, pairCode } = useMemo(() => {
+    const h = hashString(matchId);
+    const emojiIndex = h % EMOJIS.length;
+    const hue = h % 360;
+    const color = hslToHex(hue, 70, 50);
     return {
-      emoji: faker.helpers.arrayElement(EMOJIS),
-      bgColor: faker.color.rgb(),
+      emoji: EMOJIS[emojiIndex],
+      bgColor: color,
+      pairCode: pairCodeFromHash(h),
     };
   }, [matchId]);
 
@@ -97,7 +110,7 @@ export default function FindModal({ onClose, matchId }: FindModalProps) {
             {t("findYourMatch")}
           </Text>
           <Text className="text-[18px] font-semibold text-light-gray12 opacity-70 dark:text-dark-gray12">
-            {t("pairCode")}: #{faker.string.alphanumeric(6).toUpperCase()}
+            {t("pairCode")}: #{pairCode}
           </Text>
         </View>
 
