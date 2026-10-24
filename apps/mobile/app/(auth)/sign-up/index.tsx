@@ -10,7 +10,6 @@ import { Link, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
-import { Mail } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -130,19 +129,6 @@ export default function SignUpScreen() {
             )}
             <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
               Continue with Google
-            </Text>
-          </Button>
-
-          {/* Email */}
-          <Button
-            variant="outline"
-            disabled={loadingProvider !== null}
-            onPress={() => router.push("/(auth)/sign-in" as any)}
-            className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-          >
-            <Mail size={20} color={theme.color} />
-            <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
-              Continue with Email
             </Text>
           </Button>
 
