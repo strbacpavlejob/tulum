@@ -1,11 +1,11 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
+import Logo from "@/components/illustrations/logo";
 import { fetchMyMatches, fetchMyProfile, fetchSettings } from "@/lib/api";
 import { getUnreadChatsCount } from "@/lib/inboxUnread";
 import useStore from "@/store/useStore";
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
 import {
-  HeartPulse,
   Map,
   MessageCircle,
   Tickets,
@@ -180,7 +180,13 @@ export default function TabLayout() {
         name="matches"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon icon={HeartPulse} focused={focused} />
+            <Logo
+              className={focused ? "opacity-100" : "opacity-60"}
+              color={focused ? theme.primary : theme.colorStrong}
+              height={28}
+              variant={focused ? "filled" : "outlined"}
+              width={28}
+            />
           ),
         }}
       />
