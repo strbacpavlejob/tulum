@@ -414,7 +414,18 @@ export default function MatchesScreen() {
           // ignore check-in failures — still try to load profiles
         }
       }
-      const data = await fetchSwipeableProfiles(token, activeEventId);
+      // The list is everyone at the event; the counts (eligible guests and the
+      // like limit) are for the filters you have on, as when you like someone.
+      const requestedFilters: SwipeFilters = {
+        genderFilter: genderFilterRef.current,
+        ageMin: ageRangeRef.current.min,
+        ageMax: ageRangeRef.current.max,
+      };
+      const data = await fetchSwipeableProfiles(
+        token,
+        activeEventId,
+        requestedFilters,
+      );
 
       if (activeEventId) {
         setSwipeableCandidatesForEvent(
@@ -487,11 +498,19 @@ export default function MatchesScreen() {
         typeof data.like_limit === "number" ? data.like_limit : 0,
       );
 
-      setLikeStats({
-        likesUsed,
-        likeLimit: syncedLikeLimit,
-        eligibleGuestCount,
-      });
+      // If the filters changed while this loaded, its counts are for the old
+      // ones; the counts from the filtered deck stay until the next load.
+      const filtersUnchanged =
+        requestedFilters.genderFilter === genderFilterRef.current &&
+        requestedFilters.ageMin === ageRangeRef.current.min &&
+        requestedFilters.ageMax === ageRangeRef.current.max;
+      if (filtersUnchanged) {
+        setLikeStats({
+          likesUsed,
+          likeLimit: syncedLikeLimit,
+          eligibleGuestCount,
+        });
+      }
     } catch {
       // Keep empty state on error
     } finally {
