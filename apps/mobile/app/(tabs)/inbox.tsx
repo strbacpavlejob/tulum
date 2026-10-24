@@ -18,7 +18,6 @@ import * as Location from "expo-location";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import {
-  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -31,6 +30,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import LoadingIndicator from "@/components/loading-indicator";
 import EmptyIndicator from "@/components/EmptyIndicator";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -93,6 +93,11 @@ function ringColor(expiresAt: Date): string {
   if (ms < 60 * 60 * 1000) return "#ef4444";
   if (ms < 2 * 60 * 60 * 1000) return "#f97316";
   return "#22c55e";
+}
+
+/** The six-hour chat window after the match has closed. */
+function isChatExpired(expiresAt: Date): boolean {
+  return expiresAt.getTime() <= Date.now();
 }
 
 function formatTimeRemaining(expiresAt: Date): string {
@@ -205,11 +210,18 @@ function NewMatchBubble({
   onPress: () => void;
 }) {
   const avatarMargin = (MATCH_RING_SIZE - MATCH_AVATAR_SIZE) / 2;
+  // Dimmed like an expired Messages row; the inbox refuses to open it.
+  const isExpired = isChatExpired(match.expiresAt);
 
   return (
     <Pressable
       onPress={onPress}
-      style={{ alignItems: "center", marginRight: 20, width: MATCH_RING_SIZE }}
+      style={{
+        alignItems: "center",
+        marginRight: 20,
+        width: MATCH_RING_SIZE,
+        opacity: isExpired ? 0.5 : 1,
+      }}
     >
       <View style={{ width: MATCH_RING_SIZE, height: MATCH_RING_SIZE }}>
         <Image
@@ -579,7 +591,21 @@ export default function InboxScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationStatus]);
 
+  // An expired match can't be opened from either the New Matches strip or the
+  // Messages list. The check runs at tap time, because the list only
+  // re-renders once a minute. A toast, not Alert.alert: Alert.alert does
+  // nothing on web.
+  const showChatExpired = () => {
+    toast.error(t("chatExpiredTitle"), {
+      description: t("chatExpiredDescription"),
+    });
+  };
+
   const openNewMatch = (match: Match) => {
+    if (isChatExpired(match.expiresAt)) {
+      showChatExpired();
+      return;
+    }
     setNewMatches((prev) => prev.filter((m) => m.id !== match.id));
     setMatches((prev) => [match, ...prev]);
     checkChatLocation(match);
@@ -603,8 +629,8 @@ export default function InboxScreen() {
       <Pressable
         style={{ opacity: isExpired ? 0.5 : 1 }}
         onPress={() => {
-          if (isExpired) {
-            Alert.alert(t("chatExpiredTitle"), t("chatExpiredDescription"));
+          if (isChatExpired(item.expiresAt)) {
+            showChatExpired();
             return;
           }
           checkChatLocation(item);
