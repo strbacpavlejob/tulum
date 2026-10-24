@@ -19,7 +19,12 @@ This is an agent instruction, not an operating-system permission boundary. The C
 
 ## Visual browser testing
 
-- For Expo web checks, use the project `playwright` MCP server with the dedicated browser started by `bash scripts/start-tulum-test-browser.sh`; the Expo app is at `http://localhost:8081`. Trust this repository in Copilot CLI if prompted so the project MCP config loads.
+- To check a ticket in the Expo web app at `http://localhost:8081`, prefer the Claude in Chrome extension when your tools include it (`mcp__claude-in-chrome__*`, for example in Claude Code). Opening the page, clicking through the flow and taking screenshots with it is much faster than writing CDP scripts.
+  - The extension is installed in Chromium's default profile, not in the dedicated test profile below. If no browser is connected, start `chromium` without `--user-data-dir`, confirm it with `list_connected_browsers`, then work in your own tab from `tabs_context_mcp` (`createIfEmpty`) and close the tabs you opened when you finish.
+  - The app must be signed in with the development account in that profile. If it shows the sign-in screen, ask the user to sign in; never enter credentials yourself.
+  - The extension can't stub requests before a page loads, so the app talks to whatever runs on `localhost:3001`. Against the real API, keep to checks that only read: many screens write when used, and some when merely opened (event details records a 'seen' engagement for a signed-in user), which the Supabase rule above forbids. For flows that write, the real API must not be running (ask the user to stop it if it is): serve the routes the flow needs from a local stand-in on port 3001, and stop it when you finish.
+  - `resize_window` may not shrink the window to phone width (on this desktop the page stayed 640 px wide), so when the exact 375x667 layout matters, use the Playwright path below.
+- Otherwise, use the project `playwright` MCP server (`.github/mcp.json`) with the dedicated browser started by `bash scripts/start-tulum-test-browser.sh`. Trust this repository in Copilot CLI if prompted so the project MCP config loads.
 - Use a 375x667 viewport for iPhone SE checks, inspect screenshots, and do not add E2E tests unless requested.
-- Treat the dedicated browser profile as a credential: use only a development account, and never read, copy, print, or commit Clerk cookies, session tokens, or browser storage.
+- Treat both browser profiles as credentials: use only a development account in the app, and never read, copy, print, or commit Clerk cookies, session tokens, or browser storage.
 - Do not add an application auth bypass or rely on `x-user-id` to test signed-in screens; preserve real Clerk token verification.
