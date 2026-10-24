@@ -587,15 +587,16 @@ const EventDetailsScreen = () => {
 
   const handleShare = async () => {
     if (!event) return;
+    // The link opens this screen (app/event-details/[id]); sharing and the
+    // copy fallback use the same one.
+    const url = Linking.createURL(`event-details/${event.id}`);
     try {
-      const url = Linking.createURL(`event/${event.id}`);
       const message = `${event.title}\n${url}`;
       const result = await Share.share({ message, url });
       if (result.action === Share.sharedAction) {
         toast.success(t("linkShared") ?? "Shared");
       }
     } catch {
-      const url = Linking.createURL(`event/${event?.id}`);
       await Clipboard.setStringAsync(url);
       toast.success(t("linkCopied") ?? "Link copied");
     }
