@@ -52,6 +52,13 @@ export type Religion =
   | "prefer not to say";
 
 export type LookingForGender = "male" | "female" | "everyone";
+
+/**
+ * Who sees you on event guest lists and in Matches: every guest going
+ * (everyone), only the guests you liked at that event (liked), or nobody,
+ * which also pauses Matches for you (hidden).
+ */
+export type GuestVisibility = "everyone" | "liked" | "hidden";
 export type GenderFilter = "male" | "female" | "other" | "everyone";
 
 export interface User {
@@ -82,4 +89,5 @@ export interface User {
   starSign?: StarSign;
   pets?: string[];
   religion?: Religion;
+  visibility?: GuestVisibility;
 }

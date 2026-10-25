@@ -9,6 +9,7 @@
  */
 import { BadRequestException } from '@nestjs/common';
 import { beforeEach, describe, expect, it } from '@jest/globals';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { GuestsService } from '../guests/guests.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
@@ -159,6 +160,7 @@ const db = {
     }),
 };
 const supabaseService = { getClient: () => db } as unknown as SupabaseService;
+const guestSafety = new GuestSafetyService(supabaseService);
 
 beforeEach(() => {
   uniqueActiveIndex = true;
@@ -229,7 +231,7 @@ describe('Checking in (POST /events/sessions, BUG-030)', () => {
 });
 
 describe('Swiping with duplicate sessions (BUG-030)', () => {
-  const service = new MatchesService(supabaseService);
+  const service = new MatchesService(supabaseService, guestSafety);
   const like = () =>
     service.submitSwipeDecision(ME, {
       other_user_id: OTHER,
@@ -273,7 +275,11 @@ describe('Swiping with duplicate sessions (BUG-030)', () => {
 });
 
 describe('The deck with duplicate sessions (BUG-030)', () => {
-  const service = new GuestsService(supabaseService, {} as R2Service);
+  const service = new GuestsService(
+    supabaseService,
+    {} as R2Service,
+    guestSafety,
+  );
 
   it('shows the deck to a guest with two active sessions and no ticket', async () => {
     tables.event_sessions.push(

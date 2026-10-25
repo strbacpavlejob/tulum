@@ -263,7 +263,7 @@ const resources = {
       select: "Select…",
       tellOthersAboutYourself: "Tell others about yourself…",
       profileVisibilityNote:
-        "Guests you match with see your whole profile. Before that, guests at the same event see your photos, name, age, interests and bio.",
+        "Guests you match with see your whole profile. Before that, guests at the same event see your photos, name, age, interests and bio, and guests going to it see your name, age and photo on its guest list. Choose below who can see you. To block or report someone, tap ⋯ on their profile or in your chat.",
       height: "Height",
       relationship: "Relationship",
 
@@ -383,6 +383,53 @@ const resources = {
       share: "Share",
       linkCopied: "Link copied",
       linkShared: "Link shared",
+      // Guest safety: block, report and who can see me (TASK-001)
+      whoCanSeeMe: "Who can see me",
+      visibilityEveryone: "Everyone going",
+      visibilityEveryoneDescription:
+        "Guests going to the same event see you on its guest list and in Matches.",
+      visibilityLiked: "Only people I like",
+      visibilityLikedDescription:
+        "Guests see you only after you like them at that event. You can still browse and like.",
+      visibilityHidden: "Hidden",
+      visibilityHiddenDescription:
+        "Nobody sees you on guest lists or in Matches, and Matches is paused for you. Your matches and chats stay open.",
+      visibilitySaved: "Saved: {{option}}",
+      reportOrBlock: "Report or block",
+      reportAction: "Report",
+      reportActionHint: "Tell us what happened. They're blocked too.",
+      blockActionHint: "You won't see each other anymore.",
+      safetySheetNote: "{{name}} won't be told.",
+      block: "Block",
+      blockConfirmTitle: "Block {{name}}?",
+      blockConfirmDescription:
+        "You won't see each other in Matches, on guest lists or in Messages, and your chat closes. {{name}} won't be told. You can't undo this.",
+      guestBlocked: "{{name}} is blocked.",
+      blockFailed: "Couldn't block. Please try again.",
+      reportTitle: "Report {{name}}",
+      reportDescription:
+        "The Tulum team reviews every report. {{name}} is blocked when you send it and won't know who reported them.",
+      reportReasonHarassment: "Harassment or threats",
+      reportReasonInappropriate: "Inappropriate photos or messages",
+      reportReasonFakeProfile: "Fake profile or scam",
+      reportReasonSpam: "Spam or selling something",
+      reportReasonUnderage: "Might be under 18",
+      reportReasonUnsafeMeeting: "Made me feel unsafe in person",
+      reportReasonOther: "Something else",
+      reportDetailsPlaceholder: "Add details (optional)",
+      reportDetailsRequired: "What happened?",
+      reportSend: "Report and block",
+      reportSent: "Thanks for telling us. {{name}} is blocked.",
+      reportNotSent: "Your report wasn't sent. Please try again.",
+      guestUnavailable: "This guest is no longer available.",
+      chatUnavailable: "This chat is no longer available.",
+      matchesHiddenTitle: "You're hidden",
+      matchesHiddenSubtitle:
+        "Guests at this event can't see you, and Matches is paused for you. You can change who sees you on your Profile.",
+      matchesHiddenButton: "Go to Profile",
+      guestListAttendToSee:
+        "Only guests going to this event see who's going. Attend to see the guest list.",
+      guestListNotShown: "Also going, not shown: {{count}}",
     },
   },
 
@@ -650,7 +697,7 @@ const resources = {
       select: "Izaberi…",
       tellOthersAboutYourself: "Reci drugima o sebi…",
       profileVisibilityNote:
-        "Gosti sa kojima imaš meč vide ceo tvoj profil. Pre toga gosti na istom događaju vide tvoje fotografije, ime, godine, interesovanja i biografiju.",
+        "Gosti sa kojima imaš meč vide ceo tvoj profil. Pre toga gosti na istom događaju vide tvoje fotografije, ime, godine, interesovanja i biografiju, a gosti koji idu na njega vide tvoje ime, godine i fotografiju na listi gostiju. Ispod biraš ko može da te vidi. Da nekoga blokiraš ili prijaviš, dodirni ⋯ na njegovom profilu ili u razgovoru.",
       height: "Visina",
       relationship: "Veza",
 
@@ -770,6 +817,53 @@ const resources = {
       share: "Podeli",
       linkCopied: "Link kopiran",
       linkShared: "Link podeljen",
+      // Guest safety: block, report and who can see me (TASK-001)
+      whoCanSeeMe: "Ko može da me vidi",
+      visibilityEveryone: "Svi koji idu",
+      visibilityEveryoneDescription:
+        "Gosti koji idu na isti događaj vide te na listi gostiju i u Mečevima.",
+      visibilityLiked: "Samo oni koji mi se sviđaju",
+      visibilityLikedDescription:
+        "Gosti te vide tek kada ih lajkuješ na tom događaju. I dalje možeš da pregledaš profile i lajkuješ.",
+      visibilityHidden: "Skriveno",
+      visibilityHiddenDescription:
+        "Niko te ne vidi na listama gostiju ni u Mečevima, a Mečevi su ti pauzirani. Tvoji mečevi i razgovori ostaju otvoreni.",
+      visibilitySaved: "Sačuvano: {{option}}",
+      reportOrBlock: "Prijavi ili blokiraj",
+      reportAction: "Prijavi",
+      reportActionHint: "Reci nam šta se desilo. Osoba će biti i blokirana.",
+      blockActionHint: "Više se nećete videti.",
+      safetySheetNote: "{{name}} neće dobiti obaveštenje.",
+      block: "Blokiraj",
+      blockConfirmTitle: "Blokiranje: {{name}}",
+      blockConfirmDescription:
+        "Nećete se videti u Mečevima, na listama gostiju ni u Porukama, a vaš razgovor se zatvara. {{name}} neće dobiti obaveštenje. Ovo ne može da se poništi.",
+      guestBlocked: "Blokirano: {{name}}.",
+      blockFailed: "Blokiranje nije uspelo. Pokušaj ponovo.",
+      reportTitle: "Prijava: {{name}}",
+      reportDescription:
+        "Tim Tuluma pregleda svaku prijavu. Kada je pošalješ, ta osoba je blokirana i neće znati ko ju je prijavio.",
+      reportReasonHarassment: "Uznemiravanje ili pretnje",
+      reportReasonInappropriate: "Neprikladne fotografije ili poruke",
+      reportReasonFakeProfile: "Lažan profil ili prevara",
+      reportReasonSpam: "Spam ili prodaja",
+      reportReasonUnderage: "Možda nema 18 godina",
+      reportReasonUnsafeMeeting: "Nebezbedno ponašanje uživo",
+      reportReasonOther: "Nešto drugo",
+      reportDetailsPlaceholder: "Dodaj detalje (nije obavezno)",
+      reportDetailsRequired: "Šta se desilo?",
+      reportSend: "Prijavi i blokiraj",
+      reportSent: "Hvala na prijavi. Blokirano: {{name}}.",
+      reportNotSent: "Prijava nije poslata. Pokušaj ponovo.",
+      guestUnavailable: "Ovaj gost više nije dostupan.",
+      chatUnavailable: "Ovaj razgovor više nije dostupan.",
+      matchesHiddenTitle: "Tvoj profil je skriven",
+      matchesHiddenSubtitle:
+        "Gosti na ovom događaju te ne vide, a Mečevi su ti pauzirani. Ko može da te vidi menjaš na svom Profilu.",
+      matchesHiddenButton: "Idi na Profil",
+      guestListAttendToSee:
+        "Samo gosti koji idu na ovaj događaj vide ko još ide. Prisustvuj da vidiš listu gostiju.",
+      guestListNotShown: "Takođe idu, nisu prikazani: {{count}}",
     },
   },
 
@@ -1034,7 +1128,7 @@ const resources = {
       select: "Выберите…",
       tellOthersAboutYourself: "Расскажите о себе…",
       profileVisibilityNote:
-        "Гости, с которыми у вас матч, видят весь ваш профиль. До этого гости того же события видят ваши фото, имя, возраст, интересы и раздел «О себе».",
+        "Гости, с которыми у вас матч, видят весь ваш профиль. До этого гости того же события видят ваши фото, имя, возраст, интересы и раздел «О себе», а те, кто туда идёт, — ваше имя, возраст и фото в списке гостей. Ниже выберите, кто может вас видеть. Чтобы заблокировать кого-то или пожаловаться, нажмите ⋯ в его профиле или в чате.",
       height: "Рост",
       relationship: "Отношения",
 
@@ -1154,6 +1248,54 @@ const resources = {
       share: "Поделиться",
       linkCopied: "Ссылка скопирована",
       linkShared: "Ссылка отправлена",
+      // Guest safety: block, report and who can see me (TASK-001)
+      whoCanSeeMe: "Кто может меня видеть",
+      visibilityEveryone: "Все, кто идёт",
+      visibilityEveryoneDescription:
+        "Гости того же события видят вас в списке гостей и в Матчах.",
+      visibilityLiked: "Только те, кто мне нравится",
+      visibilityLikedDescription:
+        "Гости увидят вас, только когда вы поставите им лайк на этом событии. Смотреть профили и ставить лайки можно как раньше.",
+      visibilityHidden: "Скрыто",
+      visibilityHiddenDescription:
+        "Никто не видит вас в списках гостей и в Матчах, а Матчи для вас на паузе. Ваши матчи и чаты остаются открытыми.",
+      visibilitySaved: "Сохранено: {{option}}",
+      reportOrBlock: "Пожаловаться или заблокировать",
+      reportAction: "Пожаловаться",
+      reportActionHint:
+        "Расскажите, что случилось. Человек тоже будет заблокирован.",
+      blockActionHint: "Вы больше не увидите друг друга.",
+      safetySheetNote: "{{name}} не получит уведомления.",
+      block: "Заблокировать",
+      blockConfirmTitle: "Блокировка: {{name}}",
+      blockConfirmDescription:
+        "Вы больше не увидите друг друга в Матчах, списках гостей и Сообщениях, а ваш чат закроется. {{name}} не получит уведомления. Это действие нельзя отменить.",
+      guestBlocked: "Заблокировано: {{name}}.",
+      blockFailed: "Не удалось заблокировать. Попробуйте ещё раз.",
+      reportTitle: "Жалоба: {{name}}",
+      reportDescription:
+        "Команда Tulum рассматривает каждую жалобу. После отправки этот человек будет заблокирован и не узнает, кто на него пожаловался.",
+      reportReasonHarassment: "Домогательства или угрозы",
+      reportReasonInappropriate: "Неприемлемые фото или сообщения",
+      reportReasonFakeProfile: "Фейковый профиль или мошенничество",
+      reportReasonSpam: "Спам или реклама",
+      reportReasonUnderage: "Возможно, младше 18 лет",
+      reportReasonUnsafeMeeting: "Небезопасное поведение при встрече",
+      reportReasonOther: "Другое",
+      reportDetailsPlaceholder: "Добавьте подробности (необязательно)",
+      reportDetailsRequired: "Что произошло?",
+      reportSend: "Пожаловаться и заблокировать",
+      reportSent: "Спасибо за жалобу. Заблокировано: {{name}}.",
+      reportNotSent: "Жалоба не отправлена. Попробуйте ещё раз.",
+      guestUnavailable: "Этот гость больше недоступен.",
+      chatUnavailable: "Этот чат больше недоступен.",
+      matchesHiddenTitle: "Ваш профиль скрыт",
+      matchesHiddenSubtitle:
+        "Гости этого события вас не видят, а Матчи для вас на паузе. Изменить, кто вас видит, можно в Профиле.",
+      matchesHiddenButton: "Открыть профиль",
+      guestListAttendToSee:
+        "Только гости, которые идут на это событие, видят, кто ещё идёт. Нажмите «Посетить», чтобы увидеть список гостей.",
+      guestListNotShown: "Тоже идут, но не показаны: {{count}}",
     },
   },
 };

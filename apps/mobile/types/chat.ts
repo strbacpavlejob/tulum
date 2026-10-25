@@ -9,6 +9,8 @@ export interface Message {
 
 export interface Match {
   id: string;
+  /** The guest you matched with. */
+  otherUserId?: string;
   chatId?: string;
   eventId?: string;
   venueLat?: number | null;

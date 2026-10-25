@@ -5,6 +5,7 @@
  * in-memory tables.
  */
 import { describe, expect, it } from '@jest/globals';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -124,7 +125,11 @@ describe('Profile details other guests see', () => {
       guests: [{ ...guestColumns(OTHER, 'Ana'), users: names('Ana') }],
       events: [{ id: EVENT_ID, title: 'Jazz night', venues: { name: 'Bar' } }],
     });
-    const guests = new GuestsService(supabase, {} as R2Service);
+    const guests = new GuestsService(
+      supabase,
+      {} as R2Service,
+      new GuestSafetyService(supabase),
+    );
 
     const result = await guests.getSwipeableGuests(CALLER, EVENT_ID);
 
@@ -166,7 +171,10 @@ describe('Profile details other guests see', () => {
         },
       ],
     });
-    const matches = new MatchesService(supabase);
+    const matches = new MatchesService(
+      supabase,
+      new GuestSafetyService(supabase),
+    );
 
     const [match] = await matches.getMyMatches(CALLER);
 
@@ -216,7 +224,10 @@ describe('Profile details other guests see', () => {
         },
       ],
     });
-    const matches = new MatchesService(supabase);
+    const matches = new MatchesService(
+      supabase,
+      new GuestSafetyService(supabase),
+    );
 
     const [match] = await matches.getMyMatches(CALLER);
 

@@ -23,6 +23,7 @@ import { GuestsModule } from './guests/guests.module';
 import { SeedModule } from './seed/seed.module';
 import { SettingsModule } from './settings/settings.module';
 import { ReportsModule } from './reports/reports.module';
+import { GuestSafetyModule } from './guest-safety/guest-safety.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ReportsModule } from './reports/reports.module';
     SeedModule,
     SettingsModule,
     ReportsModule,
+    GuestSafetyModule,
   ],
   controllers: [AppController],
   providers: [

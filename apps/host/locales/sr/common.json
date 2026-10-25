@@ -504,7 +504,7 @@
       },
       "q5": {
         "question": "Mogu li videti ko ide na događaj?",
-        "answer": "Da. Videćeš pregled svih ljudi koji dolaze, uključujući njihova interesovanja, vibe i  uopšte odnos muškaraca i žena na događaju— bez ugrožavanja bilo čije privatnosti."
+        "answer": "Da. Pre nego što prijaviš dolazak, vidiš koliko ljudi ide, odnos žena i muškaraca i prosečne godine. Kada dodirneš Prisustvuj, vidiš i listu gostiju: ime, godine i fotografiju svakog gosta koji je izabrao da bude vidljiv."
       },
       "q6": {
         "question": "Da li je Tulum besplatan?",
@@ -516,7 +516,7 @@
       },
       "q8": {
         "question": "Da li je bezbedno?",
-        "answer": "Tulum trenutno nema opcije u aplikaciji za prijavu ili blokiranje drugih gostiju i ne može da potvrdi nečiji identitet niti da garantuje tvoju bezbednost. Nađi se na javnom mestu, javi prijatelju gde ideš i udalji se ako ti nešto ne prija. U hitnom slučaju pozovi lokalne hitne službe."
+        "answer": "Ti biraš ko te vidi. Gosti koji idu na isti događaj vide tvoje ime, godine i fotografiju na listi gostiju, gosti na samom događaju vide tvoje fotografije, interesovanja i biografiju u Mečevima, a ceo profil vide samo oni sa kojima imaš meč. Na Profilu biraš ko može da te vidi: svi koji idu, samo oni koji ti se sviđaju ili niko (Skriveno). Ako ti je neko neprijatan, dodirni ⋯ na njegovom profilu ili u razgovoru da ga blokiraš ili prijaviš: više se nigde ne vidite, ta osoba to ne saznaje, a prijave idu timu Tuluma. Tulum ne može da potvrdi nečiji identitet, zato se nađi na javnom mestu, javi prijatelju gde ideš i udalji se ako ti nešto ne prija. U hitnom slučaju pozovi lokalne hitne službe."
       },
       "q9": {
         "question": "Po čemu se Tulum razlikuje od aplikacija za upoznavanje?",
@@ -594,7 +594,8 @@
       "wordAssistant": "Word asistent",
       "quickCreate": "Brzo kreiranje događaja",
       "inbox": "Pristigle poruke",
-      "documents": "Dokumenti"
+      "documents": "Dokumenti",
+      "guestReports": "Prijave gostiju"
     },
     "userMenu": {
       "account": "Nalog",
@@ -802,6 +803,48 @@
         "deleted": "Lokal obrisan",
         "deletedDescription": "i svi povezani događaji su uklonjeni"
       }
+    },
+    "guestReportsPage": {
+      "description": "Gosti prijavljuju jedni druge sa profila ili iz razgovora u aplikaciji. Prijava je gosta i blokirala za osobu koja ga je prijavila. Ovu stranicu vide samo administratori Tuluma.",
+      "status": "Status",
+      "statuses": {
+        "pending": "Na čekanju",
+        "in_review": "U pregledu",
+        "resolved": "Rešeno",
+        "rejected": "Odbijeno",
+        "all": "Sve"
+      },
+      "reasons": {
+        "harassment": "Uznemiravanje ili pretnje",
+        "inappropriate": "Neprikladne fotografije ili poruke",
+        "fake_profile": "Lažan profil ili prevara",
+        "spam": "Spam ili prodaja",
+        "underage": "Možda nema 18 godina",
+        "unsafe_meeting": "Nebezbedno ponašanje uživo",
+        "other": "Nešto drugo"
+      },
+      "sources": {
+        "profile": "Sa profila",
+        "chat": "Iz razgovora"
+      },
+      "from": {
+        "reporter": "Prijavio/la",
+        "reported": "Prijavljeni gost",
+        "other": "Neko drugi"
+      },
+      "reportedBy": "Prijavio/la: {{name}} · {{date}}",
+      "reviewedBy": "Poslednja izmena: {{name}} · {{date}}",
+      "deletedAccount": "Obrisan nalog",
+      "reportCount": "Prijave za ovog gosta: {{count}}",
+      "event": "Događaj",
+      "showChat": "Prikaži razgovor ({{count}})",
+      "statusSaved": "Status je sačuvan",
+      "statusNotSaved": "Status nije sačuvan. Pokušaj ponovo.",
+      "emptyTitle": "Nema prijava",
+      "adminOnlyTitle": "Samo za administratore",
+      "adminOnlyDescription": "Prijave gostiju vide samo administratori Tuluma.",
+      "errorTitle": "Prijave nisu učitane",
+      "errorDescription": "Proveri vezu i pokušaj ponovo."
     }
   },
   "venueDialog": {

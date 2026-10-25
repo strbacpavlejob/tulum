@@ -7,6 +7,8 @@ import {
   normalizeLikeFilters,
   type LikeFilters,
 } from '../common/like-limit';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
+import { guestVisibility, isShownTo } from '../guest-safety/guest-visibility';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { OnboardingDto } from './dto/onboarding.dto';
@@ -59,6 +61,7 @@ export class GuestsService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
+    private readonly guestSafety: GuestSafetyService,
   ) {}
 
   private get db() {
@@ -147,6 +150,27 @@ export class GuestsService {
         };
     }
 
+    // Hidden pauses Matches for you as well: nobody sees you, and you see
+    // nobody. Someone without a guest profile counts as visible.
+    const visibility =
+      (await this.guestSafety.visibilityOf(userId)) ?? 'everyone';
+    if (visibility === 'hidden') {
+      return {
+        event_id: targetEventId as string | null,
+        event_title: '',
+        event_venue: '',
+        profiles: [],
+        visibility,
+      };
+    }
+
+    // Guests blocked either way never show up. Who liked you here decides
+    // whether a guest who shows themselves only to people they like does.
+    const [blockedIds, likedMeIds] = await Promise.all([
+      this.guestSafety.blockedUserIds(userId),
+      this.guestSafety.likedByAt(userId, targetEventId),
+    ]);
+
     // Find guests already matched with the current user at this event
     const { data: existingMatches } = await this.db
       .from('matches')
@@ -188,21 +212,32 @@ export class GuestsService {
           (s: Record<string, unknown>) => s.user_id as string,
         ),
       ),
-    ).filter((id) => !matchedIds.has(id));
+    ).filter((id) => !matchedIds.has(id) && !blockedIds.has(id));
 
     // Fetch guest profiles + user info for candidates
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let profiles: any[] = [];
     if (candidateIds.length > 0) {
+      // The rows are read whole (*) so this works before and after the
+      // guest_safety_controls migration adds visibility; the profile below
+      // picks what is sent.
       const { data: guests, error } = await this.db
         .from(GUESTS_TABLE)
         .select(
-          'user_id, gender, picture_urls, birthday, interests, bio, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
+          '*, users!guests_user_id_fkey(first_name, last_name, avatar_url)',
         )
         .in('user_id', candidateIds);
       if (error) throw error;
 
-      profiles = (guests ?? []).map((g: Record<string, unknown>) => {
+      const shownGuests = ((guests ?? []) as Record<string, unknown>[]).filter(
+        (g) =>
+          isShownTo(guestVisibility(g), {
+            blocked: blockedIds.has(g.user_id as string),
+            likedViewer: likedMeIds.has(g.user_id as string),
+          }),
+      );
+
+      profiles = shownGuests.map((g: Record<string, unknown>) => {
         const user = g.users as Record<string, unknown> | null;
         const birthday = g.birthday ? new Date(g.birthday as string) : null;
         const age = birthday
@@ -251,6 +286,7 @@ export class GuestsService {
       likes_used: likesUsed,
       like_limit: likeLimit,
       eligible_guest_count: eligibleGuestCount,
+      visibility,
     };
   }
 

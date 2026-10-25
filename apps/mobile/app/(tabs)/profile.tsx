@@ -30,7 +30,7 @@ import {
 import useStore from "@/store/useStore";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
-import { User } from "@/types/user";
+import { GuestVisibility, User } from "@/types/user";
 import { useAuth } from "@clerk/expo";
 import {
   BottomSheetBackdrop,
@@ -74,6 +74,7 @@ import {
   tagsOptions,
   themeOptions,
   venueOptions,
+  visibilityOptions,
 } from "@/constants/options";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
@@ -207,12 +208,12 @@ export default function ProfileScreen() {
   };
 
   // Shows the edit at once, saves it with PATCH /users/me and puts the old
-  // values back if the save fails.
-  const saveProfile = async (patch: Partial<User>) => {
+  // values back if the save fails. Returns whether it was saved.
+  const saveProfile = async (patch: Partial<User>): Promise<boolean> => {
     const previousUser = useStore.getState().user;
 
     if (!previousUser || !userId) {
-      return;
+      return false;
     }
 
     patchUser(patch);
@@ -230,6 +231,7 @@ export default function ProfileScreen() {
         {},
         mapUserPatchToGuestUpdates(patch),
       );
+      return true;
     } catch (error) {
       console.error("Failed to save profile", error);
 
@@ -245,7 +247,23 @@ export default function ProfileScreen() {
         ) as Partial<User>,
       );
 
-      Alert.alert(t("saveFailed"), t("profileChangeNotSaved"));
+      // A toast, not Alert.alert: Alert.alert does nothing on web, and a
+      // visibility change that silently failed would leave you seen.
+      toast.error(t("saveFailed"), {
+        description: t("profileChangeNotSaved"),
+      });
+      return false;
+    }
+  };
+
+  // Who sees you on guest lists and in Matches. Confirmed with a toast,
+  // because it decides who can see you.
+  const saveVisibility = async (visibility: GuestVisibility) => {
+    if (await saveProfile({ visibility })) {
+      const option = visibilityOptions.find((o) => o.value === visibility);
+      toast.success(
+        t("visibilitySaved", { option: t(option?.name ?? visibility) }),
+      );
     }
   };
 
@@ -811,6 +829,16 @@ export default function ProfileScreen() {
                 handleEditProfileField(fieldKey);
               },
             }}
+            onVisibilityPress={() => {
+              openSingleSelect(
+                t("whoCanSeeMe"),
+                visibilityOptions,
+                user.visibility ?? "everyone",
+                (value) => {
+                  void saveVisibility(value as GuestVisibility);
+                },
+              );
+            }}
           />
 
           <SettingsTab
@@ -920,7 +948,9 @@ export default function ProfileScreen() {
                           editSheetRef.current?.close();
                           setEditConfig(null);
                         }}
-                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5"
+                        // sm:h-auto too: the button's sm:h-9 would cut off a
+                        // description on screens 640 px and wider.
+                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5 sm:h-auto"
                         style={
                           selected
                             ? {
@@ -929,16 +959,30 @@ export default function ProfileScreen() {
                             : undefined
                         }
                       >
-                        <Text
-                          style={{
-                            flex: 1,
-                            textAlign: "left",
-                            fontSize: 16,
-                            color: selected ? theme.color : theme.colorStrong,
-                          }}
-                        >
-                          {t(option.name)}
-                        </Text>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              textAlign: "left",
+                              fontSize: 16,
+                              color: selected ? theme.color : theme.colorStrong,
+                            }}
+                          >
+                            {t(option.name)}
+                          </Text>
+                          {option.description ? (
+                            <Text
+                              style={{
+                                marginTop: 2,
+                                textAlign: "left",
+                                fontSize: 13,
+                                lineHeight: 18,
+                                color: theme.colorMuted,
+                              }}
+                            >
+                              {t(option.description)}
+                            </Text>
+                          ) : null}
+                        </View>
 
                         {selected ? (
                           <Check size={18} color={theme.color} />

@@ -10,15 +10,22 @@ import {
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo } from "react";
 import { Image } from "expo-image";
-import { View } from "react-native";
+import { Flag } from "lucide-react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
   match: Match;
   sheetRef: React.RefObject<BottomSheetModal>;
+  /** Opens the report/block sheet; this sheet closes first. */
+  onReportOrBlock?: () => void;
 };
 
-export default function MatchProfileSheet({ match, sheetRef }: Props) {
+export default function MatchProfileSheet({
+  match,
+  sheetRef,
+  onReportOrBlock,
+}: Props) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -80,6 +87,27 @@ export default function MatchProfileSheet({ match, sheetRef }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <ProfileInfoView user={userForView} />
+        {onReportOrBlock ? (
+          <Pressable
+            onPress={() => {
+              sheetRef.current?.dismiss();
+              onReportOrBlock();
+            }}
+            accessibilityRole="button"
+            className="mx-4 mt-2 flex-row items-center justify-center gap-2 rounded-full border border-light-border py-3 dark:border-dark-border"
+          >
+            <Flag size={16} color={theme.destructiveForeground} />
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: theme.destructiveForeground,
+              }}
+            >
+              {t("reportOrBlock")}
+            </Text>
+          </Pressable>
+        ) : null}
       </BottomSheetScrollView>
     </BottomSheetModal>
   );

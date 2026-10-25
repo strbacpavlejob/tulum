@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const CHATS_TABLE = 'chats';
@@ -6,7 +7,10 @@ const MESSAGES_TABLE = 'chat_messages';
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly guestSafety: GuestSafetyService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -15,7 +19,8 @@ export class ChatsService {
   // ── Access checks ─────────────────────────────────────────────────────
   // Only the two guests of a match may open its chat or touch its messages.
   // Someone else's chat, match or message is reported as not found, so ids
-  // cannot be probed.
+  // cannot be probed. A block either way closes the chat for both guests the
+  // same way. The chat socket uses these checks too.
 
   private async isMatchParticipant(matchId: number, userId: string) {
     const { data, error } = await this.db
@@ -24,7 +29,13 @@ export class ChatsService {
       .eq('id', matchId)
       .maybeSingle();
     if (error) throw error;
-    return data?.guest_id_1 === userId || data?.guest_id_2 === userId;
+    if (!data || (data.guest_id_1 !== userId && data.guest_id_2 !== userId)) {
+      return false;
+    }
+    const otherId = (
+      data.guest_id_1 === userId ? data.guest_id_2 : data.guest_id_1
+    ) as string;
+    return !(await this.guestSafety.isBlockedBetween(userId, otherId));
   }
 
   async assertMatchParticipant(matchId: number, userId: string) {

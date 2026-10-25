@@ -1,10 +1,16 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { parseDbTimestampMs } from '../common/db-timestamp';
 import {
   MAX_LIKE_PERCENTAGE,
   MIN_LIKE_LIMIT,
   normalizeLikeFilters,
 } from '../common/like-limit';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { matchProfileDetails } from '../guests/shared-profile';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SwipeDecisionDto } from './dto/swipe-decision.dto';
@@ -38,7 +44,10 @@ interface SwipeDecisionResult {
 
 @Injectable()
 export class MatchesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly guestSafety: GuestSafetyService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -68,7 +77,7 @@ export class MatchesService {
     // The guests rows are read whole (*) so this works before and after the
     // add_guest_profile_details migration; matchProfileDetails picks what is
     // sent.
-    const { data, error } = await this.db
+    const matchesQuery = this.db
       .from(MATCHES_TABLE)
       .select(
         `
@@ -110,6 +119,11 @@ export class MatchesService {
       })
       .limit(1, { referencedTable: 'chats.chat_messages' });
 
+    // A block either way takes the match out of both inboxes.
+    const [{ data, error }, blockedIds] = await Promise.all([
+      matchesQuery,
+      this.guestSafety.blockedUserIds(userId),
+    ]);
     if (error) throw error;
 
     const nowMs = Date.now();
@@ -119,6 +133,11 @@ export class MatchesService {
         const endDateRaw = match?.event?.end_date_time;
         const endMs = parseDbTimestampMs(endDateRaw);
         return endMs !== null && endMs >= nowMs;
+      })
+      .filter((match: MatchRow) => {
+        const otherId =
+          match.guest_id_1 === userId ? match.guest_id_2 : match.guest_id_1;
+        return !blockedIds.has(otherId);
       })
       .map((match: any) => {
         const isGuest1 = match.guest_id_1 === userId;
@@ -189,6 +208,24 @@ export class MatchesService {
 
     if (userId === otherUserId) {
       throw new BadRequestException('Cannot swipe on yourself');
+    }
+
+    // Hidden pauses Matches, so a hidden guest can't swipe. A guest the
+    // caller can't see in the deck (blocked either way, or their visibility
+    // leaves the caller out) can't be swiped, and is answered as not found,
+    // before the attendance check, so a swipe can't tell whether they're
+    // there.
+    const [myVisibility, otherIsShown] = await Promise.all([
+      this.guestSafety.visibilityOf(userId),
+      this.guestSafety.isShownAt(otherUserId, userId, eventId),
+    ]);
+    if (myVisibility === 'hidden') {
+      throw new ForbiddenException(
+        'Matches is paused while your visibility is hidden',
+      );
+    }
+    if (!otherIsShown) {
+      throw new NotFoundException('Guest not found');
     }
 
     // An active session each. A user can have more than one (older check-ins

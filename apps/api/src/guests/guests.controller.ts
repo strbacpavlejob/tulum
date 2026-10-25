@@ -37,7 +37,9 @@ export class GuestsController {
    *
    * Returns guests at the same event (via event_sessions) who the current user
    * hasn't matched with yet. If event_id is omitted, auto-detects from the
-   * user's current active event session.
+   * user's current active event session. Guests blocked either way are left
+   * out, and so is anyone whose visibility doesn't include the caller. A
+   * hidden caller gets nobody (visibility: 'hidden').
    */
   @Get('swipeable')
   async getSwipeable(

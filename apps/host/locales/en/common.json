@@ -504,7 +504,7 @@
       },
       "q5": {
         "question": "Can I see who is going to an event?",
-        "answer": "Yes. You'll see a preview of attendees, including interests, vibe, and general ratios without compromising anyone's privacy."
+        "answer": "Yes. Before you attend, you see how many people are going, the mix of women and men, and the average age. Once you tap Attend, you also see the guest list: the first name, age and photo of each guest who chooses to be seen."
       },
       "q6": {
         "question": "Is Tulum free to use?",
@@ -516,7 +516,7 @@
       },
       "q8": {
         "question": "Is it safe?",
-        "answer": "Tulum does not currently offer in-app tools to report or block guests, and it cannot verify someone's identity or guarantee your safety. Meet in a public place, tell a friend where you're going, and leave if anything feels off. In an emergency, contact local emergency services."
+        "answer": "You decide who sees you. Guests going to the same event see your first name, age and photo on its guest list, guests at the event see your photos, interests and bio in Matches, and only people you match with see your whole profile. In your Profile, choose who can see you: everyone going, only people you like, or nobody (Hidden). If someone makes you uncomfortable, tap ⋯ on their profile or in your chat to block or report them: you stop seeing each other everywhere, they aren't told, and reports go to the Tulum team. Tulum can't verify identities, so meet in a public place, tell a friend where you're going, and leave if anything feels off. In an emergency, contact local emergency services."
       },
       "q9": {
         "question": "What makes Tulum different from dating apps?",
@@ -594,7 +594,8 @@
       "wordAssistant": "Word Assistant",
       "quickCreate": "Quick Event Creation",
       "inbox": "Inbox",
-      "documents": "Documents"
+      "documents": "Documents",
+      "guestReports": "Guest reports"
     },
     "userMenu": {
       "account": "Account",
@@ -802,6 +803,48 @@
         "deleted": "Venue deleted",
         "deletedDescription": "and all related events have been removed"
       }
+    },
+    "guestReportsPage": {
+      "description": "Guests report each other from a profile or a chat in the app. Reporting also blocked the guest for the reporter. Only Tulum admins see this page.",
+      "status": "Status",
+      "statuses": {
+        "pending": "Pending",
+        "in_review": "In review",
+        "resolved": "Resolved",
+        "rejected": "Rejected",
+        "all": "All"
+      },
+      "reasons": {
+        "harassment": "Harassment or threats",
+        "inappropriate": "Inappropriate photos or messages",
+        "fake_profile": "Fake profile or scam",
+        "spam": "Spam or selling something",
+        "underage": "Might be under 18",
+        "unsafe_meeting": "Unsafe in person",
+        "other": "Something else"
+      },
+      "sources": {
+        "profile": "From a profile",
+        "chat": "From a chat"
+      },
+      "from": {
+        "reporter": "Reporter",
+        "reported": "Reported guest",
+        "other": "Someone else"
+      },
+      "reportedBy": "Reported by {{name}} · {{date}}",
+      "reviewedBy": "Last changed by {{name}} · {{date}}",
+      "deletedAccount": "Deleted account",
+      "reportCount": "Reports about this guest: {{count}}",
+      "event": "Event",
+      "showChat": "Show the chat ({{count}})",
+      "statusSaved": "Status saved",
+      "statusNotSaved": "The status wasn't saved. Please try again.",
+      "emptyTitle": "No reports here",
+      "adminOnlyTitle": "Admins only",
+      "adminOnlyDescription": "Only Tulum admins can see guest reports.",
+      "errorTitle": "Couldn't load the reports",
+      "errorDescription": "Check your connection and try again."
     }
   },
   "venueDialog": {

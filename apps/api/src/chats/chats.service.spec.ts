@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ChatsService } from './chats.service';
 
@@ -12,8 +13,9 @@ const CHAT_ID = '0b6c3f0e-5f8e-4a3e-9d7a-1c2b3d4e5f60';
 const MESSAGE_ID = '5a1f2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 
 // Each table returns its scripted results in order, keyed by the method that
-// ends the query (e.g. 'matches.maybeSingle').
-function createServiceWithScript(script: ScriptMap) {
+// ends the query (e.g. 'matches.maybeSingle'). blocked: whether the match's
+// two guests blocked each other.
+function createServiceWithScript(script: ScriptMap, blocked = false) {
   const consume = (key: string): Promise<ScriptedResult> =>
     Promise.resolve(script[key]?.shift() ?? { data: null, error: null });
 
@@ -36,7 +38,21 @@ function createServiceWithScript(script: ScriptMap) {
     getClient: () => ({ from }),
   } as unknown as SupabaseService;
 
-  return { service: new ChatsService(supabaseService), from, queries };
+  const guestSafety = {
+    isBlockedBetween: jest.fn<
+      (userId: string, otherUserId: string) => Promise<boolean>
+    >(() => Promise.resolve(blocked)),
+  };
+
+  return {
+    service: new ChatsService(
+      supabaseService,
+      guestSafety as unknown as GuestSafetyService,
+    ),
+    from,
+    queries,
+    guestSafety,
+  };
 }
 
 const match = (guestId1: string, guestId2: string) => ({
@@ -87,6 +103,30 @@ describe('ChatsService.assertMatchParticipant', () => {
       dbError,
     );
   });
+
+  // TASK-001: a block either way closes the chat for both guests.
+  it('reports the match as not found once either guest blocked the other', async () => {
+    const { service, guestSafety } = createServiceWithScript(
+      { 'matches.maybeSingle': [match(OTHER, CALLER)] },
+      true,
+    );
+
+    await expect(
+      service.assertMatchParticipant(7, CALLER),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(guestSafety.isBlockedBetween).toHaveBeenCalledWith(CALLER, OTHER);
+  });
+
+  it('checks no block for someone outside the match', async () => {
+    const { service, guestSafety } = createServiceWithScript({
+      'matches.maybeSingle': [match(OTHER, 'user_third')],
+    });
+
+    await expect(
+      service.assertMatchParticipant(7, CALLER),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(guestSafety.isBlockedBetween).not.toHaveBeenCalled();
+  });
 });
 
 describe('ChatsService.getChatForParticipant', () => {
@@ -106,6 +146,20 @@ describe('ChatsService.getChatForParticipant', () => {
       'chats.maybeSingle': [{ data: chat, error: null }],
       'matches.maybeSingle': [match(OTHER, 'user_third')],
     });
+
+    await expect(
+      service.getChatForParticipant(CHAT_ID, CALLER),
+    ).rejects.toThrow('Chat not found');
+  });
+
+  it('hides the chat from both guests once one blocked the other', async () => {
+    const { service } = createServiceWithScript(
+      {
+        'chats.maybeSingle': [{ data: chat, error: null }],
+        'matches.maybeSingle': [match(CALLER, OTHER)],
+      },
+      true,
+    );
 
     await expect(
       service.getChatForParticipant(CHAT_ID, CALLER),
@@ -150,6 +204,24 @@ describe('ChatsService.markMessageRead', () => {
       'chats.maybeSingle': [{ data: chat, error: null }],
       'matches.maybeSingle': [match(OTHER, 'user_third')],
     });
+
+    await expect(service.markMessageRead(MESSAGE_ID, CALLER)).rejects.toThrow(
+      'Message not found',
+    );
+    expect(queries.get('chat_messages')?.update).not.toHaveBeenCalled();
+  });
+
+  it('does not mark a message read in a chat closed by a block', async () => {
+    const { service, queries } = createServiceWithScript(
+      {
+        'chat_messages.maybeSingle': [
+          { data: { chat_id: CHAT_ID }, error: null },
+        ],
+        'chats.maybeSingle': [{ data: chat, error: null }],
+        'matches.maybeSingle': [match(CALLER, OTHER)],
+      },
+      true,
+    );
 
     await expect(service.markMessageRead(MESSAGE_ID, CALLER)).rejects.toThrow(
       'Message not found',

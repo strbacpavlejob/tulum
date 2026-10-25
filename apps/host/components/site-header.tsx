@@ -20,6 +20,8 @@ export function SiteHeader() {
         return t("dashboard.navigation.venues") || "Venues";
       case "/events":
         return t("dashboard.navigation.events") || "Events";
+      case "/reports":
+        return t("dashboard.navigation.guestReports");
       case "/login":
         return "Login";
       default:

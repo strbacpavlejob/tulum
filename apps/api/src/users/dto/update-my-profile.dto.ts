@@ -11,6 +11,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
+import { GUEST_VISIBILITIES } from '../../guest-safety/guest-visibility';
 import { OnboardingDto } from '../../guests/dto/onboarding.dto';
 
 // The choices the app's profile editors offer
@@ -150,6 +151,15 @@ export class UpdateMyGuestDto extends PartialType(
   @IsOptional()
   @IsIn(RELIGIONS)
   religion?: string | null;
+
+  @ApiPropertyOptional({
+    enum: GUEST_VISIBILITIES,
+    description:
+      'Who sees you on event guest lists and in Matches: every guest going (everyone), only guests you liked at that event (liked), or nobody, which also pauses Matches for you (hidden).',
+  })
+  @IfSent()
+  @IsIn(GUEST_VISIBILITIES)
+  visibility?: (typeof GUEST_VISIBILITIES)[number];
 }
 
 /**

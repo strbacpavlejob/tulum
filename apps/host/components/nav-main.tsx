@@ -10,6 +10,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
@@ -23,6 +24,8 @@ export function NavMain({
     title: string;
     url: string;
     icon?: Icon;
+    /** A count shown next to the title, e.g. reports waiting for review. */
+    badge?: number;
   }[];
 }) {
   const { t } = useTranslation();
@@ -70,6 +73,9 @@ export function NavMain({
                     </span>
                   </Link>
                 </SidebarMenuButton>
+                {item.badge ? (
+                  <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
+                ) : null}
               </SidebarMenuItem>
             );
           })}

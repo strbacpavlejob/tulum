@@ -1,12 +1,15 @@
+import GuestSafetySheet from "@/components/GuestSafetySheet";
 import MatchModal from "@/components/MatchModal";
 import { MatchesFiltersBottomSheet } from "@/components/matches/MatchesFiltersBottomSheet";
 import type { MatchesFiltersBottomSheetRef } from "@/components/matches/MatchesFiltersBottomSheet";
 import { Profile } from "@/types/profile";
 import type { GenderFilter } from "@/types/user";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Heart, SlidersHorizontal } from "lucide-react-native";
+import { Ellipsis, Heart, SlidersHorizontal } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
   NativeScrollEvent,
@@ -45,6 +48,10 @@ type MatchesDeckProps = {
   matchedProfile: Profile | null;
   matchId: number | null;
   onCloseMatch: () => void;
+  /** The live event, for a report made from a profile here. */
+  eventId: string | null;
+  /** After you block or report the guest shown. */
+  onGuestBlocked: (guestId: string) => void;
 };
 export default function MatchesDeck({
   topInset,
@@ -69,12 +76,22 @@ export default function MatchesDeck({
   matchedProfile,
   matchId,
   onCloseMatch,
+  eventId,
+  onGuestBlocked,
 }: MatchesDeckProps) {
+  const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
   const [measuredListHeight, setMeasuredListHeight] = useState(0);
   const cardHeight =
     measuredListHeight || Math.max(windowHeight - topInset - bottomInset, 1);
   const filterSheetRef = useRef<MatchesFiltersBottomSheetRef>(null);
+  const safetySheetRef = useRef<BottomSheetModal>(null);
+  // The guest the report/block sheet is about. Kept apart from the card in
+  // view, which a refresh or a scroll can change while the sheet is open.
+  const [safetyGuest, setSafetyGuest] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const dragStartOffsetYRef = useRef(0);
   const wrapInProgressRef = useRef(false);
   const listRef = useRef<FlatList<SwipeCandidate>>(null);
@@ -172,6 +189,11 @@ export default function MatchesDeck({
     const velocityY = event.nativeEvent.velocity?.y ?? 0;
     onScrollEnd(endOffsetY);
     handleEdgeWrap(endOffsetY, dragDelta, velocityY);
+  };
+  const openSafetySheet = () => {
+    if (!currentProfile) return;
+    setSafetyGuest({ id: currentProfile.id, name: currentProfile.name });
+    safetySheetRef.current?.present();
   };
   const handleLikePress = () => {
     if (!currentProfile || likeDisabled || currentProfileLiked) {
@@ -299,10 +321,18 @@ export default function MatchesDeck({
           >
             {currentProfile ? (
               <>
-                <View className="flex-row items-center">
-                  <Text className="text-[38px] font-black leading-[42px] tracking-tight text-white">
+                <View className="flex-row items-center justify-between gap-3">
+                  <Text className="flex-1 text-[38px] font-black leading-[42px] tracking-tight text-white">
                     {currentProfile.name}, {currentProfile.age}
                   </Text>
+                  <Pressable
+                    onPress={openSafetySheet}
+                    className="h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15"
+                    accessibilityRole="button"
+                    accessibilityLabel={t("reportOrBlock")}
+                  >
+                    <Ellipsis size={20} color="#ffffff" />
+                  </Pressable>
                 </View>
                 <View className="mt-3 flex-row flex-wrap gap-2">
                   {currentProfile.hobbies.slice(0, 4).map((interest) => (
@@ -371,6 +401,13 @@ export default function MatchesDeck({
             profile={matchedProfile}
             matchId={matchId}
             onClose={onCloseMatch}
+          />
+          <GuestSafetySheet
+            sheetRef={safetySheetRef}
+            guest={safetyGuest}
+            source="profile"
+            eventId={eventId}
+            onBlocked={onGuestBlocked}
           />
           <MatchesFiltersBottomSheet
             ref={filterSheetRef}

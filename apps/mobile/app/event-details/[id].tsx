@@ -307,6 +307,7 @@ const EventDetailsScreen = () => {
     females: 0,
     males: 0,
     guestList: [],
+    hiddenCount: 0,
   });
 
   // Fetch full event details on mount
@@ -552,6 +553,16 @@ const EventDetailsScreen = () => {
         ),
         location: event.location,
       });
+      // Going now, you get the guest list: the API shows it only to guests
+      // going. Skip the answer if you have cancelled in the meantime.
+      fetchEventAttendees(event.id, token)
+        .then((data) => {
+          const stillAttending = useStore
+            .getState()
+            .tickets?.some((t: Ticket) => t.event_id === event.id);
+          if (stillAttending) setAttendeesData(data);
+        })
+        .catch(() => {});
     } catch (err) {
       // rollback optimistic add
       removeTicketByEventId(event.id);
@@ -620,8 +631,16 @@ const EventDetailsScreen = () => {
     );
   }
 
-  const { maxSpots, averageAge, females, males, guestList } = attendeesData;
-  const goingCount = guestList.length;
+  const {
+    maxSpots,
+    averageAge,
+    females,
+    males,
+    guestList,
+    hiddenCount = 0,
+  } = attendeesData;
+  // Guests whose visibility leaves you out still count as going.
+  const goingCount = guestList.length + hiddenCount;
   const freeSpots = Math.max(0, maxSpots - goingCount);
   const progressValue =
     maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
@@ -821,7 +840,7 @@ const EventDetailsScreen = () => {
               </View>
 
               <View className="mb-3">
-                <AvatarList avatars={guestList} />
+                <AvatarList avatars={guestList} hiddenCount={hiddenCount} />
               </View>
 
               {/* Progress bar */}
@@ -860,6 +879,7 @@ const EventDetailsScreen = () => {
           males={males}
           isAttending={isAttending}
           onAttend={handleAttend}
+          hiddenCount={hiddenCount}
         />
 
         {/* Reservation modal — shown when attending requires reservation */}

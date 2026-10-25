@@ -3,7 +3,7 @@ import { getDateRangeBounds } from "@/lib/dateRange";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import type { VenueType } from "@/types/filter";
-import { type GenderFilter, User } from "@/types/user";
+import { type GenderFilter, type GuestVisibility, User } from "@/types/user";
 
 const TULUM_API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -276,6 +276,8 @@ interface MyProfileResponse {
         venue_types?: string[];
         picture_urls: string[];
         birthday: string | null;
+        /** Absent from APIs and databases from before TASK-001. */
+        visibility?: GuestVisibility;
       } & GuestProfileDetails)
     | null;
 }
@@ -380,6 +382,7 @@ export function mapProfileToUser(raw: MyProfileResponse): User {
     interests: raw.guest?.interests ?? [],
     tags: raw.guest?.interests ?? [],
     ...mapGuestDetails(raw.guest),
+    visibility: raw.guest?.visibility ?? "everyone",
   };
 }
 
@@ -415,6 +418,8 @@ export function mapUserPatchToGuestUpdates(
   if ("starSign" in patch) updates.star_sign = patch.starSign || null;
   if ("pets" in patch) updates.pets = patch.pets ?? [];
   if ("religion" in patch) updates.religion = patch.religion || null;
+  // Never cleared: the column always holds one of the three choices.
+  if (patch.visibility) updates.visibility = patch.visibility;
 
   return updates;
 }
@@ -707,6 +712,70 @@ export async function submitVenueSuggestion(
   return response.json();
 }
 
+// ─── Blocking and reporting guests ───────────────────────────────────────────
+
+/**
+ * The reasons the report sheet offers; the API accepts these
+ * (apps/api/src/guest-safety/dto/create-guest-report.dto.ts).
+ */
+export const GUEST_REPORT_REASONS = [
+  "harassment",
+  "inappropriate",
+  "fake_profile",
+  "spam",
+  "underage",
+  "unsafe_meeting",
+  "other",
+] as const;
+
+export type GuestReportReason = (typeof GUEST_REPORT_REASONS)[number];
+
+/**
+ * Blocks a guest. It works both ways: each leaves the other's Matches deck,
+ * event guest lists, inbox and chats.
+ */
+export async function blockGuest(token: string, userId: string) {
+  const response = await fetch(`${TULUM_API_URL}/blocks`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to block guest: ${response.status} ${text}`);
+  }
+}
+
+/** Reports a guest for review. The API blocks them as well. */
+export async function reportGuest(
+  token: string,
+  payload: {
+    reportedUserId: string;
+    reason: GuestReportReason;
+    source: "profile" | "chat";
+    details?: string | null;
+    eventId?: string | null;
+    matchId?: number | null;
+  },
+) {
+  const response = await fetch(`${TULUM_API_URL}/reports/guests`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      reported_user_id: payload.reportedUserId,
+      reason: payload.reason,
+      source: payload.source,
+      details: payload.details || null,
+      event_id: payload.eventId ?? null,
+      match_id: payload.matchId ?? null,
+    }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to report guest: ${response.status} ${text}`);
+  }
+}
+
 // ─── Chats ────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
@@ -727,12 +796,23 @@ export interface ChatOpenResponse {
   messages: ChatMessage[];
 }
 
+/**
+ * GET /chats/by-match answered 404: the match is gone, or a block closed the
+ * chat.
+ */
+export class ChatUnavailableError extends Error {
+  name = "ChatUnavailableError";
+}
+
 export async function fetchOrCreateChat(
   matchId: string | number,
   token: string,
 ): Promise<ChatOpenResponse> {
   const url = `${TULUM_API_URL}/chats/by-match/${matchId}`;
   const response = await fetch(url, { headers: authHeaders(token) });
+  if (response.status === 404) {
+    throw new ChatUnavailableError(`Chat unavailable: ${response.status}`);
+  }
   if (!response.ok) {
     throw new Error(`Failed to open chat: ${response.status}`);
   }
@@ -899,6 +979,12 @@ export interface EventAttendeesData {
   females: number;
   males: number;
   guestList: EventAttendee[];
+  /**
+   * Guests going whom the list leaves out: everyone, for someone not going;
+   * otherwise guests whose visibility leaves you out, or blocked either way.
+   * Absent from APIs from before TASK-001.
+   */
+  hiddenCount?: number;
 }
 
 export async function fetchEventAttendees(
@@ -956,6 +1042,8 @@ export interface SwipeableResponse {
   likes_used?: number;
   like_limit?: number;
   eligible_guest_count?: number;
+  /** Yours. Hidden pauses Matches: profiles is then empty. */
+  visibility?: GuestVisibility;
 }
 
 export interface SwipeFilters {
@@ -997,6 +1085,14 @@ export async function fetchSwipeableProfiles(
   return response.json() as Promise<SwipeableResponse>;
 }
 
+/**
+ * POST /matches/swipe answered 404: the guest blocked you, you blocked them,
+ * or their visibility no longer includes you.
+ */
+export class GuestUnavailableError extends Error {
+  name = "GuestUnavailableError";
+}
+
 export async function createMatchSwipe(
   token: string,
   otherUserId: string,
@@ -1026,6 +1122,9 @@ export async function createMatchSwipe(
       selected_interests: filters?.selectedInterests ?? [],
     }),
   });
+  if (response.status === 404) {
+    throw new GuestUnavailableError(`Guest unavailable: ${response.status}`);
+  }
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     let parsedBody: unknown = null;

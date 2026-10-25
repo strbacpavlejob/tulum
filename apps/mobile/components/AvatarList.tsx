@@ -5,12 +5,14 @@ import { View } from "react-native";
 
 interface AvatarListProps {
   avatars: { name: string; uri: string | null }[];
+  /** Guests going who aren't in avatars; they count in the "+N". */
+  hiddenCount?: number;
 }
 
-export const AvatarList = ({ avatars }: AvatarListProps) => {
+export const AvatarList = ({ avatars, hiddenCount = 0 }: AvatarListProps) => {
   const maxVisible = 3;
   const visibleAvatars = avatars.slice(0, maxVisible);
-  const extraCount = avatars.length - maxVisible;
+  const extraCount = Math.max(0, avatars.length - maxVisible) + hiddenCount;
 
   return (
     <View className="flex-row">

@@ -15,6 +15,7 @@ import {
   IconCalendarEvent,
   IconMapPin,
   IconMap,
+  IconFlag,
 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { useUser } from "@clerk/nextjs";
@@ -23,6 +24,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import Logo from "@/components/common/logo";
+import { getGuestReportsSummary } from "@/lib/api-client";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +41,23 @@ import Link from "next/link";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation();
   const { user } = useUser();
+  // Reports waiting for review, for Tulum admins; null hides the link
+  // (the API refuses everyone else).
+  const [pendingReports, setPendingReports] = React.useState<number | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    let active = true;
+    getGuestReportsSummary()
+      .then((summary) => {
+        if (active) setPendingReports(summary ? summary.pending : null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const data = {
     user: {
@@ -67,6 +86,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/map",
         icon: IconMap,
       },
+      ...(pendingReports !== null
+        ? [
+            {
+              title: t("dashboard.navigation.guestReports"),
+              url: "/reports",
+              icon: IconFlag,
+              badge: pendingReports,
+            },
+          ]
+        : []),
       // {
       //   title: t("dashboard.navigation.team"),
       //   url: "#",

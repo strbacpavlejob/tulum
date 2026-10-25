@@ -653,3 +653,92 @@ export async function geocodeAddress(address: string): Promise<{
   if (!response.ok) throw new Error("Failed to geocode address");
   return response.json();
 }
+
+// ============================================
+// GUEST REPORTS (Tulum admins only)
+// ============================================
+
+export type GuestReportStatus =
+  | "pending"
+  | "in_review"
+  | "resolved"
+  | "rejected";
+
+/** A guest's report of another guest, as GET /reports/guests sends it. */
+export interface GuestReport {
+  id: string;
+  status: GuestReportStatus;
+  reason:
+    | "harassment"
+    | "inappropriate"
+    | "fake_profile"
+    | "spam"
+    | "underage"
+    | "unsafe_meeting"
+    | "other";
+  source: "profile" | "chat";
+  details: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  match_id: number | null;
+  reporter: { user_id: string; name: string | null } | null;
+  reported: {
+    user_id: string;
+    name: string | null;
+    photos: string[];
+    bio: string | null;
+    /** Every report of this guest so far, this one included. */
+    report_count: number;
+  } | null;
+  event: {
+    id: string;
+    title: string | null;
+    start_date_time: string | null;
+  } | null;
+  /** A report from a chat: up to its last 50 messages, oldest first. */
+  messages:
+    | {
+        from: "reporter" | "reported" | "other";
+        message: string;
+        sent_at: string;
+      }[]
+    | null;
+}
+
+/** The API refused: the signed-in user isn't a Tulum admin. */
+export class AdminOnlyError extends Error {
+  name = "AdminOnlyError";
+}
+
+export async function getGuestReports(
+  status?: GuestReportStatus,
+): Promise<GuestReport[]> {
+  const params = status ? `?status=${status}` : "";
+  const response = await fetch(`/api/reports/guests${params}`);
+  if (response.status === 403) throw new AdminOnlyError("Admins only");
+  if (!response.ok) throw new Error("Failed to fetch guest reports");
+  return response.json();
+}
+
+/** Reports waiting for a review; null for anyone who isn't an admin. */
+export async function getGuestReportsSummary(): Promise<{
+  pending: number;
+} | null> {
+  const response = await fetch("/api/reports/guests/summary");
+  if (!response.ok) return null;
+  return response.json();
+}
+
+export async function updateGuestReportStatus(
+  id: string,
+  status: GuestReportStatus,
+): Promise<{ id: string; status: GuestReportStatus; reviewed_at: string }> {
+  const response = await fetch(`/api/reports/guests/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) throw new Error("Failed to update the report");
+  return response.json();
+}

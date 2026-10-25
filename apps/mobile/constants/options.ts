@@ -3,6 +3,8 @@ import type { VenueType } from "@/types/filter";
 export type SelectOption = {
   name: string;
   value: string;
+  /** An i18n key the picker shows under the name. */
+  description?: string;
 };
 
 export type EditConfig = {
@@ -356,6 +358,27 @@ export const appLanguageOptions: SelectOption[] = [
     value: "RU",
   },
 ];
+
+// Who sees you on event guest lists and in Matches (guests.visibility). The
+// API accepts these values (apps/api/src/guest-safety/guest-visibility.ts).
+export const visibilityOptions: SelectOption[] = [
+  {
+    name: "visibilityEveryone",
+    value: "everyone",
+    description: "visibilityEveryoneDescription",
+  },
+  {
+    name: "visibilityLiked",
+    value: "liked",
+    description: "visibilityLikedDescription",
+  },
+  {
+    name: "visibilityHidden",
+    value: "hidden",
+    description: "visibilityHiddenDescription",
+  },
+];
+
 export const EMOJIS = [
   "🔥",
   "❤️",

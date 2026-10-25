@@ -1,5 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { TicketsService } from './tickets.service';
 
@@ -20,7 +21,11 @@ function createServiceWithRpcResult(result: RpcResult) {
     getClient: () => db,
   } as unknown as SupabaseService;
 
-  return { service: new TicketsService(supabaseService), db, single };
+  return {
+    service: new TicketsService(supabaseService, {} as GuestSafetyService),
+    db,
+    single,
+  };
 }
 
 const ticket = {
@@ -143,9 +148,10 @@ describe('TicketsService getTickets', () => {
         select: () => queries[queryIndex++],
       }),
     };
-    const service = new TicketsService({
-      getClient: () => db,
-    } as unknown as SupabaseService);
+    const service = new TicketsService(
+      { getClient: () => db } as unknown as SupabaseService,
+      {} as GuestSafetyService,
+    );
 
     await expect(service.getTickets(GUEST_ID)).resolves.toEqual([
       expect.objectContaining({

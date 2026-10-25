@@ -1,12 +1,28 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
+import type { GuestVisibility } from '../guest-safety/guest-visibility';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MatchesService } from './matches.service';
 
 type ScriptedResult = { data: unknown; error: unknown };
 type ScriptMap = Record<string, ScriptedResult[]>;
 
-function createServiceWithScript(script: ScriptMap) {
+// The caller's own visibility, and whether the guest being swiped shows up
+// for them (not blocked either way, visibility allows it).
+interface SafetyScript {
+  visibility?: GuestVisibility;
+  otherIsShown?: boolean;
+}
+
+function createServiceWithScript(
+  script: ScriptMap,
+  { visibility = 'everyone', otherIsShown = true }: SafetyScript = {},
+) {
   const consume = (key: string): Promise<ScriptedResult> => {
     const queue = script[key] ?? [];
     if (queue.length === 0) {
@@ -52,9 +68,23 @@ function createServiceWithScript(script: ScriptMap) {
     getClient: () => db,
   } as unknown as SupabaseService;
 
+  const guestSafety = {
+    visibilityOf: jest.fn<(userId: string) => Promise<GuestVisibility>>(() =>
+      Promise.resolve(visibility),
+    ),
+    isShownAt: jest.fn<
+      (guestId: string, viewerId: string, eventId: string) => Promise<boolean>
+    >(() => Promise.resolve(otherIsShown)),
+  };
+
   return {
-    service: new MatchesService(supabaseService),
+    service: new MatchesService(
+      supabaseService,
+      guestSafety as unknown as GuestSafetyService,
+    ),
     rpc,
+    db,
+    guestSafety,
   };
 }
 
@@ -78,6 +108,44 @@ describe('MatchesService submitSwipeDecision', () => {
       'tickets.maybeSingle': [{ data: null, error: null }],
     };
   }
+
+  // TASK-001: hidden pauses Matches for the guest who chose it.
+  it('refuses a swipe from a hidden guest before recording anything', async () => {
+    const { service, rpc, db } = createServiceWithScript(attendingScript(), {
+      visibility: 'hidden',
+    });
+
+    const error = await service
+      .submitSwipeDecision('me-user', baseSwipe)
+      .catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(ForbiddenException);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  // TASK-001: blocked either way, or hidden from the swiper by their
+  // visibility. Answered before the attendance check, so the answer doesn't
+  // tell whether they are at the event.
+  it('answers a guest the swiper cannot see as not found', async () => {
+    const { service, rpc, db, guestSafety } = createServiceWithScript(
+      attendingScript(),
+      { otherIsShown: false },
+    );
+
+    const error = await service
+      .submitSwipeDecision('me-user', baseSwipe)
+      .catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(NotFoundException);
+    expect(guestSafety.isShownAt).toHaveBeenCalledWith(
+      'other-user',
+      'me-user',
+      baseSwipe.event_id,
+    );
+    expect(rpc).not.toHaveBeenCalled();
+    expect(db.from).not.toHaveBeenCalled();
+  });
 
   it('rejects likes when backend limit decision disallows it', async () => {
     const script = {
@@ -348,7 +416,8 @@ describe('MatchesService getMyMatches', () => {
   }
 
   // Awaiting the matches query gives these rows, as supabase-js does.
-  function createServiceWithRows(rows: unknown[]) {
+  // blockedIds: the guests me-user blocked or was blocked by.
+  function createServiceWithRows(rows: unknown[], blockedIds: string[] = []) {
     const query = {
       select: jest.fn().mockReturnThis(),
       or: jest.fn().mockReturnThis(),
@@ -360,7 +429,16 @@ describe('MatchesService getMyMatches', () => {
     const supabaseService = {
       getClient: () => ({ from: () => query }),
     } as unknown as SupabaseService;
-    return { service: new MatchesService(supabaseService), query };
+    const guestSafety = {
+      blockedUserIds: jest.fn(() => Promise.resolve(new Set(blockedIds))),
+    };
+    return {
+      service: new MatchesService(
+        supabaseService,
+        guestSafety as unknown as GuestSafetyService,
+      ),
+      query,
+    };
   }
 
   const newestMessage = {
@@ -429,6 +507,18 @@ describe('MatchesService getMyMatches', () => {
       has_messages: true,
       last_message: { text: 'See you at the bar' },
     });
+  });
+
+  // TASK-001: a block either way takes the match out of both inboxes.
+  it('leaves out matches with a guest blocked either way', async () => {
+    const { service } = createServiceWithRows(
+      [matchRow(5, null), matchRow(6, null), matchRow(7, null)],
+      ['other-6'],
+    );
+
+    const matches = await service.getMyMatches('me-user');
+
+    expect(matches.map((match) => match.id)).toEqual([5, 7]);
   });
 
   it("reads only each chat's newest message", async () => {

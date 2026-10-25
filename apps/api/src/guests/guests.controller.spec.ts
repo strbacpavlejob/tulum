@@ -19,6 +19,7 @@ import {
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UsersController } from '../users/users.controller';
@@ -187,6 +188,7 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
       controllers: [GuestsController, UsersController],
       providers: [
         GuestsService,
+        GuestSafetyService,
         UsersService,
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },

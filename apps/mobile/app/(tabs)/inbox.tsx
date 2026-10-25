@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTranslation } from "react-i18next";
 import {
+  ChatUnavailableError,
   fetchMyMatches,
   fetchMyTickets,
   fetchOrCreateChat,
@@ -135,6 +136,7 @@ function mapToMatch(item: MatchListItem): Match {
     : 0;
   return {
     id: String(item.id),
+    otherUserId: item.other_guest.user_id ?? undefined,
     chatId: item.chat_id ?? undefined,
     eventId: item.event?.id ?? undefined,
     venueLat: item.event?.venue_lat ?? null,
@@ -441,6 +443,13 @@ export default function InboxScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // A match you blocked or reported, or whose chat a block closed: the API
+  // no longer lists it, so drop it here too.
+  const removeMatch = (matchId: string) => {
+    setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    setNewMatches((prev) => prev.filter((m) => m.id !== matchId));
+  };
+
   const openMatch = async (match: Match) => {
     if (!userId) return;
     const token = await getToken();
@@ -463,7 +472,12 @@ export default function InboxScreen() {
       );
       setSelectedInitialMessages(mapped);
       setSelectedMatch({ ...match, chatId: chat.id });
-    } catch {
+    } catch (error) {
+      if (error instanceof ChatUnavailableError) {
+        removeMatch(match.id);
+        toast.error(t("chatUnavailable"));
+        return;
+      }
       // API unavailable — open without chatId, socket won't connect but UI shows
       setSelectedInitialMessages(match.messages);
       setSelectedMatch(match);
@@ -697,6 +711,11 @@ export default function InboxScreen() {
         userId={userId}
         initialMessages={selectedInitialMessages}
         onBack={() => {
+          setSelectedMatch(null);
+          setSelectedInitialMessages([]);
+        }}
+        onBlocked={() => {
+          removeMatch(selectedMatch.id);
           setSelectedMatch(null);
           setSelectedInitialMessages([]);
         }}

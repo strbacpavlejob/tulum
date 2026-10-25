@@ -1,5 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { toUtcIsoString } from '../common/db-timestamp';
+import { GuestSafetyService } from '../guest-safety/guest-safety.service';
+import { guestVisibility, isShownTo } from '../guest-safety/guest-visibility';
 import { SupabaseService } from '../supabase/supabase.service';
 
 const TICKETS_TABLE = 'tickets';
@@ -39,7 +41,10 @@ interface TicketCountRow {
 
 @Injectable()
 export class TicketsService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly guestSafety: GuestSafetyService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -153,20 +158,32 @@ export class TicketsService {
     if (error) throw error;
   }
 
-  async getEventAttendees(eventId: string) {
-    const [ticketsResult, eventResult] = await Promise.all([
-      this.db
-        .from(TICKETS_TABLE)
-        .select(
-          'guest_id, guests!tickets_guest_id_fkey(gender, birthday, users!guests_user_id_fkey(first_name, last_name, avatar_url))',
-        )
-        .eq('event_id', eventId),
-      this.db
-        .from('events')
-        .select('venues(capacity)')
-        .eq('id', eventId)
-        .single(),
-    ]);
+  /**
+   * GET /tickets/attendees: the event's numbers and, for a guest going to
+   * it, who else is going. The guest list shows the viewer, and each other
+   * guest whose visibility includes the viewer and who isn't blocked either
+   * way. Someone not going sees no one. The numbers count every guest, and
+   * hiddenCount is how many of them the list leaves out.
+   */
+  async getEventAttendees(eventId: string, viewerId: string) {
+    const [ticketsResult, eventResult, blockedIds, likedViewerIds] =
+      await Promise.all([
+        // The guests rows are read whole (*) so this works before and after
+        // the guest_safety_controls migration adds visibility.
+        this.db
+          .from(TICKETS_TABLE)
+          .select(
+            'guest_id, guests!tickets_guest_id_fkey(*, users!guests_user_id_fkey(first_name, last_name, avatar_url))',
+          )
+          .eq('event_id', eventId),
+        this.db
+          .from('events')
+          .select('venues(capacity)')
+          .eq('id', eventId)
+          .single(),
+        this.guestSafety.blockedUserIds(viewerId),
+        this.guestSafety.likedByAt(viewerId, eventId),
+      ]);
 
     if (ticketsResult.error) throw ticketsResult.error;
     if (eventResult.error) throw eventResult.error;
@@ -174,7 +191,7 @@ export class TicketsService {
     const maxSpots: number = (eventResult.data as any)?.venues?.capacity ?? 0;
     const now = Date.now();
 
-    const guestList = (ticketsResult.data ?? []).map((t: any) => {
+    const attendees = (ticketsResult.data ?? []).map((t: any) => {
       const guest = t.guests ?? {};
       const user = guest.users ?? {};
       const firstName = user.first_name ?? '';
@@ -187,14 +204,33 @@ export class TicketsService {
           )
         : null;
       return {
-        name,
-        age,
-        gender: (guest.gender as string | null) ?? null,
-        uri: (user.avatar_url as string | null) ?? null,
+        guestId: (t as { guest_id: string }).guest_id,
+        visibility: guestVisibility(guest as Record<string, unknown>),
+        entry: {
+          name,
+          age,
+          gender: (guest.gender as string | null) ?? null,
+          uri: (user.avatar_url as string | null) ?? null,
+        },
       };
     });
 
-    const withAge = guestList.filter((g) => g.age !== null);
+    const viewerAttends = attendees.some((a) => a.guestId === viewerId);
+    const guestList = viewerAttends
+      ? attendees
+          .filter(
+            (a) =>
+              a.guestId === viewerId ||
+              isShownTo(a.visibility, {
+                blocked: blockedIds.has(a.guestId),
+                likedViewer: likedViewerIds.has(a.guestId),
+              }),
+          )
+          .map((a) => a.entry)
+      : [];
+
+    const everyone = attendees.map((a) => a.entry);
+    const withAge = everyone.filter((g) => g.age !== null);
     const averageAge =
       withAge.length > 0
         ? Math.round(
@@ -203,9 +239,16 @@ export class TicketsService {
           )
         : null;
 
-    const females = guestList.filter((g) => g.gender === 'female').length;
-    const males = guestList.filter((g) => g.gender === 'male').length;
+    const females = everyone.filter((g) => g.gender === 'female').length;
+    const males = everyone.filter((g) => g.gender === 'male').length;
 
-    return { maxSpots, averageAge, females, males, guestList };
+    return {
+      maxSpots,
+      averageAge,
+      females,
+      males,
+      guestList,
+      hiddenCount: attendees.length - guestList.length,
+    };
   }
 }

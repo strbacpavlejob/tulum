@@ -28,8 +28,9 @@ const AS_CALLER = { Authorization: 'Bearer caller-token' };
 type Row = Record<string, unknown>;
 
 // The guests columns once supabase/migrations/
-// 20261020135713_add_guest_profile_details.sql is applied. Like PostgREST,
-// the fake refuses to write any other column.
+// 20261020135713_add_guest_profile_details.sql and
+// 20261025103255_guest_safety_controls.sql are applied. Like PostgREST, the
+// fake refuses to write any other column.
 const GUEST_COLUMNS = new Set([
   'user_id',
   'gender',
@@ -52,6 +53,7 @@ const GUEST_COLUMNS = new Set([
   'star_sign',
   'pets',
   'religion',
+  'visibility',
 ]);
 
 const seedTables = (): Record<string, Row[]> => ({
@@ -88,6 +90,7 @@ const seedTables = (): Record<string, Row[]> => ({
       star_sign: null,
       pets: [],
       religion: null,
+      visibility: 'everyone',
     },
   ],
 });
@@ -268,10 +271,31 @@ describe('Profile details on /users/me (BUG-010)', () => {
     ['an unknown language', { languages: ['Klingon'] }],
     ['a language list sent as text', { languages: 'English' }],
     ['null for a list column', { pets: null }],
+    ['a visibility the app does not offer', { visibility: 'friends' }],
+    ['null for the visibility', { visibility: null }],
   ])('refuses %s', async (_, guest) => {
     await http().patch('/users/me').set(AS_CALLER).send({ guest }).expect(400);
     expect(callerGuest()).toStrictEqual(seedTables().guests[0]);
   });
+
+  // TASK-001: who sees you on guest lists and in Matches.
+  it.each(['liked', 'hidden', 'everyone'])(
+    'saves the visibility %s and returns it on the next GET',
+    async (visibility) => {
+      await http()
+        .patch('/users/me')
+        .set(AS_CALLER)
+        .send({ guest: { visibility } })
+        .expect(200);
+      expect(callerGuest()).toStrictEqual({
+        ...seedTables().guests[0],
+        visibility,
+      });
+
+      const reloaded = await http().get('/users/me').set(AS_CALLER).expect(200);
+      expect(reloaded.body.guest).toMatchObject({ visibility });
+    },
+  );
 
   it('needs a signed-in caller', async () => {
     await http()

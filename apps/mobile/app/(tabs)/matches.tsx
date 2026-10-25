@@ -10,6 +10,7 @@ import {
   fetchMyTickets,
   fetchSwipeableProfiles,
   createEventSession,
+  GuestUnavailableError,
   type SwipeFilters,
   type SwipeableProfile,
 } from "@/lib/api";
@@ -211,6 +212,12 @@ export default function MatchesScreen() {
     likeLimit: 0,
     eligibleGuestCount: 0,
   });
+  // Your visibility is hidden: Matches is paused for you (the API sends no
+  // profiles).
+  const [selfHidden, setSelfHidden] = useState(false);
+  // Guests you blocked or reported here. The API leaves them out from then
+  // on; this also drops them from an answer that was already on its way.
+  const blockedIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
     setGenderFilter(lookingForGenderFromProfile);
@@ -444,14 +451,18 @@ export default function MatchesScreen() {
           : data.profiles;
       const sourceEventTitle = cached?.eventTitle || data.event_title;
 
+      setSelfHidden(data.visibility === "hidden");
+
       const activeProfileId =
         filteredProfilesRef.current[currentCardIndexRef.current]?.profile.id ??
         null;
-      const nextProfiles = sourceProfiles.map((p) => ({
-        profile: mapToProfile(p, sourceEventTitle),
-        gender: p.gender,
-        likedByMe: Boolean(p.liked_by_me),
-      }));
+      const nextProfiles = sourceProfiles
+        .filter((p: SwipeableProfile) => !blockedIdsRef.current.has(p.user_id))
+        .map((p) => ({
+          profile: mapToProfile(p, sourceEventTitle),
+          gender: p.gender,
+          likedByMe: Boolean(p.liked_by_me),
+        }));
 
       setEventId(data.event_id ?? activeEventId ?? null);
       setProfiles(nextProfiles);
@@ -540,6 +551,22 @@ export default function MatchesScreen() {
   }, [eligibility, loadProfiles]);
 
   // ── Swipe handlers ─────────────────────────────────────────────────────────
+  // The guest is gone for you: you blocked or reported them, or they are no
+  // longer visible to you.
+  const removeProfile = useCallback((guestId: string) => {
+    setProfiles((prev) =>
+      prev.filter((candidate) => candidate.profile.id !== guestId),
+    );
+  }, []);
+
+  const handleGuestBlocked = useCallback(
+    (guestId: string) => {
+      blockedIdsRef.current.add(guestId);
+      removeProfile(guestId);
+    },
+    [removeProfile],
+  );
+
   const handleSwipeRight = async (profile: Profile) => {
     if (likedProfileIds.has(profile.id)) {
       toast("You already liked this profile.");
@@ -611,6 +638,11 @@ export default function MatchesScreen() {
       isMutualMatch = result.matched;
       mutualMatchId = result.match_id;
     } catch (err) {
+      if (err instanceof GuestUnavailableError) {
+        removeProfile(profile.id);
+        toast(t("guestUnavailable"));
+        return;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("Like limit reached")) {
         toast("You have used all Likes for your current filters.");
@@ -682,6 +714,20 @@ export default function MatchesScreen() {
     );
   }
 
+  // Before the loading view, so the refresh every 15 s doesn't flash it.
+  if (eligibility === "eligible" && selfHidden) {
+    return (
+      <LockedStateView
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        title={t("matchesHiddenTitle")}
+        subtitle={t("matchesHiddenSubtitle")}
+        buttonText={t("matchesHiddenButton")}
+        onUnlock={() => router.push("/profile")}
+      />
+    );
+  }
+
   if (eligibility === "eligible" && loadingProfiles && profiles.length === 0) {
     return <LoadingStateView />;
   }
@@ -725,6 +771,8 @@ export default function MatchesScreen() {
       matchedProfile={matchedProfile}
       matchId={matchId}
       onCloseMatch={() => setShowMatch(false)}
+      eventId={eventId}
+      onGuestBlocked={handleGuestBlocked}
     />
   );
 }

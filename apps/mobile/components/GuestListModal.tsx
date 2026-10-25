@@ -25,6 +25,12 @@ interface GuestListModalProps {
   males: number;
   isAttending: boolean;
   onAttend: () => void;
+  /**
+   * Guests going who aren't on guestList: all of them for someone not going,
+   * otherwise those whose visibility leaves you out or who are blocked
+   * either way.
+   */
+  hiddenCount?: number;
 }
 
 /** Room under the list for the pinned Attend button (88 px) and a 16 px gap */
@@ -52,6 +58,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
       males,
       isAttending,
       onAttend,
+      hiddenCount = 0,
     },
     ref,
   ) => {
@@ -59,7 +66,14 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
     const { t } = useTranslation();
     const snapPoints = useMemo(() => ["85%"], []);
 
-    const goingCount = guestList.length;
+    const goingCount = guestList.length + hiddenCount;
+    // Only guests going see who else is; the API sends others the numbers.
+    const notShownNote =
+      !isAttending && guestList.length === 0 && hiddenCount > 0
+        ? t("guestListAttendToSee")
+        : hiddenCount > 0
+          ? t("guestListNotShown", { count: hiddenCount })
+          : null;
     const freeSpots = Math.max(0, maxSpots - goingCount);
     const progressValue =
       maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
@@ -235,7 +249,16 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
             </View>
           }
           ListFooterComponent={
-            <View className={`h-4 rounded-b-2xl border-b ${CARD_SIDES}`} />
+            <>
+              {notShownNote ? (
+                <View className={`px-4 pt-3 ${CARD_SIDES}`}>
+                  <Text className="text-xs leading-[18px] text-light-gray6 dark:text-dark-gray6">
+                    {notShownNote}
+                  </Text>
+                </View>
+              ) : null}
+              <View className={`h-4 rounded-b-2xl border-b ${CARD_SIDES}`} />
+            </>
           }
         />
       </BottomSheetModal>

@@ -1,11 +1,17 @@
 import FindModal from "@/components/FindModal";
+import GuestSafetySheet from "@/components/GuestSafetySheet";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import type { Match, Message } from "@/types/chat";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { ArrowLeft, SendHorizontal, UserSearch } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Ellipsis,
+  SendHorizontal,
+  UserSearch,
+} from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image } from "expo-image";
@@ -32,6 +38,8 @@ type ChatModalProps = {
   /** Pre-loaded initial messages from the API. Falls back to match.messages when absent. */
   initialMessages?: Message[];
   onBack: () => void;
+  /** After you block or report the guest; the chat is closed for both. */
+  onBlocked?: () => void;
 };
 
 const HEADER_HEIGHT = 64;
@@ -156,12 +164,14 @@ export default function ChatModal({
   userId,
   initialMessages,
   onBack,
+  onBlocked,
 }: ChatModalProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [showFind, setShowFind] = useState(false);
   const matchProfileSheetRef = useRef<BottomSheetModal>(null);
+  const safetySheetRef = useRef<BottomSheetModal>(null);
   const [newMessage, setNewMessage] = useState("");
 
   const listRef = useRef<FlatList<Message>>(null);
@@ -274,8 +284,11 @@ export default function ChatModal({
                 />
                 <HeaderTimerRing expiresAt={match.expiresAt} />
               </Pressable>
-              <View>
-                <Text className="text-[18px] font-semibold text-light-gray12 dark:text-dark-gray12">
+              <View className="flex-1">
+                <Text
+                  numberOfLines={1}
+                  className="text-[18px] font-semibold text-light-gray12 dark:text-dark-gray12"
+                >
                   {match.name}
                 </Text>
                 <Text className="mt-0.5 text-sm text-light-gray10 dark:text-dark-gray10">
@@ -284,9 +297,19 @@ export default function ChatModal({
               </View>
             </View>
 
-            <Pressable className="p-4" onPress={() => setShowFind(true)}>
+            <Pressable className="p-3" onPress={() => setShowFind(true)}>
               <UserSearch size={28} color={theme.gray10} />
             </Pressable>
+            {match.otherUserId ? (
+              <Pressable
+                className="p-2"
+                onPress={() => safetySheetRef.current?.present()}
+                accessibilityRole="button"
+                accessibilityLabel={t("reportOrBlock")}
+              >
+                <Ellipsis size={24} color={theme.gray10} />
+              </Pressable>
+            ) : null}
           </View>
 
           {/* Messages */}
@@ -362,7 +385,25 @@ export default function ChatModal({
           </View>
         </View>
       </KeyboardAvoidingView>
-      <MatchProfileSheet match={match} sheetRef={matchProfileSheetRef} />
+      <MatchProfileSheet
+        match={match}
+        sheetRef={matchProfileSheetRef}
+        onReportOrBlock={
+          match.otherUserId
+            ? () => safetySheetRef.current?.present()
+            : undefined
+        }
+      />
+      <GuestSafetySheet
+        sheetRef={safetySheetRef}
+        guest={
+          match.otherUserId ? { id: match.otherUserId, name: match.name } : null
+        }
+        source="chat"
+        eventId={match.eventId ?? null}
+        matchId={Number(match.id)}
+        onBlocked={() => onBlocked?.()}
+      />
     </SafeAreaView>
   );
 }
