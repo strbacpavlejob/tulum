@@ -4,7 +4,6 @@ import LoadingIndicator from "@/components/loading-indicator";
 import Tags from "@/components/Tags";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -19,7 +18,9 @@ import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
+  AccountOwnsVenuesError,
   deleteGuestPhoto,
+  deleteMyAccount,
   mapUserPatchToGuestUpdates,
   updateMyProfile,
   updateSettings,
@@ -77,7 +78,7 @@ import {
   visibilityOptions,
 } from "@/constants/options";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -112,6 +113,7 @@ export default function ProfileScreen() {
   const [venueNotes, setVenueNotes] = useState("");
   const [sendingVenue, setSendingVenue] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const editSheetRef = useRef<BottomSheetModal>(null);
   const bugSheetRef = useRef<BottomSheetModal>(null);
@@ -424,6 +426,45 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await signOut();
+    setUser(null);
+
+    router.replace("/(auth)/sign-in");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deletingAccount) return;
+    setDeletingAccount(true);
+
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token available");
+      await deleteMyAccount(token);
+    } catch (error) {
+      console.error("Failed to delete account", error);
+
+      // The dialog stays open, so the user can try again or cancel.
+      toast.error(t("deleteAccountFailed"), {
+        description: t(
+          error instanceof AccountOwnsVenuesError
+            ? "deleteAccountHostsVenues"
+            : "deleteAccountTryAgain",
+        ),
+      });
+      setDeletingAccount(false);
+      return;
+    }
+
+    setShowDeleteAlert(false);
+    setDeletingAccount(false);
+    toast.success(t("accountDeleted"));
+
+    // Deleting the Clerk user already ended the session on the server;
+    // signOut clears it on this device.
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign-out after deleting the account failed", error);
+    }
     setUser(null);
 
     router.replace("/(auth)/sign-in");
@@ -1276,30 +1317,59 @@ export default function ProfileScreen() {
         </BottomSheetView>
       </BottomSheetModal>
 
-      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent>
+      <AlertDialog
+        open={showDeleteAlert}
+        onOpenChange={(open) => {
+          // Stays open while the account is being deleted.
+          if (!deletingAccount) setShowDeleteAlert(open);
+        }}
+      >
+        {/* Colors come from the theme: this app's Tailwind config has no
+            bg-background or bg-destructive, so the dialog was see-through. */}
+        <AlertDialogContent
+          style={{
+            backgroundColor: theme.backgroundPopover,
+            borderColor: theme.border,
+          }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("deleteAlertTitle")}</AlertDialogTitle>
+            <AlertDialogTitle style={{ color: theme.colorStrong }}>
+              {t("deleteAlertTitle")}
+            </AlertDialogTitle>
 
-            <AlertDialogDescription>
+            <AlertDialogDescription style={{ color: theme.colorMuted }}>
               {t("deleteAlertDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Text>{t("cancel")}</Text>
+            <AlertDialogCancel
+              disabled={deletingAccount}
+              style={{
+                borderColor: theme.border,
+                backgroundColor: theme.backgroundStrong,
+              }}
+            >
+              <Text style={{ color: theme.colorStrong }}>{t("cancel")}</Text>
             </AlertDialogCancel>
 
-            <AlertDialogAction
+            {/* A plain Button: AlertDialogAction would close the dialog
+                before the deletion has finished. */}
+            <Button
+              disabled={deletingAccount}
               onPress={() => {
-                setShowDeleteAlert(false);
-                setUser(null);
+                void handleDeleteAccount();
               }}
-              className="bg-destructive"
+              style={{ backgroundColor: theme.destructive }}
             >
-              <Text className="text-white">{t("confirm")}</Text>
-            </AlertDialogAction>
+              {deletingAccount ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : null}
+
+              <Text style={{ color: "#fff" }}>
+                {deletingAccount ? t("deletingAccount") : t("confirm")}
+              </Text>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

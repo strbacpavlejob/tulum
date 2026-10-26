@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   DeleteObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -55,6 +56,39 @@ export class R2Service {
     await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  }
+
+  /**
+   * Deletes every object under a folder, e.g. `guests/<userId>/`, and returns
+   * how many there were. The prefix must end in '/', so that `guests/user_1/`
+   * can't also match `guests/user_12/`.
+   */
+  async deleteFolder(prefix: string): Promise<number> {
+    if (!prefix.endsWith('/') || prefix === '/') {
+      throw new Error(`Not a folder prefix: "${prefix}"`);
+    }
+    if (!this.bucket) throw new Error('R2_BUCKET_NAME is not set');
+
+    let deleted = 0;
+    let continuationToken: string | undefined;
+    do {
+      const page = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+      for (const { Key } of page.Contents ?? []) {
+        if (!Key) continue;
+        await this.deleteObject(Key);
+        deleted += 1;
+      }
+      continuationToken = page.IsTruncated
+        ? page.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+    return deleted;
   }
 
   async uploadAndProcessImage(

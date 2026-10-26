@@ -40,6 +40,7 @@ import { StatisticsService } from './statistics/statistics.service';
 import { SupabaseService } from './supabase/supabase.service';
 import { TicketsController } from './tickets/tickets.controller';
 import { TicketsService } from './tickets/tickets.service';
+import { AccountDeletionService } from './users/account-deletion.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { VenuesController } from './venues/venues.controller';
@@ -78,6 +79,7 @@ const usersService = {
   getMyProfile: jest.fn((userId: string) => Promise.resolve({ id: userId })),
   updateMyProfile: jest.fn((userId: string) => Promise.resolve({ id: userId })),
 };
+const accountDeletionService = { deleteAccount: resolved(undefined) };
 const ticketsService = {
   getTicketById: resolved<Record<string, unknown> | null>(null),
   getTickets: resolved([]),
@@ -174,6 +176,7 @@ describe('Route authorization (BUG-004)', () => {
       providers: [
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: UsersService, useValue: usersService },
+        { provide: AccountDeletionService, useValue: accountDeletionService },
         { provide: TicketsService, useValue: ticketsService },
         { provide: MatchesService, useValue: matchesService },
         { provide: ChatsService, useValue: chatsService },
@@ -320,6 +323,37 @@ describe('Route authorization (BUG-004)', () => {
         'v1',
         undefined,
       );
+    });
+  });
+
+  describe('DELETE /users/me', () => {
+    it('deletes the caller’s own account', async () => {
+      const res = await http().delete('/users/me').set(AS_CALLER).expect(200);
+      expect(res.body).toEqual({ success: true });
+      expect(accountDeletionService.deleteAccount.mock.calls).toStrictEqual([
+        [CALLER],
+      ]);
+    });
+
+    it('ignores another user’s id in the query and body', async () => {
+      await http()
+        .delete(`/users/me?id=${OTHER}&user_id=${OTHER}`)
+        .set(AS_CALLER)
+        .send({ id: OTHER, user_id: OTHER })
+        .expect(200);
+      expect(accountDeletionService.deleteAccount.mock.calls).toStrictEqual([
+        [CALLER],
+      ]);
+    });
+
+    it('needs a valid token; x-user-id alone is refused', async () => {
+      await http().delete('/users/me').expect(401);
+      await http()
+        .delete('/users/me')
+        .set('Authorization', 'Bearer expired')
+        .expect(401);
+      await http().delete('/users/me').set('x-user-id', OTHER).expect(401);
+      expect(accountDeletionService.deleteAccount).not.toHaveBeenCalled();
     });
   });
 

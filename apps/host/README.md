@@ -41,6 +41,20 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 export SUPABASE_ACCESS_TOKEN="sbp_1234..."
 
 npx supabase link --project-ref SUPABASE_PROJECTNAME
+```
+
+Both functions are Clerk webhooks: `create-user` (`user.created`) makes the
+user's rows and `delete-user` (`user.deleted`) removes them. They accept only
+requests signed by Clerk, and each Clerk endpoint has its own signing secret
+(Clerk dashboard → Webhooks → the endpoint). Set the secrets before you
+deploy: without its secret a function answers 500 to every webhook.
+
+```sh
+npx supabase secrets set CLERK_CREATE_USER_SIGNING_SECRET=whsec_...
+
+npx supabase secrets set CLERK_DELETE_USER_SIGNING_SECRET=whsec_...
 
 npx supabase functions deploy create-user --no-verify-jwt
+
+npx supabase functions deploy delete-user --no-verify-jwt
 ```

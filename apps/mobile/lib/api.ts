@@ -463,6 +463,31 @@ export async function updateMyProfile(
   return mapProfileToUser(data);
 }
 
+/** DELETE /users/me refused: the account still hosts venues. */
+export class AccountOwnsVenuesError extends Error {}
+
+/**
+ * Deletes the signed-in account: the API removes the photos and the Clerk
+ * user, and Clerk's webhook then removes the rest of the user's data. Clerk
+ * ends the session on the server, so sign out afterwards.
+ */
+export async function deleteMyAccount(token: string): Promise<void> {
+  const response = await fetch(`${TULUM_API_URL}/users/me`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (response.status === 409) {
+    const body = await response.json().catch(() => null);
+    throw new AccountOwnsVenuesError(
+      body?.message ?? "The account still hosts venues",
+    );
+  }
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Failed to delete account: ${response.status} ${text}`);
+  }
+}
+
 // ─── Guest onboarding ─────────────────────────────────────────────────────────
 
 export type GenderValue = "male" | "female" | "other";

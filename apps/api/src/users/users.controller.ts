@@ -14,6 +14,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { AccountDeletionService } from './account-deletion.service';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { UsersService } from './users.service';
 
@@ -27,7 +28,10 @@ function sentFields(dto?: object): Record<string, unknown> {
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly accountDeletionService: AccountDeletionService,
+  ) {}
 
   // The users/guests/hosts/settings routes below read or change any user's
   // rows by id, so they are admin-only. Signed-in users use /users/me.
@@ -154,5 +158,14 @@ export class UsersController {
       sentFields(body.user),
       sentFields(body.guest),
     );
+  }
+
+  // Deletes the caller's photos and Clerk user. Clerk's user.deleted webhook
+  // (the delete-user edge function) then removes their rows.
+  @Delete('me')
+  @HttpCode(HttpStatus.OK)
+  async deleteMyAccount(@UserId() userId: string) {
+    await this.accountDeletionService.deleteAccount(userId);
+    return { success: true };
   }
 }

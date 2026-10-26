@@ -22,6 +22,7 @@ import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AccountDeletionService } from '../users/account-deletion.service';
 import { UsersController } from '../users/users.controller';
 import { UsersService } from '../users/users.service';
 import { GuestsController } from './guests.controller';
@@ -193,6 +194,7 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },
         { provide: R2Service, useValue: {} },
+        { provide: AccountDeletionService, useValue: {} },
       ],
     }).compile();
 

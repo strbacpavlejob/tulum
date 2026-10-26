@@ -112,6 +112,12 @@ const resources = {
         "This action cannot be undone. All your data will be permanently deleted.",
       cancel: "Cancel",
       confirm: "Confirm",
+      deletingAccount: "Deleting...",
+      accountDeleted: "Your account was deleted.",
+      deleteAccountFailed: "Account not deleted",
+      deleteAccountTryAgain: "Your account is still active. Please try again.",
+      deleteAccountHostsVenues:
+        "This account hosts venues. Move them to another host before deleting it.",
 
       // Bug report
       bugReportPlaceholder: "Describe the bug...",
@@ -546,6 +552,12 @@ const resources = {
         "Ova radnja se ne može poništiti. Svi vaši podaci će biti trajno obrisani.",
       cancel: "Otkaži",
       confirm: "Potvrdi",
+      deletingAccount: "Brisanje...",
+      accountDeleted: "Tvoj nalog je obrisan.",
+      deleteAccountFailed: "Nalog nije obrisan",
+      deleteAccountTryAgain: "Tvoj nalog je i dalje aktivan. Pokušaj ponovo.",
+      deleteAccountHostsVenues:
+        "Ovaj nalog upravlja lokalima. Prebaci ih na drugog organizatora pre brisanja naloga.",
 
       // Bug report
       bugReportPlaceholder: "Opiši grešku...",
@@ -978,6 +990,12 @@ const resources = {
         "Это действие нельзя отменить. Все ваши данные будут удалены навсегда.",
       cancel: "Отмена",
       confirm: "Подтвердить",
+      deletingAccount: "Удаление...",
+      accountDeleted: "Ваш аккаунт удалён.",
+      deleteAccountFailed: "Аккаунт не удалён",
+      deleteAccountTryAgain: "Ваш аккаунт всё ещё активен. Попробуйте ещё раз.",
+      deleteAccountHostsVenues:
+        "Этот аккаунт управляет заведениями. Передайте их другому организатору, прежде чем удалять аккаунт.",
 
       // Bug report
       bugReportPlaceholder: "Опишите ошибку...",
