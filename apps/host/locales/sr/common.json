@@ -11,7 +11,10 @@
       "retry": "Pokušaj ponovo",
       "unlockControls": "Dodirni da otključaš kontrole mape",
       "lockControls": "Zaključaj mapu",
-      "clusterLabel": "Grupa od {{count}} lokacija događaja"
+      "clusterLabel": "Grupa od {{count}} lokacija događaja",
+      "fallbackTitle": "Mapa ne može da se učita u ovom pregledaču",
+      "fallbackSubtitle": "Evo šta je uskoro na programu.",
+      "fallbackEmpty": "Trenutno nema predstojećih događaja."
     },
     "nav": {
       "benefits": "Benefiti",

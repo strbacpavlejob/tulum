@@ -15,6 +15,10 @@ export interface Location {
   description?: string;
   picture?: string;
   picture_urls?: string[];
+  /** GET /api/events/active sends these too; the map's fallback list uses them. */
+  venue_name?: string;
+  /** Start time, ISO-8601 UTC. */
+  date?: string;
 }
 
 interface LocationsState {

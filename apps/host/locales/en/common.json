@@ -11,7 +11,10 @@
       "retry": "Try again",
       "unlockControls": "Tap to unlock map controls",
       "lockControls": "Lock map",
-      "clusterLabel": "{{count}} event locations"
+      "clusterLabel": "{{count}} event locations",
+      "fallbackTitle": "The map can't load in this browser",
+      "fallbackSubtitle": "Here's what's coming up instead.",
+      "fallbackEmpty": "No events coming up right now."
     },
     "nav": {
       "benefits": "Benefits",

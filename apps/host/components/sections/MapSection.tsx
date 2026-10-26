@@ -8,7 +8,11 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { useLocationsStore } from "@/store/locations";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MapErrorBoundary } from "@/components/common/map-error-boundary";
+import { cn } from "@/lib/utils";
+import { supportsWebGL } from "@/lib/webgl";
 import { MascotSlot } from "./mascot-slot";
+import { MapEventList } from "./map-event-list";
 
 function MapSkeleton() {
   return (
@@ -36,6 +40,13 @@ export default function MapSection() {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [mapUnlocked, setMapUnlocked] = useState(false);
+  // Without WebGL, MapLibre throws while mounting, and with nothing to catch
+  // it Next.js replaced the whole page with "Application error" (QA
+  // TASK-003). The map isn't even loaded then, and a list of the events
+  // takes its place; so it does if the map fails for another reason.
+  const [mapSupported, setMapSupported] = useState<boolean | null>(null);
+  const [mapFailed, setMapFailed] = useState(false);
+  const showEventList = mapSupported === false || mapFailed;
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapLoadRequested = useRef(false);
   const { locations, isLoading, error, fetchLocations } = useLocationsStore();
@@ -48,6 +59,7 @@ export default function MapSection() {
       if (mapLoadRequested.current) return;
 
       mapLoadRequested.current = true;
+      setMapSupported(supportsWebGL());
       setShouldLoadMap(true);
       void fetchLocations();
     };
@@ -96,7 +108,12 @@ export default function MapSection() {
         <Card className="p-0 overflow-hidden w-full flex items-center justify-center">
           <div
             ref={mapContainerRef}
-            className="relative w-full aspect-[16/9] sm:aspect-[4/3] md:aspect-[16/7] lg:aspect-[16/5]"
+            className={cn(
+              "relative w-full",
+              // The list sizes itself; the map needs a fixed shape.
+              !showEventList &&
+                "aspect-[16/9] sm:aspect-[4/3] md:aspect-[16/7] lg:aspect-[16/5]",
+            )}
             role="region"
             aria-labelledby="guest-map-title"
             aria-busy={!shouldLoadMap || isLoading}
@@ -117,22 +134,19 @@ export default function MapSection() {
                   {t("landingpage.map.retry")}
                 </Button>
               </div>
-            ) : locations.length === 0 ? (
-              <LazyStyledMapWithHandle
-                locations={[]}
-                disablePopOver
-                selectedLocation={selectedLocation}
-                onLocationSelect={setSelectedLocation}
-              />
+            ) : showEventList ? (
+              <MapEventList events={locations} />
             ) : (
-              <LazyStyledMapWithHandle
-                disablePopOver
-                locations={locations}
-                selectedLocation={selectedLocation}
-                onLocationSelect={setSelectedLocation}
-              />
+              <MapErrorBoundary onError={() => setMapFailed(true)}>
+                <LazyStyledMapWithHandle
+                  disablePopOver
+                  locations={locations}
+                  selectedLocation={selectedLocation}
+                  onLocationSelect={setSelectedLocation}
+                />
+              </MapErrorBoundary>
             )}
-            {!error && !mapUnlocked && (
+            {!error && !showEventList && !mapUnlocked && (
               <div
                 aria-label={t("landingpage.map.unlockControls")}
                 onClick={() => setMapUnlocked(true)}
@@ -146,7 +160,7 @@ export default function MapSection() {
                 </span>
               </div>
             )}
-            {!error && mapUnlocked && (
+            {!error && !showEventList && mapUnlocked && (
               <button
                 type="button"
                 aria-label={t("landingpage.map.lockControls")}
