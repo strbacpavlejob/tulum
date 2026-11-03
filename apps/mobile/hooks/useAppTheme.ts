@@ -168,7 +168,11 @@ export function useAppTheme() {
     theme === "dark" || (theme === "system" && colorScheme === "dark");
 
   const newTheme = isDark ? "dark" : "light";
-  nativewindColorScheme.set(newTheme);
+  // Expo renders web pages on the server without a window, and NativeWind
+  // throws if the color scheme is set there.
+  if (typeof window !== "undefined") {
+    nativewindColorScheme.set(newTheme);
+  }
 
   return isDark ? darkTheme : lightTheme;
 }

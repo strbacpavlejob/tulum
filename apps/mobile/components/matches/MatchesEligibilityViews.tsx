@@ -125,10 +125,7 @@ export function LocationRequiredView({
 
       <View
         pointerEvents="box-none"
-        style={[
-          StyleSheet.absoluteFillObject,
-          { zIndex: 2000, elevation: 2000 },
-        ]}
+        style={[StyleSheet.absoluteFill, { zIndex: 2000, elevation: 2000 }]}
       >
         <MatchesLocationGateCard topInset={topInset} onBypass={onBypass} />
 

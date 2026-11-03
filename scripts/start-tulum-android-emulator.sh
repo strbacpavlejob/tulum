@@ -32,7 +32,10 @@ if [ -z "$serial" ]; then
   fi
 
   log="${TMPDIR:-/tmp}/tulum-emulator.log"
-  setsid nohup "$emulator" -avd "$avd" "$@" >"$log" 2>&1 </dev/null &
+  # Guest Vulkan stays off. On this laptop the emulator falls back to software
+  # rendering (lavapipe), and Chrome's Vulkan compositor crashed the whole
+  # emulator as soon as Google sign-in opened it (emulator 37.2, 2026-11-02).
+  setsid nohup "$emulator" -avd "$avd" -feature -Vulkan "$@" >"$log" 2>&1 </dev/null &
   printf 'Starting %s (log: %s)\n' "$avd" "$log"
 
   deadline=$((SECONDS + 120))

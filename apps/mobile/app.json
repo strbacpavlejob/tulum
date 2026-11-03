@@ -14,11 +14,6 @@
       "tinted": "./assets/icons/ios-tinted.png"
     },
     "android": {
-      "config": {
-        "googleMaps": {
-          "apiKey": "process.env.GOOGLE_MAPS_API_KEY"
-        }
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "monochromeImage": "./assets/icons/adaptive-icon.png",
@@ -61,7 +56,8 @@
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to set a profile picture."
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

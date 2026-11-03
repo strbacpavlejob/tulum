@@ -13,7 +13,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { Platform, StatusBar } from "react-native";
+import { Platform, StatusBar, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
@@ -35,8 +35,8 @@ SplashScreen.setOptions({
 SplashScreen.preventAutoHideAsync();
 
 const MainStack = () => {
-  const theme = useAppTheme();
-  const background = theme.color;
+  // Also keeps NativeWind's color scheme in sync with the theme setting.
+  useAppTheme();
   const { isLoadingStore } = useStoreSetup();
   useLanguageSync();
 
@@ -46,11 +46,13 @@ const MainStack = () => {
     }
   }, [isLoadingStore]);
 
+  // Android draws edge to edge: the system bars are transparent over the
+  // SafeAreaView background, so only the button color is set here.
   useEffect(() => {
-    StatusBar.setBackgroundColor(background, true);
-    NavigationBar.setBackgroundColorAsync(background).catch(console.warn);
-    NavigationBar.setButtonStyleAsync("light");
-  }, [background]);
+    if (Platform.OS === "android") {
+      NavigationBar.setStyle("light");
+    }
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -61,12 +63,8 @@ const MainStack = () => {
   return (
     <>
       <SafeAreaView className="flex-1 bg-light-color dark:bg-dark-color">
-        <StatusBar
-          translucent
-          backgroundColor="transparent"
-          barStyle="light-content"
-        />
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" />
+        <View style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <Stack>
               <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -86,7 +84,7 @@ const MainStack = () => {
               />
             </Stack>
           </BottomSheetModalProvider>
-        </GestureHandlerRootView>
+        </View>
       </SafeAreaView>
     </>
   );
@@ -106,8 +104,11 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ThemeProvider>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-          <MainStack />
-          <Toaster />
+          {/* Toaster's swipe-to-dismiss is a gesture too, so it must be inside. */}
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <MainStack />
+            <Toaster />
+          </GestureHandlerRootView>
         </SafeAreaProvider>
       </ThemeProvider>
     </ClerkProvider>

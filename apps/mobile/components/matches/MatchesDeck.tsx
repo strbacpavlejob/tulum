@@ -266,7 +266,7 @@ export default function MatchesDeck({
                     "rgba(9,7,14,0.9)",
                   ]}
                   locations={[0, 0.26, 0.42, 0.78, 1]}
-                  style={StyleSheet.absoluteFillObject}
+                  style={StyleSheet.absoluteFill}
                 />
               </View>
             )}
@@ -279,7 +279,7 @@ export default function MatchesDeck({
           <LinearGradient
             pointerEvents="none"
             colors={["rgba(53,44,78,0.25)", "rgba(16,14,22,0)"]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           {profiles.length === 0 ? (
             <View
