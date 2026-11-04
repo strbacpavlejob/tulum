@@ -1,6 +1,7 @@
 import FavoriteButton from "@/components/FavoriteButton";
 import Tags from "@/components/Tags";
 import { Text } from "@/components/ui/text";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { cn } from "@/lib/utils";
 import { EventSummary } from "@/types/event";
 import { format } from "date-fns";
@@ -30,6 +31,7 @@ export const TicketCard = ({
   isLoading = false,
 }: TicketCardProps) => {
   const { t, i18n } = useTranslation();
+  const theme = useAppTheme();
 
   if (isLoading) {
     return (
@@ -97,10 +99,9 @@ export const TicketCard = ({
 
         {/* Ticket icon overlay */}
         <View className="bg-light-background/80 dark:bg-dark-background/80 absolute inset-0 items-center justify-center">
-          <Ticket
-            className="text-light-gray12/80 dark:text-dark-gray12/80 w-full h-full p-8 rotate-12"
-            strokeWidth={2}
-          />
+          <View className="rotate-12 opacity-80">
+            <Ticket size={36} color={theme.gray12} strokeWidth={2} />
+          </View>
         </View>
       </View>
 

@@ -15,7 +15,7 @@ export default function NotFoundScreen() {
         </Text>
         <Link href="/" asChild>
           <Button className="mt-3 px-6 bg-gray-200 rounded-lg items-center">
-            <Text>{t("goToHome")}</Text>
+            <Text className="text-black">{t("goToHome")}</Text>
           </Button>
         </Link>
       </View>

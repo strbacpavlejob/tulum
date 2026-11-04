@@ -137,6 +137,7 @@ const ListingsMap = memo(() => {
   const TAG_SKELETON_WIDTHS = [72, 88, 64, 96, 76];
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
+  const hasFirstSelectionRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const prevSelectedIndexRef = useRef<number | null>(0);
 
@@ -504,8 +505,7 @@ const ListingsMap = memo(() => {
 
   /* ── Keep selected pin centered and zoomed in ── */
   useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || selectedIndex === null) return;
+    if (selectedIndex === null) return;
 
     const selectedEvent = listings?.[selectedIndex];
     if (!selectedEvent) return;
@@ -513,7 +513,14 @@ const ListingsMap = memo(() => {
     const lng = selectedEvent?.location?.longitude;
     if (!isValidCoord(lat, lng)) return;
 
-    map.flyTo([lat, lng], ACTIVE_PIN_ZOOM, {
+    // The map opens on the city overview, even when the events load after it:
+    // the first selection only marks its pin, and later ones fly to theirs.
+    if (!hasFirstSelectionRef.current) {
+      hasFirstSelectionRef.current = true;
+      return;
+    }
+
+    mapInstanceRef.current?.flyTo([lat, lng], ACTIVE_PIN_ZOOM, {
       duration: 0.35,
     });
   }, [selectedIndex, listings]);

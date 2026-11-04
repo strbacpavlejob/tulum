@@ -7,8 +7,8 @@ import MapMarkerIcon from "./MapMarkerIcon";
 interface MatchLocationMapProps {
   venueLat: number;
   venueLng: number;
-  userLat: number;
-  userLng: number;
+  userLat?: number;
+  userLng?: number;
 }
 
 const maptilerKey = process.env.EXPO_PUBLIC_MAPTILER_KEY ?? "";
@@ -99,9 +99,11 @@ export const MatchLocationMap = ({
       });
       L.marker([venueLat, venueLng], { icon: venueIcon }).addTo(map);
 
-      // User location marker — a pulsing blue dot
-      const userDot = document.createElement("div");
-      userDot.style.cssText = `
+      // Without a position there's no user pin, and the map stays on the venue.
+      if (userLat !== undefined && userLng !== undefined) {
+        // User location marker — a pulsing blue dot
+        const userDot = document.createElement("div");
+        userDot.style.cssText = `
         width: 20px;
         height: 20px;
         border-radius: 50%;
@@ -110,21 +112,22 @@ export const MatchLocationMap = ({
         box-shadow: 0 0 0 4px rgba(59,130,246,0.3);
         position: relative;
       `;
-      const userEl = renderToDiv(
-        <MapMarkerIcon size="md" isSelected={true} isUser />,
-        venueSize,
-      );
-      const userIcon = L.divIcon({
-        html: userEl,
-        className: "",
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-      });
-      L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+        const userEl = renderToDiv(
+          <MapMarkerIcon size="md" isSelected={true} isUser />,
+          venueSize,
+        );
+        const userIcon = L.divIcon({
+          html: userEl,
+          className: "",
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+        L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
 
-      // Fit bounds to show both markers
-      const bounds = L.latLngBounds([venueLat, venueLng], [userLat, userLng]);
-      map.fitBounds(bounds, { padding: [60, 60] });
+        // Fit bounds to show both markers
+        const bounds = L.latLngBounds([venueLat, venueLng], [userLat, userLng]);
+        map.fitBounds(bounds, { padding: [60, 60] });
+      }
 
       mapInstanceRef.current = map;
       setMapReady(true);

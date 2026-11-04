@@ -1,17 +1,36 @@
 import { cn } from "@/lib/utils";
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import { cssInterop } from "nativewind";
 import { Platform, TextInput } from "react-native";
+
+// The className support NativeWind gives TextInput.
+cssInterop(BottomSheetTextInput, {
+  className: { target: "style", nativeStyleToProp: { textAlign: true } },
+});
+
+type TextareaProps = React.ComponentProps<typeof TextInput> & {
+  /**
+   * For fields inside a @gorhom/bottom-sheet sheet, which only moves up with
+   * the keyboard for its own input. Browsers handle the keyboard themselves.
+   */
+  inBottomSheet?: boolean;
+};
 
 function Textarea({
   className,
+  inBottomSheet = false,
   multiline = true,
   numberOfLines = Platform.select({ web: 2, native: 8 }),
   placeholderClassName,
   ...props
-}: React.ComponentProps<typeof TextInput>) {
+}: TextareaProps) {
   const isDisabled = props.editable === false;
+  const Field = (
+    inBottomSheet && Platform.OS !== "web" ? BottomSheetTextInput : TextInput
+  ) as typeof TextInput;
 
   return (
-    <TextInput
+    <Field
       className={cn(
         // Layout
         "min-h-16 w-full rounded-2xl border px-3 py-2 text-base md:text-sm",
@@ -55,7 +74,10 @@ function Textarea({
               "disabled:pointer-events-none disabled:cursor-not-allowed",
           ),
 
-          native: "selection:bg-light-primary dark:selection:bg-dark-primary",
+          // On native selection: only moves the text color to selectionColor;
+          // a selection:bg- class becomes the background.
+          native:
+            "selection:text-light-primary dark:selection:text-dark-primary",
         }),
 
         className,

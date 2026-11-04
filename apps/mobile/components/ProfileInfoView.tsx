@@ -229,7 +229,7 @@ export default function ProfileInfoView({
               <>
                 <Image
                   source={{ uri: user.photos[0] }}
-                  className="flex-1 rounded-xl"
+                  style={{ flex: 1, borderRadius: 12 }}
                   contentFit="cover"
                   cachePolicy="disk"
                 />
@@ -274,7 +274,7 @@ export default function ProfileInfoView({
                   <>
                     <Image
                       source={{ uri: user.photos[idx] }}
-                      className="flex-1 rounded-xl"
+                      style={{ flex: 1, borderRadius: 12 }}
                       contentFit="cover"
                       cachePolicy="disk"
                     />

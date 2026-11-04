@@ -739,6 +739,7 @@ export default function ProfileScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
             contentContainerStyle={{
               gap: 8,
               paddingHorizontal: 4,
@@ -944,6 +945,7 @@ export default function ProfileScreen() {
       <BottomSheetModal
         ref={editSheetRef}
         snapPoints={editSnapPoints}
+        keyboardBlurBehavior="restore"
         backdropComponent={renderBackdrop}
         backgroundStyle={{
           backgroundColor: theme.backgroundPopover,
@@ -1089,6 +1091,7 @@ export default function ProfileScreen() {
               {editConfig.type === "text" ? (
                 <>
                   <Textarea
+                    inBottomSheet
                     value={textValue}
                     onChangeText={setTextValue}
                     placeholder={`${editConfig.title}…`}
@@ -1117,6 +1120,7 @@ export default function ProfileScreen() {
       <BottomSheetModal
         ref={bugSheetRef}
         snapPoints={bugSnapPoints}
+        keyboardBlurBehavior="restore"
         backdropComponent={renderBackdrop}
         backgroundStyle={{
           backgroundColor: theme.backgroundPopover,
@@ -1145,6 +1149,7 @@ export default function ProfileScreen() {
           </Text>
 
           <Textarea
+            inBottomSheet
             value={bugText}
             onChangeText={setBugText}
             placeholder={t("bugReportPlaceholder")}
@@ -1205,6 +1210,7 @@ export default function ProfileScreen() {
       <BottomSheetModal
         ref={venueSheetRef}
         snapPoints={venueSnapPoints}
+        keyboardBlurBehavior="restore"
         backdropComponent={renderBackdrop}
         backgroundStyle={{
           backgroundColor: theme.backgroundPopover,
@@ -1233,6 +1239,7 @@ export default function ProfileScreen() {
           </Text>
 
           <Textarea
+            inBottomSheet
             value={venueName}
             onChangeText={setVenueName}
             placeholder={t("venueNamePlaceholder")}
@@ -1240,6 +1247,7 @@ export default function ProfileScreen() {
           />
 
           <Textarea
+            inBottomSheet
             value={venueInstagram}
             onChangeText={setVenueInstagram}
             placeholder={t("instagramHandlePlaceholder")}
@@ -1247,6 +1255,7 @@ export default function ProfileScreen() {
           />
 
           <Textarea
+            inBottomSheet
             value={venueNotes}
             onChangeText={setVenueNotes}
             placeholder={t("additionalInfoPlaceholder")}

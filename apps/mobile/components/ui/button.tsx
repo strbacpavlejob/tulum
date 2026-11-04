@@ -15,12 +15,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: cn(
-          "bg-primary active:bg-primary/90 shadow-sm shadow-black/5",
-          Platform.select({
-            web: "hover:bg-primary/90",
-          }),
-        ),
+        // One plain class: primary is the same in both themes, and a dark:,
+        // active: or hover: background would outlive a caller's own bg- class.
+        default: "bg-light-primary shadow-sm shadow-black/5",
         destructive: cn(
           "bg-destructive active:bg-destructive/90 dark:bg-destructive/60 shadow-sm shadow-black/5",
           Platform.select({
@@ -92,7 +89,7 @@ const buttonTextVariants = cva(
   {
     variants: {
       variant: {
-        default: "text-primary-foreground",
+        default: "text-white",
         destructive: "text-white",
         outline: cn(
           "group-active:text-accent-foreground",

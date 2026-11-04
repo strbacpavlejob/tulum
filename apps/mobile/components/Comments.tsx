@@ -25,7 +25,7 @@ export const Comment = ({ comment }: Props) => {
               <View className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
                 <Image
                   source={{ uri: comment.host.avatar }}
-                  className="w-full h-full"
+                  style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
                   cachePolicy="disk"
                 />

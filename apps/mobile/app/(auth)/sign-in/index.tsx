@@ -38,6 +38,13 @@ const COLORS = {
   white: "#FFFFFF",
 };
 
+// On the links too: ui/text's own size class would beat the size they inherit.
+const LEGAL_TEXT_STYLE = {
+  fontFamily: "Fredoka_500Medium",
+  fontSize: 13,
+  lineHeight: 20,
+};
+
 export default function SignInScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -335,18 +342,20 @@ export default function SignInScreen() {
           {/* Terms */}
           <Text
             className="mt-5 text-center text-light-colorMuted dark:text-dark-colorMuted"
-            style={{
-              fontFamily: "Fredoka_500",
-              fontSize: 13,
-              lineHeight: 20,
-            }}
+            style={LEGAL_TEXT_STYLE}
           >
             {t("authTermsPrefix")}{" "}
-            <Text className="text-light-color dark:text-dark-color">
+            <Text
+              className="text-light-color dark:text-dark-color"
+              style={LEGAL_TEXT_STYLE}
+            >
               {t("authTermsOfService")}
             </Text>{" "}
             {t("authTermsAnd")}{" "}
-            <Text className="text-light-color dark:text-dark-color">
+            <Text
+              className="text-light-color dark:text-dark-color"
+              style={LEGAL_TEXT_STYLE}
+            >
               {t("authPrivacyPolicy")}
             </Text>
           </Text>

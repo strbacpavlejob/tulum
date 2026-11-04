@@ -262,8 +262,8 @@ function LocationGateScreen({
 }: {
   venueLat: number;
   venueLng: number;
-  userLat: number;
-  userLng: number;
+  userLat?: number;
+  userLng?: number;
   venueName: string;
   onCheckLocation: () => void;
   onBack: () => void;
@@ -733,8 +733,8 @@ export default function InboxScreen() {
       <LocationGateScreen
         venueLat={locationVenueCoords.lat}
         venueLng={locationVenueCoords.lng}
-        userLat={userCoords?.lat ?? locationVenueCoords.lat + 0.003}
-        userLng={userCoords?.lng ?? locationVenueCoords.lng + 0.003}
+        userLat={userCoords?.lat}
+        userLng={userCoords?.lng}
         venueName={locationPendingMatch.venue}
         onCheckLocation={() => checkChatLocation(locationPendingMatch)}
         onBack={() => {

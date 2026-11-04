@@ -9,6 +9,9 @@ import {
 import { Toaster as Sonner, type ToasterProps } from "sonner-native";
 
 const ICON_SIZE = 16;
+// On native, above AlertDialog's z-50 backdrop: a failed action keeps its dialog
+// open. Web's dialog is portaled to <body>, so this can't lift toasts above it.
+const POSITIONER_STYLE = { zIndex: 100 };
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const theme = useAppTheme();
@@ -17,6 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
+      positionerStyle={POSITIONER_STYLE}
       icons={{
         success: <CircleCheckIcon size={ICON_SIZE} color={"green"} />,
         info: <InfoIcon size={ICON_SIZE} color={"yellow"} />,

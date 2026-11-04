@@ -3,6 +3,7 @@ import GuestSafetySheet from "@/components/GuestSafetySheet";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import type { Match, Message } from "@/types/chat";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -27,7 +28,10 @@ import {
   View,
   ViewToken,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import MatchProfileSheet from "./MatchProfileSheet";
 
@@ -168,6 +172,10 @@ export default function ChatModal({
 }: ChatModalProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
+  // Where the app's area starts on screen. KeyboardAvoidingView compares its
+  // own bottom edge, measured from its parent, with the keyboard's top,
+  // measured from the screen, so it needs this distance as an offset.
+  const { y: screenTop } = useSafeAreaFrame();
   const { t } = useTranslation();
   const [showFind, setShowFind] = useState(false);
   const matchProfileSheetRef = useRef<BottomSheetModal>(null);
@@ -252,7 +260,7 @@ export default function ChatModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={
-          Platform.OS === "ios" ? HEADER_HEIGHT + insets.top : 0
+          Platform.OS === "ios" ? HEADER_HEIGHT + screenTop : screenTop
         }
       >
         <View className="flex-1 bg-light-background dark:bg-dark-background">
@@ -348,7 +356,13 @@ export default function ChatModal({
             <View className="px-6 py-4">
               <View className="flex-row items-center rounded-full bg-light-gray3 px-[18px] py-3 dark:bg-dark-gray3">
                 <Textarea
-                  className="flex-1 border-0 shadow-none rounded-none min-h-0"
+                  className={cn(
+                    "flex-1 border-0 bg-transparent shadow-none rounded-none min-h-0 dark:bg-transparent",
+                    Platform.select({
+                      web: "resize-none focus-visible:ring-0 [field-sizing:content]",
+                    }),
+                  )}
+                  numberOfLines={Platform.select({ web: 1 })}
                   style={{
                     fontSize: 17,
                     color: theme.gray12,

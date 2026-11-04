@@ -737,7 +737,7 @@ const EventDetailsScreen = () => {
               <View className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500/30">
                 <Image
                   source={{ uri: event.venue_picture ?? undefined }}
-                  className="w-full h-full"
+                  style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
                   cachePolicy="disk"
                 />

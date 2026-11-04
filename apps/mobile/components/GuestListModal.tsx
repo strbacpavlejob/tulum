@@ -117,7 +117,7 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
               {guest.uri ? (
                 <Image
                   source={{ uri: guest.uri }}
-                  className="w-full h-full"
+                  style={{ width: "100%", height: "100%" }}
                   contentFit="cover"
                   cachePolicy="disk"
                 />

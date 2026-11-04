@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
 import { VENUE_TYPES } from "@/constants/options";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { cn } from "@/lib/utils";
 import {
   deleteGuestPhoto,
@@ -16,7 +17,7 @@ import useStore from "@/store/useStore";
 import { LookingForGender } from "@/types/user";
 import { useAuth } from "@clerk/expo";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import type { VenueType } from "@/types/filter";
@@ -30,7 +31,7 @@ import {
   ScrollView,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import BirthdayInput from "@/components/birthday-input";
 import { differenceInYears, format, subYears } from "date-fns";
@@ -114,6 +115,11 @@ const STEP_IDS = [
 ] as const;
 
 const TOTAL_STEPS = STEP_IDS.length;
+const STEP_CONTENT_STYLE = {
+  paddingHorizontal: 20,
+  paddingTop: 20,
+  paddingBottom: 20,
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -214,6 +220,7 @@ function PhotoPickerStep({
   addPhotoLabel: string;
   photosCounter: (count: number) => string;
 }) {
+  const theme = useAppTheme();
   const { getToken } = useAuth();
 
   const mergePhotoUrls = (current: string[], incoming: string[]) => {
@@ -322,10 +329,10 @@ function PhotoPickerStep({
                     <>
                       <Camera
                         size={24}
-                        className={
+                        color={
                           photos.length >= 3
-                            ? `color-light-backgroundMuted dark:color-dark-backgroundMuted`
-                            : "color-light-colorMuted dark:color-dark-colorMuted"
+                            ? theme.backgroundMuted
+                            : theme.colorMuted
                         }
                       />
                       {idx === 0 && photos.length === 0 && (
@@ -352,6 +359,10 @@ function PhotoPickerStep({
 
 export default function OnboardingScreen() {
   const { t } = useTranslation();
+  const theme = useAppTheme();
+  // KeyboardAvoidingView measures its bottom edge from its parent but the
+  // keyboard from the screen, so it needs the distance between the two.
+  const { y: screenTop } = useSafeAreaFrame();
   const router = useRouter();
   const { setUser } = useStore();
   const { userId, getToken } = useAuth();
@@ -510,8 +521,15 @@ export default function OnboardingScreen() {
 
   // Onboarding is opened with replace (sign-in, the SSO callback, the index
   // redirect), so the first step usually has no screen to go back to. Back
-  // only shows when it can do something.
-  const canGoBack = step > 0 || router.canGoBack();
+  // only shows when it can do something. Read after render, where
+  // canGoBack() can be stale and React Navigation warns about it.
+  const [hasScreenBehind, setHasScreenBehind] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setHasScreenBehind(router.canGoBack());
+    }, [router]),
+  );
+  const canGoBack = step > 0 || hasScreenBehind;
 
   const handleBack = () => {
     if (step > 0) {
@@ -754,21 +772,19 @@ export default function OnboardingScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={screenTop}
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View className="px-5 pt-3 pb-2">
-          {/* Back button + progress bar */}
-          <View className="flex-row items-center gap-4 mb-4">
+          {/* Back button + progress bar, clear of the language flag */}
+          <View className="flex-row items-center gap-4 mb-4 pr-10">
             {canGoBack ? (
               <Pressable
                 onPress={handleBack}
                 hitSlop={12}
                 className="h-9 w-9 items-center justify-center rounded-full bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
               >
-                <ArrowLeft
-                  size={18}
-                  className="color-light-colorStrong dark:color-dark-colorStrong"
-                />
+                <ArrowLeft size={18} color={theme.colorStrong} />
               </Pressable>
             ) : (
               // Same size as the button, so the progress bar doesn't move.
@@ -803,18 +819,22 @@ export default function OnboardingScreen() {
         </View>
 
         {/* ── Step content ─────────────────────────────────────────────── */}
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingTop: 20,
-            paddingBottom: 20,
-          }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {renderStepContent()}
-        </ScrollView>
+        {/* The birthday wheel's lists scroll themselves and can't sit inside a
+            vertical ScrollView; the wheel always fits the screen. */}
+        {steps[step].id === "birthday" ? (
+          <View className="flex-1" style={STEP_CONTENT_STYLE}>
+            {renderStepContent()}
+          </View>
+        ) : (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={STEP_CONTENT_STYLE}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {renderStepContent()}
+          </ScrollView>
+        )}
 
         {/* ── Continue button ───────────────────────────────────────────── */}
         <View className="border-t border-light-border px-5 pb-4 pt-3 dark:border-dark-border">

@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { LookingForGender } from "@/types/user";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +25,7 @@ export default function MatchesGenderToggle({
   onChange,
 }: MatchesGenderToggleProps) {
   const { t } = useTranslation();
+  const theme = useAppTheme();
 
   return (
     <View className="items-center px-4 py-3">
@@ -50,11 +52,7 @@ export default function MatchesGenderToggle({
               >
                 <Icon
                   size={18}
-                  className={
-                    selected
-                      ? "text-light-background dark:text-dark-background"
-                      : "text-light-gray10 dark:text-dark-gray10"
-                  }
+                  color={selected ? theme.background : theme.gray10}
                   strokeWidth={selected ? 2.6 : 2.2}
                 />
               </TouchableOpacity>

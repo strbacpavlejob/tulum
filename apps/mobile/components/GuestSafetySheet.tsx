@@ -173,6 +173,7 @@ export default function GuestSafetySheet({
       ref={sheetRef}
       snapPoints={snapPoints}
       enableDynamicSizing={false}
+      keyboardBlurBehavior="restore"
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: theme.backgroundPopover }}
       handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
@@ -274,6 +275,7 @@ export default function GuestSafetySheet({
                 fast typing and put back the previous text, dropping
                 characters on web. It remounts empty after the sheet closes. */}
             <Textarea
+              inBottomSheet
               defaultValue={details}
               onChangeText={setDetails}
               maxLength={DETAILS_MAX_LENGTH}

@@ -11,7 +11,7 @@ function Input({
     <TextInput
       className={cn(
         // Layout
-        "h-10 w-full min-w-0 rounded-2xl border px-3 py-1 text-base leading-5 sm:h-9",
+        "w-full min-w-0 rounded-2xl border px-3 py-1 text-base leading-5",
 
         // App theme
         "bg-light-backgroundCard dark:bg-dark-backgroundAccent",
@@ -27,7 +27,7 @@ function Input({
 
         Platform.select({
           web: cn(
-            "outline-none transition-[color,box-shadow] md:text-sm",
+            "h-10 outline-none transition-[color,box-shadow] sm:h-9 md:text-sm",
             "selection:bg-light-primary selection:text-light-primaryForeground",
             "dark:selection:bg-dark-primary dark:selection:text-dark-primaryForeground",
 
@@ -49,8 +49,12 @@ function Input({
               "disabled:pointer-events-none disabled:cursor-not-allowed",
           ),
 
+          // Android clips text that doesn't fit, so the content sets the
+          // height. On native selection: only moves the text color to
+          // selectionColor; a selection:bg- class becomes the background.
           native: cn(
-            "selection:bg-light-primary dark:selection:bg-dark-primary",
+            "min-h-10",
+            "selection:text-light-primary dark:selection:text-dark-primary",
           ),
         }),
 

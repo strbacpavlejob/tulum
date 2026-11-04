@@ -19,8 +19,8 @@ import { View } from "react-native";
 interface MatchLocationMapProps {
   venueLat: number;
   venueLng: number;
-  userLat: number;
-  userLng: number;
+  userLat?: number;
+  userLng?: number;
 }
 
 /**
@@ -62,8 +62,8 @@ export const MatchLocationMap = ({
       pins.push({
         key: "user",
         kind: "user",
-        lat: userLat,
-        lng: userLng,
+        lat: userLat as number,
+        lng: userLng as number,
         selected: true,
       });
     }

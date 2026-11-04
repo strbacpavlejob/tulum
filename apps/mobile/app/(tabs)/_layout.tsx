@@ -25,15 +25,13 @@ const TabBarIcon: React.FC<IconProps> = ({
   size = 28,
   focused = false,
 }) => {
+  const theme = useAppTheme();
+
   return (
     <View className={focused ? "opacity-100" : "opacity-60"}>
       <IconComponent
         size={size}
-        className={
-          focused
-            ? "fill-light-primary text-light-primary dark:fill-dark-primary dark:text-dark-primary"
-            : "fill-light-gray10 text-light-colorStrong dark:fill-dark-gray10 dark:text-dark-colorStrong"
-        }
+        color={focused ? theme.primary : theme.colorStrong}
       />
     </View>
   );

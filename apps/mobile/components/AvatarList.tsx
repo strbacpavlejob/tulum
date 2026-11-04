@@ -24,7 +24,7 @@ export const AvatarList = ({ avatars, hiddenCount = 0 }: AvatarListProps) => {
         >
           <Image
             source={{ uri: user.uri }}
-            className="w-full h-full"
+            style={{ width: "100%", height: "100%" }}
             contentFit="cover"
             cachePolicy="disk"
           />

@@ -119,8 +119,8 @@ export function LocationRequiredView({
       <MatchLocationMap
         venueLat={liveTicket.venue_lat}
         venueLng={liveTicket.venue_lng}
-        userLat={userCoords?.lat ?? liveTicket.venue_lat + 0.003}
-        userLng={userCoords?.lng ?? liveTicket.venue_lng + 0.003}
+        userLat={userCoords?.lat}
+        userLng={userCoords?.lng}
       />
 
       <View

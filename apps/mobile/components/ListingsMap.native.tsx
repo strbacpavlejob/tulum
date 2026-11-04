@@ -108,6 +108,7 @@ const ListingsMap = memo(() => {
   useEffect(() => {
     latest.current = { selectedIndex, selectedVenueId };
   });
+  const hasFirstSelection = useRef(false);
 
   const flyTo = useCallback((lat: number, lng: number) => {
     mapRef.current?.send({
@@ -199,9 +200,14 @@ const ListingsMap = memo(() => {
   useEffect(() => {
     if (mapGeneration === 0) return;
     mapRef.current?.send({ type: "setSelected", key: selectedVenueId });
-    if (isValidCoord(selectedLat, selectedLng)) {
-      flyTo(selectedLat as number, selectedLng as number);
+    if (!isValidCoord(selectedLat, selectedLng)) return;
+    // The map opens on the city overview: the first selection only marks its
+    // pin, and later ones fly to theirs.
+    if (!hasFirstSelection.current) {
+      hasFirstSelection.current = true;
+      return;
     }
+    flyTo(selectedLat as number, selectedLng as number);
   }, [mapGeneration, selectedVenueId, selectedLat, selectedLng, flyTo]);
 
   const renderItem = useCallback(

@@ -248,7 +248,8 @@ export default function TicketsScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-light-background dark:bg-dark-background">
       <ScrollView
-        className="w-full p-4"
+        className="w-full"
+        contentContainerClassName="p-4"
         contentContainerStyle={{ gap: 32 }}
         refreshControl={
           <RefreshControl

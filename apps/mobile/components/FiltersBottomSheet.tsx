@@ -276,8 +276,9 @@ export const FiltersBottomSheet = forwardRef<FiltersBottomSheetRef, Props>(
 
     const renderFooter = useCallback(
       (props: any) => (
-        <BottomSheetFooter {...props} bottomInset={8}>
-          <View className="flex-row gap-3 p-3">
+        <BottomSheetFooter {...props}>
+          {/* Solid, so the list doesn't show around the buttons. */}
+          <View className="flex-row gap-3 bg-light-background p-3 pb-5 dark:bg-dark-background">
             <Pressable
               className="flex-1 h-12 items-center justify-center rounded-xl bg-light-gray3 dark:bg-dark-gray3"
               onPress={reset}
