@@ -50,6 +50,7 @@
     "@rn-primitives/toggle": "^1.4.0",
     "@rn-primitives/toggle-group": "^1.4.0",
     "@rn-primitives/tooltip": "^1.4.0",
+    "@sentry/react": "11.12.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

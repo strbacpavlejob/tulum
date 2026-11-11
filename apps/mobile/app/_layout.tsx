@@ -3,6 +3,7 @@ import "@/lib/i18n";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useLanguageSync } from "@/hooks/useLanguageSync";
 import useStoreSetup from "@/hooks/useStoreSetup";
+import { captureError, initSentry } from "@/lib/sentry";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/expo";
@@ -11,7 +12,11 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { PortalHost } from "@rn-primitives/portal";
 import { useFonts } from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
-import { Stack } from "expo-router";
+import {
+  ErrorBoundary as RouterErrorBoundary,
+  type ErrorBoundaryProps,
+  Stack,
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { LogBox, Platform, StatusBar } from "react-native";
@@ -26,6 +31,18 @@ import {
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 if (!publishableKey) {
   throw new Error("Add your Clerk Publishable Key to the .env file");
+}
+
+initSentry();
+
+// A screen that throws while rendering gets Expo Router's error screen, with
+// its retry button, and the error is reported.
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  useEffect(() => {
+    captureError(props.error);
+  }, [props.error]);
+
+  return <RouterErrorBoundary {...props} />;
 }
 
 // Set the animation options. This is optional.

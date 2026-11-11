@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
         hostname: "**.supabase.co",
       },
       {
+        // The R2 bucket's custom domain, replacing r2.dev.
+        protocol: "https",
+        hostname: "img.tulum-app.com",
+      },
+      {
         protocol: "https",
         hostname: "pub-d5cc44fe73934be18d2bb77b8de1b215.r2.dev",
       },

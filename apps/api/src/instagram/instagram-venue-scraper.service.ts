@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import * as https from 'https';
 import * as puppeteer from 'puppeteer';
+import { GeocoderService } from '../geocoder/geocoder.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RedisService } from '../redis/redis.service';
@@ -34,8 +34,6 @@ export interface InstagramVenueData {
 
 const VENUE_USERNAMES: string[] = ['freestylerbelgrade_official'];
 
-const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/search';
-
 const INSTAGRAM_POSTS_LIMIT = 5;
 
 /** How long scraped venue data is cached in Redis (6 hours) */
@@ -50,6 +48,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
     private readonly redisService: RedisService,
+    private readonly geocoder: GeocoderService,
   ) {}
 
   async onModuleDestroy() {
@@ -381,7 +380,20 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     const streetAddress = rawAddress
       ? this.stripVenueNameFromAddress(rawAddress)
       : venueName;
-    const { latitude, longitude } = await this.geocodeAddress(streetAddress);
+    const coordinates = await this.geocoder.geocodeVenueAddress(
+      `${streetAddress}, Belgrade`,
+      'RS',
+    );
+
+    // A venue can't be saved without a point, and a stand-in such as 0,0
+    // puts it on the map off the coast of Africa.
+    if (!coordinates) {
+      throw new Error(
+        `@${profile.username}: no coordinates for "${streetAddress}", so its venue is not saved`,
+      );
+    }
+
+    const { latitude, longitude } = coordinates;
     this.logger.log(
       `Geocoded "${streetAddress}, Belgrade": lat=${latitude}, lon=${longitude}`,
     );
@@ -669,44 +681,6 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       }
     }
     return address;
-  }
-
-  private async geocodeAddress(
-    address: string,
-  ): Promise<{ latitude: number; longitude: number }> {
-    const query = encodeURIComponent(`${address}, Belgrade, Serbia`);
-    const url = `${NOMINATIM_ENDPOINT}?q=${query}&format=json&limit=1`;
-
-    return new Promise((resolve) => {
-      const req = https.get(
-        url,
-        { headers: { 'User-Agent': 'tulum-api/1.0 (venue scraper)' } },
-        (res) => {
-          let body = '';
-          res.on('data', (chunk: Buffer) => (body += chunk.toString()));
-          res.on('end', () => {
-            try {
-              const results = JSON.parse(body) as Array<{
-                lat?: string;
-                lon?: string;
-              }>;
-              if (results.length > 0 && results[0].lat && results[0].lon) {
-                resolve({
-                  latitude: parseFloat(results[0].lat),
-                  longitude: parseFloat(results[0].lon),
-                });
-              } else {
-                resolve({ latitude: 0, longitude: 0 });
-              }
-            } catch {
-              resolve({ latitude: 0, longitude: 0 });
-            }
-          });
-        },
-      );
-      req.on('error', () => resolve({ latitude: 0, longitude: 0 }));
-      req.end();
-    });
   }
 
   private emptyProfile(username: string): InstagramVenueProfile {

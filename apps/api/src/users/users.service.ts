@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from './user-provisioning.service';
 
 const USERS_TABLE = 'users';
 const GUESTS_TABLE = 'guests';
@@ -12,7 +13,10 @@ const MY_PROFILE_USER_COLUMNS =
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly userProvisioning: UserProvisioningService,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -187,6 +191,8 @@ export class UsersService {
   // ── Profile (user + guest joined) ──────────────────────────────────────
 
   async getMyProfile(userId: string) {
+    // A users row the create-user webhook hasn't made yet is made now.
+    await this.userProvisioning.ensureUserRow(userId);
     const [userResult, guestResult] = await Promise.all([
       this.db
         .from(USERS_TABLE)

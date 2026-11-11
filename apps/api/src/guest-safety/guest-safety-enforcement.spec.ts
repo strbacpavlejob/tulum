@@ -22,6 +22,7 @@ import { GuestsService } from '../guests/guests.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { GuestSafetyService } from './guest-safety.service';
 
@@ -225,23 +226,37 @@ function from(table: string) {
 
 const db = {
   from,
-  // A like the limit allows.
-  rpc: () =>
-    Promise.resolve({
-      data: {
-        allowed: true,
-        was_already_liked: false,
-        likes_used: 1,
-        like_limit: 3,
-        eligible_guest_count: 2,
-        limit_reached: false,
-      },
-      error: null,
-    }),
+  // A like the limit allows. PostgREST doesn't know the other functions, as
+  // before the paging migration, so the deck and the guest list read the
+  // tables above.
+  rpc: (fn: string) =>
+    Promise.resolve(
+      fn === 'submit_guest_swipe_with_limit'
+        ? {
+            data: {
+              allowed: true,
+              was_already_liked: false,
+              likes_used: 1,
+              like_limit: 3,
+              eligible_guest_count: 2,
+              limit_reached: false,
+            },
+            error: null,
+          }
+        : {
+            data: null,
+            error: {
+              code: 'PGRST202',
+              message: `Could not find the function public.${fn}`,
+            },
+          },
+    ),
 };
 const supabase = { getClient: () => db } as unknown as SupabaseService;
 const guestSafety = new GuestSafetyService(supabase);
-const guests = new GuestsService(supabase, {} as R2Service, guestSafety);
+const guests = new GuestsService(supabase, {} as R2Service, guestSafety, {
+  ensureUserRow: () => Promise.resolve(),
+} as unknown as UserProvisioningService);
 const tickets = new TicketsService(supabase, guestSafety);
 const matches = new MatchesService(supabase, guestSafety);
 const chats = new ChatsService(supabase, guestSafety);

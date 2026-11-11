@@ -19,6 +19,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from './user-provisioning.service';
 import { AccountDeletionService } from './account-deletion.service';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
@@ -169,6 +170,10 @@ describe('Profile details on /users/me (BUG-010)', () => {
       controllers: [UsersController],
       providers: [
         UsersService,
+        {
+          provide: UserProvisioningService,
+          useValue: { ensureUserRow: () => Promise.resolve() },
+        },
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },
         { provide: AccountDeletionService, useValue: {} },

@@ -17,6 +17,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
+import { parsePageLimit } from '../common/paging';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { GuestsService } from './guests.service';
 
@@ -40,6 +41,12 @@ export class GuestsController {
    * user's current active event session. Guests blocked either way are left
    * out, and so is anyone whose visibility doesn't include the caller. A
    * hidden caller gets nobody (visibility: 'hidden').
+   *
+   * One page at a time: limit profiles (25 unless given, at most 50; 0 for
+   * the counts alone), the guests the filters keep. Pass next_cursor back as
+   * cursor for the next page; it is null on the last one. end_cursor marks
+   * the page's last guest, from where guests who check in later follow.
+   * present_guest_count counts the guests shown before the filters.
    */
   @Get('swipeable')
   async getSwipeable(
@@ -49,6 +56,8 @@ export class GuestsController {
     @Query('age_min') ageMin?: string,
     @Query('age_max') ageMax?: string,
     @Query('selected_interests') selectedInterests?: string | string[],
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
   ) {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
@@ -62,12 +71,17 @@ export class GuestsController {
         ? selectedInterests.split(',')
         : [];
 
-    return this.guestsService.getSwipeableGuests(userId, eventId, {
-      genderFilter,
-      ageMin: Number.isFinite(parsedAgeMin) ? parsedAgeMin : null,
-      ageMax: Number.isFinite(parsedAgeMax) ? parsedAgeMax : null,
-      selectedInterests: interests,
-    });
+    return this.guestsService.getSwipeableGuests(
+      userId,
+      eventId,
+      {
+        genderFilter,
+        ageMin: Number.isFinite(parsedAgeMin) ? parsedAgeMin : null,
+        ageMax: Number.isFinite(parsedAgeMax) ? parsedAgeMax : null,
+        selectedInterests: interests,
+      },
+      { cursor: cursor ?? null, limit: parsePageLimit(limit) },
+    );
   }
 
   @Post('onboarding')

@@ -10,6 +10,7 @@ import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   AttendConflictError,
+  EventAttendee,
   EventAttendeesData,
   attendEvent,
   fetchEventAttendees,
@@ -54,6 +55,14 @@ import { Marquee } from "@/components/ui/marquee";
 import { AuthGuard } from "@/components/auth-guard";
 
 // ─── Helpers for deep-linking to contact apps ────────────────────────────
+
+/**
+ * Your own row on the guest list: the "You" placeholder added when you
+ * attend here, or the server's row marked as yours.
+ */
+function isOwnGuestRow(guest: EventAttendee): boolean {
+  return guest.uri === "__local_you__" || guest.isViewer === true;
+}
 
 function normalizePhone(raw: string): string {
   return raw.replace(/[^+0-9]/g, "");
@@ -306,8 +315,10 @@ const EventDetailsScreen = () => {
     averageAge: null,
     females: 0,
     males: 0,
+    goingCount: 0,
     guestList: [],
     hiddenCount: 0,
+    nextCursor: null,
   });
 
   // Fetch full event details on mount
@@ -350,21 +361,8 @@ const EventDetailsScreen = () => {
     eventRef.current = event;
   }, [event]);
 
-  // Fetch attendees
-  useEffect(() => {
-    if (!id || !userId) return;
-    getToken()
-      .then((token) => {
-        if (!token) return;
-        return fetchEventAttendees(id, token);
-      })
-      .then((data) => {
-        if (data) setAttendeesData(data);
-      })
-      .catch(() => {});
-  }, [id, userId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fetch attendees once when this screen loads.
+  // Fetch attendees once when this screen loads: the numbers and the first
+  // page of the guest list.
   useEffect(() => {
     if (!id || !userId) return;
 
@@ -383,9 +381,7 @@ const EventDetailsScreen = () => {
         // If backend indicates the user is in the guest list but local tickets
         // don't have the event, add a minimal ticket to keep UI consistent.
         // The going count already includes you.
-        const isUserInList = data.guestList.some(
-          (g: any) => g.id === userId || g.user_id === userId,
-        );
+        const isUserInList = data.guestList.some((g) => g.isViewer);
 
         const hasTicket = useStore
           .getState()
@@ -441,18 +437,16 @@ const EventDetailsScreen = () => {
       const prevTicket =
         useStore.getState().tickets?.find((t) => t.event_id === event.id) ??
         null;
-      // Your row in the guest list is either the "You" placeholder added when
-      // you attended on this screen, or a row from the server.
-      const hadPlaceholder = attendeesData.guestList.some(
-        (g) => g.uri === "__local_you__",
-      );
+      // Your row in the guest list: the "You" placeholder added when you
+      // attended on this screen, or the server's row marked as yours.
+      const ownRows = attendeesData.guestList.filter(isOwnGuestRow);
       // Optimistically remove locally
       removeTicketByEventId(event.id);
       updateEventAttendance(event.id, false);
-      // remove optimistic placeholder guest if present
       setAttendeesData((prev) => ({
         ...prev,
-        guestList: prev.guestList.filter((g) => g.uri !== "__local_you__"),
+        goingCount: Math.max(0, prev.goingCount - 1),
+        guestList: prev.guestList.filter((g) => !isOwnGuestRow(g)),
       }));
       try {
         await unattendEvent(token, event.id);
@@ -460,26 +454,16 @@ const EventDetailsScreen = () => {
         // rollback
         if (prevTicket) addTicket(prevTicket);
         updateEventAttendance(event.id, true);
-        // rollback guest placeholder removal by re-adding a placeholder
-        if (hadPlaceholder) {
-          setAttendeesData((prev) => ({
-            ...prev,
-            guestList: [
-              {
-                name: t("you"),
-                age: null,
-                gender: null,
-                uri: "__local_you__",
-              },
-              ...prev.guestList,
-            ],
-          }));
-        }
+        setAttendeesData((prev) => ({
+          ...prev,
+          goingCount: prev.goingCount + 1,
+          guestList: [...ownRows, ...prev.guestList],
+        }));
         toast.error("Could not cancel attendance. Please try again.");
         return;
       }
-      // The server's guest list has no user ids, so a row of yours that came
-      // from it can't be picked out here: load the list again, without you.
+      // An API from before the paged guest list doesn't mark your row, so it
+      // can't be picked out here: load the list again, without you.
       // Skip the answer if you have attended again in the meantime.
       fetchEventAttendees(event.id, token)
         .then((data) => {
@@ -533,6 +517,7 @@ const EventDetailsScreen = () => {
     };
     setAttendeesData((prev) => ({
       ...prev,
+      goingCount: prev.goingCount + 1,
       guestList: [placeholderGuest, ...prev.guestList],
     }));
     addTicket(tempTicket);
@@ -570,6 +555,7 @@ const EventDetailsScreen = () => {
       // remove optimistic placeholder guest
       setAttendeesData((prev) => ({
         ...prev,
+        goingCount: Math.max(0, prev.goingCount - 1),
         guestList: prev.guestList.filter((g) => g.uri !== "__local_you__"),
       }));
       // An overlap comes with the server's reason, which names the event you
@@ -586,6 +572,34 @@ const EventDetailsScreen = () => {
   const openGuestList = useCallback(() => {
     guestListRef.current?.present();
   }, []);
+
+  // The guest list loads a page at a time: the sheet asks for the next one
+  // as it scrolls near the end.
+  const loadingMoreGuestsRef = useRef(false);
+  const loadMoreGuests = useCallback(async () => {
+    const cursor = attendeesData.nextCursor;
+    if (!id || !cursor || loadingMoreGuestsRef.current) return;
+    loadingMoreGuestsRef.current = true;
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const page = await fetchEventAttendees(id, token, cursor);
+      // Skip the page if the list has loaded again since.
+      setAttendeesData((prev) =>
+        prev.nextCursor === cursor
+          ? {
+              ...prev,
+              guestList: [...prev.guestList, ...page.guestList],
+              nextCursor: page.nextCursor,
+            }
+          : prev,
+      );
+    } catch {
+      // The sheet asks again when it nears the end again.
+    } finally {
+      loadingMoreGuestsRef.current = false;
+    }
+  }, [id, attendeesData.nextCursor, getToken]);
 
   const handleBackPress = useCallback(() => {
     if (router.canGoBack()) {
@@ -631,16 +645,18 @@ const EventDetailsScreen = () => {
     );
   }
 
+  // goingCount counts everyone going: guests the list leaves out, and those
+  // on pages not loaded yet.
   const {
     maxSpots,
     averageAge,
     females,
     males,
+    goingCount,
     guestList,
-    hiddenCount = 0,
+    hiddenCount,
+    nextCursor,
   } = attendeesData;
-  // Guests whose visibility leaves you out still count as going.
-  const goingCount = guestList.length + hiddenCount;
   const freeSpots = Math.max(0, maxSpots - goingCount);
   const progressValue =
     maxSpots > 0 ? Math.min((goingCount / maxSpots) * 100, 100) : 0;
@@ -840,7 +856,10 @@ const EventDetailsScreen = () => {
               </View>
 
               <View className="mb-3">
-                <AvatarList avatars={guestList} hiddenCount={hiddenCount} />
+                <AvatarList
+                  avatars={guestList}
+                  hiddenCount={Math.max(0, goingCount - guestList.length)}
+                />
               </View>
 
               {/* Progress bar */}
@@ -879,7 +898,10 @@ const EventDetailsScreen = () => {
           males={males}
           isAttending={isAttending}
           onAttend={handleAttend}
+          goingCount={goingCount}
           hiddenCount={hiddenCount}
+          hasMoreGuests={nextCursor !== null}
+          onLoadMoreGuests={loadMoreGuests}
         />
 
         {/* Reservation modal — shown when attending requires reservation */}

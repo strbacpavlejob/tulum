@@ -36,6 +36,11 @@ type MatchesDeckProps = {
   ageMax: number;
   onAgeChange: (next: { min: number; max: number }) => void;
   profiles: SwipeCandidate[];
+  /**
+   * More pages of the deck follow. The last card loaded isn't the end then,
+   * so the deck doesn't wrap around from it.
+   */
+  hasMoreProfiles?: boolean;
   currentCardIndex: number;
   onChangeCardIndex: (index: number) => void;
   onLike: (profile: Profile) => void;
@@ -65,6 +70,7 @@ export default function MatchesDeck({
   ageMax,
   onAgeChange,
   profiles,
+  hasMoreProfiles = false,
   currentCardIndex,
   onChangeCardIndex,
   onLike,
@@ -150,7 +156,7 @@ export default function MatchesDeck({
     dragDelta: number,
     velocityY: number,
   ) => {
-    if (profiles.length < 2 || wrapInProgressRef.current) {
+    if (profiles.length < 2 || wrapInProgressRef.current || hasMoreProfiles) {
       return;
     }
     const maxOffset = Math.max((profiles.length - 1) * cardHeight, 0);

@@ -3,7 +3,8 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import * as puppeteer from 'puppeteer';
 import { isValid, parseISO } from 'date-fns';
-import { GeocoderService } from 'src/geocoder/geocoder.service';
+import { Coordinates, toCoordinates } from '../../../geocoder/coordinates';
+import { GeocoderService } from '../../../geocoder/geocoder.service';
 import {
   ImageStoragePolicy,
   SCRAPER_CONFIGS,
@@ -40,8 +41,9 @@ interface ParsedEventDetails {
   venueDescription: string;
   tags: string[];
   imageUrl?: string;
-  latitude: number;
-  longitude: number;
+  /** The venue's point from the page's JSON-LD, when it has one. */
+  coordinates: Coordinates | null;
+  addressCountry?: string;
   minAgeMale: number;
   minAgeFemale: number;
 }
@@ -53,7 +55,8 @@ interface EventJsonLd {
   image?: string | string[];
   location?: {
     name?: string;
-    address?: { streetAddress?: string };
+    address?: { streetAddress?: string; addressCountry?: string };
+    geo: Coordinates | null;
   };
 }
 
@@ -67,7 +70,7 @@ export class GuestListSerbiaScraperService
   implements
     OnModuleDestroy,
     Scraper<
-      [ParsedEventDetails, VenueTypeEnum, string?],
+      [ParsedEventDetails, VenueTypeEnum, Coordinates, string?],
       [ParsedEventDetails, string, ScrapedVenue]
     >
 {
@@ -106,6 +109,7 @@ export class GuestListSerbiaScraperService
   mapVenue(
     parsed: ParsedEventDetails,
     venueType: VenueTypeEnum,
+    coordinates: Coordinates,
     venueName = parsed.venueName,
   ): ScrapedVenue {
     const now = new Date();
@@ -115,8 +119,8 @@ export class GuestListSerbiaScraperService
       hostId: this.config.venues.defaultHostId ?? 'DEFAULT_VENUE_HOST_ID',
       venueType,
       name: venueName,
-      longitude: parsed.longitude,
-      latitude: parsed.latitude,
+      longitude: coordinates.longitude,
+      latitude: coordinates.latitude,
       address: parsed.address,
       description: parsed.venueDescription || parsed.description,
       capacity: this.config.venues.defaultCapacity,
@@ -170,6 +174,7 @@ export class GuestListSerbiaScraperService
 
   async scrape(): Promise<ScraperResult> {
     const venuesByKey = new Map<string, ScrapedVenue>();
+    const unlocatedVenueKeys = new Set<string>();
     const events: ScrapedEvent[] = [];
 
     for (const [category, venueType] of buildVenueTypeMap(
@@ -183,7 +188,13 @@ export class GuestListSerbiaScraperService
       const eventPaths = await this.fetchEventPaths(url.toString());
 
       for (const eventPath of eventPaths) {
-        await this.scrapeEvent(eventPath, venueType, venuesByKey, events);
+        await this.scrapeEvent(
+          eventPath,
+          venueType,
+          venuesByKey,
+          unlocatedVenueKeys,
+          events,
+        );
       }
 
       this.logs.categoryScrapingCompleted(
@@ -204,10 +215,12 @@ export class GuestListSerbiaScraperService
     eventPath: string,
     venueType: VenueTypeEnum,
     venuesByKey: Map<string, ScrapedVenue>,
+    unlocatedVenueKeys: Set<string>,
     events: ScrapedEvent[],
   ): Promise<void> {
     const eventUrl = new URL(eventPath, this.config.baseUrl).toString();
-    const parsed = await this.parseEventDetails(await this.fetchHtml(eventUrl));
+    const html = await this.fetchHtml(eventUrl);
+    const parsed = this.parseEventDetails(html);
 
     if (!parsed || !isValid(parseISO(parsed.startDateTime))) {
       return;
@@ -219,7 +232,21 @@ export class GuestListSerbiaScraperService
     const venue = venuesByKey.get(venueKey);
 
     if (!venue) {
-      venuesByKey.set(venueKey, this.mapVenue(parsed, venueType));
+      const coordinates = await this.locateVenue(
+        parsed,
+        html,
+        venueKey,
+        unlocatedVenueKeys,
+      );
+
+      // Without a point the venue can't be saved (its coordinates are
+      // required), and a made-up one would put it on the map in the wrong
+      // place, so its events wait for a scrape that can locate it.
+      if (!coordinates) {
+        return;
+      }
+
+      venuesByKey.set(venueKey, this.mapVenue(parsed, venueType, coordinates));
     } else {
       const defaults = this.config.venues.defaultAgeRestriction;
 
@@ -408,9 +435,45 @@ export class GuestListSerbiaScraperService
     return [...paths];
   }
 
-  private async parseEventDetails(
+  /**
+   * Where the venue is: the page's JSON-LD point, else its Google Maps link,
+   * else its address on Nominatim. Null when none of them gives one; a venue
+   * never gets a default point such as the city centre.
+   */
+  private async locateVenue(
+    parsed: ParsedEventDetails,
     html: string,
-  ): Promise<ParsedEventDetails | null> {
+    venueKey: string,
+    unlocatedVenueKeys: Set<string>,
+  ): Promise<Coordinates | null> {
+    if (parsed.coordinates) {
+      return parsed.coordinates;
+    }
+
+    // Google and Nominatim already failed for this venue during this scrape.
+    if (unlocatedVenueKeys.has(venueKey)) {
+      return null;
+    }
+
+    const coordinates =
+      (await this.geoCoder.extractCoordinates(html)) ??
+      (await this.geoCoder.geocodeVenueAddress(
+        parsed.address,
+        parsed.addressCountry,
+      ));
+
+    if (!coordinates) {
+      unlocatedVenueKeys.add(venueKey);
+      this.logs.warning(
+        `Skipping events at "${parsed.venueName}" (${parsed.address}): ` +
+          'no coordinates in the page, its maps link or the address lookup',
+      );
+    }
+
+    return coordinates;
+  }
+
+  private parseEventDetails(html: string): ParsedEventDetails | null {
     const jsonLd = this.extractEventJsonLd(html);
     if (!jsonLd) return null;
 
@@ -436,8 +499,6 @@ export class GuestListSerbiaScraperService
     const venueDescription =
       this.extractSectionParagraph(html, 'About Venue') || description;
     const musicStyles = this.extractSectionParagraph(html, 'Music Style');
-    const { latitude, longitude } =
-      await this.geoCoder.extractCoordinates(html);
     const { male, female } = this.parseAgeLimits(html);
 
     return {
@@ -457,8 +518,8 @@ export class GuestListSerbiaScraperService
       ].slice(0, 3),
       imageUrl:
         typeof jsonLd.image === 'string' ? jsonLd.image : jsonLd.image?.[0],
-      latitude,
-      longitude,
+      coordinates: jsonLd.location?.geo ?? null,
+      addressCountry: jsonLd.location?.address?.addressCountry,
       minAgeMale: male,
       minAgeFemale: female,
     };
@@ -494,6 +555,11 @@ export class GuestListSerbiaScraperService
             location?.address && typeof location.address === 'object'
               ? (location.address as Record<string, unknown>)
               : undefined;
+          // GuestList pages give the venue's exact point here.
+          const geo =
+            location?.geo && typeof location.geo === 'object'
+              ? (location.geo as Record<string, unknown>)
+              : undefined;
 
           return {
             name: asString(value.name),
@@ -507,8 +573,12 @@ export class GuestListSerbiaScraperService
               ? {
                   name: asString(location.name),
                   address: address
-                    ? { streetAddress: asString(address.streetAddress) }
+                    ? {
+                        streetAddress: asString(address.streetAddress),
+                        addressCountry: asString(address.addressCountry),
+                      }
                     : undefined,
+                  geo: geo ? toCoordinates(geo.latitude, geo.longitude) : null,
                 }
               : undefined,
           };

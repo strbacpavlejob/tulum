@@ -21,6 +21,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import { UsersService } from '../users/users.service';
 import { BlocksController } from './blocks.controller';
 import { GuestReportsController } from './guest-reports.controller';
@@ -326,6 +327,10 @@ describe('Guest safety routes (TASK-001)', () => {
         GuestSafetyService,
         GuestReportsService,
         UsersService,
+        {
+          provide: UserProvisioningService,
+          useValue: { ensureUserRow: () => Promise.resolve() },
+        },
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },
       ],

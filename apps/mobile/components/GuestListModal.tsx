@@ -25,12 +25,17 @@ interface GuestListModalProps {
   males: number;
   isAttending: boolean;
   onAttend: () => void;
+  /** Everyone going; the guests listed and hiddenCount when not given. */
+  goingCount?: number;
   /**
-   * Guests going who aren't on guestList: all of them for someone not going,
-   * otherwise those whose visibility leaves you out or who are blocked
-   * either way.
+   * Guests going whom the list leaves out: all of them for someone not
+   * going, otherwise those whose visibility leaves you out or who are
+   * blocked either way.
    */
   hiddenCount?: number;
+  /** guestList is a page so far: more load as the list nears its end. */
+  hasMoreGuests?: boolean;
+  onLoadMoreGuests?: () => void;
 }
 
 /** Room under the list for the pinned Attend button (88 px) and a 16 px gap */
@@ -58,7 +63,10 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
       males,
       isAttending,
       onAttend,
+      goingCount: goingCountProp,
       hiddenCount = 0,
+      hasMoreGuests = false,
+      onLoadMoreGuests,
     },
     ref,
   ) => {
@@ -66,12 +74,13 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
     const { t } = useTranslation();
     const snapPoints = useMemo(() => ["85%"], []);
 
-    const goingCount = guestList.length + hiddenCount;
+    const goingCount = goingCountProp ?? guestList.length + hiddenCount;
     // Only guests going see who else is; the API sends others the numbers.
+    // The note ends the list, so it waits for the last page.
     const notShownNote =
       !isAttending && guestList.length === 0 && hiddenCount > 0
         ? t("guestListAttendToSee")
-        : hiddenCount > 0
+        : hiddenCount > 0 && !hasMoreGuests
           ? t("guestListNotShown", { count: hiddenCount })
           : null;
     const freeSpots = Math.max(0, maxSpots - goingCount);
@@ -163,6 +172,8 @@ const GuestListModal = forwardRef<BottomSheetModal, GuestListModalProps>(
           keyExtractor={(guest, i) => `${guest.name}-${i}`}
           renderItem={renderGuest}
           ItemSeparatorComponent={GuestGap}
+          onEndReached={hasMoreGuests ? onLoadMoreGuests : undefined}
+          onEndReachedThreshold={0.5}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 20,

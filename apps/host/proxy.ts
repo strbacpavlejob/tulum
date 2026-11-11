@@ -26,11 +26,22 @@ const isProtectedRoute = createRouteMatcher([
   "/venues(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
-  }
-});
+// Origins whose session tokens are accepted, comma-separated, for example
+// https://tulum-app.com,https://www.tulum-app.com,https://mobile.tulum-app.com.
+// Clerk recommends it in production; leave it unset in development.
+const authorizedParties = (process.env.CLERK_AUTHORIZED_PARTIES ?? "")
+  .split(",")
+  .map((party) => party.trim())
+  .filter(Boolean);
+
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (!isPublicRoute(request)) {
+      await auth.protect();
+    }
+  },
+  authorizedParties.length > 0 ? { authorizedParties } : {},
+);
 
 export const config = {
   matcher: [

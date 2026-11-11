@@ -13,6 +13,7 @@ import {
   GuestUnavailableError,
   type SwipeFilters,
   type SwipeableProfile,
+  type SwipeableResponse,
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { Profile } from "@/types/profile";
@@ -44,7 +45,14 @@ const LOCATION_POLL_INTERVAL_MS = 5_000;
 /** How often (ms) the locked screen checks again for a ticket whose event is live */
 const LOCKED_RECHECK_INTERVAL_MS = 30_000;
 
-const PROFILE_REFRESH_INTERVAL_MS = 15_000;
+/** How often (ms) the deck's counts are checked again while it is open */
+const PROFILE_REFRESH_INTERVAL_MS = 30_000;
+/** Profiles in a page of the deck */
+const DECK_PAGE_SIZE = 25;
+/** The next page loads when the card shown is this close to the last one */
+const DECK_PREFETCH_CARDS = 5;
+/** Wait (ms) after a filter change before the deck loads again */
+const FILTER_RELOAD_DELAY_MS = 400;
 const MAX_LIKE_PERCENTAGE = 0.2;
 const MIN_LIKE_LIMIT = 3;
 const PRE_EVENT_GRACE_MS = 5 * 60 * 1000;
@@ -152,6 +160,9 @@ interface LikeStats {
   eligibleGuestCount: number;
 }
 
+// The API filters the deck it sends; an API from before paging sent everyone
+// at the event, so the deck is filtered here as well. Between a filter change
+// and the deck it loads, this also narrows the deck shown at once.
 function applyProfileFilters(
   candidates: SwipeCandidate[],
   genderFilter: GenderFilter,
@@ -167,6 +178,26 @@ function applyProfileFilters(
   });
 }
 
+/** Which filters a deck was loaded for. */
+function filtersKey(filters: SwipeFilters): string {
+  return `${filters.genderFilter}|${filters.ageMin}|${filters.ageMax}`;
+}
+
+/** The deck's cards for the profiles in an answer, without blocked guests. */
+function toSwipeCandidates(
+  profiles: SwipeableProfile[],
+  eventTitle: string,
+  blockedIds: ReadonlySet<string>,
+): SwipeCandidate[] {
+  return profiles
+    .filter((p) => !blockedIds.has(p.user_id))
+    .map((p) => ({
+      profile: mapToProfile(p, eventTitle),
+      gender: p.gender,
+      likedByMe: Boolean(p.liked_by_me),
+    }));
+}
+
 // ── Screen ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
@@ -176,12 +207,6 @@ export default function MatchesScreen() {
   const router = useRouter();
   const lookingForGenderFromProfile = useStore(
     (s) => s.user?.lookingForGender ?? "everyone",
-  );
-  const setSwipeableCandidatesForEvent = useStore(
-    (s) => s.setSwipeableCandidatesForEvent,
-  );
-  const getSwipeableCandidatesForEvent = useStore(
-    (s) => s.getSwipeableCandidatesForEvent,
   );
 
   // ── Eligibility ────────────────────────────────────────────────────────────
@@ -218,6 +243,26 @@ export default function MatchesScreen() {
   // Guests you blocked or reported here. The API leaves them out from then
   // on; this also drops them from an answer that was already on its way.
   const blockedIdsRef = useRef(new Set<string>());
+  // Guests here shown to you, before the filters: tells an event with nobody
+  // yet from filters that leave nobody. Null until the first answer.
+  const [presentGuestCount, setPresentGuestCount] = useState<number | null>(
+    null,
+  );
+  // The deck loads a page at a time: more follow while hasMoreProfiles, from
+  // deckCursorRef, where the loaded deck ends.
+  const [hasMoreProfiles, setHasMoreProfiles] = useState(false);
+  const hasMoreProfilesRef = useRef(false);
+  const deckCursorRef = useRef<string | null>(null);
+  // The eligible count when the end of the deck loaded. Another count later
+  // means guests came or went, so the deck asks again from its end.
+  const endEligibleCountRef = useRef<number | null>(null);
+  // Each full load replaces the deck: a page asked for before it is dropped.
+  const deckGenerationRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const loadedFiltersKeyRef = useRef<string | null>(null);
+  // False for an API from before paging: it sends the whole deck, which is
+  // then loaded whole at every refresh, as before.
+  const pagedDeckRef = useRef(true);
 
   useEffect(() => {
     setGenderFilter(lookingForGenderFromProfile);
@@ -267,27 +312,6 @@ export default function MatchesScreen() {
     }),
     [genderFilter, ageRange.min, ageRange.max],
   );
-
-  useEffect(() => {
-    const eligibleGuestCount = filteredProfiles.length;
-    setLikeStats((prev) => {
-      const nextLikeLimit = calculateEffectiveLikeLimit(
-        eligibleGuestCount,
-        prev.likesUsed,
-      );
-      if (
-        prev.eligibleGuestCount === eligibleGuestCount &&
-        prev.likeLimit === nextLikeLimit
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        eligibleGuestCount,
-        likeLimit: nextLikeLimit,
-      };
-    });
-  }, [filteredProfiles.length]);
 
   const isLikeDisabled = likeStats.likesUsed >= likeStats.likeLimit;
 
@@ -403,15 +427,75 @@ export default function MatchesScreen() {
     return () => clearInterval(id);
   }, [eligibility, liveTicket, checkLocation]);
 
+  const liveEventId = liveTicket?.event_id;
+
+  // hasMoreProfiles, also for the refresh, which runs outside renders.
+  const setMoreProfiles = useCallback((more: boolean) => {
+    hasMoreProfilesRef.current = more;
+    setHasMoreProfiles(more);
+  }, []);
+
+  // The filters on now, as the API takes them.
+  const currentFilters = useCallback(
+    (): SwipeFilters => ({
+      genderFilter: genderFilterRef.current,
+      ageMin: ageRangeRef.current.min,
+      ageMax: ageRangeRef.current.max,
+    }),
+    [],
+  );
+
+  // The counts in an answer: the like limit and how many guests are here.
+  // If the filters changed while it loaded, its like counts are for the old
+  // ones; those of the deck loaded for the new filters come next.
+  const syncDeckCounts = useCallback(
+    (
+      data: SwipeableResponse,
+      requestedFilters: SwipeFilters,
+      fallback?: { likesUsed: number; eligibleGuestCount: number },
+    ) => {
+      setPresentGuestCount(
+        typeof data.present_guest_count === "number"
+          ? data.present_guest_count
+          : data.profiles.length,
+      );
+      if (filtersKey(requestedFilters) !== filtersKey(currentFilters())) {
+        return;
+      }
+      setLikeStats((prev) => {
+        const likesUsed =
+          typeof data.likes_used === "number"
+            ? data.likes_used
+            : (fallback?.likesUsed ?? prev.likesUsed);
+        const eligibleGuestCount =
+          typeof data.eligible_guest_count === "number"
+            ? data.eligible_guest_count
+            : (fallback?.eligibleGuestCount ?? prev.eligibleGuestCount);
+        const likeLimit = Math.max(
+          calculateEffectiveLikeLimit(eligibleGuestCount, likesUsed),
+          typeof data.like_limit === "number" ? data.like_limit : 0,
+        );
+        return { likesUsed, likeLimit, eligibleGuestCount };
+      });
+    },
+    [currentFilters],
+  );
+
   // ── Load swipeable profiles once eligible ─────────────────────────────────
+  // The first page of the deck, for the filters on now. It replaces the deck.
   const loadProfiles = useCallback(async () => {
     if (!userId || loadingProfilesRef.current) return;
     loadingProfilesRef.current = true;
     setLoadingProfiles(true);
+    deckGenerationRef.current += 1;
+    // The API filters the deck, and counts eligible guests and the like
+    // limit for these filters, as when you like someone.
+    const requestedFilters = currentFilters();
+    loadedFiltersKeyRef.current = filtersKey(requestedFilters);
     try {
       const token = await getTokenRef.current();
       if (!token) return;
-      const activeEventId = liveTicket?.event_id;
+      const activeEventId = liveEventId;
       // Ensure the backend records this user's active event session (check-in)
       if (activeEventId && checkedInEventIdRef.current !== activeEventId) {
         try {
@@ -421,51 +505,32 @@ export default function MatchesScreen() {
           // ignore check-in failures — still try to load profiles
         }
       }
-      // The list is everyone at the event; the counts (eligible guests and the
-      // like limit) are for the filters you have on, as when you like someone.
-      const requestedFilters: SwipeFilters = {
-        genderFilter: genderFilterRef.current,
-        ageMin: ageRangeRef.current.min,
-        ageMax: ageRangeRef.current.max,
-      };
       const data = await fetchSwipeableProfiles(
         token,
         activeEventId,
         requestedFilters,
+        { limit: DECK_PAGE_SIZE },
       );
-
-      if (activeEventId) {
-        setSwipeableCandidatesForEvent(
-          activeEventId,
-          data.event_title,
-          data.profiles,
-        );
-      }
-
-      const cached = activeEventId
-        ? getSwipeableCandidatesForEvent(activeEventId)
-        : null;
-      const sourceProfiles =
-        cached?.candidates && cached.candidates.length > 0
-          ? cached.candidates
-          : data.profiles;
-      const sourceEventTitle = cached?.eventTitle || data.event_title;
 
       setSelfHidden(data.visibility === "hidden");
 
       const activeProfileId =
         filteredProfilesRef.current[currentCardIndexRef.current]?.profile.id ??
         null;
-      const nextProfiles = sourceProfiles
-        .filter((p: SwipeableProfile) => !blockedIdsRef.current.has(p.user_id))
-        .map((p) => ({
-          profile: mapToProfile(p, sourceEventTitle),
-          gender: p.gender,
-          likedByMe: Boolean(p.liked_by_me),
-        }));
+      const nextProfiles = toSwipeCandidates(
+        data.profiles,
+        data.event_title,
+        blockedIdsRef.current,
+      );
 
       setEventId(data.event_id ?? activeEventId ?? null);
       setProfiles(nextProfiles);
+      pagedDeckRef.current = data.next_cursor !== undefined;
+      deckCursorRef.current = data.end_cursor ?? null;
+      setMoreProfiles(Boolean(data.next_cursor));
+      endEligibleCountRef.current = data.next_cursor
+        ? null
+        : (data.eligible_guest_count ?? null);
 
       const nextFiltered = applyProfileFilters(
         nextProfiles,
@@ -489,50 +554,115 @@ export default function MatchesScreen() {
         setCurrentCardIndex((prev) => Math.min(prev, nextFiltered.length - 1));
       }
 
-      const likesUsed =
-        typeof data.likes_used === "number"
-          ? data.likes_used
-          : nextProfiles.filter((candidate) => candidate.likedByMe).length;
-
-      const eligibleGuestCount =
-        typeof data.eligible_guest_count === "number"
-          ? data.eligible_guest_count
-          : nextFiltered.length;
-
-      const likeLimit = calculateEffectiveLikeLimit(
-        eligibleGuestCount,
-        likesUsed,
-      );
-
-      const syncedLikeLimit = Math.max(
-        likeLimit,
-        typeof data.like_limit === "number" ? data.like_limit : 0,
-      );
-
-      // If the filters changed while this loaded, its counts are for the old
-      // ones; the counts from the filtered deck stay until the next load.
-      const filtersUnchanged =
-        requestedFilters.genderFilter === genderFilterRef.current &&
-        requestedFilters.ageMin === ageRangeRef.current.min &&
-        requestedFilters.ageMax === ageRangeRef.current.max;
-      if (filtersUnchanged) {
-        setLikeStats({
-          likesUsed,
-          likeLimit: syncedLikeLimit,
-          eligibleGuestCount,
-        });
-      }
+      syncDeckCounts(data, requestedFilters, {
+        likesUsed: nextProfiles.filter((candidate) => candidate.likedByMe)
+          .length,
+        eligibleGuestCount: nextFiltered.length,
+      });
     } catch {
       // Keep empty state on error
     } finally {
       setLoadingProfiles(false);
       loadingProfilesRef.current = false;
     }
+  }, [userId, liveEventId, currentFilters, syncDeckCounts, setMoreProfiles]);
+
+  // The next page, after the end of the loaded deck.
+  const loadMoreProfiles = useCallback(async () => {
+    const cursor = deckCursorRef.current;
+    if (!userId || loadingMoreRef.current || loadingProfilesRef.current) {
+      return;
+    }
+    if (!cursor) {
+      setMoreProfiles(false);
+      return;
+    }
+    loadingMoreRef.current = true;
+    const generation = deckGenerationRef.current;
+    try {
+      const token = await getTokenRef.current();
+      if (!token) return;
+      const requestedFilters = currentFilters();
+      const data = await fetchSwipeableProfiles(
+        token,
+        liveEventId,
+        requestedFilters,
+        { cursor, limit: DECK_PAGE_SIZE },
+      );
+      // A full load replaced the deck this page would continue.
+      if (generation !== deckGenerationRef.current) return;
+
+      const page = toSwipeCandidates(
+        data.profiles,
+        data.event_title,
+        blockedIdsRef.current,
+      );
+      setProfiles((prev) => {
+        const loadedIds = new Set(prev.map((c) => c.profile.id));
+        return [...prev, ...page.filter((c) => !loadedIds.has(c.profile.id))];
+      });
+      setSelfHidden(data.visibility === "hidden");
+      deckCursorRef.current = data.end_cursor ?? cursor;
+      setMoreProfiles(Boolean(data.next_cursor));
+      endEligibleCountRef.current = data.next_cursor
+        ? null
+        : (data.eligible_guest_count ?? null);
+      syncDeckCounts(data, requestedFilters);
+    } catch {
+      // Tried again when the deck moves near its end again.
+    } finally {
+      loadingMoreRef.current = false;
+    }
+  }, [userId, liveEventId, currentFilters, syncDeckCounts, setMoreProfiles]);
+
+  // Every PROFILE_REFRESH_INTERVAL_MS: the counts. The deck itself loads
+  // again only while it is empty, so a deck you are going through isn't
+  // replaced; guests who check in later come from its end (see below).
+  const refreshDeck = useCallback(async () => {
+    if (!userId || loadingProfilesRef.current || loadingMoreRef.current) {
+      return;
+    }
+    if (filteredProfilesRef.current.length === 0 || !pagedDeckRef.current) {
+      await loadProfiles();
+      return;
+    }
+    const generation = deckGenerationRef.current;
+    try {
+      const token = await getTokenRef.current();
+      if (!token) return;
+      const requestedFilters = currentFilters();
+      const data = await fetchSwipeableProfiles(
+        token,
+        liveEventId,
+        requestedFilters,
+        { limit: 0 },
+      );
+      if (generation !== deckGenerationRef.current) return;
+
+      setSelfHidden(data.visibility === "hidden");
+      syncDeckCounts(data, requestedFilters);
+      // At the end of the deck, a new count means guests came or went: ask
+      // again from the end, once the deck is near it.
+      const eligibleGuestCount = data.eligible_guest_count;
+      if (
+        !hasMoreProfilesRef.current &&
+        deckCursorRef.current &&
+        typeof eligibleGuestCount === "number" &&
+        eligibleGuestCount !== endEligibleCountRef.current
+      ) {
+        endEligibleCountRef.current = eligibleGuestCount;
+        setMoreProfiles(true);
+      }
+    } catch {
+      // Tried again at the next refresh.
+    }
   }, [
     userId,
-    liveTicket?.event_id,
-    setSwipeableCandidatesForEvent,
-    getSwipeableCandidatesForEvent,
+    liveEventId,
+    currentFilters,
+    syncDeckCounts,
+    setMoreProfiles,
+    loadProfiles,
   ]);
 
   useEffect(() => {
@@ -542,13 +672,39 @@ export default function MatchesScreen() {
     if (eligibility === "eligible") loadProfiles();
   }, [eligibility, loadProfiles]);
 
+  // The API filters the deck: other filters load it again, once the slider
+  // or the gender choice has settled, and after a load already on its way.
+  useEffect(() => {
+    if (eligibility !== "eligible" || loadingProfiles) return;
+    if (filtersKey(swipeFilters) === loadedFiltersKeyRef.current) return;
+    const id = setTimeout(() => {
+      void loadProfiles();
+    }, FILTER_RELOAD_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [eligibility, loadingProfiles, swipeFilters, loadProfiles]);
+
+  // Near the end of the loaded deck, the next page loads.
+  useEffect(() => {
+    if (eligibility !== "eligible" || !hasMoreProfiles) return;
+    if (currentCardIndex < filteredProfiles.length - DECK_PREFETCH_CARDS) {
+      return;
+    }
+    void loadMoreProfiles();
+  }, [
+    eligibility,
+    hasMoreProfiles,
+    currentCardIndex,
+    filteredProfiles.length,
+    loadMoreProfiles,
+  ]);
+
   useEffect(() => {
     if (eligibility !== "eligible") return;
     const id = setInterval(() => {
-      void loadProfiles();
+      void refreshDeck();
     }, PROFILE_REFRESH_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [eligibility, loadProfiles]);
+  }, [eligibility, refreshDeck]);
 
   // ── Swipe handlers ─────────────────────────────────────────────────────────
   // The guest is gone for you: you blocked or reported them, or they are no
@@ -714,7 +870,7 @@ export default function MatchesScreen() {
     );
   }
 
-  // Before the loading view, so the refresh every 15 s doesn't flash it.
+  // Before the loading view, so the refresh every 30 s doesn't flash it.
   if (eligibility === "eligible" && selfHidden) {
     return (
       <LockedStateView
@@ -728,11 +884,20 @@ export default function MatchesScreen() {
     );
   }
 
-  if (eligibility === "eligible" && loadingProfiles && profiles.length === 0) {
+  // Only the first load: a deck that filters left empty stays on screen,
+  // filters and all, while the deck for new filters loads.
+  if (
+    eligibility === "eligible" &&
+    loadingProfiles &&
+    profiles.length === 0 &&
+    presentGuestCount === null
+  ) {
     return <LoadingStateView />;
   }
 
-  if (!profiles.length) {
+  // Nobody here yet. With guests here whom the filters leave out, the deck
+  // shows instead, so the filters can be changed.
+  if (!profiles.length && !presentGuestCount) {
     return (
       <EmptyMatchesView
         topInset={insets.top}
@@ -759,6 +924,7 @@ export default function MatchesScreen() {
       ageMax={ageRange.max}
       onAgeChange={handleAgeChange}
       profiles={filteredProfiles}
+      hasMoreProfiles={hasMoreProfiles}
       currentCardIndex={currentCardIndex}
       onChangeCardIndex={handleVerticalIndexChange}
       onLike={handleSwipeRight}

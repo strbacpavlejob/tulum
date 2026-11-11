@@ -9,6 +9,7 @@ import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import { GuestsService } from './guests.service';
 
 const CALLER = 'user_caller';
@@ -112,7 +113,17 @@ function fakeSupabase(tables: Record<string, Row[]>) {
     };
     return query;
   };
-  return { getClient: () => ({ from }) } as unknown as SupabaseService;
+  // No database functions, as before the paging migration: the deck reads
+  // the tables.
+  const rpc = (fn: string) =>
+    Promise.resolve({
+      data: null,
+      error: {
+        code: 'PGRST202',
+        message: `Could not find the function public.${fn}`,
+      },
+    });
+  return { getClient: () => ({ from, rpc }) } as unknown as SupabaseService;
 }
 
 describe('Profile details other guests see', () => {
@@ -129,6 +140,9 @@ describe('Profile details other guests see', () => {
       supabase,
       {} as R2Service,
       new GuestSafetyService(supabase),
+      {
+        ensureUserRow: () => Promise.resolve(),
+      } as unknown as UserProvisioningService,
     );
 
     const result = await guests.getSwipeableGuests(CALLER, EVENT_ID);

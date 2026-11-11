@@ -27,6 +27,13 @@
       "sharp",
       "puppeteer",
       "@nestjs/core"
-    ]
+    ],
+    "packageExtensions": {
+      "@nestjs/swagger": {
+        "peerDependencies": {
+          "typescript": "*"
+        }
+      }
+    }
   }
 }

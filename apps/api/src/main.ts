@@ -1,3 +1,5 @@
+// Must stay the first import: Sentry starts before Nest loads.
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';

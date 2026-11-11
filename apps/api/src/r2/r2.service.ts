@@ -8,16 +8,27 @@ import {
 import axios from 'axios';
 import sharp from 'sharp';
 
+// Browsers keep an image for a day. Most keys are unique per upload; the few
+// that are overwritten (a venue's instagram-profile.webp) can be a day stale.
+const OBJECT_CACHE_CONTROL = 'public, max-age=86400';
+
 @Injectable()
 export class R2Service {
   private readonly logger = new Logger(R2Service.name);
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly publicUrl: string;
+  // Earlier public base URLs that stored rows may still hold, such as the
+  // r2.dev address before the move to a custom domain.
+  private readonly legacyPublicUrls: string[];
 
   constructor() {
     this.bucket = process.env.R2_BUCKET_NAME ?? '';
     this.publicUrl = (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, '');
+    this.legacyPublicUrls = (process.env.R2_LEGACY_PUBLIC_URLS ?? '')
+      .split(',')
+      .map((url) => url.trim().replace(/\/$/, ''))
+      .filter(Boolean);
 
     this.client = new S3Client({
       region: 'auto',
@@ -40,15 +51,18 @@ export class R2Service {
         Key: key,
         Body: buffer,
         ContentType: contentType,
+        CacheControl: OBJECT_CACHE_CONTROL,
       }),
     );
     return `${this.publicUrl}/${key}`;
   }
 
   extractKeyFromUrl(url: string): string | null {
-    if (!this.publicUrl) return null;
-    const prefix = this.publicUrl + '/';
-    if (url.startsWith(prefix)) return url.slice(prefix.length);
+    for (const baseUrl of [this.publicUrl, ...this.legacyPublicUrls]) {
+      if (!baseUrl) continue;
+      const prefix = baseUrl + '/';
+      if (url.startsWith(prefix)) return url.slice(prefix.length);
+    }
     return null;
   }
 

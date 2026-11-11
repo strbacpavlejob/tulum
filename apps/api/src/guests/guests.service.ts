@@ -7,10 +7,13 @@ import {
   normalizeLikeFilters,
   type LikeFilters,
 } from '../common/like-limit';
+import { isMissingFunction } from '../common/missing-function';
+import { pageSize } from '../common/paging';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { guestVisibility, isShownTo } from '../guest-safety/guest-visibility';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { deckProfileDetails } from './shared-profile';
 
@@ -21,6 +24,47 @@ const MAX_PHOTOS = 3;
 // Profile photo dimensions and target quality
 const PHOTO_WIDTH = 800;
 const PHOTO_HEIGHT = 600;
+// supabase/migrations/20261111210742_paged_swipe_deck_and_guest_list.sql
+const SWIPE_DECK_FUNCTION = 'get_swipe_deck';
+/** Profiles in a page of the deck when the request names no limit. */
+export const DECK_PAGE_SIZE = 25;
+/** A deck cursor: a guest's 12-digit arrival wave, then 32 hex digits. */
+const DECK_CURSOR = /^\d{12}[0-9a-f]{32}$/;
+
+/** A guest on the Matches deck, as the app gets them. */
+export interface DeckProfile {
+  user_id: string;
+  event_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  gender: 'male' | 'female' | 'other' | null;
+  picture_urls: string[];
+  age: number;
+  interests: string[];
+  bio: string | null;
+  liked_by_me: boolean;
+}
+
+/** What get_swipe_deck returns. */
+interface SwipeDeckResult {
+  eligible_guest_count: number;
+  present_guest_count: number;
+  likes_used: number;
+  profiles: (Omit<DeckProfile, 'event_id' | 'age'> & { age: number | null })[];
+  next_cursor: string | null;
+  end_cursor: string | null;
+}
+
+interface DeckPage {
+  profiles: DeckProfile[];
+  likesUsed: number;
+  eligibleGuestCount: number;
+  /** Guests shown to the user before the filters. */
+  presentGuestCount: number;
+  nextCursor: string | null;
+  endCursor: string | null;
+}
 
 function isOnboardingComplete(guest: Record<string, unknown> | null): boolean {
   if (!guest) return false;
@@ -62,6 +106,7 @@ export class GuestsService {
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
     private readonly guestSafety: GuestSafetyService,
+    private readonly userProvisioning: UserProvisioningService,
   ) {}
 
   private get db() {
@@ -69,6 +114,9 @@ export class GuestsService {
   }
 
   async getGuestMe(userId: string) {
+    // The app asks this first after sign-in, so a users row the webhook
+    // hasn't made yet is made here, before onboarding needs it.
+    await this.userProvisioning.ensureUserRow(userId);
     const { data, error } = await this.db
       .from(GUESTS_TABLE)
       .select('*')
@@ -90,8 +138,14 @@ export class GuestsService {
       ageMax?: number | null;
       selectedInterests?: string[] | null;
     },
+    page?: { cursor?: string | null; limit?: number | null },
   ) {
     const filters = normalizeLikeFilters(filtersInput);
+    const cursor = page?.cursor || null;
+    if (cursor !== null && !DECK_CURSOR.test(cursor)) {
+      throw new BadRequestException('Invalid cursor');
+    }
+    const limit = pageSize(page?.limit, DECK_PAGE_SIZE);
     let targetEventId = eventId;
 
     if (!targetEventId) {
@@ -164,18 +218,127 @@ export class GuestsService {
       };
     }
 
+    // One page of the deck and its counts in one call. Until that function
+    // exists, the whole deck is read as before.
+    const deck =
+      (await this.swipeDeckPage(
+        userId,
+        targetEventId,
+        filters,
+        cursor,
+        limit,
+      )) ??
+      (await this.wholeSwipeDeck(
+        userId,
+        targetEventId,
+        filters,
+        cursor,
+        limit,
+      ));
+
+    const likeLimit = calculateEffectiveLikeLimit(
+      deck.eligibleGuestCount,
+      deck.likesUsed,
+    );
+
+    // Fetch event title + venue name
+    const { data: event } = await this.db
+      .from('events')
+      .select('id, title, venues!events_venue_id_fkey(name)')
+      .eq('id', targetEventId)
+      .maybeSingle();
+
+    return {
+      event_id: targetEventId as string | null,
+      event_title: (event?.title ?? '') as string,
+      event_venue: ((event?.venues as unknown as Record<string, unknown> | null)
+        ?.name ?? '') as string,
+      profiles: deck.profiles,
+      likes_used: deck.likesUsed,
+      like_limit: likeLimit,
+      eligible_guest_count: deck.eligibleGuestCount,
+      present_guest_count: deck.presentGuestCount,
+      visibility,
+      next_cursor: deck.nextCursor,
+      end_cursor: deck.endCursor,
+    };
+  }
+
+  /**
+   * A page of the deck from get_swipe_deck: guests the filters keep, in the
+   * order the function sets, with the counts for those filters. Null while
+   * the function is missing.
+   */
+  private async swipeDeckPage(
+    userId: string,
+    eventId: string,
+    filters: LikeFilters,
+    cursor: string | null,
+    limit: number,
+  ): Promise<DeckPage | null> {
+    const { data, error } = await this.db.rpc(SWIPE_DECK_FUNCTION, {
+      p_viewer_id: userId,
+      p_event_id: eventId,
+      p_gender_filter: filters.genderFilter,
+      p_age_min: filters.ageMin,
+      p_age_max: filters.ageMax,
+      p_interest_filters: filters.selectedInterests,
+      p_cursor: cursor,
+      p_limit: limit,
+    });
+    if (error) {
+      if (isMissingFunction(error)) return null;
+      throw error;
+    }
+
+    const deck = data as SwipeDeckResult;
+    return {
+      profiles: deck.profiles.map((p) => ({
+        user_id: p.user_id,
+        event_id: eventId,
+        first_name: p.first_name ?? null,
+        last_name: p.last_name ?? null,
+        avatar_url: p.avatar_url ?? null,
+        gender: p.gender ?? null,
+        picture_urls: p.picture_urls ?? [],
+        age: p.age ?? 0,
+        interests: p.interests ?? [],
+        ...deckProfileDetails(p),
+        liked_by_me: Boolean(p.liked_by_me),
+      })),
+      likesUsed: deck.likes_used,
+      eligibleGuestCount: deck.eligible_guest_count,
+      presentGuestCount: deck.present_guest_count,
+      nextCursor: deck.next_cursor ?? null,
+      endCursor: deck.end_cursor ?? null,
+    };
+  }
+
+  /**
+   * The deck as it was read before get_swipe_deck, for while that function
+   * is missing: everyone shown to the user at the event in one answer, for
+   * the app to filter, with the counts for the filters. It has no pages, so
+   * a request for a later page, or for the counts alone, gets no profiles.
+   */
+  private async wholeSwipeDeck(
+    userId: string,
+    eventId: string,
+    filters: LikeFilters,
+    cursor: string | null,
+    limit: number,
+  ): Promise<DeckPage> {
     // Guests blocked either way never show up. Who liked you here decides
     // whether a guest who shows themselves only to people they like does.
     const [blockedIds, likedMeIds] = await Promise.all([
       this.guestSafety.blockedUserIds(userId),
-      this.guestSafety.likedByAt(userId, targetEventId),
+      this.guestSafety.likedByAt(userId, eventId),
     ]);
 
     // Find guests already matched with the current user at this event
     const { data: existingMatches } = await this.db
       .from('matches')
       .select('guest_id_1, guest_id_2')
-      .eq('event_id', targetEventId)
+      .eq('event_id', eventId)
       .or(`guest_id_1.eq.${userId},guest_id_2.eq.${userId}`);
 
     const matchedIds = new Set<string>([userId]);
@@ -189,7 +352,7 @@ export class GuestsService {
       .from(GUEST_SWIPES_TABLE)
       .select('swiped_user_id, liked')
       .eq('swiper_user_id', userId)
-      .eq('event_id', targetEventId);
+      .eq('event_id', eventId);
 
     const likedByMeIds = new Set<string>(
       (mySwipes ?? [])
@@ -202,7 +365,7 @@ export class GuestsService {
     const { data: sessions } = await this.db
       .from('event_sessions')
       .select('user_id')
-      .eq('event_id', targetEventId)
+      .eq('event_id', eventId)
       .is('exited_at', null)
       .neq('user_id', userId);
 
@@ -215,8 +378,7 @@ export class GuestsService {
     ).filter((id) => !matchedIds.has(id) && !blockedIds.has(id));
 
     // Fetch guest profiles + user info for candidates
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let profiles: any[] = [];
+    let profiles: DeckProfile[] = [];
     if (candidateIds.length > 0) {
       // The rows are read whole (*) so this works before and after the
       // guest_safety_controls migration adds visibility; the profile below
@@ -247,7 +409,7 @@ export class GuestsService {
           : 0;
         return {
           user_id: g.user_id as string,
-          event_id: targetEventId,
+          event_id: eventId,
           first_name: (user?.first_name ?? null) as string | null,
           last_name: (user?.last_name ?? null) as string | null,
           avatar_url: (user?.avatar_url ?? null) as string | null,
@@ -265,35 +427,22 @@ export class GuestsService {
       profileMatchesFilters(profile, filters),
     ).length;
 
-    const likeLimit = calculateEffectiveLikeLimit(
-      eligibleGuestCount,
-      likesUsed,
-    );
-
-    // Fetch event title + venue name
-    const { data: event } = await this.db
-      .from('events')
-      .select('id, title, venues!events_venue_id_fkey(name)')
-      .eq('id', targetEventId)
-      .maybeSingle();
-
     return {
-      event_id: targetEventId as string | null,
-      event_title: (event?.title ?? '') as string,
-      event_venue: ((event?.venues as unknown as Record<string, unknown> | null)
-        ?.name ?? '') as string,
-      profiles,
-      likes_used: likesUsed,
-      like_limit: likeLimit,
-      eligible_guest_count: eligibleGuestCount,
-      visibility,
+      profiles: cursor === null && limit > 0 ? profiles : [],
+      likesUsed,
+      eligibleGuestCount,
+      presentGuestCount: profiles.length,
+      nextCursor: null,
+      endCursor: null,
     };
   }
 
   async upsertOnboarding(userId: string, dto: OnboardingDto) {
-    // The name is a users column; the users row is made at sign-up. It is
-    // saved before the guest row, because that row is what marks onboarding
-    // complete: if this write fails, onboarding stays open to submit again.
+    // The name is a users column; the users row is made at sign-up, or here
+    // if the webhook that makes it is late. It is saved before the guest row,
+    // because that row is what marks onboarding complete: if this write
+    // fails, onboarding stays open to submit again.
+    await this.userProvisioning.ensureUserRow(userId);
     const { error: nameError } = await this.db
       .from(USERS_TABLE)
       .update({ first_name: dto.first_name })

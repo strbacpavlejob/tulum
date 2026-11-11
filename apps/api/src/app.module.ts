@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClerkAuthGuard } from './common/guards/clerk-auth.guard';
@@ -27,6 +28,7 @@ import { GuestSafetyModule } from './guest-safety/guest-safety.module';
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     RedisModule,
@@ -50,6 +52,12 @@ import { GuestSafetyModule } from './guest-safety/guest-safety.module';
   ],
   controllers: [AppController],
   providers: [
+    // Reports unexpected errors (not HttpExceptions such as 401 or 404) to
+    // Sentry, then answers as Nest's default filter would.
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
     AppService,
     AdminGuard,
     {

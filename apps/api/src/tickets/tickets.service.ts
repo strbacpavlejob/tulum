@@ -1,5 +1,11 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { toUtcIsoString } from '../common/db-timestamp';
+import { isMissingFunction } from '../common/missing-function';
+import { pageSize } from '../common/paging';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { guestVisibility, isShownTo } from '../guest-safety/guest-visibility';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -7,12 +13,45 @@ import { SupabaseService } from '../supabase/supabase.service';
 const TICKETS_TABLE = 'tickets';
 // supabase/migrations/20261019182832_attend_event_with_overlap_check.sql
 const ATTEND_EVENT_FUNCTION = 'attend_event_with_overlap_check';
+// supabase/migrations/20261111210742_paged_swipe_deck_and_guest_list.sql
+const GUEST_LIST_FUNCTION = 'get_event_guest_list';
+/** Guests in a page of the guest list when the request names no limit. */
+export const GUEST_LIST_PAGE_SIZE = 30;
+/** A guest list cursor: 0 for the viewer's own row or 1, then a ticket id. */
+const GUEST_LIST_CURSOR = /^[01][0-9a-f-]{36}$/;
 
 type AttendEventResult = {
   ticket: Record<string, unknown> | null;
   is_new: boolean;
   conflicting_event_title: string | null;
 };
+
+/** What get_event_guest_list returns. */
+type GuestListResult = {
+  max_spots: number;
+  going_count: number;
+  listed_count: number;
+  females: number;
+  males: number;
+  average_age: number | null;
+  guests: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    age: number | null;
+    gender: string | null;
+    is_viewer: boolean;
+  }[];
+  next_cursor: string | null;
+};
+
+/** The name on the guest list: first and last, or "Guest" with neither. */
+function guestName(
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
+): string {
+  return [firstName, lastName].filter(Boolean).join(' ') || 'Guest';
+}
 
 interface TicketRow {
   id: string;
@@ -160,12 +199,68 @@ export class TicketsService {
 
   /**
    * GET /tickets/attendees: the event's numbers and, for a guest going to
-   * it, who else is going. The guest list shows the viewer, and each other
-   * guest whose visibility includes the viewer and who isn't blocked either
-   * way. Someone not going sees no one. The numbers count every guest, and
-   * hiddenCount is how many of them the list leaves out.
+   * it, who else is going, a page at a time. The guest list shows the viewer
+   * first, then each other guest whose visibility includes the viewer and
+   * who isn't blocked either way. Someone not going sees no one. The numbers
+   * count every guest going (goingCount), and hiddenCount is how many of
+   * them the list leaves out. Pass nextCursor back as cursor for the next
+   * page; it is null on the last.
    */
-  async getEventAttendees(eventId: string, viewerId: string) {
+  async getEventAttendees(
+    eventId: string,
+    viewerId: string,
+    page?: { cursor?: string | null; limit?: number | null },
+  ) {
+    const cursor = page?.cursor || null;
+    if (cursor !== null && !GUEST_LIST_CURSOR.test(cursor)) {
+      throw new BadRequestException('Invalid cursor');
+    }
+    const limit = pageSize(page?.limit, GUEST_LIST_PAGE_SIZE);
+
+    const { data, error } = await this.db.rpc(GUEST_LIST_FUNCTION, {
+      p_viewer_id: viewerId,
+      p_event_id: eventId,
+      p_cursor: cursor,
+      p_limit: limit,
+    });
+    if (error) {
+      // Until that function exists, the list is read whole as before.
+      if (isMissingFunction(error)) {
+        return this.wholeGuestList(eventId, viewerId, cursor, limit);
+      }
+      throw error;
+    }
+
+    const list = data as GuestListResult;
+    return {
+      maxSpots: list.max_spots,
+      averageAge: list.average_age,
+      females: list.females,
+      males: list.males,
+      goingCount: list.going_count,
+      guestList: list.guests.map((g) => ({
+        name: guestName(g.first_name, g.last_name),
+        age: g.age,
+        gender: g.gender,
+        uri: g.avatar_url,
+        isViewer: g.is_viewer,
+      })),
+      hiddenCount: list.going_count - list.listed_count,
+      nextCursor: list.next_cursor,
+    };
+  }
+
+  /**
+   * The guest list as it was read before get_event_guest_list, for while
+   * that function is missing: the whole list in one answer. It has no pages,
+   * so a request for a later page, or for the numbers alone, gets no guests.
+   */
+  private async wholeGuestList(
+    eventId: string,
+    viewerId: string,
+    cursor: string | null,
+    limit: number,
+  ) {
     const [ticketsResult, eventResult, blockedIds, likedViewerIds] =
       await Promise.all([
         // The guests rows are read whole (*) so this works before and after
@@ -194,9 +289,7 @@ export class TicketsService {
     const attendees = (ticketsResult.data ?? []).map((t: any) => {
       const guest = t.guests ?? {};
       const user = guest.users ?? {};
-      const firstName = user.first_name ?? '';
-      const lastName = user.last_name ?? '';
-      const name = [firstName, lastName].filter(Boolean).join(' ') || 'Guest';
+      const guestId = (t as { guest_id: string }).guest_id;
       const age = guest.birthday
         ? Math.floor(
             (now - new Date(guest.birthday).getTime()) /
@@ -204,13 +297,14 @@ export class TicketsService {
           )
         : null;
       return {
-        guestId: (t as { guest_id: string }).guest_id,
+        guestId,
         visibility: guestVisibility(guest as Record<string, unknown>),
         entry: {
-          name,
+          name: guestName(user.first_name, user.last_name),
           age,
           gender: (guest.gender as string | null) ?? null,
           uri: (user.avatar_url as string | null) ?? null,
+          isViewer: guestId === viewerId,
         },
       };
     });
@@ -247,8 +341,10 @@ export class TicketsService {
       averageAge,
       females,
       males,
-      guestList,
+      goingCount: attendees.length,
+      guestList: cursor === null && limit > 0 ? guestList : [],
       hiddenCount: attendees.length - guestList.length,
+      nextCursor: null,
     };
   }
 }

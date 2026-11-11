@@ -996,6 +996,8 @@ export interface EventAttendee {
   age: number | null;
   gender: "male" | "female" | "other" | null;
   uri: string | null;
+  /** Your own row. Absent from APIs from before the paged guest list. */
+  isViewer?: boolean;
 }
 
 export interface EventAttendeesData {
@@ -1003,25 +1005,47 @@ export interface EventAttendeesData {
   averageAge: number | null;
   females: number;
   males: number;
+  /** Everyone going, whether or not the list shows them. */
+  goingCount: number;
+  /** The guests loaded so far: you first, then a page at a time. */
   guestList: EventAttendee[];
   /**
    * Guests going whom the list leaves out: everyone, for someone not going;
    * otherwise guests whose visibility leaves you out, or blocked either way.
-   * Absent from APIs from before TASK-001.
    */
-  hiddenCount?: number;
+  hiddenCount: number;
+  /** Asks for the next page of guestList; null once it is all loaded. */
+  nextCursor: string | null;
 }
 
 export async function fetchEventAttendees(
   eventId: string | number,
   token: string,
+  cursor?: string | null,
 ): Promise<EventAttendeesData> {
-  const url = `${TULUM_API_URL}/tickets/attendees?event_id=${eventId}`;
+  const searchParams = new URLSearchParams({ event_id: String(eventId) });
+  if (cursor) {
+    searchParams.set("cursor", cursor);
+  }
+  const url = `${TULUM_API_URL}/tickets/attendees?${searchParams.toString()}`;
   const response = await fetch(url, { headers: authHeaders(token) });
   if (!response.ok) {
     throw new Error(`Failed to fetch event attendees: ${response.status}`);
   }
-  return response.json() as Promise<EventAttendeesData>;
+  const data = (await response.json()) as Omit<
+    EventAttendeesData,
+    "goingCount" | "hiddenCount" | "nextCursor"
+  > &
+    Partial<EventAttendeesData>;
+  // APIs from before the paged guest list send the whole list without a
+  // going count or a cursor; those from before TASK-001 no hiddenCount.
+  const hiddenCount = data.hiddenCount ?? 0;
+  return {
+    ...data,
+    hiddenCount,
+    goingCount: data.goingCount ?? data.guestList.length + hiddenCount,
+    nextCursor: data.nextCursor ?? null,
+  };
 }
 
 export async function fetchMyTickets(token: string, userId: string) {
@@ -1067,8 +1091,17 @@ export interface SwipeableResponse {
   likes_used?: number;
   like_limit?: number;
   eligible_guest_count?: number;
+  /** Guests here shown to you, before the filters. */
+  present_guest_count?: number;
   /** Yours. Hidden pauses Matches: profiles is then empty. */
   visibility?: GuestVisibility;
+  /**
+   * The next page's cursor, null on the last page. Absent from APIs from
+   * before paging, which send the whole deck, unfiltered.
+   */
+  next_cursor?: string | null;
+  /** Where this page ends: guests who check in later come after it. */
+  end_cursor?: string | null;
 }
 
 export interface SwipeFilters {
@@ -1078,10 +1111,18 @@ export interface SwipeFilters {
   selectedInterests?: string[];
 }
 
+export interface SwipeablePage {
+  /** The end_cursor of the page before; none for the first page. */
+  cursor?: string | null;
+  /** Profiles in the page; 0 asks for the counts alone. */
+  limit?: number;
+}
+
 export async function fetchSwipeableProfiles(
   token: string,
   eventId?: string,
   filters?: SwipeFilters,
+  page?: SwipeablePage,
 ): Promise<SwipeableResponse> {
   const searchParams = new URLSearchParams();
 
@@ -1099,6 +1140,12 @@ export async function fetchSwipeableProfiles(
   }
   if (filters?.selectedInterests?.length) {
     searchParams.set("selected_interests", filters.selectedInterests.join(","));
+  }
+  if (page?.cursor) {
+    searchParams.set("cursor", page.cursor);
+  }
+  if (typeof page?.limit === "number") {
+    searchParams.set("limit", String(page.limit));
   }
 
   const qs = searchParams.toString();

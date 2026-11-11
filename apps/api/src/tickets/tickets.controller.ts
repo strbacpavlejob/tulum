@@ -15,6 +15,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { parsePageLimit } from '../common/paging';
 import { UsersService } from '../users/users.service';
 import { TicketsService } from './tickets.service';
 
@@ -56,12 +57,22 @@ export class TicketsController {
     return this.ticketsService.getTickets(userId, eventId);
   }
 
+  /**
+   * GET /tickets/attendees?event_id=X: limit guests a page (30 unless
+   * given, at most 50; 0 for the numbers alone); cursor is the nextCursor of
+   * the page before.
+   */
   @Get('attendees')
   async getEventAttendees(
     @UserId() userId: string,
     @Query('event_id', ParseUUIDPipe) eventId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.ticketsService.getEventAttendees(eventId, userId);
+    return this.ticketsService.getEventAttendees(eventId, userId, {
+      cursor: cursor ?? null,
+      limit: parsePageLimit(limit),
+    });
   }
 
   @Post('attend')

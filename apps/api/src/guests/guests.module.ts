@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { GuestSafetyModule } from '../guest-safety/guest-safety.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { R2Module } from '../r2/r2.module';
+import { UsersModule } from '../users/users.module';
 import { GuestsController } from './guests.controller';
 import { GuestsService } from './guests.service';
 
 @Module({
-  imports: [SupabaseModule, R2Module, GuestSafetyModule],
+  imports: [SupabaseModule, R2Module, GuestSafetyModule, UsersModule],
   controllers: [GuestsController],
   providers: [GuestsService],
 })

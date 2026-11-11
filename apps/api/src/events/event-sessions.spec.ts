@@ -14,6 +14,7 @@ import { GuestsService } from '../guests/guests.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import { EventsController } from './events.controller';
 
 const EVENT = 'f5f8b2e0-bfcf-4a77-90b7-e7631f38a101';
@@ -145,19 +146,31 @@ function from(table: string) {
 
 const db = {
   from,
-  // A like the limit allows; no reciprocal like, so no match.
-  rpc: () =>
-    Promise.resolve({
-      data: {
-        allowed: true,
-        was_already_liked: false,
-        likes_used: 1,
-        like_limit: 3,
-        eligible_guest_count: 1,
-        limit_reached: false,
-      },
-      error: null,
-    }),
+  // A like the limit allows; no reciprocal like, so no match. PostgREST
+  // doesn't know the other functions, as before the paging migration, so the
+  // deck reads the tables above.
+  rpc: (fn: string) =>
+    Promise.resolve(
+      fn === 'submit_guest_swipe_with_limit'
+        ? {
+            data: {
+              allowed: true,
+              was_already_liked: false,
+              likes_used: 1,
+              like_limit: 3,
+              eligible_guest_count: 1,
+              limit_reached: false,
+            },
+            error: null,
+          }
+        : {
+            data: null,
+            error: {
+              code: 'PGRST202',
+              message: `Could not find the function public.${fn}`,
+            },
+          },
+    ),
 };
 const supabaseService = { getClient: () => db } as unknown as SupabaseService;
 const guestSafety = new GuestSafetyService(supabaseService);
@@ -279,6 +292,9 @@ describe('The deck with duplicate sessions (BUG-030)', () => {
     supabaseService,
     {} as R2Service,
     guestSafety,
+    {
+      ensureUserRow: () => Promise.resolve(),
+    } as unknown as UserProvisioningService,
   );
 
   it('shows the deck to a guest with two active sessions and no ticket', async () => {
