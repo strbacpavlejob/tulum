@@ -100,8 +100,7 @@ const resources = {
       onboardingMissingRequiredFields: "Missing required fields",
       onboardingAuthError: "Authentication error. Please sign in again.",
       onboardingSaveFailed: "Save failed",
-      onboardingSubmitError:
-        "We couldn't save your profile. Please try again.",
+      onboardingSubmitError: "We couldn't save your profile. Please try again.",
       onboardingBioPlaceholder: "Tell others a little about yourself...",
       onboardingContinue: "Continue",
       onboardingCompleteProfile: "Complete Profile",
@@ -436,6 +435,44 @@ const resources = {
       guestListAttendToSee:
         "Only guests going to this event see who's going. Attend to see the guest list.",
       guestListNotShown: "Also going, not shown: {{count}}",
+      // QR event page (/e/[id])
+      eventJoinCta: "Join the party",
+      eventJoining: "Joining…",
+      eventLiveNow: "Live now",
+      eventYoureGoing: "You're going!",
+      eventMatchingOpensIn: "Matching opens in {{time}}.",
+      eventMatchingOpenNow: "Matching is open: meet the people here.",
+      eventGoToMatches: "Go to Matches",
+      eventSeeWhoIsGoing: "See who's going",
+      eventEnded: "This event has ended",
+      eventEndedSubtitle: "See what else is on in Tulum.",
+      eventSeeWhatsOn: "See what's on",
+      eventNotFound: "We couldn't find this event",
+      eventNotFoundSubtitle:
+        "The link may be old. Open Tulum to see what's on.",
+      eventOpenTulum: "Open Tulum",
+      eventLoadFailed: "Couldn't load the event.",
+      eventJoinFailed: "Couldn't join. Check your connection and try again.",
+      eventSwitchQuestion:
+        "You're going to {{other}} at the same time. Switch to {{event}}?",
+      eventSwitch: "Switch",
+      eventKeepOther: "Keep {{other}}",
+      eventSignInToJoin: "Sign in with Google or Apple to join.",
+      countdownHoursMinutes: "{{hours}} h {{minutes}} min",
+      countdownMinutes: "{{minutes}} min",
+      // Matches location gate and empty deck
+      matchesLocationOffTitle: "Location is off for Tulum",
+      matchesLocationOffIos:
+        "Open Settings → Privacy & Security → Location Services → Safari Websites (or Chrome) and choose While Using the App. Then come back and tap Check again.",
+      matchesLocationOffAndroid:
+        "Tap the icon left of the address bar → Permissions → Location → Allow. Then tap Check again.",
+      matchesLocationOffOther:
+        "Allow location for this site in your browser's settings, then tap Check again.",
+      matchesLocationOffApp:
+        "Allow location for Tulum in your phone's settings, then tap Check again.",
+      matchesCheckAgain: "Check again",
+      matchesNobodyHereTitle: "No one else here yet",
+      matchesNobodyHereSubtitle: "Guests show up here as they check in.",
     },
   },
 
@@ -876,6 +913,46 @@ const resources = {
       guestListAttendToSee:
         "Samo gosti koji idu na ovaj događaj vide ko još ide. Prisustvuj da vidiš listu gostiju.",
       guestListNotShown: "Takođe idu, nisu prikazani: {{count}}",
+      // QR event page (/e/[id])
+      eventJoinCta: "Pridruži se žurci",
+      eventJoining: "Pridružujemo te…",
+      eventLiveNow: "Upravo traje",
+      eventYoureGoing: "Ideš!",
+      eventMatchingOpensIn: "Mečevanje počinje za {{time}}.",
+      eventMatchingOpenNow: "Mečevanje je počelo: upoznaj ljude ovde.",
+      eventGoToMatches: "Idi na mečeve",
+      eventSeeWhoIsGoing: "Vidi ko ide",
+      eventEnded: "Ovaj događaj je završen",
+      eventEndedSubtitle: "Pogledaj šta se još dešava u Tulumu.",
+      eventSeeWhatsOn: "Pogledaj događaje",
+      eventNotFound: "Ne možemo da pronađemo ovaj događaj",
+      eventNotFoundSubtitle:
+        "Link je možda zastareo. Otvori Tulum da vidiš šta se dešava.",
+      eventOpenTulum: "Otvori Tulum",
+      eventLoadFailed: "Događaj se nije učitao.",
+      eventJoinFailed:
+        "Pridruživanje nije uspelo. Proveri vezu i pokušaj ponovo.",
+      eventSwitchQuestion:
+        "U isto vreme ideš na {{other}}. Da se prebaciš na {{event}}?",
+      eventSwitch: "Prebaci se",
+      eventKeepOther: "Ostani na {{other}}",
+      eventSignInToJoin:
+        "Prijavi se preko Google-a ili Apple-a da se pridružiš.",
+      countdownHoursMinutes: "{{hours}} h {{minutes}} min",
+      countdownMinutes: "{{minutes}} min",
+      // Matches location gate and empty deck
+      matchesLocationOffTitle: "Lokacija je isključena za Tulum",
+      matchesLocationOffIos:
+        "Otvori Podešavanja → Privatnost i bezbednost → Usluge lokacije → Safari veb-sajtovi (ili Chrome) i izaberi Dok se aplikacija koristi. Zatim se vrati i dodirni Proveri ponovo.",
+      matchesLocationOffAndroid:
+        "Dodirni ikonu levo od adrese → Dozvole → Lokacija → Dozvoli. Zatim dodirni Proveri ponovo.",
+      matchesLocationOffOther:
+        "Dozvoli lokaciju za ovaj sajt u podešavanjima pregledača, pa dodirni Proveri ponovo.",
+      matchesLocationOffApp:
+        "Dozvoli lokaciju za Tulum u podešavanjima telefona, pa dodirni Proveri ponovo.",
+      matchesCheckAgain: "Proveri ponovo",
+      matchesNobodyHereTitle: "Ovde još nema nikog drugog",
+      matchesNobodyHereSubtitle: "Gosti se pojavljuju ovde čim stignu.",
     },
   },
 
@@ -1314,6 +1391,46 @@ const resources = {
       guestListAttendToSee:
         "Только гости, которые идут на это событие, видят, кто ещё идёт. Нажмите «Посетить», чтобы увидеть список гостей.",
       guestListNotShown: "Тоже идут, но не показаны: {{count}}",
+      // QR event page (/e/[id])
+      eventJoinCta: "Присоединиться",
+      eventJoining: "Присоединяем…",
+      eventLiveNow: "Идёт сейчас",
+      eventYoureGoing: "Вы идёте!",
+      eventMatchingOpensIn: "Матчи откроются через {{time}}.",
+      eventMatchingOpenNow: "Матчи открыты: знакомьтесь с теми, кто здесь.",
+      eventGoToMatches: "К матчам",
+      eventSeeWhoIsGoing: "Кто идёт",
+      eventEnded: "Это мероприятие закончилось",
+      eventEndedSubtitle: "Посмотрите, что ещё есть в Tulum.",
+      eventSeeWhatsOn: "Смотреть события",
+      eventNotFound: "Мы не нашли это мероприятие",
+      eventNotFoundSubtitle:
+        "Возможно, ссылка устарела. Откройте Tulum, чтобы посмотреть события.",
+      eventOpenTulum: "Открыть Tulum",
+      eventLoadFailed: "Не удалось загрузить мероприятие.",
+      eventJoinFailed:
+        "Не удалось присоединиться. Проверьте связь и попробуйте ещё раз.",
+      eventSwitchQuestion:
+        "В это же время вы идёте на «{{other}}». Переключиться на «{{event}}»?",
+      eventSwitch: "Переключиться",
+      eventKeepOther: "Оставить «{{other}}»",
+      eventSignInToJoin:
+        "Войдите через Google или Apple, чтобы присоединиться.",
+      countdownHoursMinutes: "{{hours}} ч {{minutes}} мин",
+      countdownMinutes: "{{minutes}} мин",
+      // Matches location gate and empty deck
+      matchesLocationOffTitle: "Геолокация для Tulum выключена",
+      matchesLocationOffIos:
+        "Откройте Настройки → Конфиденциальность и безопасность → Службы геолокации → Веб-сайты Safari (или Chrome) и выберите «При использовании приложения». Затем вернитесь и нажмите «Проверить снова».",
+      matchesLocationOffAndroid:
+        "Нажмите на значок слева от адресной строки → Разрешения → Местоположение → Разрешить. Затем нажмите «Проверить снова».",
+      matchesLocationOffOther:
+        "Разрешите геолокацию для этого сайта в настройках браузера, затем нажмите «Проверить снова».",
+      matchesLocationOffApp:
+        "Разрешите геолокацию для Tulum в настройках телефона, затем нажмите «Проверить снова».",
+      matchesCheckAgain: "Проверить снова",
+      matchesNobodyHereTitle: "Здесь пока больше никого нет",
+      matchesNobodyHereSubtitle: "Гости появятся здесь, когда придут.",
     },
   },
 };

@@ -89,6 +89,8 @@ function from(table: string) {
   const rows = (tables[table] ??= []);
   const filters: ((row: Row) => boolean)[] = [];
   let deleting = false;
+  // select(..., { count: 'exact', head: true }) answers with the count only.
+  let countOnly = false;
   const matching = () => rows.filter((row) => filters.every((f) => f(row)));
   const where = (filter: (row: Row) => boolean) => {
     filters.push(filter);
@@ -96,7 +98,13 @@ function from(table: string) {
   };
 
   const query = {
-    select: () => query,
+    select: (
+      _columns?: string,
+      options?: { count?: string; head?: boolean },
+    ) => {
+      countOnly = options?.count === 'exact' && options.head === true;
+      return query;
+    },
     order: () => query,
     limit: () => query,
     eq: (column: string, value: unknown) =>
@@ -136,6 +144,13 @@ function from(table: string) {
       reject: (reason: unknown) => unknown,
     ) => {
       const found = matching();
+      if (countOnly) {
+        return Promise.resolve({
+          data: null,
+          count: found.length,
+          error: null,
+        }).then(resolve, reject);
+      }
       if (deleting) {
         for (const row of found) rows.splice(rows.indexOf(row), 1);
       }
@@ -264,6 +279,32 @@ describe('Favorites on the active events routes (BUG-008)', () => {
       .get(`/events/active/${SAVED_EVENT}`)
       .expect(200);
     expect(anonymous.body).toMatchObject({ isFavorite: false });
+  });
+
+  it('GET /events/active/:id sends the end time and how many are going, signed out too', async () => {
+    tables.tickets.push(
+      { id: 't1', guest_id: CALLER, event_id: SAVED_EVENT },
+      { id: 't2', guest_id: OTHER, event_id: SAVED_EVENT },
+      { id: 't3', guest_id: OTHER, event_id: UNSAVED_EVENT },
+    );
+
+    const anonymous = await http()
+      .get(`/events/active/${SAVED_EVENT}`)
+      .expect(200);
+    expect(anonymous.body).toMatchObject({
+      going_count: 2,
+      isAttending: false,
+    });
+    expect(Date.parse(anonymous.body.end_date_time)).toBeGreaterThan(
+      Date.parse(anonymous.body.date),
+    );
+    expect(anonymous.body.end_date_time).toMatch(/Z$/);
+
+    const caller = await http()
+      .get(`/events/active/${SAVED_EVENT}`)
+      .set(AS_CALLER)
+      .expect(200);
+    expect(caller.body).toMatchObject({ going_count: 2, isAttending: true });
   });
 
   it('a favorite saved with POST /favorites stays until DELETE /favorites removes it', async () => {

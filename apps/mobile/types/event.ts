@@ -64,6 +64,8 @@ export interface EventPin {
 
 /** Full event details fetched from the detail endpoint */
 export interface Event extends EventSummary {
+  /** When it ends; absent from APIs from before the QR event page. */
+  endDate?: string | null;
   venue_picture: string | null;
   description: string;
   isSeen: boolean;

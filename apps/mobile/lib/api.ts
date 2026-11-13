@@ -64,6 +64,10 @@ interface ActiveEventDetailResponse {
   venue_name: string;
   venue_picture: string | null;
   date: string;
+  /** Absent from APIs from before the QR event page. */
+  end_date_time?: string | null;
+  /** Everyone going. Absent from APIs from before the QR event page. */
+  going_count?: number;
   tags: string[];
   isFavorite: boolean;
   isSeen: boolean;
@@ -136,9 +140,10 @@ function mapActiveEventDetailToEvent(item: ActiveEventDetailResponse): Event {
       address: item.address,
     },
     date: normalizeApiTimestamp(item.date) ?? item.date,
+    endDate: normalizeApiTimestamp(item.end_date_time),
     tags: item.tags ?? [],
     isFavorite: item.isFavorite ?? false,
-    guestCount: 0,
+    guestCount: item.going_count ?? 0,
     venue_picture: item.venue_picture,
     description: item.description ?? "",
     isSeen: item.isSeen ?? false,
@@ -220,6 +225,11 @@ export async function fetchActiveEvents(
   };
 }
 
+/** GET /events/active/:id answered 404 (or 400 for an id that isn't one). */
+export class EventNotFoundError extends Error {
+  name = "EventNotFoundError";
+}
+
 export async function fetchEventDetails(
   eventId: string,
   token?: string,
@@ -228,6 +238,9 @@ export async function fetchEventDetails(
   const response = await fetch(url, {
     headers: token ? authHeaders(token) : undefined,
   });
+  if (response.status === 404 || response.status === 400) {
+    throw new EventNotFoundError(`Event not found: ${response.status}`);
+  }
   if (!response.ok) {
     throw new Error(`Failed to fetch event details: ${response.status}`);
   }

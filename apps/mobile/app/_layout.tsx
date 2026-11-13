@@ -105,6 +105,8 @@ const MainStack = () => {
                 name="event-details/[id]"
                 options={{ headerShown: false }}
               />
+              {/* The page a poster's QR code opens; signed out too. */}
+              <Stack.Screen name="e/[id]" options={{ headerShown: false }} />
               <Stack.Screen
                 name="+not-found"
                 options={{ headerShown: false }}

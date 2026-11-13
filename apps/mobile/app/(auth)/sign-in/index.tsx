@@ -5,8 +5,9 @@ import GoogleIcon from "@/components/illustrations/google-icon";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 
+import { savePendingJoin } from "@/lib/pending-join";
 import { useAuth, useSSO } from "@clerk/expo";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
@@ -65,7 +66,16 @@ export default function SignInScreen() {
     Fredoka_700Bold,
   });
 
-  const redirectUrl = Linking.createURL("/(auth)/sso-callback");
+  // An event this guest asked to join (from /e/[id]) is saved, and also
+  // rides in the return URL in case storage is lost on the way.
+  const { join, src } = useLocalSearchParams<{ join?: string; src?: string }>();
+  useEffect(() => {
+    if (join) savePendingJoin(join, src);
+  }, [join, src]);
+
+  const redirectUrl = Linking.createURL("/(auth)/sso-callback", {
+    queryParams: join ? { join, ...(src ? { src } : {}) } : undefined,
+  });
 
   const isCompact = screenHeight < 750;
 

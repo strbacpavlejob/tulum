@@ -31,6 +31,9 @@ const fixtures = process.env.TULUM_PROXY_FIXTURES
   : {};
 
 // GET routes whose handlers only read (checked in apps/api/src, 2026-11-02).
+// Since 2026-11-11, GET /users/me and /guests/me also make the caller's users
+// row when it is missing (the create-user webhook was late). An account that
+// is signed in and onboarded has that row, so for it they only read.
 const readOnlyRoutes = [
   /^\/events\/active$/,
   /^\/users\/me$/,

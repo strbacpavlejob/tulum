@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { Info } from "lucide-react-native";
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,31 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 type MatchesLocationGateCardProps = {
   topInset: number;
   onBypass: () => void;
+  /** Location is refused: the card says how to allow it, and checks again. */
+  denied?: boolean;
+  onCheckAgain?: () => void;
 };
+
+/**
+ * Where to allow location, for the device: a refused prompt in the browser
+ * doesn't come back, so the guest has to change it in the settings.
+ */
+function locationHelpKey() {
+  if (Platform.OS !== "web") return "matchesLocationOffApp";
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const iOS =
+    /iPhone|iPad|iPod/.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (iOS) return "matchesLocationOffIos";
+  if (/Android/.test(ua)) return "matchesLocationOffAndroid";
+  return "matchesLocationOffOther";
+}
 
 export default function MatchesLocationGateCard({
   topInset,
   onBypass,
+  denied = false,
+  onCheckAgain,
 }: MatchesLocationGateCardProps) {
   const { t } = useTranslation();
   const theme = useAppTheme();
@@ -51,15 +71,29 @@ export default function MatchesLocationGateCard({
 
         {/* Info content */}
         <View className="flex-1">
-          <Text className="text-[16px] font-bold leading-[22px] text-light-colorInverse dark:text-dark-colorStrong">
-            {t("matchesAlmostThere")}
+          <Text className="text-[16px] font-bold leading-[22px] text-light-colorStrong dark:text-dark-colorStrong">
+            {denied ? t("matchesLocationOffTitle") : t("matchesAlmostThere")}
           </Text>
 
           <Text className="mt-1 text-[12px] leading-[18px] text-light-gray10 dark:text-dark-gray10">
-            {t("matchesArriveAtVenue")}
+            {denied ? t(locationHelpKey()) : t("matchesArriveAtVenue")}
           </Text>
         </View>
       </View>
+
+      {denied && onCheckAgain ? (
+        <View className="mt-4 pl-12">
+          <Button
+            onPress={onCheckAgain}
+            className="self-start h-9 rounded-full px-4"
+            style={{ borderRadius: 999, backgroundColor: theme.color }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>
+              {t("matchesCheckAgain")}
+            </Text>
+          </Button>
+        </View>
+      ) : null}
 
       {showBypassButton && (
         <View className="mt-4 pl-12">

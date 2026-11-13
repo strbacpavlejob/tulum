@@ -1,8 +1,9 @@
 import LoadingIndicator from "@/components/loading-indicator";
 import { Text } from "@/components/ui/text";
 import ClerkCaptcha from "@/components/ClerkCaptcha";
+import { savePendingJoin } from "@/lib/pending-join";
 import { useClerk } from "@clerk/expo";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +12,12 @@ export default function SsoCallbackScreen() {
   const clerk = useClerk();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  // The event to join, if sign-in started on its page (see sign-in).
+  const { join, src } = useLocalSearchParams<{ join?: string; src?: string }>();
+
+  useEffect(() => {
+    if (join) savePendingJoin(join, src);
+  }, [join, src]);
 
   useEffect(() => {
     let cancelled = false;

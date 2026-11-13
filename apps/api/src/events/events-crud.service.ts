@@ -228,12 +228,19 @@ export class EventsCrudService {
     const { data: event, error: eventError } = await this.db
       .from(EVENTS_TABLE)
       .select(
-        'id, title, description, picture_url, scraper, venue_id, start_date_time, tags',
+        'id, title, description, picture_url, scraper, venue_id, start_date_time, end_date_time, tags',
       )
       .eq('id', eventId)
       .eq('status', 'active')
       .single();
     if (eventError || !event) throw new NotFoundException('Event not found');
+
+    // Everyone going: the event page a QR code opens shows it before sign-in.
+    const { count: goingCount, error: goingError } = await this.db
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    if (goingError) throw goingError;
 
     // Fetch venue with contact info
     const { data: venue, error: venueError } = await this.db
@@ -300,6 +307,10 @@ export class EventsCrudService {
       venue_name: venueTyped.name,
       venue_picture: venueTyped.picture_url ?? null,
       date: toUtcIsoString((event as Record<string, unknown>).start_date_time),
+      end_date_time: toUtcIsoString(
+        (event as Record<string, unknown>).end_date_time,
+      ),
+      going_count: goingCount ?? 0,
       tags: ((event as Record<string, unknown>).tags as string[]) ?? [],
       isFavorite,
       isSeen,

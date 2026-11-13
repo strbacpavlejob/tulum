@@ -13,6 +13,7 @@ import {
   uploadGuestPhoto,
 } from "@/lib/api";
 import type { GenderValue, SeekingValue } from "@/lib/api";
+import { signedInHomeHref } from "@/lib/pending-join";
 import useStore from "@/store/useStore";
 import { LookingForGender } from "@/types/user";
 import { useAuth } from "@clerk/expo";
@@ -430,7 +431,7 @@ export default function OnboardingScreen() {
       })
       .then(({ guest, isOnboardingComplete }) => {
         if (isOnboardingComplete) {
-          router.replace("/(tabs)");
+          router.replace(signedInHomeHref());
         } else {
           // Pre-populate photos from the database so previously uploaded
           // photos are visible if the user returns before finishing.
@@ -592,7 +593,7 @@ export default function OnboardingScreen() {
         info: bio.trim() || undefined,
       });
 
-      router.replace("/(tabs)");
+      router.replace(signedInHomeHref());
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[onboarding] submitOnboarding failed:", msg);

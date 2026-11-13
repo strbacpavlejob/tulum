@@ -1,5 +1,4 @@
 import GuestSafetySheet from "@/components/GuestSafetySheet";
-import MatchModal from "@/components/MatchModal";
 import { MatchesFiltersBottomSheet } from "@/components/matches/MatchesFiltersBottomSheet";
 import type { MatchesFiltersBottomSheetRef } from "@/components/matches/MatchesFiltersBottomSheet";
 import { Profile } from "@/types/profile";
@@ -49,10 +48,6 @@ type MatchesDeckProps = {
   likeLimit: number;
   likeLimitReached: boolean;
   likeDisabled: boolean;
-  showMatch: boolean;
-  matchedProfile: Profile | null;
-  matchId: number | null;
-  onCloseMatch: () => void;
   /** The live event, for a report made from a profile here. */
   eventId: string | null;
   /** After you block or report the guest shown. */
@@ -78,10 +73,6 @@ export default function MatchesDeck({
   likesUsed,
   likeLimit,
   likeDisabled,
-  showMatch,
-  matchedProfile,
-  matchId,
-  onCloseMatch,
   eventId,
   onGuestBlocked,
 }: MatchesDeckProps) {
@@ -402,12 +393,6 @@ export default function MatchesDeck({
               </>
             ) : null}
           </View>
-          <MatchModal
-            visible={showMatch}
-            profile={matchedProfile}
-            matchId={matchId}
-            onClose={onCloseMatch}
-          />
           <GuestSafetySheet
             sheetRef={safetySheetRef}
             guest={safetyGuest}

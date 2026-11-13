@@ -1,3 +1,4 @@
+import MatchModal from "@/components/MatchModal";
 import MatchesDeck from "@/components/matches/MatchesDeck";
 import {
   EmptyMatchesView,
@@ -36,7 +37,10 @@ import useStore from "@/store/useStore";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-/** Metres within which the user is considered "at the venue" */
+/**
+ * Metres within which the user is considered "at the venue", when the API
+ * sends no checkin_radius_m with the ticket
+ */
 const PROXIMITY_RADIUS_M = 300;
 
 /** How often (ms) to re-check position on the location verification screen */
@@ -146,6 +150,23 @@ interface LiveTicket {
   venue_lng: number;
   venue_name: string;
   event_title: string;
+  /** How near the venue the user must be, in metres; set by the API. */
+  checkin_radius_m: number;
+}
+
+/**
+ * Whether a position counts as at the venue: within the radius once its
+ * reported accuracy is allowed for. Indoors a browser's position can be a few
+ * hundred metres off. The allowance is at most the radius, so a position that
+ * vague still has to be nearby.
+ */
+function isAtVenue(
+  distanceM: number,
+  accuracyM: number | null | undefined,
+  radiusM: number,
+): boolean {
+  const allowance = Math.min(Math.max(accuracyM ?? 0, 0), radiusM);
+  return distanceM - allowance <= radiusM;
 }
 
 interface SwipeCandidate {
@@ -219,6 +240,9 @@ export default function MatchesScreen() {
     lat: number;
     lng: number;
   } | null>(null);
+  // The browser or the phone refuses Tulum the location: the gate says how
+  // to allow it.
+  const [locationDenied, setLocationDenied] = useState(false);
 
   // ── Swipe state ────────────────────────────────────────────────────────────
   const [profiles, setProfiles] = useState<SwipeCandidate[]>([]);
@@ -260,8 +284,10 @@ export default function MatchesScreen() {
   const deckGenerationRef = useRef(0);
   const loadingMoreRef = useRef(false);
   const loadedFiltersKeyRef = useRef<string | null>(null);
-  // False for an API from before paging: it sends the whole deck, which is
-  // then loaded whole at every refresh, as before.
+  // False when the deck came whole, without an end_cursor: from an API from
+  // before paging, or one reading it whole until the paging migration is
+  // applied. Such a deck loads whole at every refresh, as before, so guests
+  // who check in later show up.
   const pagedDeckRef = useRef(true);
 
   useEffect(() => {
@@ -316,31 +342,35 @@ export default function MatchesScreen() {
   const isLikeDisabled = likeStats.likesUsed >= likeStats.likeLimit;
 
   // ── GPS proximity check ───────────────────────────────────────────────────
-  const checkLocation = useCallback(
-    async (venueLat: number, venueLng: number) => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          setEligibility("location_required");
-          return;
-        }
-        const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const { latitude, longitude } = pos.coords;
-        setUserCoords({ lat: latitude, lng: longitude });
-        const dist = haversineMeters(latitude, longitude, venueLat, venueLng);
-        if (dist <= PROXIMITY_RADIUS_M) {
-          setEligibility("eligible");
-        } else {
-          setEligibility("location_required");
-        }
-      } catch {
+  const checkLocation = useCallback(async (ticket: LiveTicket) => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocationDenied(true);
+        setEligibility("location_required");
+        return;
+      }
+      setLocationDenied(false);
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude, accuracy } = pos.coords;
+      setUserCoords({ lat: latitude, lng: longitude });
+      const dist = haversineMeters(
+        latitude,
+        longitude,
+        ticket.venue_lat,
+        ticket.venue_lng,
+      );
+      if (isAtVenue(dist, accuracy, ticket.checkin_radius_m)) {
+        setEligibility("eligible");
+      } else {
         setEligibility("location_required");
       }
-    },
-    [],
-  );
+    } catch {
+      setEligibility("location_required");
+    }
+  }, []);
 
   // ── Find live-event ticket then check GPS ─────────────────────────────────
   const checkTickets = useCallback(async () => {
@@ -379,13 +409,17 @@ export default function MatchesScreen() {
         venue_lng: live.longitude ?? live.location?.longitude ?? 0,
         venue_name: live.venue_name ?? "",
         event_title: live.title ?? "",
+        checkin_radius_m:
+          typeof live.checkin_radius_m === "number"
+            ? live.checkin_radius_m
+            : PROXIMITY_RADIUS_M,
       };
       setLiveTicket(ticket);
       // A re-check from the locked screen shows the loading view while the
       // location is read, as the first check does.
       setEligibility("checking");
 
-      await checkLocation(ticket.venue_lat, ticket.venue_lng);
+      await checkLocation(ticket);
     } catch {
       setEligibility("locked");
     } finally {
@@ -421,7 +455,7 @@ export default function MatchesScreen() {
   useEffect(() => {
     if (eligibility !== "location_required" || !liveTicket) return;
     const id = setInterval(
-      () => checkLocation(liveTicket.venue_lat, liveTicket.venue_lng),
+      () => checkLocation(liveTicket),
       LOCATION_POLL_INTERVAL_MS,
     );
     return () => clearInterval(id);
@@ -525,7 +559,7 @@ export default function MatchesScreen() {
 
       setEventId(data.event_id ?? activeEventId ?? null);
       setProfiles(nextProfiles);
-      pagedDeckRef.current = data.next_cursor !== undefined;
+      pagedDeckRef.current = data.end_cursor != null;
       deckCursorRef.current = data.end_cursor ?? null;
       setMoreProfiles(Boolean(data.next_cursor));
       endEligibleCountRef.current = data.next_cursor
@@ -837,108 +871,119 @@ export default function MatchesScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (eligibility === "checking") {
-    return <LoadingStateView />;
-  }
-
-  if (eligibility === "locked") {
-    return (
-      <LockedStateView
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        title={t("matchesLocked")}
-        subtitle={t("matchesLockedSubtitle")}
-        buttonText={t("matchesUnlockButton")}
-        onUnlock={() => router.push("/tickets")}
-      />
-    );
-  }
-
-  if (eligibility === "location_required" && liveTicket) {
-    return (
-      <LocationRequiredView
-        liveTicket={liveTicket}
-        userCoords={userCoords}
-        setUserCoords={setUserCoords}
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        onBypass={() => setEligibility("eligible")}
-        onCheckLocation={() =>
-          checkLocation(liveTicket.venue_lat, liveTicket.venue_lng)
-        }
-      />
-    );
-  }
-
-  // Before the loading view, so the refresh every 30 s doesn't flash it.
-  if (eligibility === "eligible" && selfHidden) {
-    return (
-      <LockedStateView
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        title={t("matchesHiddenTitle")}
-        subtitle={t("matchesHiddenSubtitle")}
-        buttonText={t("matchesHiddenButton")}
-        onUnlock={() => router.push("/profile")}
-      />
-    );
-  }
-
-  // Only the first load: a deck that filters left empty stays on screen,
-  // filters and all, while the deck for new filters loads.
-  if (
-    eligibility === "eligible" &&
-    loadingProfiles &&
-    profiles.length === 0 &&
-    presentGuestCount === null
-  ) {
-    return <LoadingStateView />;
-  }
-
-  // Nobody here yet. With guests here whom the filters leave out, the deck
-  // shows instead, so the filters can be changed.
-  if (!profiles.length && !presentGuestCount) {
-    return (
-      <EmptyMatchesView
-        topInset={insets.top}
-        bottomInset={insets.bottom}
-        title={t("noMatchesTitle")}
-        subtitle={t("noMatchesSubtitle")}
-      />
-    );
-  }
-
+  // The match modal is drawn over whichever view shows (BUG-043). Inside
+  // the deck, a refresh that left the deck empty unmounted it while open.
   return (
-    <MatchesDeck
-      topInset={insets.top}
-      bottomInset={insets.bottom}
-      venueName={liveTicket?.venue_name ?? ""}
-      eventTitle={liveTicket?.event_title ?? ""}
-      venuePeopleCount={Math.max(
-        filteredProfiles.length,
-        likeStats.eligibleGuestCount,
-      )}
-      genderFilter={genderFilter}
-      onGenderChange={setGenderFilter}
-      ageMin={ageRange.min}
-      ageMax={ageRange.max}
-      onAgeChange={handleAgeChange}
-      profiles={filteredProfiles}
-      hasMoreProfiles={hasMoreProfiles}
-      currentCardIndex={currentCardIndex}
-      onChangeCardIndex={handleVerticalIndexChange}
-      onLike={handleSwipeRight}
-      likedProfileIds={likedProfileIds}
-      likesUsed={likeStats.likesUsed}
-      likeLimit={likeStats.likeLimit}
-      likeLimitReached={isLikeDisabled}
-      likeDisabled={isLikeDisabled}
-      showMatch={showMatch}
-      matchedProfile={matchedProfile}
-      matchId={matchId}
-      onCloseMatch={() => setShowMatch(false)}
-      eventId={eventId}
-      onGuestBlocked={handleGuestBlocked}
-    />
+    <>
+      {renderView()}
+      <MatchModal
+        visible={showMatch}
+        profile={matchedProfile}
+        matchId={matchId}
+        onClose={() => setShowMatch(false)}
+      />
+    </>
   );
+
+  function renderView() {
+    if (eligibility === "checking") {
+      return <LoadingStateView />;
+    }
+
+    if (eligibility === "locked") {
+      return (
+        <LockedStateView
+          topInset={insets.top}
+          bottomInset={insets.bottom}
+          title={t("matchesLocked")}
+          subtitle={t("matchesLockedSubtitle")}
+          buttonText={t("matchesUnlockButton")}
+          onUnlock={() => router.push("/tickets")}
+        />
+      );
+    }
+
+    if (eligibility === "location_required" && liveTicket) {
+      return (
+        <LocationRequiredView
+          liveTicket={liveTicket}
+          userCoords={userCoords}
+          setUserCoords={setUserCoords}
+          topInset={insets.top}
+          bottomInset={insets.bottom}
+          locationDenied={locationDenied}
+          onBypass={() => setEligibility("eligible")}
+          onCheckLocation={() => checkLocation(liveTicket)}
+        />
+      );
+    }
+
+    // Before the loading view, so the refresh every 30 s doesn't flash it.
+    if (eligibility === "eligible" && selfHidden) {
+      return (
+        <LockedStateView
+          topInset={insets.top}
+          bottomInset={insets.bottom}
+          title={t("matchesHiddenTitle")}
+          subtitle={t("matchesHiddenSubtitle")}
+          buttonText={t("matchesHiddenButton")}
+          onUnlock={() => router.push("/profile")}
+        />
+      );
+    }
+
+    // Only the first load: a deck that filters left empty stays on screen,
+    // filters and all, while the deck for new filters loads.
+    if (
+      eligibility === "eligible" &&
+      loadingProfiles &&
+      profiles.length === 0 &&
+      presentGuestCount === null
+    ) {
+      return <LoadingStateView />;
+    }
+
+    // Nobody here yet. With guests here whom the filters leave out, the deck
+    // shows instead, so the filters can be changed.
+    if (!profiles.length && !presentGuestCount) {
+      return (
+        <EmptyMatchesView
+          topInset={insets.top}
+          bottomInset={insets.bottom}
+          title={t("matchesNobodyHereTitle")}
+          subtitle={t("matchesNobodyHereSubtitle")}
+        />
+      );
+    }
+
+    return (
+      <MatchesDeck
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        venueName={liveTicket?.venue_name ?? ""}
+        eventTitle={liveTicket?.event_title ?? ""}
+        venuePeopleCount={Math.max(
+          filteredProfiles.length,
+          likeStats.eligibleGuestCount,
+        )}
+        genderFilter={genderFilter}
+        onGenderChange={setGenderFilter}
+        ageMin={ageRange.min}
+        ageMax={ageRange.max}
+        onAgeChange={handleAgeChange}
+        profiles={filteredProfiles}
+        hasMoreProfiles={hasMoreProfiles}
+        currentCardIndex={currentCardIndex}
+        onChangeCardIndex={handleVerticalIndexChange}
+        onLike={handleSwipeRight}
+        likedProfileIds={likedProfileIds}
+        likesUsed={likeStats.likesUsed}
+        likeLimit={likeStats.likeLimit}
+        likeLimitReached={isLikeDisabled}
+        likeDisabled={isLikeDisabled}
+        eventId={eventId}
+        onGuestBlocked={handleGuestBlocked}
+      />
+    );
+  }
 }

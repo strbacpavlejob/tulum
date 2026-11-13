@@ -162,4 +162,40 @@ describe('TicketsService getTickets', () => {
       }),
     ]);
   });
+
+  it('tells the app how near the venue Matches needs a guest: 300 m, or CHECKIN_RADIUS_METERS', async () => {
+    const radiusWith = async (setting: string | undefined) => {
+      if (setting === undefined) delete process.env.CHECKIN_RADIUS_METERS;
+      else process.env.CHECKIN_RADIUS_METERS = setting;
+      const row = {
+        id: 'ticket-1',
+        event_id: EVENT_ID,
+        guest_id: GUEST_ID,
+        created_at: ticket.created_at,
+        events: null,
+      };
+      const queries = [
+        queryWithResult({ data: [row], error: null }),
+        queryWithResult({ data: [], error: null }),
+      ];
+      let queryIndex = 0;
+      const db = { from: () => ({ select: () => queries[queryIndex++] }) };
+      const service = new TicketsService(
+        { getClient: () => db } as unknown as SupabaseService,
+        {} as GuestSafetyService,
+      );
+      const [listed] = await service.getTickets(GUEST_ID);
+      return listed.checkin_radius_m;
+    };
+
+    try {
+      expect(await radiusWith(undefined)).toBe(300);
+      expect(await radiusWith('450')).toBe(450);
+      // Outside 50..5000, or not a number: the default.
+      expect(await radiusWith('20')).toBe(300);
+      expect(await radiusWith('lots')).toBe(300);
+    } finally {
+      delete process.env.CHECKIN_RADIUS_METERS;
+    }
+  });
 });

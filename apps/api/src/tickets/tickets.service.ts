@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import { checkinRadiusMeters } from '../common/checkin-radius';
 import { toUtcIsoString } from '../common/db-timestamp';
 import { isMissingFunction } from '../common/missing-function';
 import { pageSize } from '../common/paging';
@@ -130,6 +131,7 @@ export class TicketsService {
       }
     }
 
+    const checkinRadius = checkinRadiusMeters();
     return tickets.map((t) => ({
       id: String(t.id),
       event_id: String(t.event_id),
@@ -144,6 +146,8 @@ export class TicketsService {
       latitude: t.events?.venues?.latitude ?? 0,
       longitude: t.events?.venues?.longitude ?? 0,
       guest_count: guestCountMap.get(String(t.event_id)) ?? 0,
+      // How near the venue Matches needs the guest to be, in metres.
+      checkin_radius_m: checkinRadius,
     }));
   }
 

@@ -102,11 +102,12 @@ describe('EventsCrudService start times (BUG-009)', () => {
     ]);
   });
 
-  it('GET /events/active/:id sends the start time as a UTC instant', async () => {
+  it('GET /events/active/:id sends the start and end times as UTC instants', async () => {
     const details = await service.getActiveEventById(EVENT_ID);
     expect(details).toMatchObject({
       id: EVENT_ID,
       date: '2026-10-29T19:00:00.000Z',
+      end_date_time: '2026-10-30T00:00:00.000Z',
     });
   });
 });

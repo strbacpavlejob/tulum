@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import LoadingIndicator from "@/components/loading-indicator";
 import { fetchGuestMe } from "@/lib/api";
+import { signedInHomeHref } from "@/lib/pending-join";
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -93,8 +94,9 @@ export default function Index() {
     );
   }
 
+  // An event joined from its page before sign-in comes first.
   return onboardingComplete ? (
-    <Redirect href="/(tabs)" />
+    <Redirect href={signedInHomeHref()} />
   ) : (
     <Redirect href="/(auth)/onboarding" />
   );

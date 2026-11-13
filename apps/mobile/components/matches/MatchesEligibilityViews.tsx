@@ -103,6 +103,8 @@ type LocationRequiredViewProps = {
   bottomInset: number;
   onCheckLocation: () => void;
   onBypass: () => void;
+  /** The browser or the phone refuses Tulum the location. */
+  locationDenied?: boolean;
 };
 
 export function LocationRequiredView({
@@ -113,6 +115,7 @@ export function LocationRequiredView({
   bottomInset,
   onCheckLocation,
   onBypass,
+  locationDenied = false,
 }: LocationRequiredViewProps) {
   return (
     <View className="flex-1 bg-light-background dark:bg-dark-background">
@@ -127,7 +130,12 @@ export function LocationRequiredView({
         pointerEvents="box-none"
         style={[StyleSheet.absoluteFill, { zIndex: 2000, elevation: 2000 }]}
       >
-        <MatchesLocationGateCard topInset={topInset} onBypass={onBypass} />
+        <MatchesLocationGateCard
+          topInset={topInset}
+          onBypass={onBypass}
+          denied={locationDenied}
+          onCheckAgain={onCheckLocation}
+        />
 
         <MatchesTaxiButton
           eventId={liveTicket.event_id}
