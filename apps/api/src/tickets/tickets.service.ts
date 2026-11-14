@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { checkinRadiusMeters } from '../common/checkin-radius';
 import { toUtcIsoString } from '../common/db-timestamp';
+import { countTicketsByEvent } from '../common/ticket-counts';
 import { isMissingFunction } from '../common/missing-function';
 import { pageSize } from '../common/paging';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
@@ -75,10 +76,6 @@ interface TicketRow {
   } | null;
 }
 
-interface TicketCountRow {
-  event_id: string;
-}
-
 @Injectable()
 export class TicketsService {
   constructor(
@@ -114,22 +111,10 @@ export class TicketsService {
     if (error) throw error;
 
     const tickets = data ?? [];
-    const eventIds = [...new Set(tickets.map((ticket) => ticket.event_id))];
-    const guestCountMap = new Map<string, number>();
-
-    if (eventIds.length > 0) {
-      const { data: ticketCounts, error: ticketCountsError } = await this.db
-        .from(TICKETS_TABLE)
-        .select('event_id')
-        .in('event_id', eventIds)
-        .returns<TicketCountRow[]>();
-      if (ticketCountsError) throw ticketCountsError;
-
-      for (const ticketCount of ticketCounts ?? []) {
-        const id = ticketCount.event_id;
-        guestCountMap.set(id, (guestCountMap.get(id) ?? 0) + 1);
-      }
-    }
+    const guestCountMap = await countTicketsByEvent(
+      this.db,
+      tickets.map((ticket) => ticket.event_id),
+    );
 
     const checkinRadius = checkinRadiusMeters();
     return tickets.map((t) => ({

@@ -4,7 +4,7 @@ import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { TicketsService } from './tickets.service';
 
-type RpcResult = { data: unknown; error: unknown };
+type RpcResult = { data: unknown; error: unknown; count?: number | null };
 
 const GUEST_ID = 'guest-user';
 const EVENT_ID = '7d0f6c2a-3b4e-4f51-9a6b-2c8d1e0f3a45';
@@ -137,10 +137,8 @@ describe('TicketsService getTickets', () => {
       },
     };
     const ticketQuery = queryWithResult({ data: [row], error: null });
-    const countQuery = queryWithResult({
-      data: Array.from({ length: 99 }, () => ({ event_id: EVENT_ID })),
-      error: null,
-    });
+    // The event's guests, counted in the database (head-only, no rows).
+    const countQuery = queryWithResult({ data: null, count: 99, error: null });
     const queries = [ticketQuery, countQuery];
     let queryIndex = 0;
     const db = {

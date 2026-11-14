@@ -9,6 +9,7 @@ import {
   toUtcIsoString,
   withUtcEventTimes,
 } from '../common/db-timestamp';
+import { countTicketsByEvent } from '../common/ticket-counts';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -153,18 +154,9 @@ export class EventsCrudService {
     const { data: venues, error: venuesError } = await venuesQuery;
     if (venuesError) throw venuesError;
 
-    // Fetch guest counts per event
+    // Guests going per event
     const eventIds = uniqueEvents.map((e) => e.id as string);
-    const { data: ticketCounts, error: ticketCountsError } = await this.db
-      .from('tickets')
-      .select('event_id')
-      .in('event_id', eventIds);
-    if (ticketCountsError) throw ticketCountsError;
-    const guestCountMap = new Map<string, number>();
-    for (const t of ticketCounts ?? []) {
-      const id = t.event_id as string;
-      guestCountMap.set(id, (guestCountMap.get(id) ?? 0) + 1);
-    }
+    const guestCountMap = await countTicketsByEvent(this.db, eventIds);
 
     const venueMap = new Map(venues?.map((v) => [v.id as string, v]) ?? []);
 

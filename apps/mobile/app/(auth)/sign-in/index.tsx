@@ -7,7 +7,7 @@ import { Text } from "@/components/ui/text";
 
 import { savePendingJoin } from "@/lib/pending-join";
 import { useAuth, useSSO } from "@clerk/expo";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
@@ -355,19 +355,25 @@ export default function SignInScreen() {
             style={LEGAL_TEXT_STYLE}
           >
             {t("authTermsPrefix")}{" "}
-            <Text
-              className="text-light-color dark:text-dark-color"
-              style={LEGAL_TEXT_STYLE}
-            >
-              {t("authTermsOfService")}
-            </Text>{" "}
+            <Link href="https://tulum-app.com/terms" asChild>
+              <Text
+                accessibilityRole="link"
+                className="text-light-color dark:text-dark-color"
+                style={LEGAL_TEXT_STYLE}
+              >
+                {t("authTermsOfService")}
+              </Text>
+            </Link>{" "}
             {t("authTermsAnd")}{" "}
-            <Text
-              className="text-light-color dark:text-dark-color"
-              style={LEGAL_TEXT_STYLE}
-            >
-              {t("authPrivacyPolicy")}
-            </Text>
+            <Link href="https://tulum-app.com/privacy" asChild>
+              <Text
+                accessibilityRole="link"
+                className="text-light-color dark:text-dark-color"
+                style={LEGAL_TEXT_STYLE}
+              >
+                {t("authPrivacyPolicy")}
+              </Text>
+            </Link>
           </Text>
         </View>
       </ScrollView>

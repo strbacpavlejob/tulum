@@ -220,6 +220,22 @@ describe('Favorites on the active events routes (BUG-008)', () => {
 
   const http = () => request(app.getHttpServer());
 
+  it('GET /events/active counts the guests going to each event', async () => {
+    tables.tickets.push(
+      { id: 't1', guest_id: CALLER, event_id: SAVED_EVENT },
+      { id: 't2', guest_id: OTHER, event_id: SAVED_EVENT },
+      { id: 't3', guest_id: OTHER, event_id: UNSAVED_EVENT },
+    );
+
+    const res = await http().get('/events/active').expect(200);
+    const counts = Object.fromEntries(
+      (
+        res.body as { events: { id: string; guest_count: number }[] }
+      ).events.map((e) => [e.id, e.guest_count]),
+    );
+    expect(counts).toEqual({ [SAVED_EVENT]: 2, [UNSAVED_EVENT]: 1 });
+  });
+
   it('GET /events/active marks the events the signed-in caller saved', async () => {
     const res = await http().get('/events/active').set(AS_CALLER).expect(200);
     expect(favoritesIn(res.body)).toEqual({
