@@ -239,6 +239,27 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
     });
   });
 
+  it('completes onboarding with only what Matches needs (the short onboarding)', async () => {
+    const short = {
+      first_name: 'Ana',
+      gender: 'female',
+      interested_in: ['male'],
+      picture_urls: ['https://example.com/ana.jpg'],
+      birthday: '1999-04-02',
+    };
+    const submitted = await http()
+      .post('/guests/onboarding')
+      .set(AS_CALLER)
+      .send(short)
+      .expect(201);
+    expect(submitted.body.isOnboardingComplete).toBe(true);
+    // Not sent, so not stored: seeking is answered later from the profile.
+    expect(tables.guests[0]).not.toHaveProperty('seeking');
+
+    const status = await http().get('/guests/me').set(AS_CALLER).expect(200);
+    expect(status.body.isOnboardingComplete).toBe(true);
+  });
+
   it('accepts a 50-character name', async () => {
     const name = 'A'.repeat(50);
     await http()

@@ -1,6 +1,7 @@
 import FindModal from "@/components/FindModal";
 import GuestSafetySheet from "@/components/GuestSafetySheet";
 import { useChatSocket } from "@/hooks/useChatSocket";
+import { markMatchAsRead } from "@/lib/inboxUnread";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -198,6 +199,14 @@ export default function ChatModal({
     () => [...socketMessages].reverse(),
     [socketMessages],
   );
+
+  // What arrives while the chat is open is read: the inbox badge leaves it
+  // out. The message's own time, so a phone clock behind the API's can't
+  // leave it unread.
+  const newestAt = socketMessages[socketMessages.length - 1]?.timestamp;
+  useEffect(() => {
+    if (newestAt) void markMatchAsRead(match.id, newestAt.toISOString());
+  }, [match.id, newestAt]);
 
   const prevLen = usePrevious(messages.length);
 

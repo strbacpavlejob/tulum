@@ -5,6 +5,7 @@
  * in-memory tables.
  */
 import { describe, expect, it } from '@jest/globals';
+import { InboxPushService } from '../chats/inbox-push.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { MatchesService } from '../matches/matches.service';
 import { R2Service } from '../r2/r2.service';
@@ -188,6 +189,7 @@ describe('Profile details other guests see', () => {
     const matches = new MatchesService(
       supabase,
       new GuestSafetyService(supabase),
+      new InboxPushService(),
     );
 
     const [match] = await matches.getMyMatches(CALLER);
@@ -241,6 +243,7 @@ describe('Profile details other guests see', () => {
     const matches = new MatchesService(
       supabase,
       new GuestSafetyService(supabase),
+      new InboxPushService(),
     );
 
     const [match] = await matches.getMyMatches(CALLER);

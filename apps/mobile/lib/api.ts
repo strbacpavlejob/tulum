@@ -412,8 +412,8 @@ export function mapUserPatchToGuestUpdates(
   if ("tags" in patch) updates.interests = patch.tags ?? [];
   if ("info" in patch) updates.bio = patch.info || null;
   if ("lookingFor" in patch) {
-    // Onboarding only counts as complete while seeking is set, so an empty
-    // choice is never sent.
+    // The choice can be changed but not cleared, so an empty one is never
+    // sent.
     const seeking = mapLookingForToSeeking(patch.lookingFor);
     if (seeking) updates.seeking = seeking;
   }
@@ -526,7 +526,8 @@ export interface GuestMeResponse {
 export interface OnboardingPayload {
   first_name: string;
   gender: GenderValue;
-  seeking: SeekingValue;
+  /** Asked later, in "Finish your profile". */
+  seeking?: SeekingValue;
   interested_in: GenderValue[];
   interests?: string[];
   venue_types?: VenueType[];

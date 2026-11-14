@@ -66,11 +66,15 @@ interface DeckPage {
   endCursor: string | null;
 }
 
+/**
+ * Whether the guest answered what Matches needs: their gender and who they
+ * are interested in. Why they're here (seeking) used to count too; the short
+ * onboarding leaves it for later.
+ */
 function isOnboardingComplete(guest: Record<string, unknown> | null): boolean {
   if (!guest) return false;
   return !!(
     guest.gender != null &&
-    guest.seeking != null &&
     Array.isArray(guest.interested_in) &&
     (guest.interested_in as unknown[]).length > 0
   );
@@ -452,7 +456,8 @@ export class GuestsService {
     const payload = {
       user_id: userId,
       gender: dto.gender,
-      seeking: dto.seeking,
+      // Left out when not sent, so it isn't cleared.
+      ...(dto.seeking ? { seeking: dto.seeking } : {}),
       interested_in: dto.interested_in,
       interests: dto.interests ?? [],
       picture_urls: dto.picture_urls ?? [],

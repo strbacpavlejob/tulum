@@ -9,6 +9,7 @@
  */
 import { BadRequestException } from '@nestjs/common';
 import { beforeEach, describe, expect, it } from '@jest/globals';
+import { InboxPushService } from '../chats/inbox-push.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { GuestsService } from '../guests/guests.service';
 import { MatchesService } from '../matches/matches.service';
@@ -244,7 +245,11 @@ describe('Checking in (POST /events/sessions, BUG-030)', () => {
 });
 
 describe('Swiping with duplicate sessions (BUG-030)', () => {
-  const service = new MatchesService(supabaseService, guestSafety);
+  const service = new MatchesService(
+    supabaseService,
+    guestSafety,
+    new InboxPushService(),
+  );
   const like = () =>
     service.submitSwipeDecision(ME, {
       other_user_id: OTHER,

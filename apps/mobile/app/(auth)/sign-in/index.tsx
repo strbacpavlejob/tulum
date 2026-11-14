@@ -5,12 +5,22 @@ import GoogleIcon from "@/components/illustrations/google-icon";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInAppBrowser } from "@/hooks/useInAppBrowser";
+import {
+  isRateLimited,
+  retryDelayMs,
+  retryOnRateLimit,
+} from "@/lib/clerk-retry";
+import { chromeIntentUrl } from "@/lib/in-app-browser";
 import { savePendingJoin } from "@/lib/pending-join";
-import { useAuth, useSSO } from "@clerk/expo";
+import { generatedPassword, generatedUsername } from "@/lib/sign-up-fields";
+import { useAuth, useClerk, useSSO } from "@clerk/expo";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
+import { Mail } from "lucide-react-native";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -49,16 +59,40 @@ const LEGAL_TEXT_STYLE = {
 export default function SignInScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const theme = useAppTheme();
   const { height: screenHeight } = useWindowDimensions();
 
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { startSSOFlow } = useSSO();
+  const clerk = useClerk();
+  // Google refuses sign-in inside Instagram's or Facebook's own browser.
+  const inAppBrowser = useInAppBrowser();
 
   const [loadingProvider, setLoadingProvider] = useState<
     "oauth_apple" | "oauth_google" | null
   >(null);
 
   const ssoInProgress = useRef(false);
+
+  // Clerk answered 429 and a call is waiting to go again.
+  const [waiting, setWaiting] = useState(false);
+  // Clerk refused to start Google or Apple (429). Browsers open their
+  // window only from a tap, so the guest taps again once this has passed.
+  const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (cooldownEndsAt === null) return;
+    const tick = setInterval(() => {
+      const time = Date.now();
+      setNow(time);
+      if (time >= cooldownEndsAt) setCooldownEndsAt(null);
+    }, 250);
+    return () => clearInterval(tick);
+  }, [cooldownEndsAt]);
+  const cooldownSeconds =
+    cooldownEndsAt === null
+      ? 0
+      : Math.max(1, Math.ceil((cooldownEndsAt - now) / 1000));
 
   const [fontsLoaded] = useFonts({
     Fredoka_500Medium,
@@ -109,12 +143,6 @@ export default function SignInScreen() {
     const missing = signUp.missingFields ?? [];
     if (!missing.length || !signUp.update) return false;
 
-    const emailPrefix =
-      signUp.emailAddress?.split("@")[0]?.replace(/[^a-zA-Z0-9_]/g, "") ??
-      "user";
-
-    const suffix = Math.floor(1000 + Math.random() * 9000);
-
     const updatePayload: {
       username?: string;
       lastName?: string;
@@ -122,7 +150,7 @@ export default function SignInScreen() {
     } = {};
 
     if (missing.includes("username")) {
-      updatePayload.username = `${emailPrefix}${suffix}`.toLowerCase();
+      updatePayload.username = generatedUsername(signUp.emailAddress);
     }
 
     if (missing.includes("last_name")) {
@@ -130,7 +158,7 @@ export default function SignInScreen() {
     }
 
     if (missing.includes("password")) {
-      updatePayload.password = `Sso!${suffix}Tmp#${Date.now()}`;
+      updatePayload.password = generatedPassword();
     }
 
     const updatedSignUp = await signUp.update(updatePayload);
@@ -181,6 +209,10 @@ export default function SignInScreen() {
         toast.error(t("authSsoSignInFailed"));
       }
     } catch (err) {
+      if (isRateLimited(err)) {
+        await continueAfterRateLimit(err);
+        return;
+      }
       console.error(`${strategy} sign-in error:`, err);
 
       toast.error(
@@ -189,8 +221,58 @@ export default function SignInScreen() {
     } finally {
       ssoInProgress.current = false;
       setLoadingProvider(null);
+      setWaiting(false);
     }
   };
+
+  // Clerk allows 5 sign-ins and 5 sign-ups every 10 s from one IP, and a
+  // venue's guests can share one. When Google or Apple has already answered,
+  // only creating the account was refused: that is tried again here, with
+  // a note instead of an error. Before that, the guest taps again once the
+  // wait is over.
+  const continueAfterRateLimit = async (refusal: unknown) => {
+    const client = clerk.client;
+    if (client?.signIn.firstFactorVerification.status !== "transferable") {
+      setNow(Date.now());
+      setCooldownEndsAt(Date.now() + retryDelayMs(refusal, 1));
+      return;
+    }
+    try {
+      const signUp = await retryOnRateLimit(
+        () => client.signUp.create({ transfer: true }),
+        () => setWaiting(true),
+      );
+      if (signUp.createdSessionId) {
+        await clerk.setActive({ session: signUp.createdSessionId });
+        router.replace("/onboarding");
+      } else if (
+        await completeSsoSignUpIfNeeded({ signUp, setActive: clerk.setActive })
+      ) {
+        router.replace("/onboarding");
+      } else {
+        toast.error(t("authSsoSignInFailed"));
+      }
+    } catch (err) {
+      console.error("sign-up after Clerk's rate limit failed:", err);
+      toast.error(
+        isRateLimited(err) ? t("authBusyLater") : t("authSsoSignInFailed"),
+      );
+    }
+  };
+
+  const openEmailSignIn = () => {
+    router.push({
+      pathname: "/(auth)/sign-in/email",
+      params: join ? { join, ...(src ? { src } : {}) } : {},
+    });
+  };
+
+  const openInChrome = () => {
+    if (typeof window === "undefined") return;
+    window.location.href = chromeIntentUrl(window.location.href);
+  };
+
+  const ssoDisabled = loadingProvider !== null || cooldownEndsAt !== null;
 
   if (!isAuthLoaded || isSignedIn || !fontsLoaded) {
     return null;
@@ -301,18 +383,94 @@ export default function SignInScreen() {
             {t("authSignInSubtitle")}
           </Text>
 
-          {/* Apple */}
+          {inAppBrowser ? (
+            <View className="mb-3 rounded-2xl bg-light-backgroundMuted p-4 dark:bg-dark-backgroundMuted">
+              <Text
+                className="mb-1 text-light-colorStrong dark:text-dark-colorStrong"
+                style={{ fontFamily: "Fredoka_600SemiBold", fontSize: 16 }}
+              >
+                {t("authInAppTitle")}
+              </Text>
+              <Text
+                className="text-light-colorMuted dark:text-dark-colorMuted"
+                style={{ fontFamily: "Fredoka_500Medium", fontSize: 14 }}
+              >
+                {inAppBrowser.platform === "android"
+                  ? t("authInAppBodyAndroid", { app: inAppBrowser.app })
+                  : t("authInAppBodyIos", { app: inAppBrowser.app })}
+              </Text>
+              {inAppBrowser.platform === "android" && (
+                <Button
+                  onPress={openInChrome}
+                  className="mt-3 h-12 rounded-2xl bg-light-color dark:bg-dark-color"
+                >
+                  <Text
+                    className="text-white"
+                    style={{ fontFamily: "Fredoka_600SemiBold", fontSize: 16 }}
+                  >
+                    {t("authOpenInChrome")}
+                  </Text>
+                </Button>
+              )}
+            </View>
+          ) : (
+            <>
+              {/* Apple */}
+              <Button
+                disabled={ssoDisabled}
+                onPress={() => handleSSOSignIn("oauth_apple")}
+                className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
+              >
+                {loadingProvider === "oauth_apple" ? (
+                  <ActivityIndicator color={COLORS.purple} />
+                ) : (
+                  <AppleIcon fill="#737373" />
+                )}
+
+                <Text
+                  className="text-light-colorStrong dark:text-dark-colorStrong"
+                  style={{
+                    fontFamily: "Fredoka_600SemiBold",
+                    fontSize: 16,
+                  }}
+                >
+                  {t("authContinueWithApple")}
+                </Text>
+              </Button>
+
+              {/* Google */}
+              <Button
+                disabled={ssoDisabled}
+                onPress={() => handleSSOSignIn("oauth_google")}
+                className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
+              >
+                {loadingProvider === "oauth_google" ? (
+                  <ActivityIndicator color={COLORS.purple} />
+                ) : (
+                  <GoogleIcon />
+                )}
+
+                <Text
+                  className="text-light-colorStrong dark:text-dark-colorStrong"
+                  style={{
+                    fontFamily: "Fredoka_600SemiBold",
+                    fontSize: 16,
+                  }}
+                >
+                  {t("authContinueWithGoogle")}
+                </Text>
+              </Button>
+            </>
+          )}
+
+          {/* Email code: the fallback for in-app browsers and for anyone
+              without Google or Apple. */}
           <Button
             disabled={loadingProvider !== null}
-            onPress={() => handleSSOSignIn("oauth_apple")}
+            onPress={openEmailSignIn}
             className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
           >
-            {loadingProvider === "oauth_apple" ? (
-              <ActivityIndicator color={COLORS.purple} />
-            ) : (
-              <AppleIcon fill="#737373" />
-            )}
-
+            <Mail size={20} color={theme.colorStrong} />
             <Text
               className="text-light-colorStrong dark:text-dark-colorStrong"
               style={{
@@ -320,32 +478,26 @@ export default function SignInScreen() {
                 fontSize: 16,
               }}
             >
-              {t("authContinueWithApple")}
+              {t("authContinueWithEmail")}
             </Text>
           </Button>
 
-          {/* Google */}
-          <Button
-            disabled={loadingProvider !== null}
-            onPress={() => handleSSOSignIn("oauth_google")}
-            className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-          >
-            {loadingProvider === "oauth_google" ? (
-              <ActivityIndicator color={COLORS.purple} />
-            ) : (
-              <GoogleIcon />
-            )}
-
+          {waiting && (
             <Text
-              className="text-light-colorStrong dark:text-dark-colorStrong"
-              style={{
-                fontFamily: "Fredoka_600SemiBold",
-                fontSize: 16,
-              }}
+              className="mt-1 text-center text-light-colorMuted dark:text-dark-colorMuted"
+              style={LEGAL_TEXT_STYLE}
             >
-              {t("authContinueWithGoogle")}
+              {t("authBusyRetrying")}
             </Text>
-          </Button>
+          )}
+          {cooldownEndsAt !== null && (
+            <Text
+              className="mt-1 text-center text-light-colorMuted dark:text-dark-colorMuted"
+              style={LEGAL_TEXT_STYLE}
+            >
+              {t("authBusyTryAgain", { seconds: cooldownSeconds })}
+            </Text>
+          )}
 
           <ClerkCaptcha />
 

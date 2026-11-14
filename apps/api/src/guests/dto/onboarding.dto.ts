@@ -75,9 +75,12 @@ export class OnboardingDto {
   @IsEnum(GenderEnum)
   gender!: GenderEnum;
 
-  @ApiProperty({ enum: SeekingEnum })
+  // The short onboarding leaves it for "Finish your profile" (PATCH
+  // /users/me); apps from before it still send it.
+  @ApiPropertyOptional({ enum: SeekingEnum })
+  @IsOptional()
   @IsEnum(SeekingEnum)
-  seeking!: SeekingEnum;
+  seeking?: SeekingEnum;
 
   @ApiProperty({ enum: GenderEnum, isArray: true })
   @IsArray()

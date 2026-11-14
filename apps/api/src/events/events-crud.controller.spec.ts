@@ -21,6 +21,7 @@ import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
 import { FavoritesController } from '../favorites/favorites.controller';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
+import { RedisService } from '../redis/redis.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EventsCrudController } from './events-crud.controller';
 import { EventsCrudService } from './events-crud.service';
@@ -83,9 +84,24 @@ const seedTables = (): Record<string, Row[]> => ({
 });
 
 let tables = seedTables();
+/** How many queries each table got, to see what the cache saved. */
+let tableReads: Record<string, number> = {};
+
+// Redis, in memory: remember keeps each value until the next test. Values go
+// through JSON, as they do in Redis.
+const cache = new Map<string, unknown>();
+const redis = {
+  remember: async (key: string, _ttl: number, load: () => Promise<unknown>) => {
+    if (!cache.has(key)) {
+      cache.set(key, JSON.parse(JSON.stringify(await load())) as unknown);
+    }
+    return cache.get(key);
+  },
+};
 
 // Just enough of the supabase-js query builder for the two services.
 function from(table: string) {
+  tableReads[table] = (tableReads[table] ?? 0) + 1;
   const rows = (tables[table] ??= []);
   const filters: ((row: Row) => boolean)[] = [];
   let deleting = false;
@@ -199,6 +215,7 @@ describe('Favorites on the active events routes (BUG-008)', () => {
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },
         { provide: R2Service, useValue: {} },
+        { provide: RedisService, useValue: redis },
       ],
     }).compile();
 
@@ -216,6 +233,8 @@ describe('Favorites on the active events routes (BUG-008)', () => {
 
   beforeEach(() => {
     tables = seedTables();
+    tableReads = {};
+    cache.clear();
   });
 
   const http = () => request(app.getHttpServer());
@@ -321,6 +340,66 @@ describe('Favorites on the active events routes (BUG-008)', () => {
       .set(AS_CALLER)
       .expect(200);
     expect(caller.body).toMatchObject({ going_count: 2, isAttending: true });
+  });
+
+  it('GET /events/active reads the events once per cache period, and each caller still gets their own favorites', async () => {
+    const asCaller = await http().get('/events/active').set(AS_CALLER);
+    const asOther = await http().get('/events/active').set(AS_OTHER);
+    const anonymous = await http().get('/events/active');
+    const onlyFavorites = await http()
+      .get('/events/active?only_favorites=true')
+      .set(AS_OTHER);
+
+    expect(tableReads.events).toBe(1);
+    expect(favoritesIn(asCaller.body)).toEqual({
+      [SAVED_EVENT]: true,
+      [UNSAVED_EVENT]: false,
+    });
+    expect(favoritesIn(asOther.body)).toEqual({
+      [SAVED_EVENT]: false,
+      [UNSAVED_EVENT]: true,
+    });
+    expect(favoritesIn(anonymous.body)).toEqual({
+      [SAVED_EVENT]: false,
+      [UNSAVED_EVENT]: false,
+    });
+    expect(favoritesIn(onlyFavorites.body)).toEqual({ [UNSAVED_EVENT]: true });
+    expect(
+      (onlyFavorites.body as { pins: { instances: number }[] }).pins,
+    ).toEqual([expect.objectContaining({ venue_id: VENUE_ID, instances: 1 })]);
+  });
+
+  it('GET /events/active/:id caches the event, but counts the guests and reads the caller fresh', async () => {
+    await http().get(`/events/active/${SAVED_EVENT}`).expect(200);
+    // Someone joins after the event was cached.
+    tables.tickets.push({ id: 't1', guest_id: CALLER, event_id: SAVED_EVENT });
+
+    const caller = await http()
+      .get(`/events/active/${SAVED_EVENT}`)
+      .set(AS_CALLER)
+      .expect(200);
+
+    expect(tableReads.events).toBe(1);
+    expect(caller.body).toMatchObject({
+      going_count: 1,
+      isAttending: true,
+      isFavorite: true,
+      venue_name: 'Witch Bar',
+    });
+  });
+
+  it('GET /events/active/:id answers 404 for an unknown event without caching it, or marking it seen', async () => {
+    const unknown = '0f0e0d0c-0b0a-4908-8706-050403020100';
+    const seenRows = () =>
+      tables.event_engagements.filter(
+        (e) => e.event_id === unknown && e.engagement_type === 'seen',
+      );
+    await http().get(`/events/active/${unknown}`).set(AS_CALLER).expect(404);
+    expect(seenRows()).toHaveLength(0);
+
+    tables.events.push(event(unknown, 'Added since'));
+    await http().get(`/events/active/${unknown}`).set(AS_CALLER).expect(200);
+    expect(seenRows()).toHaveLength(1);
   });
 
   it('a favorite saved with POST /favorites stays until DELETE /favorites removes it', async () => {

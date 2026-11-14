@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InboxPushService } from '../chats/inbox-push.service';
 import { parseDbTimestampMs } from '../common/db-timestamp';
 import {
   MAX_LIKE_PERCENTAGE,
@@ -47,6 +48,7 @@ export class MatchesService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly guestSafety: GuestSafetyService,
+    private readonly inboxPush: InboxPushService,
   ) {}
 
   private get db() {
@@ -397,6 +399,8 @@ export class MatchesService {
       };
     }
 
+    // Only the request that made the match tells the guests' apps.
+    this.inboxPush.matchCreated([guestId1, guestId2]);
     return {
       matched: true,
       match_id: match.id as number,

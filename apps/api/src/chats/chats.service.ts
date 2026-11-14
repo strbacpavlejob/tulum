@@ -5,6 +5,16 @@ import { SupabaseService } from '../supabase/supabase.service';
 const CHATS_TABLE = 'chats';
 const MESSAGES_TABLE = 'chat_messages';
 
+/** A chat_messages row. */
+export interface ChatMessageRow {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  message: string;
+  is_read: boolean;
+  sent_at: string;
+}
+
 @Injectable()
 export class ChatsService {
   constructor(
@@ -22,7 +32,14 @@ export class ChatsService {
   // cannot be probed. A block either way closes the chat for both guests the
   // same way. The chat socket uses these checks too.
 
-  private async isMatchParticipant(matchId: number, userId: string) {
+  /**
+   * The match's other guest, if the user is one of its two guests and
+   * neither has blocked the other; otherwise null.
+   */
+  private async matchPartner(
+    matchId: number,
+    userId: string,
+  ): Promise<string | null> {
     const { data, error } = await this.db
       .from('matches')
       .select('guest_id_1, guest_id_2')
@@ -30,12 +47,18 @@ export class ChatsService {
       .maybeSingle();
     if (error) throw error;
     if (!data || (data.guest_id_1 !== userId && data.guest_id_2 !== userId)) {
-      return false;
+      return null;
     }
     const otherId = (
       data.guest_id_1 === userId ? data.guest_id_2 : data.guest_id_1
     ) as string;
-    return !(await this.guestSafety.isBlockedBetween(userId, otherId));
+    return (await this.guestSafety.isBlockedBetween(userId, otherId))
+      ? null
+      : otherId;
+  }
+
+  private async isMatchParticipant(matchId: number, userId: string) {
+    return (await this.matchPartner(matchId, userId)) !== null;
   }
 
   async assertMatchParticipant(matchId: number, userId: string) {
@@ -44,20 +67,21 @@ export class ChatsService {
     }
   }
 
-  private async findChatForParticipant(chatId: string, userId: string) {
+  /** The chat and the other guest, if the user is one of its match's guests. */
+  private async findChatAndPartner(chatId: string, userId: string) {
     const { data: chat, error } = await this.db
       .from(CHATS_TABLE)
       .select('id, match_id, event_id, created_at')
       .eq('id', chatId)
       .maybeSingle();
     if (error) throw error;
-    if (
-      !chat ||
-      !(await this.isMatchParticipant(chat.match_id as number, userId))
-    ) {
-      return null;
-    }
-    return chat;
+    if (!chat) return null;
+    const partnerId = await this.matchPartner(chat.match_id as number, userId);
+    return partnerId === null ? null : { chat, partnerId };
+  }
+
+  private async findChatForParticipant(chatId: string, userId: string) {
+    return (await this.findChatAndPartner(chatId, userId))?.chat ?? null;
   }
 
   /** The chat, if the user is one of its match's guests; otherwise 404. */
@@ -65,6 +89,16 @@ export class ChatsService {
     const chat = await this.findChatForParticipant(chatId, userId);
     if (!chat) throw new NotFoundException('Chat not found');
     return chat;
+  }
+
+  /**
+   * The other guest of the chat's match, if the user is one of its guests;
+   * otherwise 404, as getChatForParticipant.
+   */
+  async getChatPartner(chatId: string, userId: string): Promise<string> {
+    const found = await this.findChatAndPartner(chatId, userId);
+    if (!found) throw new NotFoundException('Chat not found');
+    return found.partnerId;
   }
 
   async getChatByMatchId(matchId: number) {
@@ -127,12 +161,14 @@ export class ChatsService {
     return data ?? [];
   }
 
-  async createMessage(message: Record<string, unknown>) {
+  async createMessage(
+    message: Record<string, unknown>,
+  ): Promise<ChatMessageRow> {
     const { data, error } = await this.db
       .from(MESSAGES_TABLE)
       .insert(message)
       .select()
-      .single();
+      .single<ChatMessageRow>();
     if (error) throw error;
     return data;
   }

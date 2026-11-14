@@ -2,6 +2,7 @@ import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
@@ -14,6 +15,7 @@ import { isUUID } from 'class-validator';
 import { DefaultEventsMap, Server, Socket } from 'socket.io';
 import { verifySessionUserId } from '../common/clerk-session';
 import { ChatsService } from './chats.service';
+import { chatRoom, InboxPushService, userRoom } from './inbox-push.service';
 
 /** data.userId is the Clerk user verified in the handshake. */
 type ChatSocket = Socket<
@@ -23,8 +25,6 @@ type ChatSocket = Socket<
   { userId: string }
 >;
 
-const chatRoom = (chatId: string) => `chat:${chatId}`;
-
 // The global ClerkAuthGuard does not authenticate sockets. Every connection
 // is authenticated here, in the handshake, and each event only reaches chats
 // whose match the user is a guest of.
@@ -32,7 +32,9 @@ const chatRoom = (chatId: string) => `chat:${chatId}`;
   cors: { origin: '*', credentials: true },
   transports: ['websocket', 'polling'],
 })
-export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
+export class ChatsGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -41,9 +43,13 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
   });
 
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(
+    private readonly chatsService: ChatsService,
+    private readonly inboxPush: InboxPushService,
+  ) {}
 
   afterInit(server: Server) {
+    this.inboxPush.attach(server);
     // socket.io runs this before it accepts the connection, so no event is
     // handled until the token is verified. A refused client gets a
     // connect_error with the reason.
@@ -58,6 +64,12 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
     });
   }
 
+  handleConnection(client: ChatSocket) {
+    // The user's room, for InboxPushService: the app learns of new matches
+    // and messages from it instead of polling.
+    void client.join(userRoom(client.data.userId));
+  }
+
   handleDisconnect(_client: Socket) {
     // nothing to clean up — rooms are per-connection
   }
@@ -67,7 +79,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
     @ConnectedSocket() client: ChatSocket,
     @MessageBody() payload: { chatId: string },
   ) {
-    const chatId = await this.assertParticipant(client, payload?.chatId);
+    const { chatId } = await this.assertParticipant(client, payload?.chatId);
     await client.join(chatRoom(chatId));
     return { event: 'joined', data: { chatId } };
   }
@@ -81,7 +93,10 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
     if (!text) return;
     // Checked on every send, like POST /chats/messages, so a chat deleted by
     // the expiry cleanup stops taking messages.
-    const chatId = await this.assertParticipant(client, payload.chatId);
+    const { chatId, partnerId } = await this.assertParticipant(
+      client,
+      payload.chatId,
+    );
 
     const row = await this.chatsService.createMessage({
       chat_id: chatId,
@@ -89,13 +104,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
       message: text,
     });
 
-    this.server.to(chatRoom(chatId)).emit('new_message', {
-      id: row.id,
-      chatId,
-      senderId: row.sender_id,
-      text: row.message,
-      sentAt: row.sent_at,
-    });
+    this.inboxPush.messageSent(chatId, row, partnerId);
   }
 
   @SubscribeMessage('typing')
@@ -139,25 +148,28 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayDisconnect {
   }
 
   /**
-   * The chat id, if the socket's user is one of the two guests of the chat's
-   * match. Anyone else gets the same 'Chat not found' as from the REST
-   * routes, so chat ids can't be probed.
+   * The chat id and the match's other guest, if the socket's user is one of
+   * the two guests of the chat's match. Anyone else gets the same 'Chat not
+   * found' as from the REST routes, so chat ids can't be probed.
    */
   private async assertParticipant(
     client: ChatSocket,
     chatId: unknown,
-  ): Promise<string> {
+  ): Promise<{ chatId: string; partnerId: string }> {
     if (typeof chatId !== 'string' || !isUUID(chatId)) {
       throw new WsException('Chat not found');
     }
     try {
-      await this.chatsService.getChatForParticipant(chatId, client.data.userId);
+      const partnerId = await this.chatsService.getChatPartner(
+        chatId,
+        client.data.userId,
+      );
+      return { chatId, partnerId };
     } catch (err) {
       if (err instanceof NotFoundException) {
         throw new WsException('Chat not found');
       }
       throw err;
     }
-    return chatId;
   }
 }

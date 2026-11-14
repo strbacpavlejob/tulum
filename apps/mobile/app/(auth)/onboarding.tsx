@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
-import { Textarea } from "@/components/ui/textarea";
 import LanguageSelector from "@/components/LanguageSelector";
-import { VENUE_TYPES } from "@/constants/options";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { cn } from "@/lib/utils";
 import {
@@ -12,20 +10,19 @@ import {
   submitOnboarding,
   uploadGuestPhoto,
 } from "@/lib/api";
-import type { GenderValue, SeekingValue } from "@/lib/api";
+import type { GenderValue } from "@/lib/api";
 import { signedInHomeHref } from "@/lib/pending-join";
 import useStore from "@/store/useStore";
 import { LookingForGender } from "@/types/user";
-import { useAuth } from "@clerk/expo";
+import { useAuth, useUser } from "@clerk/expo";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
-import type { VenueType } from "@/types/filter";
 import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner-native";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -42,46 +39,6 @@ import { differenceInYears, format, subYears } from "date-fns";
 // The API refuses a longer first name (apps/api/src/guests/dto/
 // onboarding.dto.ts). Change both together.
 const FIRST_NAME_MAX_LENGTH = 50;
-
-const TAGS_OPTIONS = [
-  { value: "Photography", labelKey: "photography" },
-  { value: "Travel", labelKey: "travel" },
-  { value: "Yoga", labelKey: "yoga" },
-  { value: "Music", labelKey: "music" },
-  { value: "Coffee", labelKey: "coffee" },
-  { value: "Art", labelKey: "art" },
-  { value: "Dancing", labelKey: "dancing" },
-  { value: "Hiking", labelKey: "hiking" },
-  { value: "Food", labelKey: "food" },
-  { value: "Tech", labelKey: "tech" },
-  { value: "Fitness", labelKey: "fitness" },
-  { value: "Reading", labelKey: "reading" },
-  { value: "Movies", labelKey: "movies" },
-  { value: "Gaming", labelKey: "gaming" },
-  { value: "Fashion", labelKey: "fashion" },
-];
-
-const LOOKING_FOR_OPTIONS: { labelKey: string; value: SeekingValue }[] = [
-  { labelKey: "onboardingSeekingCasual", value: "casual" },
-  { labelKey: "onboardingSeekingRelationship", value: "relationship" },
-  { labelKey: "onboardingSeekingFriendship", value: "friendship" },
-  { labelKey: "onboardingSeekingParty", value: "party" },
-];
-
-function mapSeekingToLookingFor(
-  seeking: SeekingValue,
-): "to date" | "to party" | "open to chat" | "ready for a relationship" {
-  switch (seeking) {
-    case "casual":
-      return "to date";
-    case "relationship":
-      return "ready for a relationship";
-    case "friendship":
-      return "open to chat";
-    case "party":
-      return "to party";
-  }
-}
 
 const GENDER_OPTIONS: {
   labelKey: string;
@@ -103,16 +60,15 @@ const LOOKING_FOR_GENDER_OPTIONS: {
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
+// Only what Matches needs, so a guest who scanned a QR code at the door is
+// swiping in about a minute. Why they're here, interests and a bio are added
+// later from the Profile tab ("Finish your profile").
 const STEP_IDS = [
   "name",
   "birthday",
   "gender",
   "lookingForGender",
-  "lookingFor",
-  "tags",
-  "venueTypes",
   "photo",
-  "bio",
 ] as const;
 
 const TOTAL_STEPS = STEP_IDS.length;
@@ -123,40 +79,6 @@ const STEP_CONTENT_STYLE = {
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function ChipOption({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        "mb-2 mr-2 flex-row items-center gap-2 rounded-2xl border-[1.5px] px-4 py-3",
-        selected
-          ? "border-light-color bg-light-color dark:border-dark-color dark:bg-dark-color"
-          : "border-transparent bg-light-backgroundMuted dark:bg-dark-backgroundMuted",
-      )}
-    >
-      {selected && <Check size={14} color="#fff" />}
-      <Text
-        className={cn(
-          "text-sm",
-          selected
-            ? "font-semibold text-white"
-            : "font-normal text-light-colorStrong dark:text-dark-colorStrong",
-        )}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 function CardOption({
   label,
@@ -237,7 +159,8 @@ function PhotoPickerStep({
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(permissionTitle, permissionMessage);
+      // A toast, not Alert.alert: Alert.alert does nothing on web.
+      toast.error(permissionTitle, { description: permissionMessage });
       return;
     }
 
@@ -262,10 +185,9 @@ function PhotoPickerStep({
       );
       onPhotosChange(mergePhotoUrls(photos, updatedUrls));
     } catch (err) {
-      Alert.alert(
-        uploadFailedTitle,
-        err instanceof Error ? err.message : String(err),
-      );
+      toast.error(uploadFailedTitle, {
+        description: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       onUploadingChange(false);
     }
@@ -280,10 +202,9 @@ function PhotoPickerStep({
       const fallbackUrls = photos.filter((u) => u !== url);
       onPhotosChange(updatedUrls.length ? updatedUrls : fallbackUrls);
     } catch (err) {
-      Alert.alert(
-        removeFailedTitle,
-        err instanceof Error ? err.message : String(err),
-      );
+      toast.error(removeFailedTitle, {
+        description: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       onUploadingChange(false);
     }
@@ -367,6 +288,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { setUser } = useStore();
   const { userId, getToken } = useAuth();
+  const { user: clerkUser } = useUser();
 
   const steps = [
     {
@@ -390,29 +312,9 @@ export default function OnboardingScreen() {
       subtitle: t("onboardingStepInterestedSubtitle"),
     },
     {
-      id: "lookingFor",
-      title: t("onboardingStepLookingForTitle"),
-      subtitle: t("onboardingStepLookingForSubtitle"),
-    },
-    {
-      id: "tags",
-      title: t("onboardingStepTagsTitle"),
-      subtitle: t("onboardingStepTagsSubtitle"),
-    },
-    {
-      id: "venueTypes",
-      title: t("onboardingStepVenuesTitle"),
-      subtitle: t("onboardingStepVenuesSubtitle"),
-    },
-    {
       id: "photo",
       title: t("onboardingStepPhotoTitle"),
       subtitle: t("onboardingStepPhotoSubtitle"),
-    },
-    {
-      id: "bio",
-      title: t("onboardingStepBioTitle"),
-      subtitle: t("onboardingStepBioSubtitle"),
     },
   ] as const;
 
@@ -455,60 +357,45 @@ export default function OnboardingScreen() {
 
   // Form state
   const [firstName, setFirstName] = useState("");
-  const [birthday, setBirthday] = useState(new Date(subYears(new Date(), 18)));
+  // The name Google or Apple gave Clerk, once it loads, unless one is typed.
+  const clerkFirstName = clerkUser?.firstName?.trim() ?? "";
+  const [nameEdited, setNameEdited] = useState(false);
+  const shownFirstName = nameEdited
+    ? firstName
+    : firstName || clerkFirstName.slice(0, FIRST_NAME_MAX_LENGTH);
+  // None until the guest picks one: a date filled in for them made everyone
+  // who tapped through exactly 18.
+  const [birthday, setBirthday] = useState<Date | null>(null);
   const [gender, setGender] = useState<"male" | "female" | "other" | "">("");
   const [lookingForGender, setLookingForGender] = useState<
     LookingForGender | ""
   >("");
-  const [seeking, setSeeking] = useState<SeekingValue | "">("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [venueTypes, setVenueTypes] = useState<VenueType[]>([]);
   // Uploaded R2 URLs (up to 3); populated as photos are picked and uploaded
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [bio, setBio] = useState("");
 
   // ── Validation ────────────────────────────────────────────────────────────
 
   const canProceed = (): boolean => {
     switch (steps[step].id) {
       case "name":
-        return firstName.trim().length > 0;
+        return shownFirstName.trim().length > 0;
       case "birthday": {
-        return differenceInYears(new Date(), birthday) >= 18;
+        return (
+          birthday !== null && differenceInYears(new Date(), birthday) >= 18
+        );
       }
       case "gender":
         return gender !== "";
       case "lookingForGender":
         return lookingForGender !== "";
-      case "lookingFor":
-        return seeking !== "";
-      case "tags":
-        return tags.length >= 1;
-      case "venueTypes":
-        return venueTypes.length >= 1;
       case "photo":
-        return true; // photo optional
-      case "bio":
-        return true; // bio optional
+        // The deck shows a photo per guest; while one uploads, wait for it.
+        return photos.length >= 1 && !photoUploading;
       default:
         return false;
     }
   };
-
-  // ── Toggle helpers ────────────────────────────────────────────────────────
-
-  const toggleItem = useCallback(
-    <T extends string>(
-      setter: React.Dispatch<React.SetStateAction<T[]>>,
-      val: T,
-    ) => {
-      setter((prev) =>
-        prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val],
-      );
-    },
-    [],
-  );
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
@@ -541,11 +428,9 @@ export default function OnboardingScreen() {
   };
 
   const finishOnboarding = async () => {
-    if (!userId || !gender || !seeking || !lookingForGender) {
-      Alert.alert(
-        t("onboardingMissingRequiredFields"),
-        `Debug: userId=${userId}, gender=${gender}, seeking=${seeking}, lookingForGender=${lookingForGender}`,
-      );
+    const name = shownFirstName.trim();
+    if (!userId || !name || !birthday || !gender || !lookingForGender) {
+      setSubmitError(t("onboardingMissingRequiredFields"));
       return;
     }
 
@@ -568,29 +453,22 @@ export default function OnboardingScreen() {
         return;
       }
       await submitOnboarding(token, {
-        first_name: firstName.trim(),
+        first_name: name,
         gender: gender as GenderValue,
-        seeking: seeking as SeekingValue,
         interested_in: interestedIn,
-        interests: tags,
-        venue_types: venueTypes,
-        bio: bio.trim() || undefined,
         picture_urls: photos,
         birthday: birthdayIso,
       });
 
       setUser({
-        firstName: firstName.trim(),
-        birthday: format(new Date(birthdayIso), "yyyy-MM-dd"),
+        firstName: name,
+        birthday: birthdayIso,
         age,
         gender: gender as "male" | "female" | "other",
         lookingForGender: lookingForGender as LookingForGender,
-        lookingFor: [mapSeekingToLookingFor(seeking as SeekingValue)],
-        tags,
-        preferredVenueTypes: venueTypes,
+        tags: [],
         imgUrl: photos[0],
         photos,
-        info: bio.trim() || undefined,
       });
 
       router.replace(signedInHomeHref());
@@ -598,7 +476,7 @@ export default function OnboardingScreen() {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[onboarding] submitOnboarding failed:", msg);
       const userMessage = t("onboardingSubmitError");
-      Alert.alert(t("onboardingSaveFailed"), userMessage);
+      toast.error(t("onboardingSaveFailed"), { description: userMessage });
       setSubmitError(userMessage);
     } finally {
       setSubmitting(false);
@@ -615,8 +493,11 @@ export default function OnboardingScreen() {
         return (
           <Input
             inputMode="text"
-            value={firstName}
-            onChangeText={setFirstName}
+            value={shownFirstName}
+            onChangeText={(text) => {
+              setNameEdited(true);
+              setFirstName(text);
+            }}
             placeholder={t("onboardingFirstNamePlaceholder")}
             maxLength={FIRST_NAME_MAX_LENGTH}
             autoFocus
@@ -627,16 +508,23 @@ export default function OnboardingScreen() {
 
       case "birthday":
         return (
-          <BirthdayInput
-            value={birthday}
-            minimumDate={new Date(1900, 0, 1)}
-            maximumDate={new Date(subYears(new Date(), 18))}
-            onChange={(dateString) => {
-              const [year, month, day] = dateString.split("-").map(Number);
+          <View>
+            <BirthdayInput
+              value={birthday ?? undefined}
+              minimumDate={new Date(1900, 0, 1)}
+              maximumDate={new Date(subYears(new Date(), 18))}
+              onChange={(dateString) => {
+                const [year, month, day] = dateString.split("-").map(Number);
 
-              setBirthday(new Date(year, month - 1, day, 12));
-            }}
-          />
+                setBirthday(new Date(year, month - 1, day, 12));
+              }}
+            />
+            {birthday === null && (
+              <Text className="mt-4 text-center text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
+                {t("onboardingBirthdayHint")}
+              </Text>
+            )}
+          </View>
         );
 
       case "gender":
@@ -667,48 +555,6 @@ export default function OnboardingScreen() {
           </View>
         );
 
-      case "lookingFor":
-        return (
-          <View>
-            {LOOKING_FOR_OPTIONS.map((opt) => (
-              <CardOption
-                key={opt.value}
-                label={t(opt.labelKey)}
-                selected={seeking === opt.value}
-                onPress={() => setSeeking(opt.value)}
-              />
-            ))}
-          </View>
-        );
-
-      case "tags":
-        return (
-          <View className="flex-row flex-wrap">
-            {TAGS_OPTIONS.map((tag) => (
-              <ChipOption
-                key={tag.value}
-                label={t(tag.labelKey)}
-                selected={tags.includes(tag.value)}
-                onPress={() => toggleItem(setTags, tag.value)}
-              />
-            ))}
-          </View>
-        );
-
-      case "venueTypes":
-        return (
-          <View className="flex-row flex-wrap">
-            {VENUE_TYPES.map((opt) => (
-              <ChipOption
-                key={opt.value}
-                label={`${opt.emoji} ${t(opt.labelKey)}`}
-                selected={venueTypes.includes(opt.value)}
-                onPress={() => toggleItem(setVenueTypes, opt.value)}
-              />
-            ))}
-          </View>
-        );
-
       case "photo":
         return (
           <PhotoPickerStep
@@ -723,20 +569,9 @@ export default function OnboardingScreen() {
             addPhotoLabel={t("onboardingAddPhoto")}
             photosCounter={(count) =>
               count === 0
-                ? t("onboardingAddUpToPhotos")
+                ? t("onboardingAddOnePhoto")
                 : t("onboardingPhotosAdded", { count })
             }
-          />
-        );
-
-      case "bio":
-        return (
-          <Textarea
-            value={bio}
-            onChangeText={setBio}
-            placeholder={t("onboardingBioPlaceholder")}
-            autoFocus
-            className="min-h-[140px]"
           />
         );
 

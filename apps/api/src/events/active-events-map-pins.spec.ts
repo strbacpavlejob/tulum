@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
+import { RedisService } from '../redis/redis.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { GetActiveEventsDto } from './dto/get-active-events.dto';
 import { EventsCrudService } from './events-crud.service';
@@ -97,6 +98,11 @@ const service = new EventsCrudService(
   { getClient: () => ({ from }) } as unknown as SupabaseService,
   {} as R2Service,
   {} as FavoritesService,
+  // No cache: every call reads the tables.
+  {
+    remember: (_key: string, _ttl: number, load: () => Promise<unknown>) =>
+      load(),
+  } as unknown as RedisService,
 );
 
 const listing = async (filters: GetActiveEventsDto = {}) =>

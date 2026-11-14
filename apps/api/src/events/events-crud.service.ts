@@ -12,11 +12,84 @@ import {
 import { countTicketsByEvent } from '../common/ticket-counts';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
+import { RedisService } from '../redis/redis.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { GetActiveEventsDto } from './dto/get-active-events.dto';
 
 const EVENTS_TABLE = 'events';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+/**
+ * How long the feed and event details are cached, in seconds. Only what is
+ * the same for every caller is cached; favorites, seen and attending are
+ * read for each request.
+ */
+const ACTIVE_EVENTS_CACHE_SECONDS = 45;
+
+/** One event in the feed, before the caller's favorites are known. */
+interface FeedEvent {
+  id: string;
+  name: string;
+  picture: string | null;
+  venue_name: string;
+  venue_id: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  date: string | null;
+  tags: string[];
+  guest_count: number;
+}
+
+interface FeedVenue {
+  id: string;
+  name: string;
+  picture_url: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+/** The cached part of GET /events/active. */
+interface SharedFeed {
+  /** Every event the date filters found, venue filters aside. */
+  eventIds: string[];
+  /** Those events whose venue passes the venue filters, in start order. */
+  events: FeedEvent[];
+  venues: Record<string, FeedVenue>;
+}
+
+/** The cached part of GET /events/active/:id. */
+interface SharedEventDetails {
+  event: Record<string, unknown>;
+  venue: Record<string, unknown>;
+  contact: Record<string, unknown> | null;
+}
+
+/**
+ * One pin per venue, in the order of its first listed event; instances is
+ * how many listed events are there. A pin per event stacked a duplicate
+ * marker on the venue for each of its events.
+ */
+function feedPins(events: FeedEvent[], venues: Record<string, FeedVenue>) {
+  const instances = new Map<string, number>();
+  for (const event of events) {
+    instances.set(event.venue_id, (instances.get(event.venue_id) ?? 0) + 1);
+  }
+  return [...instances].map(([venueId, count]) => {
+    const venue = venues[venueId];
+    return {
+      id: venue.id,
+      name: venue.name,
+      picture: venue.picture_url,
+      venue_name: venue.name,
+      venue_id: venue.id,
+      address: venue.address,
+      latitude: venue.latitude,
+      longitude: venue.longitude,
+      instances: count,
+    };
+  });
+}
 
 /**
  * A date_start or date_end value in milliseconds. Like the events columns, a
@@ -40,6 +113,7 @@ export class EventsCrudService {
     private readonly supabaseService: SupabaseService,
     private readonly r2Service: R2Service,
     private readonly favoritesService: FavoritesService,
+    private readonly redis: RedisService,
   ) {}
 
   private get db() {
@@ -52,23 +126,87 @@ export class EventsCrudService {
    */
   async getActiveEvents(filters: GetActiveEventsDto = {}, userId?: string) {
     const venueTypes = filters.venue_type
-      ? filters.venue_type
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean)
+      ? [
+          ...new Set(
+            filters.venue_type
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean),
+          ),
+        ].sort()
       : [];
-
-    const nowMs = Date.now();
-    const now = new Date(nowMs).toISOString();
-    const tenDaysFromNow = new Date(
-      nowMs + 10 * 24 * 60 * 60 * 1000,
-    ).toISOString();
     const rangeStart = filters.date_start
       ? parseRangeBound(filters.date_start, 'date_start')
       : null;
     const rangeEnd = filters.date_end
       ? parseRangeBound(filters.date_end, 'date_end')
       : null;
+    const capacityMin =
+      filters.capacity_min !== undefined ? Number(filters.capacity_min) : null;
+    const capacityMax =
+      filters.capacity_max !== undefined ? Number(filters.capacity_max) : null;
+
+    const sharedKey = `events:active:v1:${JSON.stringify([
+      venueTypes,
+      capacityMin,
+      capacityMax,
+      rangeStart,
+      rangeEnd,
+    ])}`;
+    const [shared, savedEventIds] = await Promise.all([
+      this.redis.remember(sharedKey, ACTIVE_EVENTS_CACHE_SECONDS, () =>
+        this.loadSharedFeed(
+          venueTypes,
+          capacityMin,
+          capacityMax,
+          rangeStart,
+          rangeEnd,
+        ),
+      ),
+      userId ? this.savedEventIds(userId) : new Set<string>(),
+    ]);
+    if (shared.eventIds.length === 0) return [];
+
+    let listed = shared.events;
+    if (filters.only_favorites === 'true' && userId) {
+      if (!shared.eventIds.some((id) => savedEventIds.has(id))) return [];
+      listed = listed.filter((event) => savedEventIds.has(event.id));
+    }
+
+    const eventsListing = listed.map((event) => ({
+      ...event,
+      isFavorite: savedEventIds.has(event.id),
+    }));
+    return {
+      events: eventsListing,
+      pins: feedPins(listed, shared.venues),
+    };
+  }
+
+  /** The ids of the events the user saved (favorited). */
+  private async savedEventIds(userId: string): Promise<Set<string>> {
+    const { data, error } = await this.db
+      .from('event_engagements')
+      .select('event_id')
+      .eq('user_id', userId)
+      .eq('engagement_type', 'saved');
+    if (error) throw error;
+    return new Set((data ?? []).map((e) => e.event_id as string));
+  }
+
+  /** The feed as every caller sees it, favorites aside. */
+  private async loadSharedFeed(
+    venueTypes: string[],
+    capacityMin: number | null,
+    capacityMax: number | null,
+    rangeStart: number | null,
+    rangeEnd: number | null,
+  ): Promise<SharedFeed> {
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const tenDaysFromNow = new Date(
+      nowMs + 10 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     let eventsQuery = this.db
       .from(EVENTS_TABLE)
@@ -100,36 +238,11 @@ export class EventsCrudService {
 
     const { data: events, error: eventsError } = await eventsQuery;
     if (eventsError) throw eventsError;
-    if (!events || events.length === 0) return [];
-
-    // Fetch saved event IDs for the current user
-    const savedEventIds: Set<string> = new Set();
-    if (userId) {
-      const { data: engagements, error: engagementsError } = await this.db
-        .from('event_engagements')
-        .select('event_id')
-        .eq('user_id', userId)
-        .eq('engagement_type', 'saved');
-      if (engagementsError) throw engagementsError;
-      for (const e of engagements ?? []) {
-        savedEventIds.add(e.event_id as string);
-      }
+    if (!events || events.length === 0) {
+      return { eventIds: [], events: [], venues: {} };
     }
-    const favoriteEventIds: Set<string> | null =
-      filters.only_favorites === 'true' && userId ? savedEventIds : null;
 
-    // Optionally filter by favorites
-    const uniqueEvents = events.filter((event) => {
-      if (favoriteEventIds && !favoriteEventIds.has(event.id as string))
-        return false;
-      return true;
-    });
-
-    if (uniqueEvents.length === 0) return [];
-
-    const venueIds = [
-      ...new Set(uniqueEvents.map((e) => e.venue_id as string)),
-    ];
+    const venueIds = [...new Set(events.map((e) => e.venue_id as string))];
     let venuesQuery = this.db
       .from('venues')
       .select(
@@ -144,25 +257,34 @@ export class EventsCrudService {
       venuesQuery = venuesQuery.in('venue_type', venueTypes);
     }
     // Capacity filter
-    if (filters.capacity_min !== undefined) {
-      venuesQuery = venuesQuery.gte('capacity', Number(filters.capacity_min));
+    if (capacityMin !== null) {
+      venuesQuery = venuesQuery.gte('capacity', capacityMin);
     }
-    if (filters.capacity_max !== undefined) {
-      venuesQuery = venuesQuery.lte('capacity', Number(filters.capacity_max));
+    if (capacityMax !== null) {
+      venuesQuery = venuesQuery.lte('capacity', capacityMax);
     }
 
     const { data: venues, error: venuesError } = await venuesQuery;
     if (venuesError) throw venuesError;
 
     // Guests going per event
-    const eventIds = uniqueEvents.map((e) => e.id as string);
+    const eventIds = events.map((e) => e.id as string);
     const guestCountMap = await countTicketsByEvent(this.db, eventIds);
 
     const venueMap = new Map(venues?.map((v) => [v.id as string, v]) ?? []);
+    const listedVenues: Record<string, FeedVenue> = {};
 
-    const eventsListing = uniqueEvents.flatMap((event) => {
+    const listing = events.flatMap((event): FeedEvent[] => {
       const venue = venueMap.get(event.venue_id as string);
       if (!venue) return [];
+      listedVenues[venue.id as string] = {
+        id: venue.id as string,
+        name: venue.name as string,
+        picture_url: (venue.picture_url as string | null) ?? null,
+        address: venue.address as string,
+        latitude: venue.latitude as number,
+        longitude: venue.longitude as number,
+      };
       return [
         {
           id: event.id as string,
@@ -177,46 +299,71 @@ export class EventsCrudService {
           longitude: venue.longitude as number,
           date: toUtcIsoString(event.start_date_time),
           tags: (event.tags as string[]) ?? [],
-          isFavorite: savedEventIds.has(event.id as string),
           guest_count: guestCountMap.get(event.id as string) ?? 0,
         },
       ];
     });
-    // One pin per venue, in the order of its first listed event; instances is
-    // how many listed events are there. A pin per event stacked a duplicate
-    // marker on the venue for each of its events.
-    const pinVenueIds = [...new Set(eventsListing.map((e) => e.venue_id))];
-    const mapPinListing = pinVenueIds
-      .flatMap((venueId) => {
-        const venue = venueMap.get(venueId);
-        if (!venue) return [];
-        return [
-          {
-            id: venue.id as string,
-            name: venue.name as string,
-            picture: venue.picture_url as string,
-            venue_name: venue.name as string,
-            venue_id: venue.id as string,
-            address: venue.address as string,
-            latitude: venue.latitude as number,
-            longitude: venue.longitude as number,
-          },
-        ];
-      })
-      .map((pin) => ({
-        ...pin,
-        instances: eventsListing.filter((e) => e.venue_id === pin.venue_id)
-          .length,
-      }));
 
-    return {
-      events: eventsListing,
-      pins: mapPinListing,
-    };
+    return { eventIds, events: listing, venues: listedVenues };
   }
 
   /** GET /events/active/:id — full event details for a single event */
   async getActiveEventById(eventId: string, userId?: string) {
+    const [shared, goingCount, viewer] = await Promise.all([
+      this.redis.remember(
+        `events:active:detail:v1:${eventId}`,
+        ACTIVE_EVENTS_CACHE_SECONDS,
+        () => this.loadSharedEventDetails(eventId),
+      ),
+      // Everyone going, counted fresh so a guest who just joined is in it.
+      // The event page a QR code opens shows it before sign-in.
+      this.countGoing(eventId),
+      userId ? this.viewerEngagement(eventId, userId) : null,
+    ]);
+    const { event, venue, contact } = shared;
+
+    // Fire-and-forget: mark event as seen for this user
+    if (userId) {
+      this.favoritesService.trackSeen(userId, eventId).catch(() => {});
+    }
+
+    return {
+      id: event.id as string,
+      name: event.title,
+      address: venue.address,
+      latitude: venue.latitude,
+      longitude: venue.longitude,
+      description: event.description,
+      picture: event.picture_url ?? venue.picture_url,
+      venue_name: venue.name,
+      venue_picture: venue.picture_url ?? null,
+      date: toUtcIsoString(event.start_date_time),
+      end_date_time: toUtcIsoString(event.end_date_time),
+      going_count: goingCount,
+      tags: (event.tags as string[]) ?? [],
+      isFavorite: viewer?.isFavorite ?? false,
+      isSeen: viewer?.isSeen ?? false,
+      isAttending: viewer?.isAttending ?? false,
+      requires_reservation: (venue.requires_reservation as boolean) ?? false,
+      venue_contact: contact
+        ? {
+            id: contact.id,
+            phone_number: contact.phone_number,
+            is_viber: contact.is_viber,
+            is_phone: contact.is_phone,
+            is_sms: contact.is_sms,
+            is_whatsapp: contact.is_whatsapp,
+            is_instagram: contact.is_instagram ?? false,
+            instagram_handle: contact.instagram_handle ?? null,
+          }
+        : null,
+    };
+  }
+
+  /** An active event with its venue and the venue's contact, or a 404. */
+  private async loadSharedEventDetails(
+    eventId: string,
+  ): Promise<SharedEventDetails> {
     const { data: event, error: eventError } = await this.db
       .from(EVENTS_TABLE)
       .select(
@@ -226,13 +373,6 @@ export class EventsCrudService {
       .eq('status', 'active')
       .single();
     if (eventError || !event) throw new NotFoundException('Event not found');
-
-    // Everyone going: the event page a QR code opens shows it before sign-in.
-    const { count: goingCount, error: goingError } = await this.db
-      .from('tickets')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', eventId);
-    if (goingError) throw goingError;
 
     // Fetch venue with contact info
     const { data: venue, error: venueError } = await this.db
@@ -259,68 +399,42 @@ export class EventsCrudService {
       contact = (c as Record<string, unknown> | null) ?? null;
     }
 
-    // Fetch user engagement
-    let isFavorite = false;
-    let isSeen = false;
-    let isAttending = false;
-    if (userId) {
-      const { data: engagements } = await this.db
+    return { event, venue: venueTyped, contact };
+  }
+
+  /** How many guests are going to the event. */
+  private async countGoing(eventId: string): Promise<number> {
+    const { count, error } = await this.db
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  /** Whether the user saved, has seen and is going to the event. */
+  private async viewerEngagement(eventId: string, userId: string) {
+    const [{ data: engagements }, { data: ticket }] = await Promise.all([
+      this.db
         .from('event_engagements')
         .select('engagement_type')
         .eq('user_id', userId)
         .eq('event_id', eventId)
-        .in('engagement_type', ['saved', 'seen']);
-      for (const e of engagements ?? []) {
-        if (e.engagement_type === 'saved') isFavorite = true;
-        if (e.engagement_type === 'seen') isSeen = true;
-      }
-      const { data: ticket } = await this.db
+        .in('engagement_type', ['saved', 'seen']),
+      this.db
         .from('tickets')
         .select('id')
         .eq('guest_id', userId)
         .eq('event_id', eventId)
-        .maybeSingle();
-      isAttending = !!ticket;
-
-      // Fire-and-forget: mark event as seen for this user
-      this.favoritesService.trackSeen(userId, eventId).catch(() => {});
-    }
-
+        .maybeSingle(),
+    ]);
+    const types = new Set(
+      (engagements ?? []).map((e) => e.engagement_type as string),
+    );
     return {
-      id: (event as Record<string, unknown>).id as string,
-      name: (event as Record<string, unknown>).title,
-      address: venueTyped.address,
-      latitude: venueTyped.latitude,
-      longitude: venueTyped.longitude,
-      description: (event as Record<string, unknown>).description,
-      picture:
-        (event as Record<string, unknown>).picture_url ??
-        (venue as Record<string, unknown>).picture_url,
-      venue_name: venueTyped.name,
-      venue_picture: venueTyped.picture_url ?? null,
-      date: toUtcIsoString((event as Record<string, unknown>).start_date_time),
-      end_date_time: toUtcIsoString(
-        (event as Record<string, unknown>).end_date_time,
-      ),
-      going_count: goingCount ?? 0,
-      tags: ((event as Record<string, unknown>).tags as string[]) ?? [],
-      isFavorite,
-      isSeen,
-      isAttending,
-      requires_reservation:
-        (venueTyped.requires_reservation as boolean) ?? false,
-      venue_contact: contact
-        ? {
-            id: contact.id,
-            phone_number: contact.phone_number,
-            is_viber: contact.is_viber,
-            is_phone: contact.is_phone,
-            is_sms: contact.is_sms,
-            is_whatsapp: contact.is_whatsapp,
-            is_instagram: contact.is_instagram ?? false,
-            instagram_handle: contact.instagram_handle ?? null,
-          }
-        : null,
+      isFavorite: types.has('saved'),
+      isSeen: types.has('seen'),
+      isAttending: !!ticket,
     };
   }
 

@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
+import { InboxPushService } from '../chats/inbox-push.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import type { GuestVisibility } from '../guest-safety/guest-visibility';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -77,14 +78,18 @@ function createServiceWithScript(
     >(() => Promise.resolve(otherIsShown)),
   };
 
+  const inboxPush = { matchCreated: jest.fn() };
+
   return {
     service: new MatchesService(
       supabaseService,
       guestSafety as unknown as GuestSafetyService,
+      inboxPush as unknown as InboxPushService,
     ),
     rpc,
     db,
     guestSafety,
+    inboxPush,
   };
 }
 
@@ -336,7 +341,7 @@ describe('MatchesService submitSwipeDecision', () => {
       'matches.maybeSingle': [{ data: { id: 55 }, error: null }],
     };
 
-    const { service } = createServiceWithScript(script);
+    const { service, inboxPush } = createServiceWithScript(script);
 
     await expect(
       service.submitSwipeDecision('me-user', baseSwipe),
@@ -349,6 +354,41 @@ describe('MatchesService submitSwipeDecision', () => {
       eligible_guest_count: 20,
       limit_reached: false,
     });
+    // The guests heard about it when it was made.
+    expect(inboxPush.matchCreated).not.toHaveBeenCalled();
+  });
+
+  it('tells both guests’ apps about a new match', async () => {
+    const script = {
+      ...attendingScript(),
+      'rpc.submit_guest_swipe_with_limit': [
+        {
+          data: {
+            allowed: true,
+            was_already_liked: false,
+            likes_used: 1,
+            like_limit: 3,
+            eligible_guest_count: 10,
+            limit_reached: false,
+          },
+          error: null,
+        },
+      ],
+      'guest_swipes.maybeSingle': [{ data: { id: 9 }, error: null }],
+      'matches.maybeSingle': [{ data: null, error: null }],
+      'matches.single': [{ data: { id: 81 }, error: null }],
+    };
+
+    const { service, inboxPush } = createServiceWithScript(script);
+
+    await expect(
+      service.submitSwipeDecision('me-user', baseSwipe),
+    ).resolves.toMatchObject({ matched: true, match_id: 81 });
+    expect(inboxPush.matchCreated).toHaveBeenCalledTimes(1);
+    expect(inboxPush.matchCreated).toHaveBeenCalledWith([
+      'me-user',
+      'other-user',
+    ]);
   });
 
   it('handles concurrent match creation unique-violation race', async () => {
@@ -375,7 +415,7 @@ describe('MatchesService submitSwipeDecision', () => {
       ],
     };
 
-    const { service } = createServiceWithScript(script);
+    const { service, inboxPush } = createServiceWithScript(script);
 
     await expect(
       service.submitSwipeDecision('me-user', baseSwipe),
@@ -388,6 +428,8 @@ describe('MatchesService submitSwipeDecision', () => {
       eligible_guest_count: 10,
       limit_reached: false,
     });
+    // The request that inserted it told the guests.
+    expect(inboxPush.matchCreated).not.toHaveBeenCalled();
   });
 });
 
@@ -436,6 +478,7 @@ describe('MatchesService getMyMatches', () => {
       service: new MatchesService(
         supabaseService,
         guestSafety as unknown as GuestSafetyService,
+        new InboxPushService(),
       ),
       query,
     };

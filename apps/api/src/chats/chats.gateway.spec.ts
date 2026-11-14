@@ -4,6 +4,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import type { Server } from 'socket.io';
 import { ChatsGateway } from './chats.gateway';
 import { ChatsService } from './chats.service';
+import { InboxPushService } from './inbox-push.service';
 
 const VALID_TOKEN = 'valid-session-token';
 const CALLER = 'user_caller';
@@ -49,10 +50,11 @@ function callerSocket(rooms: string[] = []) {
 
 function createGateway() {
   const chatsService = {
-    // Only CALLER and OTHER are guests of the match behind CHAT_ID.
-    getChatForParticipant: jest.fn((chatId: string, userId: string) =>
+    // Only CALLER and OTHER are guests of the match behind CHAT_ID; each
+    // gets the other back.
+    getChatPartner: jest.fn((chatId: string, userId: string) =>
       chatId === CHAT_ID && [CALLER, OTHER].includes(userId)
-        ? Promise.resolve({ id: CHAT_ID, match_id: 7 })
+        ? Promise.resolve(userId === CALLER ? OTHER : CALLER)
         : Promise.reject(new NotFoundException('Chat not found')),
     ),
     createMessage: jest.fn((row: Record<string, unknown>) =>
@@ -63,7 +65,10 @@ function createGateway() {
       }),
     ),
   };
-  const gateway = new ChatsGateway(chatsService as unknown as ChatsService);
+  const gateway = new ChatsGateway(
+    chatsService as unknown as ChatsService,
+    new InboxPushService(),
+  );
 
   // Stands in for Clerk: only VALID_TOKEN is a signed-in session.
   const authenticateRequest = jest.fn((request: Request) => {
@@ -170,6 +175,17 @@ describe('ChatsGateway handshake', () => {
   });
 });
 
+describe('ChatsGateway connection', () => {
+  it('puts each socket in its verified user’s room, for inbox pushes', () => {
+    const { gateway } = createGateway();
+    const socket = callerSocket();
+
+    gateway.handleConnection(socket as never);
+
+    expect(socket.join).toHaveBeenCalledWith(`user:${CALLER}`);
+  });
+});
+
 describe('ChatsGateway join_chat', () => {
   it('joins a guest of the match to the chat room', async () => {
     const { gateway, chatsService } = createGateway();
@@ -178,10 +194,7 @@ describe('ChatsGateway join_chat', () => {
     await expect(
       gateway.handleJoinChat(socket as never, { chatId: CHAT_ID }),
     ).resolves.toEqual({ event: 'joined', data: { chatId: CHAT_ID } });
-    expect(chatsService.getChatForParticipant).toHaveBeenCalledWith(
-      CHAT_ID,
-      CALLER,
-    );
+    expect(chatsService.getChatPartner).toHaveBeenCalledWith(CHAT_ID, CALLER);
     expect(socket.join).toHaveBeenCalledWith(ROOM);
   });
 
@@ -205,7 +218,7 @@ describe('ChatsGateway join_chat', () => {
       await expect(
         gateway.handleJoinChat(socket as never, { chatId } as never),
       ).rejects.toThrow('Chat not found');
-      expect(chatsService.getChatForParticipant).not.toHaveBeenCalled();
+      expect(chatsService.getChatPartner).not.toHaveBeenCalled();
       expect(socket.join).not.toHaveBeenCalled();
     },
   );
@@ -213,7 +226,7 @@ describe('ChatsGateway join_chat', () => {
   it('passes database errors through instead of answering not found', async () => {
     const { gateway, chatsService } = createGateway();
     const dbError = { code: '57014', message: 'canceling statement' };
-    chatsService.getChatForParticipant.mockRejectedValueOnce(dbError);
+    chatsService.getChatPartner.mockRejectedValueOnce(dbError);
 
     await expect(
       gateway.handleJoinChat(callerSocket() as never, { chatId: CHAT_ID }),
@@ -249,6 +262,20 @@ describe('ChatsGateway send_message', () => {
     });
   });
 
+  it('tells the other guest’s apps that their inbox changed, and only them', async () => {
+    const { gateway, server, roomEmit } = createGateway();
+
+    await gateway.handleSendMessage(callerSocket([ROOM]) as never, {
+      chatId: CHAT_ID,
+      text: 'hi',
+    });
+
+    expect(server.to.mock.calls).toEqual([[ROOM], [`user:${OTHER}`]]);
+    expect(roomEmit).toHaveBeenLastCalledWith('inbox_changed', {
+      reason: 'message',
+    });
+  });
+
   it('refuses a sender outside the match, even one in the room', async () => {
     const { gateway, chatsService, roomEmit } = createGateway();
     const socket = fakeSocket({ rooms: [ROOM] });
@@ -278,7 +305,7 @@ describe('ChatsGateway send_message', () => {
           } as never,
         ),
       ).resolves.toBeUndefined();
-      expect(chatsService.getChatForParticipant).not.toHaveBeenCalled();
+      expect(chatsService.getChatPartner).not.toHaveBeenCalled();
       expect(chatsService.createMessage).not.toHaveBeenCalled();
       expect(roomEmit).not.toHaveBeenCalled();
     },
@@ -304,7 +331,7 @@ describe('ChatsGateway typing', () => {
       userId: CALLER,
       isTyping: true,
     });
-    expect(chatsService.getChatForParticipant).not.toHaveBeenCalled();
+    expect(chatsService.getChatPartner).not.toHaveBeenCalled();
   });
 
   it('refuses typing in a chat the socket has not joined', () => {

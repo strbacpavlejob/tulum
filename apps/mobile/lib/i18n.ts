@@ -53,6 +53,30 @@ const resources = {
       authSecondFactorRequired: "A second verification step is required.",
       authInvalidCode: "Invalid code. Please try again.",
       authVerifyCodeFailed: "Failed to verify code.",
+      authContinueWithEmail: "Continue with email",
+      authEmailSubtitle: "We'll email you a 6-digit code. No password needed.",
+      authSendCode: "Send code",
+      authCodeTitle: "Check your email",
+      authCodeSubtitle: "Enter the 6-digit code we sent to {{email}}.",
+      authVerifyCode: "Continue",
+      authResendCode: "Send a new code",
+      authCodeResent: "A new code is on its way.",
+      authUseDifferentEmail: "Use a different email",
+      authFirstName: "First name",
+      authLastName: "Last name",
+      authCodeExpired: "That code has expired. Send a new one.",
+      authEmailInvalid: "Enter a valid email address.",
+      authSignInFailed: "Sign-in didn't work. Please try again.",
+      authBusyRetrying: "Lots of people are joining. Retrying…",
+      authBusyLater: "Lots of people are joining. Try again in a minute.",
+      authBusyTryAgain:
+        "Lots of people are joining. Try again in {{seconds}} s.",
+      authInAppTitle: "Open Tulum in your browser",
+      authInAppBodyAndroid:
+        "Google and Apple sign-in don't work in {{app}}'s browser. Open Tulum in Chrome, or continue with email.",
+      authInAppBodyIos:
+        "Google and Apple sign-in don't work in {{app}}'s browser. Tap ⋯ at the top and choose to open it in your browser, or continue with email.",
+      authOpenInChrome: "Open in Chrome",
 
       // Onboarding
       onboardingStepNameTitle: "What's your name?",
@@ -96,6 +120,8 @@ const resources = {
       onboardingRemoveFailed: "Remove failed",
       onboardingAddPhoto: "Add photo",
       onboardingAddUpToPhotos: "Add up to 3 photos",
+      onboardingAddOnePhoto: "Add at least one photo, up to 3",
+      onboardingBirthdayHint: "Scroll to your date of birth",
       onboardingPhotosAdded: "{{count}}/3 photos added",
       onboardingMissingRequiredFields: "Missing required fields",
       onboardingAuthError: "Authentication error. Please sign in again.",
@@ -148,6 +174,9 @@ const resources = {
       education: "Education",
       whyYoureHere: "Why you're here",
       bio: "Bio",
+      finishProfileTitle: "Finish your profile",
+      finishProfileBody:
+        "Tell your matches why you're here, what you're into and a little about you.",
       heightCm: "Height (cm)",
       children: "Children",
       drinking: "Drinking",
@@ -527,6 +556,32 @@ const resources = {
       authSecondFactorRequired: "Potreban je drugi korak verifikacije.",
       authInvalidCode: "Neispravan kod. Pokušaj ponovo.",
       authVerifyCodeFailed: "Provera koda nije uspela.",
+      authContinueWithEmail: "Nastavi sa email adresom",
+      authEmailSubtitle:
+        "Poslaćemo ti šestocifreni kod na email. Lozinka nije potrebna.",
+      authSendCode: "Pošalji kod",
+      authCodeTitle: "Proveri email",
+      authCodeSubtitle: "Unesi šestocifreni kod koji smo poslali na {{email}}.",
+      authVerifyCode: "Nastavi",
+      authResendCode: "Pošalji novi kod",
+      authCodeResent: "Novi kod je na putu.",
+      authUseDifferentEmail: "Koristi drugu email adresu",
+      authFirstName: "Ime",
+      authLastName: "Prezime",
+      authCodeExpired: "Kod je istekao. Pošalji novi.",
+      authEmailInvalid: "Unesi ispravnu email adresu.",
+      authSignInFailed: "Prijava nije uspela. Pokušaj ponovo.",
+      authBusyRetrying: "Mnogo ljudi se upravo prijavljuje. Pokušavamo ponovo…",
+      authBusyLater:
+        "Mnogo ljudi se upravo prijavljuje. Pokušaj ponovo za minut.",
+      authBusyTryAgain:
+        "Mnogo ljudi se upravo prijavljuje. Pokušaj ponovo za {{seconds}} s.",
+      authInAppTitle: "Otvori Tulum u pregledaču",
+      authInAppBodyAndroid:
+        "Prijava preko Google-a i Apple-a ne radi u pregledaču aplikacije {{app}}. Otvori Tulum u Chrome-u ili nastavi sa email adresom.",
+      authInAppBodyIos:
+        "Prijava preko Google-a i Apple-a ne radi u pregledaču aplikacije {{app}}. Dodirni ⋯ na vrhu i izaberi otvaranje u pregledaču ili nastavi sa email adresom.",
+      authOpenInChrome: "Otvori u Chrome-u",
 
       // Onboarding
       onboardingStepNameTitle: "Kako se zoveš?",
@@ -573,6 +628,8 @@ const resources = {
       onboardingRemoveFailed: "Uklanjanje nije uspelo",
       onboardingAddPhoto: "Dodaj fotografiju",
       onboardingAddUpToPhotos: "Dodaj do 3 fotografije",
+      onboardingAddOnePhoto: "Dodaj bar jednu fotografiju, najviše 3",
+      onboardingBirthdayHint: "Odaberi svoj datum rođenja",
       onboardingPhotosAdded: "Dodato fotografija: {{count}}/3",
       onboardingMissingRequiredFields: "Nedostaju obavezna polja",
       onboardingAuthError: "Greška pri autentikaciji. Prijavi se ponovo.",
@@ -626,6 +683,9 @@ const resources = {
       education: "Obrazovanje",
       whyYoureHere: "Zašto ste ovde",
       bio: "Biografija",
+      finishProfileTitle: "Završi svoj profil",
+      finishProfileBody:
+        "Reci svojim mečevima zašto si ovde, šta voliš i nešto o sebi.",
       heightCm: "Visina (cm)",
       children: "Deca",
       drinking: "Alkohol",
@@ -1007,6 +1067,31 @@ const resources = {
       authSecondFactorRequired: "Требуется второй шаг проверки.",
       authInvalidCode: "Неверный код. Попробуйте снова.",
       authVerifyCodeFailed: "Не удалось подтвердить код.",
+      authContinueWithEmail: "Продолжить с email",
+      authEmailSubtitle:
+        "Мы отправим 6-значный код на вашу почту. Пароль не нужен.",
+      authSendCode: "Отправить код",
+      authCodeTitle: "Проверьте почту",
+      authCodeSubtitle: "Введите 6-значный код, отправленный на {{email}}.",
+      authVerifyCode: "Продолжить",
+      authResendCode: "Отправить новый код",
+      authCodeResent: "Новый код уже в пути.",
+      authUseDifferentEmail: "Указать другой email",
+      authFirstName: "Имя",
+      authLastName: "Фамилия",
+      authCodeExpired: "Срок действия кода истёк. Отправьте новый.",
+      authEmailInvalid: "Введите корректный email.",
+      authSignInFailed: "Не удалось войти. Попробуйте снова.",
+      authBusyRetrying: "Сейчас входит много людей. Повторяем попытку…",
+      authBusyLater: "Сейчас входит много людей. Попробуйте через минуту.",
+      authBusyTryAgain:
+        "Сейчас входит много людей. Попробуйте снова через {{seconds}} с.",
+      authInAppTitle: "Откройте Tulum в браузере",
+      authInAppBodyAndroid:
+        "Вход через Google и Apple не работает во встроенном браузере {{app}}. Откройте Tulum в Chrome или продолжите с email.",
+      authInAppBodyIos:
+        "Вход через Google и Apple не работает во встроенном браузере {{app}}. Нажмите ⋯ вверху и выберите открытие в браузере или продолжите с email.",
+      authOpenInChrome: "Открыть в Chrome",
 
       // Onboarding
       onboardingStepNameTitle: "Как вас зовут?",
@@ -1051,6 +1136,8 @@ const resources = {
       onboardingRemoveFailed: "Не удалось удалить",
       onboardingAddPhoto: "Добавить фото",
       onboardingAddUpToPhotos: "Добавьте до 3 фото",
+      onboardingAddOnePhoto: "Добавьте хотя бы одно фото, максимум 3",
+      onboardingBirthdayHint: "Прокрутите до даты рождения",
       onboardingPhotosAdded: "Добавлено фото: {{count}}/3",
       onboardingMissingRequiredFields: "Не заполнены обязательные поля",
       onboardingAuthError: "Ошибка аутентификации. Войдите снова.",
@@ -1104,6 +1191,9 @@ const resources = {
       education: "Образование",
       whyYoureHere: "Зачем вы здесь",
       bio: "О себе",
+      finishProfileTitle: "Заполните профиль",
+      finishProfileBody:
+        "Расскажите, зачем вы здесь, чем увлекаетесь, и пару слов о себе.",
       heightCm: "Рост (см)",
       children: "Дети",
       drinking: "Алкоголь",

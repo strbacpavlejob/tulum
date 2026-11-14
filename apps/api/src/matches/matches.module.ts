@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ChatsModule } from '../chats/chats.module';
 import { GuestSafetyModule } from '../guest-safety/guest-safety.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { UsersModule } from '../users/users.module';
@@ -6,7 +7,7 @@ import { MatchesController } from './matches.controller';
 import { MatchesService } from './matches.service';
 
 @Module({
-  imports: [SupabaseModule, UsersModule, GuestSafetyModule],
+  imports: [SupabaseModule, UsersModule, GuestSafetyModule, ChatsModule],
   controllers: [MatchesController],
   providers: [MatchesService],
 })

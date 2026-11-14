@@ -5,11 +5,12 @@ import { UsersModule } from '../users/users.module';
 import { ChatsController } from './chats.controller';
 import { ChatsGateway } from './chats.gateway';
 import { ChatsService } from './chats.service';
+import { InboxPushService } from './inbox-push.service';
 
 @Module({
   imports: [SupabaseModule, UsersModule, GuestSafetyModule],
   controllers: [ChatsController],
-  providers: [ChatsService, ChatsGateway],
-  exports: [ChatsService],
+  providers: [ChatsService, ChatsGateway, InboxPushService],
+  exports: [ChatsService, InboxPushService],
 })
 export class ChatsModule {}

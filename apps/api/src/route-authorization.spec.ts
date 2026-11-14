@@ -23,6 +23,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { ChatsController } from './chats/chats.controller';
 import { ChatsService } from './chats/chats.service';
+import { InboxPushService } from './chats/inbox-push.service';
 import { CleanupController } from './cleanup/cleanup.controller';
 import { CleanupService } from './cleanup/cleanup.service';
 import { ClerkAuthGuard } from './common/guards/clerk-auth.guard';
@@ -100,6 +101,7 @@ const matchesService = {
 const chatsService = {
   assertMatchParticipant: resolved(undefined),
   getChatForParticipant: resolved({ id: CHAT_ID, match_id: 7 }),
+  getChatPartner: resolved(OTHER),
   getChatByMatchId: resolved({ id: CHAT_ID }),
   getOrCreateChat: resolved({ id: CHAT_ID }),
   getMessages: resolved([]),
@@ -180,6 +182,8 @@ describe('Route authorization (BUG-004)', () => {
         { provide: TicketsService, useValue: ticketsService },
         { provide: MatchesService, useValue: matchesService },
         { provide: ChatsService, useValue: chatsService },
+        // Not attached to a socket server, so it pushes nothing.
+        InboxPushService,
         { provide: SettingsService, useValue: settingsService },
         { provide: CleanupService, useValue: cleanupService },
         { provide: EventsCrudService, useValue: eventsCrudService },
@@ -467,10 +471,7 @@ describe('Route authorization (BUG-004)', () => {
         .set(AS_CALLER)
         .send({ chat_id: CHAT_ID, message: 'Hey', is_read: true })
         .expect(201);
-      expect(chatsService.getChatForParticipant).toHaveBeenCalledWith(
-        CHAT_ID,
-        CALLER,
-      );
+      expect(chatsService.getChatPartner).toHaveBeenCalledWith(CHAT_ID, CALLER);
       expect(chatsService.createMessage).toHaveBeenCalledWith({
         chat_id: CHAT_ID,
         sender_id: CALLER,

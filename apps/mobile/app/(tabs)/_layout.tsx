@@ -1,4 +1,5 @@
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInboxSocket } from "@/hooks/useInboxSocket";
 import Logo from "@/components/illustrations/logo";
 import { fetchMyMatches, fetchMyProfile, fetchSettings } from "@/lib/api";
 import { getUnreadChatsCount } from "@/lib/inboxUnread";
@@ -13,6 +14,11 @@ import {
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef } from "react";
 import { AppState, View } from "react-native";
+
+/** While the socket is down, the unread badge is read this often instead. */
+const INBOX_POLL_MS = 60_000;
+/** Pushes this close together (a lively chat) are read once. */
+const INBOX_PUSH_DELAY_MS = 1_500;
 
 type IconProps = {
   icon: React.ElementType;
@@ -48,6 +54,7 @@ export default function TabLayout() {
     setSettings,
     inboxUnreadCount,
     setInboxUnreadCount,
+    bumpInboxVersion,
   } = useStore();
 
   useEffect(() => {
@@ -84,6 +91,9 @@ export default function TabLayout() {
 
   const getTokenRef = useRef(getToken);
   const refreshInFlightRef = useRef(false);
+  // A refresh asked for while one runs runs again after it, since the one
+  // running may have read the inbox before the change.
+  const refreshAgainRef = useRef(false);
   const unreadCountRef = useRef(inboxUnreadCount);
 
   useEffect(() => {
@@ -95,17 +105,24 @@ export default function TabLayout() {
   }, [inboxUnreadCount]);
 
   const refreshInboxUnread = useCallback(async () => {
-    if (!userId || refreshInFlightRef.current) return;
+    if (!userId) return;
+    if (refreshInFlightRef.current) {
+      refreshAgainRef.current = true;
+      return;
+    }
     refreshInFlightRef.current = true;
     try {
-      const token = await getTokenRef.current();
-      if (!token) return;
-      const items = await fetchMyMatches(token);
-      const unreadCount = await getUnreadChatsCount(items, userId);
-      if (unreadCount !== unreadCountRef.current) {
-        unreadCountRef.current = unreadCount;
-        setInboxUnreadCount(unreadCount);
-      }
+      do {
+        refreshAgainRef.current = false;
+        const token = await getTokenRef.current();
+        if (!token) return;
+        const items = await fetchMyMatches(token);
+        const unreadCount = await getUnreadChatsCount(items, userId);
+        if (unreadCount !== unreadCountRef.current) {
+          unreadCountRef.current = unreadCount;
+          setInboxUnreadCount(unreadCount);
+        }
+      } while (refreshAgainRef.current);
     } catch {
       // Ignore transient network errors.
     } finally {
@@ -113,23 +130,49 @@ export default function TabLayout() {
     }
   }, [setInboxUnreadCount, userId]);
 
-  useEffect(() => {
-    void refreshInboxUnread();
-
-    const interval = setInterval(() => {
+  // New matches and messages are pushed over the socket instead of the
+  // badge polling /matches/mine. A push also tells an open inbox to reload.
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onInboxPush = useCallback(() => {
+    if (pushTimerRef.current) return;
+    pushTimerRef.current = setTimeout(() => {
+      pushTimerRef.current = null;
+      bumpInboxVersion();
       void refreshInboxUnread();
-    }, 15000);
+    }, INBOX_PUSH_DELAY_MS);
+  }, [bumpInboxVersion, refreshInboxUnread]);
+  useEffect(
+    () => () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    },
+    [],
+  );
+  const socketConnected = useInboxSocket(userId, onInboxPush);
 
+  useEffect(() => {
+    // At start, and each time the socket connects or drops: pushes sent
+    // while it was down are lost.
+    void refreshInboxUnread();
+    if (socketConnected) {
+      // An open inbox reads what it missed too.
+      bumpInboxVersion();
+      return;
+    }
+
+    // While it is down, poll instead, but not while the app is hidden.
+    const interval = setInterval(() => {
+      if (AppState.currentState === "active") void refreshInboxUnread();
+    }, INBOX_POLL_MS);
+    return () => clearInterval(interval);
+  }, [bumpInboxVersion, refreshInboxUnread, socketConnected]);
+
+  useEffect(() => {
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         void refreshInboxUnread();
       }
     });
-
-    return () => {
-      clearInterval(interval);
-      appStateSub.remove();
-    };
+    return () => appStateSub.remove();
   }, [refreshInboxUnread]);
 
   if (!isLoaded) {

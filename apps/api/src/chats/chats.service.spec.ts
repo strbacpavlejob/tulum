@@ -176,6 +176,38 @@ describe('ChatsService.getChatForParticipant', () => {
   });
 });
 
+describe('ChatsService.getChatPartner', () => {
+  it('returns the other guest of the chat’s match', async () => {
+    const { service } = createServiceWithScript({
+      'chats.maybeSingle': [{ data: chat, error: null }],
+      'matches.maybeSingle': [match(OTHER, CALLER)],
+    });
+
+    await expect(service.getChatPartner(CHAT_ID, CALLER)).resolves.toBe(OTHER);
+  });
+
+  it('answers not found to anyone outside the match, and once a block closed it', async () => {
+    const outsider = createServiceWithScript({
+      'chats.maybeSingle': [{ data: chat, error: null }],
+      'matches.maybeSingle': [match(OTHER, 'user_third')],
+    });
+    await expect(
+      outsider.service.getChatPartner(CHAT_ID, CALLER),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    const blocked = createServiceWithScript(
+      {
+        'chats.maybeSingle': [{ data: chat, error: null }],
+        'matches.maybeSingle': [match(CALLER, OTHER)],
+      },
+      true,
+    );
+    await expect(
+      blocked.service.getChatPartner(CHAT_ID, CALLER),
+    ).rejects.toThrow('Chat not found');
+  });
+});
+
 describe('ChatsService.markMessageRead', () => {
   it('marks a message in one of the caller’s chats as read', async () => {
     const updated = { id: MESSAGE_ID, is_read: true };

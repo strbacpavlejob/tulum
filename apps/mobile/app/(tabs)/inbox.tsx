@@ -366,6 +366,9 @@ export default function InboxScreen() {
   const { userId, getToken } = useAuth();
   const router = useRouter();
   const setInboxUnreadCount = useStore((s) => s.setInboxUnreadCount);
+  const inboxVersion = useStore(
+    (s: { inboxVersion: number }) => s.inboxVersion,
+  );
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [newMatches, setNewMatches] = useState<Match[]>([]);
@@ -432,10 +435,12 @@ export default function InboxScreen() {
     loadMatches();
   }, [loadMatches]);
 
+  // On focus, and when a pushed change bumps inboxVersion while the inbox is
+  // open; a change while it is closed is read when it is next focused.
   useFocusEffect(
     useCallback(() => {
       loadMatches();
-    }, [loadMatches]),
+    }, [inboxVersion, loadMatches]), // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   useEffect(() => {

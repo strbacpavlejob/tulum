@@ -20,13 +20,17 @@ import { UserId } from '../common/decorators/user-id.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { ChatsService } from './chats.service';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto';
+import { InboxPushService } from './inbox-push.service';
 
 // Reads and message writes are limited to the two guests of the chat's
 // match; the service answers 404 for everyone else.
 @ApiTags('chats')
 @Controller('chats')
 export class ChatsController {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(
+    private readonly chatsService: ChatsService,
+    private readonly inboxPush: InboxPushService,
+  ) {}
 
   @Get()
   async getChat(
@@ -100,12 +104,18 @@ export class ChatsController {
     if (body.sender_id && body.sender_id !== userId) {
       throw new ForbiddenException('sender_id must be the signed-in user');
     }
-    await this.chatsService.getChatForParticipant(body.chat_id, userId);
-    return this.chatsService.createMessage({
+    const partnerId = await this.chatsService.getChatPartner(
+      body.chat_id,
+      userId,
+    );
+    const row = await this.chatsService.createMessage({
       chat_id: body.chat_id,
       sender_id: userId,
       message: body.message,
     });
+    // As if sent over the socket: to the open chat and the recipient's inbox.
+    this.inboxPush.messageSent(body.chat_id, row, partnerId);
+    return row;
   }
 
   @Patch('messages')

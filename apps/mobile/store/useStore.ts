@@ -35,6 +35,8 @@ interface MyStore {
   user: User | null;
   settings: Settings;
   inboxUnreadCount: number;
+  /** Goes up when the API says the inbox changed; the inbox reloads then. */
+  inboxVersion: number;
   events?: EventSummary[];
   filteredEvents?: EventSummary[];
   pins?: EventPin[];
@@ -48,6 +50,7 @@ interface MyStore {
   setUser: (user: User | null) => void;
   setSettings: (settings: Settings) => void;
   setInboxUnreadCount: (count: number) => void;
+  bumpInboxVersion: () => void;
   setEvents: (events: EventSummary[]) => void;
   setPins: (pins: EventPin[]) => void;
   setTickets: (tickets: Ticket[]) => void;
@@ -82,6 +85,7 @@ const useStore = create<MyStore>((set) => ({
     notificationsEnabled: true,
   },
   inboxUnreadCount: 0,
+  inboxVersion: 0,
   events: [],
   filteredEvents: [],
   pins: [],
@@ -116,6 +120,8 @@ const useStore = create<MyStore>((set) => ({
   setSettings: (settings: Settings) => set({ settings }),
   setInboxUnreadCount: (count: number) =>
     set({ inboxUnreadCount: Math.max(0, count) }),
+  bumpInboxVersion: () =>
+    set((state) => ({ inboxVersion: state.inboxVersion + 1 })),
   setEvents: (events: EventSummary[]) => set({ events }),
   setPins: (pins: EventPin[]) => set({ pins }),
   setTickets: (tickets: Ticket[]) => set({ tickets }),
