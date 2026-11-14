@@ -131,7 +131,15 @@ export class AiEventProcessingService {
       return events;
     }
 
-    return this.applyResult(events, response.output_parsed);
+    const parsed = AiEventResultSchema.safeParse(response.output_parsed);
+    if (!parsed.success) {
+      this.logger.warn(
+        `AI returned an unexpected event result: ${parsed.error.message}`,
+      );
+      return events;
+    }
+
+    return this.applyResult(events, parsed.data);
   }
 
   private applyResult<T extends InstagramEvent>(
