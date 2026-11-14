@@ -1,10 +1,12 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   ArrayMinSize,
+  Matches,
   MaxLength,
   registerDecorator,
   ValidationOptions,
@@ -115,4 +117,35 @@ export class OnboardingDto {
   @IsString()
   @IsRealDate()
   birthday!: string;
+
+  // Stored apart from the profile (ConsentsService, AttributionService).
+
+  @ApiPropertyOptional({
+    description:
+      '"Email me when the Tulum app is out", unticked unless the guest ticked it',
+  })
+  @IsOptional()
+  @IsBoolean()
+  launch_email_opt_in?: boolean;
+
+  @ApiPropertyOptional({
+    maxLength: 500,
+    description: 'The text shown next to that checkbox',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  consent_wording?: string;
+
+  @ApiPropertyOptional({ description: "The app's language, e.g. en, sr, ru" })
+  @IsOptional()
+  @Matches(/^[a-zA-Z-]{2,8}$/)
+  language?: string;
+
+  @ApiPropertyOptional({
+    description: 'Where the app runs, e.g. web-ios or web-android-instagram',
+  })
+  @IsOptional()
+  @Matches(/^[a-z0-9-]{1,64}$/)
+  signup_platform?: string;
 }

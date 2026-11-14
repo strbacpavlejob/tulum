@@ -140,7 +140,13 @@ export default function EventJoinScreen() {
       try {
         const token = await getToken();
         if (!token) throw new Error("No token");
-        const { ticket } = await attendEvent(token, target.id);
+        // The poster that brought the guest: in the link, or saved with the
+        // join while they signed in.
+        const { ticket } = await attendEvent(
+          token,
+          target.id,
+          src ?? getPendingJoin()?.src,
+        );
         addTicket({
           id: String(ticket?.id ?? `remote-${target.id}`),
           event_id: target.id,
@@ -175,7 +181,7 @@ export default function EventJoinScreen() {
         setJoinStatus("failed");
       }
     },
-    [findConflict, addTicket, updateEventAttendance], // eslint-disable-line react-hooks/exhaustive-deps
+    [findConflict, addTicket, updateEventAttendance, src], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // The event, and whether you are going: the API says so when signed in.

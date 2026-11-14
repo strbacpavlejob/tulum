@@ -16,6 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { parsePageLimit } from '../common/paging';
+import { AttributionService } from '../retention/attribution.service';
 import { UsersService } from '../users/users.service';
 import { TicketsService } from './tickets.service';
 
@@ -25,6 +26,7 @@ export class TicketsController {
   constructor(
     private readonly ticketsService: TicketsService,
     private readonly usersService: UsersService,
+    private readonly attribution: AttributionService,
   ) {}
 
   /**
@@ -75,12 +77,21 @@ export class TicketsController {
     });
   }
 
+  /**
+   * src is the tag of the QR poster that brought the guest, if any
+   * (/e/{id}?src=p07). On the guest's first join it is kept with the event.
+   */
   @Post('attend')
   async attendEvent(
     @UserId() userId: string,
     @Body('event_id', ParseUUIDPipe) eventId: string,
+    @Body('src') src?: unknown,
   ) {
-    return this.ticketsService.attendEvent(userId, eventId);
+    const result = await this.ticketsService.attendEvent(userId, eventId);
+    if (result.isNew) {
+      await this.attribution.recordFirstEvent(userId, eventId, src);
+    }
+    return result;
   }
 
   @Delete('attend')

@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import MobileStoreButton from "../mobile-store-button";
 
+const INSTAGRAM_URL = "https://www.instagram.com/tulum_app/";
+
 export default function HeroGuest() {
   const { t } = useTranslation();
+  const mobileUrl = process.env.NEXT_PUBLIC_TULUM_MOBILE_URL;
+  const appStoreUrl = process.env.NEXT_PUBLIC_TULUM_APP_STORE_URL;
+  const playStoreUrl = process.env.NEXT_PUBLIC_TULUM_PLAY_STORE_URL;
   const heroRef = useRef<HTMLElement | null>(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
 
@@ -55,22 +60,51 @@ export default function HeroGuest() {
               {t("landingpage.guest.hero.subtitle")}
             </p>
 
-            {/* App Store Download Buttons */}
-            <div className="flex flex-col items-center gap-2 lg:items-start">
-              <MobileStoreButton
-                variant="web"
-                link={process.env.NEXT_PUBLIC_TULUM_MOBILE_URL}
-              />
-              <div className="flex flex-wrap gap-2">
-                <MobileStoreButton
-                  variant="appStore"
-                  link={process.env.NEXT_PUBLIC_TULUM_APP_STORE_URL}
-                />
-                <MobileStoreButton
-                  variant="googlePlay"
-                  link={process.env.NEXT_PUBLIC_TULUM_PLAY_STORE_URL}
-                />
-              </div>
+            {/* One main action, the web app. A store badge shows only once
+                its URL is set, so the hero has no disabled buttons. */}
+            <div className="flex flex-col items-center gap-3 lg:items-start">
+              {mobileUrl && (
+                <>
+                  <a
+                    href={mobileUrl}
+                    className="group inline-flex h-12 items-center justify-center gap-1 rounded-full bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    {t("landingpage.guest.hero.openTulum")}
+                    <ChevronRight
+                      className="size-5 transition-transform duration-300 ease-out group-hover:translate-x-1"
+                      aria-hidden="true"
+                    />
+                  </a>
+                  <p className="text-xs text-secondary/70">
+                    {t("landingpage.guest.hero.worksInBrowser")}
+                  </p>
+                </>
+              )}
+              {appStoreUrl || playStoreUrl ? (
+                <div className="flex flex-wrap gap-2">
+                  {appStoreUrl && (
+                    <MobileStoreButton variant="appStore" link={appStoreUrl} />
+                  )}
+                  {playStoreUrl && (
+                    <MobileStoreButton
+                      variant="googlePlay"
+                      link={playStoreUrl}
+                    />
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-secondary/70">
+                  {t("landingpage.guest.hero.appsSoon")}{" "}
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-secondary underline underline-offset-4"
+                  >
+                    {t("landingpage.guest.hero.followForNews")}
+                  </a>
+                </p>
+              )}
             </div>
           </div>
 

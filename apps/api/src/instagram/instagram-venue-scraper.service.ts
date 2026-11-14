@@ -25,6 +25,8 @@ export interface InstagramVenueProfile {
 export interface InstagramPost {
   imageUrl: string | null;
   description: string | null;
+  /** When it was posted (ISO), if Instagram says. */
+  postedAt?: string | null;
 }
 
 export interface InstagramVenueData {
@@ -144,7 +146,10 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     for (const post of posts) {
       if (!post.description) continue;
 
-      const extracted = extractEventData(post.description);
+      const extracted = extractEventData(
+        post.description,
+        post.postedAt ? new Date(post.postedAt) : undefined,
+      );
 
       const status: Event['status'] = 'draft';
 
@@ -448,7 +453,10 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     for (const post of posts) {
       if (!post.description) continue;
 
-      const extracted = extractEventData(post.description);
+      const extracted = extractEventData(
+        post.description,
+        post.postedAt ? new Date(post.postedAt) : undefined,
+      );
 
       const status: Event['status'] = 'draft';
 
@@ -664,7 +672,9 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
           const imageUrl = node?.display_url ?? null;
           const description =
             node?.edge_media_to_caption?.edges?.[0]?.node?.text ?? null;
-          return { imageUrl, description };
+          const ts = node?.taken_at_timestamp;
+          const postedAt = ts ? new Date(ts * 1000).toISOString() : null;
+          return { imageUrl, description, postedAt };
         });
     } catch (err) {
       this.logger.error('Failed to parse postsV2:', err);

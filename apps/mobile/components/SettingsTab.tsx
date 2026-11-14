@@ -13,6 +13,7 @@ import {
   Languages,
   LocateFixed,
   LogOut,
+  Mail,
   MapPinCheck,
   MapPinPlus,
   Sun,
@@ -42,6 +43,9 @@ type SettingsTabProps = {
   onDeleteAccountPress: () => void;
 
   onNotificationsChange: (enabled: boolean) => void;
+  /** "Email me when the Tulum app is out"; null hides the switch. */
+  launchEmailOptIn: boolean | null;
+  onLaunchEmailOptInChange: (optIn: boolean) => void;
   onLogout: () => void | Promise<void>;
 };
 
@@ -56,6 +60,8 @@ export default function SettingsTab({
   onSuggestVenuePress,
   onDeleteAccountPress,
   onNotificationsChange,
+  launchEmailOptIn,
+  onLaunchEmailOptInChange,
   onLogout,
 }: SettingsTabProps) {
   const theme = useAppTheme();
@@ -108,6 +114,21 @@ export default function SettingsTab({
             title={t("language")}
             subtitle={languageName}
             onPress={onLanguagePress}
+          />
+
+          <Separator />
+
+          <SettingsRow
+            icon={Mail}
+            title={t("launchEmailConsent")}
+            subtitle={launchEmailOptIn ? t("on") : t("off")}
+            right={
+              <Switch
+                checked={launchEmailOptIn === true}
+                onCheckedChange={onLaunchEmailOptInChange}
+              />
+            }
+            hidden={launchEmailOptIn === null}
           />
 
           <Separator />

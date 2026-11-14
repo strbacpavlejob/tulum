@@ -1,4 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
+import { ServiceUnavailableException } from '@nestjs/common';
+import { describe, expect, it, jest } from '@jest/globals';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CleanupService } from './cleanup.service';
 
@@ -60,5 +61,85 @@ describe('CleanupService previewExpiredMatches', () => {
         },
       ],
     });
+  });
+});
+
+describe('CleanupService archives instead of deleting', () => {
+  const EVENT = '7d0f6c2a-3b4e-4f51-9a6b-2c8d1e0f3a45';
+
+  // matches.update(...).in(...).is(...).select('id') answers result.
+  function archiveService(result: { data: unknown; error: unknown }) {
+    const calls: Record<string, unknown[]> = {};
+    const record =
+      (name: string, value: unknown) =>
+      (...args: unknown[]) => {
+        calls[name] = args;
+        return value;
+      };
+    const archive: Record<string, unknown> = {};
+    Object.assign(archive, {
+      in: record('in', archive),
+      is: record('is', archive),
+      select: record('select', Promise.resolve(result)),
+    });
+    const matches = {
+      update: record('update', archive),
+      delete: jest.fn(),
+    };
+    const events = {
+      select: () => ({
+        lt: () => Promise.resolve({ data: [{ id: EVENT }], error: null }),
+      }),
+    };
+    const from = (table: string) => (table === 'events' ? events : matches);
+    const service = new CleanupService({
+      getClient: () => ({ from }),
+    } as unknown as SupabaseService);
+    return { service, calls, matches };
+  }
+
+  it('archives the matches of past events and deletes nothing', async () => {
+    const { service, calls, matches } = archiveService({
+      data: [{ id: 1 }, { id: 2 }],
+      error: null,
+    });
+
+    await expect(service.cleanupExpiredMatches()).resolves.toEqual({
+      archived_matches: 2,
+      events_affected: [EVENT],
+    });
+    expect(matches.delete).not.toHaveBeenCalled();
+    expect(calls.update[0]).toEqual({ archived_at: expect.any(String) });
+    expect(calls.in).toEqual(['event_id', [EVENT]]);
+    // Matches archived earlier keep their first archived_at.
+    expect(calls.is).toEqual(['archived_at', null]);
+  });
+
+  it('archives one event’s matches', async () => {
+    const { service, matches } = archiveService({
+      data: [{ id: 5 }],
+      error: null,
+    });
+
+    await expect(service.cleanupMatchesForEvent(EVENT)).resolves.toEqual({
+      event_id: EVENT,
+      archived_matches: 1,
+    });
+    expect(matches.delete).not.toHaveBeenCalled();
+  });
+
+  it('refuses, rather than deleting, until archived_at exists', async () => {
+    const { service, matches } = archiveService({
+      data: null,
+      error: {
+        code: 'PGRST204',
+        message: "Could not find the 'archived_at' column",
+      },
+    });
+
+    await expect(service.cleanupMatchesForEvent(EVENT)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+    expect(matches.delete).not.toHaveBeenCalled();
   });
 });

@@ -39,7 +39,11 @@
         "comingSoon": "Uskoro",
         "tryWebVersion": "Probaj web verziju",
         "openInBrowser": "Otvori u pregledaču",
-        "scrollHint": "Skroluj nadole da vidiš ostatak"
+        "scrollHint": "Skroluj nadole da vidiš ostatak",
+        "openTulum": "Otvori Tulum",
+        "worksInBrowser": "Radi u pregledaču na telefonu. Ništa ne preuzimaš.",
+        "appsSoon": "Aplikacije za iPhone i Android stižu uskoro.",
+        "followForNews": "Prati nas za novosti"
       }
     },
     "hero": {

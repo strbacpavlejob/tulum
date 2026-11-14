@@ -5,7 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -22,14 +22,14 @@ export class CleanupController {
   /**
    * GET /cleanup/expired-matches
    *
-   * Dry-run: returns which matches and events would be removed.
-   * Does NOT delete anything.
+   * Dry-run: returns which matches and events would be archived.
+   * Changes nothing.
    */
   @Get('expired-matches')
   @ApiOperation({
     summary: 'Preview expired matches (dry-run)',
     description:
-      'Returns all matches whose event has passed, grouped by event. Nothing is deleted.',
+      'Returns the matches not yet archived whose event has passed, grouped by event. Nothing changes.',
   })
   previewExpiredMatches() {
     return this.cleanupService.previewExpiredMatches();
@@ -38,15 +38,15 @@ export class CleanupController {
   /**
    * DELETE /cleanup/expired-matches
    *
-   * Deletes all matches (+ cascaded chats and messages) for events
-   * whose end_date_time is in the past.
+   * Archives the matches of every event whose end_date_time is in the past.
+   * Nothing is deleted (the path is kept for existing callers).
    */
   @Delete('expired-matches')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Delete all expired matches',
+    summary: 'Archive all expired matches',
     description:
-      'Removes matches for every past event. Chats and messages are cascaded automatically.',
+      "Archives the matches of every past event: they leave the guests' inboxes, and the matches, chats and messages stay in the database.",
   })
   cleanupExpiredMatches() {
     return this.cleanupService.cleanupExpiredMatches();
@@ -55,12 +55,12 @@ export class CleanupController {
   /**
    * DELETE /cleanup/events/:eventId/matches
    *
-   * Deletes all matches (+ chats/messages) for a single specific event.
+   * Archives the matches of one event. Nothing is deleted.
    */
   @Delete('events/:eventId/matches')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete all matches for a specific event' })
-  cleanupMatchesForEvent(@Param('eventId', ParseIntPipe) eventId: number) {
+  @ApiOperation({ summary: 'Archive the matches of a specific event' })
+  cleanupMatchesForEvent(@Param('eventId', ParseUUIDPipe) eventId: string) {
     return this.cleanupService.cleanupMatchesForEvent(eventId);
   }
 }

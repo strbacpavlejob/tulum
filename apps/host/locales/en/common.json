@@ -39,7 +39,11 @@
         "comingSoon": "Coming Soon",
         "tryWebVersion": "Try Web Version",
         "openInBrowser": "Open in Browser",
-        "scrollHint": "Scroll to explore"
+        "scrollHint": "Scroll to explore",
+        "openTulum": "Open Tulum",
+        "worksInBrowser": "Runs in your phone's browser. Nothing to download.",
+        "appsSoon": "Apps for iPhone and Android are on the way.",
+        "followForNews": "Follow us for news"
       }
     },
     "hero": {

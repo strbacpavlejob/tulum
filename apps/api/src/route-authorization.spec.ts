@@ -34,6 +34,7 @@ import { InstagramScraperController } from './instagram/instagram-scraper.contro
 import { InstagramVenueScraperService } from './instagram/instagram-venue-scraper.service';
 import { MatchesController } from './matches/matches.controller';
 import { MatchesService } from './matches/matches.service';
+import { AttributionService } from './retention/attribution.service';
 import { SettingsController } from './settings/settings.controller';
 import { SettingsService } from './settings/settings.service';
 import { StatisticsController } from './statistics/statistics.controller';
@@ -61,6 +62,10 @@ const EVENT_ID = 'f5f8b2e0-bfcf-4a77-90b7-e7631f38a101';
 
 const resolved = <T>(value: T) => jest.fn(() => Promise.resolve(value));
 
+const attributionService = {
+  recordFirstEvent: resolved(undefined),
+  recordSignupPlatform: resolved(undefined),
+};
 const usersService = {
   isAdmin: jest.fn((userId: string) => Promise.resolve(userId === ADMIN)),
   getUserById: resolved({ id: OTHER }),
@@ -184,6 +189,7 @@ describe('Route authorization (BUG-004)', () => {
         { provide: ChatsService, useValue: chatsService },
         // Not attached to a socket server, so it pushes nothing.
         InboxPushService,
+        { provide: AttributionService, useValue: attributionService },
         { provide: SettingsService, useValue: settingsService },
         { provide: CleanupService, useValue: cleanupService },
         { provide: EventsCrudService, useValue: eventsCrudService },
@@ -310,6 +316,30 @@ describe('Route authorization (BUG-004)', () => {
         {},
         undefined,
       );
+    });
+
+    it('POST /tickets/attend records the first event, and its QR poster, for the caller', async () => {
+      ticketsService.attendEvent.mockResolvedValueOnce({ isNew: true });
+      await http()
+        .post('/tickets/attend')
+        .set(AS_CALLER)
+        .send({ event_id: EVENT_ID, src: 'p07', guest_id: OTHER })
+        .expect(201);
+      expect(ticketsService.attendEvent).toHaveBeenCalledWith(CALLER, EVENT_ID);
+      expect(attributionService.recordFirstEvent).toHaveBeenCalledWith(
+        CALLER,
+        EVENT_ID,
+        'p07',
+      );
+
+      // Joining again isn't a first join.
+      ticketsService.attendEvent.mockResolvedValueOnce({ isNew: false });
+      await http()
+        .post('/tickets/attend')
+        .set(AS_CALLER)
+        .send({ event_id: EVENT_ID, src: 'p07' })
+        .expect(201);
+      expect(attributionService.recordFirstEvent).toHaveBeenCalledTimes(1);
     });
 
     it('GET /settings/me ignores ?user_id=', async () => {
@@ -533,7 +563,8 @@ describe('Route authorization (BUG-004)', () => {
       ['delete', `/chats/messages?id=${CHAT_ID}`],
       ['get', '/cleanup/expired-matches'],
       ['delete', '/cleanup/expired-matches'],
-      ['delete', '/cleanup/events/1/matches'],
+      // Event ids are UUIDs; an integer id was refused with a 400.
+      ['delete', `/cleanup/events/${EVENT_ID}/matches`],
       ['delete', '/events/cleanup'],
       // Paid scrapes
       ['post', '/instagram/scrape/venues'],

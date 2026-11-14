@@ -25,6 +25,7 @@ import { SeedModule } from './seed/seed.module';
 import { SettingsModule } from './settings/settings.module';
 import { ReportsModule } from './reports/reports.module';
 import { GuestSafetyModule } from './guest-safety/guest-safety.module';
+import { RetentionModule } from './retention/retention.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { GuestSafetyModule } from './guest-safety/guest-safety.module';
     SettingsModule,
     ReportsModule,
     GuestSafetyModule,
+    RetentionModule,
   ],
   controllers: [AppController],
   providers: [

@@ -190,6 +190,37 @@ describe('InstagramScraperService', () => {
     expect(result.events).toHaveLength(1);
   });
 
+  it('leaves out an event the AI dated far from its post (BUG-041)', async () => {
+    const { service, instagramApifyService, aiEventProcessingService } =
+      setup();
+
+    // Posted 2026-09-10: "May 30th" read as 2029, a night two weeks after
+    // the post, and one the day before it went up.
+    instagramApifyService.fetchPosts = jest
+      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .mockResolvedValue([makePost('clubx', 'INNER GROOVE returns')]);
+    aiEventProcessingService.processEvents = jest
+      .fn()
+      .mockImplementation(async (events) =>
+        [
+          ['Misread', '2029-08-19T20:00:00.000Z'],
+          ['Upcoming', '2026-09-24T20:00:00.000Z'],
+          ['Recap', '2026-09-08T20:00:00.000Z'],
+        ].map(([title, start]) => ({
+          ...(events as Record<string, unknown>[])[0],
+          title,
+          startDateTime: start,
+          endDateTime: start,
+        })),
+      );
+
+    const result = await service.scrape({
+      venues: [makeVenue('venue-1', 'clubx')],
+    });
+
+    expect(result.events.map((event) => event.title)).toEqual(['Upcoming']);
+  });
+
   it('returns empty events when Apify returns no posts', async () => {
     const { service, instagramApifyService, aiEventProcessingService } =
       setup();

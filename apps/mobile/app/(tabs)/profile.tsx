@@ -21,13 +21,16 @@ import {
   AccountOwnsVenuesError,
   deleteGuestPhoto,
   deleteMyAccount,
+  fetchLaunchEmailConsent,
   mapUserPatchToGuestUpdates,
+  saveLaunchEmailConsent,
   updateMyProfile,
   updateSettings,
   uploadGuestPhoto,
   submitBugReport,
   submitVenueSuggestion,
 } from "@/lib/api";
+import { appPlatform } from "@/lib/app-platform";
 import useStore from "@/store/useStore";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
@@ -77,7 +80,13 @@ import {
   venueOptions,
   visibilityOptions,
 } from "@/constants/options";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
@@ -91,7 +100,7 @@ import { cn } from "@/lib/utils";
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const { user, settings, setUser, setSettings } = useStore();
@@ -266,6 +275,48 @@ export default function ProfileScreen() {
       toast.success(
         t("visibilitySaved", { option: t(option?.name ?? visibility) }),
       );
+    }
+  };
+
+  // "Email me when the Tulum app is out": null until loaded, and while the
+  // API can't store the answer yet, which hides the switch.
+  const [launchEmailOptIn, setLaunchEmailOptIn] = useState<boolean | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    getToken()
+      .then((token) => (token ? fetchLaunchEmailConsent(token) : null))
+      .then((consent) => {
+        if (!cancelled && consent?.available) {
+          setLaunchEmailOptIn(consent.granted);
+        }
+      })
+      .catch((error) => console.warn("Failed to load consent", error));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const changeLaunchEmailOptIn = async (optIn: boolean) => {
+    const previous = launchEmailOptIn;
+    setLaunchEmailOptIn(optIn);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token available");
+      await saveLaunchEmailConsent(token, {
+        granted: optIn,
+        wording: t("launchEmailConsent"),
+        language: i18n.language,
+        platform: appPlatform(),
+      });
+    } catch (error) {
+      console.error("Failed to save consent", error);
+      setLaunchEmailOptIn(previous);
+      toast.error(t("saveFailed"), {
+        description: t("profileChangeNotSaved"),
+      });
     }
   };
 
@@ -903,6 +954,10 @@ export default function ProfileScreen() {
               void patchSettings({
                 notificationsEnabled: enabled,
               });
+            }}
+            launchEmailOptIn={launchEmailOptIn}
+            onLaunchEmailOptInChange={(optIn) => {
+              void changeLaunchEmailOptIn(optIn);
             }}
             onLanguagePress={() => {
               openSingleSelect(

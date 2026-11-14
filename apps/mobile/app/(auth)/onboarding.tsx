@@ -11,6 +11,7 @@ import {
   uploadGuestPhoto,
 } from "@/lib/api";
 import type { GenderValue } from "@/lib/api";
+import { appPlatform } from "@/lib/app-platform";
 import { signedInHomeHref } from "@/lib/pending-join";
 import useStore from "@/store/useStore";
 import { LookingForGender } from "@/types/user";
@@ -131,6 +132,10 @@ function PhotoPickerStep({
   removeFailedTitle,
   addPhotoLabel,
   photosCounter,
+  launchEmailOptIn,
+  onLaunchEmailOptInChange,
+  launchEmailLabel,
+  launchEmailNote,
 }: {
   photos: string[];
   onPhotosChange: (urls: string[]) => void;
@@ -142,6 +147,10 @@ function PhotoPickerStep({
   removeFailedTitle: string;
   addPhotoLabel: string;
   photosCounter: (count: number) => string;
+  launchEmailOptIn: boolean;
+  onLaunchEmailOptInChange: (optIn: boolean) => void;
+  launchEmailLabel: string;
+  launchEmailNote: string;
 }) {
   const theme = useAppTheme();
   const { getToken } = useAuth();
@@ -273,6 +282,33 @@ function PhotoPickerStep({
       <Text className="mt-4 text-center text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
         {photosCounter(photos.length)}
       </Text>
+
+      {/* Consent for later: never ticked for the guest. */}
+      <Pressable
+        onPress={() => onLaunchEmailOptInChange(!launchEmailOptIn)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: launchEmailOptIn }}
+        className="mt-8 flex-row items-start gap-3 rounded-2xl bg-light-backgroundMuted p-4 dark:bg-dark-backgroundMuted"
+      >
+        <View
+          className={cn(
+            "mt-0.5 h-6 w-6 items-center justify-center rounded-md border-[1.5px]",
+            launchEmailOptIn
+              ? "border-light-color bg-light-color dark:border-dark-color dark:bg-dark-color"
+              : "border-light-colorMuted dark:border-dark-colorMuted",
+          )}
+        >
+          {launchEmailOptIn && <Check size={14} color="#fff" />}
+        </View>
+        <View className="flex-1">
+          <Text className="text-[15px] text-light-colorStrong dark:text-dark-colorStrong">
+            {launchEmailLabel}
+          </Text>
+          <Text className="mt-1 text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
+            {launchEmailNote}
+          </Text>
+        </View>
+      </Pressable>
     </View>
   );
 }
@@ -280,7 +316,7 @@ function PhotoPickerStep({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useAppTheme();
   // KeyboardAvoidingView measures its bottom edge from its parent but the
   // keyboard from the screen, so it needs the distance between the two.
@@ -373,6 +409,8 @@ export default function OnboardingScreen() {
   // Uploaded R2 URLs (up to 3); populated as photos are picked and uploaded
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUploading, setPhotoUploading] = useState(false);
+  // "Email me when the Tulum app is out": unticked until the guest ticks it.
+  const [launchEmailOptIn, setLaunchEmailOptIn] = useState(false);
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -458,6 +496,10 @@ export default function OnboardingScreen() {
         interested_in: interestedIn,
         picture_urls: photos,
         birthday: birthdayIso,
+        launch_email_opt_in: launchEmailOptIn,
+        consent_wording: t("launchEmailConsent"),
+        language: i18n.language,
+        signup_platform: appPlatform(),
       });
 
       setUser({
@@ -572,6 +614,10 @@ export default function OnboardingScreen() {
                 ? t("onboardingAddOnePhoto")
                 : t("onboardingPhotosAdded", { count })
             }
+            launchEmailOptIn={launchEmailOptIn}
+            onLaunchEmailOptInChange={setLaunchEmailOptIn}
+            launchEmailLabel={t("launchEmailConsent")}
+            launchEmailNote={t("launchEmailConsentNote")}
           />
         );
 

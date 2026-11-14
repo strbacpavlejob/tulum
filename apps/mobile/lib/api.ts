@@ -534,6 +534,13 @@ export interface OnboardingPayload {
   bio?: string;
   picture_urls?: string[];
   birthday: string;
+  /** "Email me when the Tulum app is out", and the text shown with it. */
+  launch_email_opt_in?: boolean;
+  consent_wording?: string;
+  /** The app's language, e.g. EN. */
+  language?: string;
+  /** Where the app runs (appPlatform). */
+  signup_platform?: string;
 }
 
 function authHeaders(token: string): Record<string, string> {
@@ -968,15 +975,17 @@ export class AttendConflictError extends Error {
   name = "AttendConflictError";
 }
 
+/** src is the QR poster that brought the guest, e.g. p07 from ?src=p07. */
 export async function attendEvent(
   token: string,
   eventId: string | number,
+  src?: string | null,
 ): Promise<{ ticket: Record<string, unknown>; isNew: boolean }> {
   const url = `${TULUM_API_URL}/tickets/attend`;
   const response = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ event_id: eventId }),
+    body: JSON.stringify({ event_id: eventId, ...(src ? { src } : {}) }),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -987,6 +996,49 @@ export async function attendEvent(
     throw new Error(message);
   }
   return response.json();
+}
+
+/**
+ * The guest's answer to "Email me when the Tulum app is out". available is
+ * false while the API can't store answers yet (its database migration isn't
+ * applied); Settings then leaves the switch out.
+ */
+export async function fetchLaunchEmailConsent(
+  token: string,
+): Promise<{ available: boolean; granted: boolean }> {
+  const response = await fetch(`${TULUM_API_URL}/users/me/consents`, {
+    headers: authHeaders(token),
+  });
+  if (response.status === 503) return { available: false, granted: false };
+  if (!response.ok) {
+    throw new Error(`Failed to load consents: ${response.status}`);
+  }
+  const body: { app_launch: { granted: boolean } | null } =
+    await response.json();
+  return { available: true, granted: body.app_launch?.granted ?? false };
+}
+
+/** Records a new answer from Settings; the earlier ones are kept. */
+export async function saveLaunchEmailConsent(
+  token: string,
+  answer: {
+    granted: boolean;
+    wording: string;
+    language?: string;
+    platform?: string;
+  },
+): Promise<void> {
+  const response = await fetch(
+    `${TULUM_API_URL}/users/me/consents/app-launch`,
+    {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(answer),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to save consent: ${response.status}`);
+  }
 }
 
 export async function unattendEvent(

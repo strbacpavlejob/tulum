@@ -1,5 +1,6 @@
 import * as chrono from 'chrono-node';
-import { isValid, addYears, addHours } from 'date-fns';
+import { isValid, addYears, addHours, subMonths } from 'date-fns';
+import { isPlausibleEventStart } from '../scrape/shared/event-date-guard';
 
 export interface ExtractedEventData {
   title: string | null;
@@ -131,40 +132,57 @@ function extractVenue(text: string): {
   return { value: venue || null, confidence: venue ? 0.95 : 0 };
 }
 
-function moveToFutureIfNeeded(date: Date): Date {
-  return date < new Date() ? addYears(date, 1) : date;
+/**
+ * A day and month without a year, in the year around the post. A date that
+ * falls more than half a year before the post is next year's (a December
+ * post about 5.1). One shortly before it is left in the past, where the
+ * date check drops it: rolling it a year forward made "25.4" in a post from
+ * 30 April into next April (BUG-041).
+ */
+function dateNearPost(month: number, day: number, postedAt: Date): Date {
+  const date = new Date(postedAt.getFullYear(), month, day);
+  return date < subMonths(postedAt, 6) ? addYears(date, 1) : date;
 }
 
-function extractExplicitDate(text: string): Date | null {
+function extractExplicitDate(text: string, postedAt: Date): Date | null {
   const dayMonthText = text.match(
     /\b(\d{1,2})\s+(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|september|oct|october|nov|november|dec|december)\b/i,
   );
   if (dayMonthText) {
     const day = Number(dayMonthText[1]);
     const month = MONTH_MAP[dayMonthText[2].toLowerCase()];
-    return moveToFutureIfNeeded(new Date(new Date().getFullYear(), month, day));
+    return dateNearPost(month, day, postedAt);
   }
 
   const numericDate = text.match(/\b(\d{1,2})[./-](\d{1,2})\b/);
   if (numericDate) {
     const day = Number(numericDate[1]);
     const month = Number(numericDate[2]) - 1;
-    return moveToFutureIfNeeded(new Date(new Date().getFullYear(), month, day));
+    return dateNearPost(month, day, postedAt);
   }
 
   return null;
 }
 
-function extractDate(text: string): { value: Date | null; confidence: number } {
-  const explicitDate = extractExplicitDate(text);
+/**
+ * The date the caption announces, read relative to when it was posted, or
+ * null when it can't be read or isn't an upcoming night near the post.
+ */
+function extractDate(
+  text: string,
+  postedAt: Date,
+): { value: Date | null; confidence: number } {
+  const explicitDate = extractExplicitDate(text, postedAt);
   if (explicitDate && isValid(explicitDate)) {
-    return { value: explicitDate, confidence: 0.9 };
+    return isPlausibleEventStart(explicitDate, postedAt)
+      ? { value: explicitDate, confidence: 0.9 }
+      : { value: null, confidence: 0 };
   }
 
-  const parsed = chrono.parseDate(normalizeSerbianDates(text), new Date(), {
+  const parsed = chrono.parseDate(normalizeSerbianDates(text), postedAt, {
     forwardDate: true,
   });
-  if (parsed && isValid(parsed)) {
+  if (parsed && isValid(parsed) && isPlausibleEventStart(parsed, postedAt)) {
     return { value: parsed, confidence: 0.7 };
   }
 
@@ -176,10 +194,17 @@ function extractTags(text: string): string[] {
   return matches.map((tag) => tag.slice(1).toLowerCase());
 }
 
-export function extractEventData(caption: string): ExtractedEventData {
+/**
+ * The event a post's caption announces. Dates are read relative to postedAt,
+ * when the post went up; without it, now.
+ */
+export function extractEventData(
+  caption: string,
+  postedAt: Date = new Date(),
+): ExtractedEventData {
   const title = extractTitle(caption);
   const venue = extractVenue(caption);
-  const date = extractDate(caption);
+  const date = extractDate(caption, postedAt);
   const tags = extractTags(caption);
 
   const startDateTime = date.value ? date.value.toISOString() : null;

@@ -79,14 +79,13 @@ export class MatchesService {
     // The guests rows are read whole (*) so this works before and after the
     // add_guest_profile_details migration; matchProfileDetails picks what is
     // sent.
+    // The match is read whole (*) so archived_at is seen after the migration
+    // that adds it, and nothing breaks before.
     const matchesQuery = this.db
       .from(MATCHES_TABLE)
       .select(
         `
-        id,
-        guest_id_1,
-        guest_id_2,
-        matched_at,
+        *,
         guest1:guests!matches_guest_id_1_fkey(
           *,
           user:users!guests_user_id_fkey(first_name, last_name, avatar_url)
@@ -130,7 +129,9 @@ export class MatchesService {
 
     const nowMs = Date.now();
 
+    // A match an admin clean-up archived is kept, but no longer listed.
     return (data ?? [])
+      .filter((match: any) => !match.archived_at)
       .filter((match: any) => {
         const endDateRaw = match?.event?.end_date_time;
         const endMs = parseDbTimestampMs(endDateRaw);

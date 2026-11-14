@@ -68,7 +68,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Privacy Policy",
       intro:
         "This Policy explains how Tulum handles information when you use our mobile app, website, and venue tools. It covers information you provide, activity needed to run the service, and choices available to you.",
-      updated: "Last updated: October 21, 2026",
+      updated: "Last updated: November 14, 2026",
       sections: [
         {
           title: "Information you provide",
@@ -78,7 +78,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Activity in Tulum",
           body:
-            "To provide the service, we process activity such as event views, attendance or RSVP records, saved events, likes, matches, messages, profile settings, and support requests. Our systems may also create technical records needed to operate and secure the service.",
+            "To provide the service, we process activity such as event views, attendance or RSVP records, saved events, likes, matches, messages, profile settings, and support requests. Our systems may also create technical records needed to operate and secure the service. We also note how you found Tulum: the platform you signed up on, the first event you joined and, if a poster's QR code brought you, which poster.",
         },
         {
           title: "Location and device permissions",
@@ -89,6 +89,11 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
           title: "How information is used",
           body:
             "We use information to create and secure accounts, show events and profiles, support attendance and matching features, deliver chats, operate venue tools, respond to requests, troubleshoot problems, prevent abuse, and meet legal obligations.",
+        },
+        {
+          title: "Emails about the Tulum app",
+          body:
+            "If you tick “Email me when the Tulum app is out”, we keep your answer with the wording you saw, the time, the app's language and your phone type, and email you when the Tulum app comes to the App Store and Google Play. The box is never ticked for you. You can change your answer in Settings at any time. We keep the record of your answers as proof of consent and delete it with your account.",
         },
         {
           title: "What other people can see",
@@ -197,7 +202,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Politika privatnosti",
       intro:
         "Ova politika objašnjava kako Tulum obrađuje podatke kada koristiš mobilnu aplikaciju, veb-sajt i alate za lokale. Obuhvata podatke koje nam dostavljaš, aktivnost potrebnu za rad usluge i izbore koji su ti dostupni.",
-      updated: "Poslednje ažuriranje: 21. oktobar 2026.",
+      updated: "Poslednje ažuriranje: 14. novembar 2026.",
       sections: [
         {
           title: "Podaci koje dostavljaš",
@@ -207,7 +212,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Aktivnost u Tulum-u",
           body:
-            "Radi pružanja usluge obrađujemo aktivnost kao što su pregledi događaja, prijave ili evidencija prisustva, sačuvani događaji, lajkovi, mečevi, poruke, podešavanja profila i zahtevi podršci. Naši sistemi mogu stvarati i tehničke zapise potrebne za rad i zaštitu usluge.",
+            "Radi pružanja usluge obrađujemo aktivnost kao što su pregledi događaja, prijave ili evidencija prisustva, sačuvani događaji, lajkovi, mečevi, poruke, podešavanja profila i zahtevi podršci. Naši sistemi mogu stvarati i tehničke zapise potrebne za rad i zaštitu usluge. Beležimo i kako si pronašao/la Tulum: platformu na kojoj si se registrovao/la, prvi događaj kojem si se pridružio/la i, ako te je doveo QR kod sa plakata, sa kog plakata.",
         },
         {
           title: "Lokacija i dozvole uređaja",
@@ -218,6 +223,11 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
           title: "Kako koristimo podatke",
           body:
             "Podatke koristimo za kreiranje i zaštitu naloga, prikaz događaja i profila, funkcije prisustva i mečeva, ćaskanje, rad alata za lokale, odgovore na zahteve, rešavanje problema, sprečavanje zloupotreba i ispunjavanje zakonskih obaveza.",
+        },
+        {
+          title: "Email-ovi o Tulum aplikaciji",
+          body:
+            "Ako označiš „Pošalji mi email kad Tulum aplikacija izađe”, čuvamo tvoj odgovor sa tekstom koji si video/la, vremenom, jezikom aplikacije i vrstom telefona, i poslaćemo ti email kada Tulum aplikacija stigne na App Store i Google Play. Polje nikada nije unapred označeno. Odgovor možeš da promeniš u Podešavanjima kad god želiš. Zapis tvojih odgovora čuvamo kao dokaz saglasnosti i brišemo ga zajedno sa nalogom.",
         },
         {
           title: "Šta drugi mogu da vide",
@@ -326,7 +336,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Политика конфиденциальности",
       intro:
         "В этой политике описано, как Tulum обрабатывает информацию при использовании мобильного приложения, сайта и инструментов для заведений. Она охватывает сведения, которые вы предоставляете, данные о работе сервиса и доступные вам настройки.",
-      updated: "Последнее обновление: 21 октября 2026 г.",
+      updated: "Последнее обновление: 14 ноября 2026 г.",
       sections: [
         {
           title: "Предоставляемая вами информация",
@@ -336,7 +346,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Активность в Tulum",
           body:
-            "Для работы сервиса мы обрабатываем такие данные, как просмотры событий, отметки участия или записи RSVP, сохраненные события, лайки, совпадения, сообщения, настройки профиля и обращения в поддержку. Системы также могут создавать технические записи, необходимые для работы и защиты сервиса.",
+            "Для работы сервиса мы обрабатываем такие данные, как просмотры событий, отметки участия или записи RSVP, сохраненные события, лайки, совпадения, сообщения, настройки профиля и обращения в поддержку. Системы также могут создавать технические записи, необходимые для работы и защиты сервиса. Мы также отмечаем, как вы нашли Tulum: платформу, на которой вы зарегистрировались, первое событие, к которому вы присоединились, и, если вас привел QR-код с плаката, — с какого плаката.",
         },
         {
           title: "Геолокация и разрешения устройства",
@@ -347,6 +357,11 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
           title: "Использование информации",
           body:
             "Мы используем информацию для создания и защиты аккаунтов, показа событий и профилей, поддержки участия и совпадений, чатов, инструментов для заведений, ответа на обращения, устранения неполадок, предотвращения злоупотреблений и выполнения требований закона.",
+        },
+        {
+          title: "Письма о приложении Tulum",
+          body:
+            "Если вы отметите «Сообщите мне по email, когда выйдет приложение Tulum», мы сохраним ваш ответ вместе с показанным текстом, временем, языком приложения и типом телефона и напишем вам, когда приложение Tulum появится в App Store и Google Play. Этот флажок никогда не отмечается за вас. Ответ можно изменить в настройках в любой момент. Историю ваших ответов мы храним как подтверждение согласия и удаляем вместе с аккаунтом.",
         },
         {
           title: "Что могут видеть другие",

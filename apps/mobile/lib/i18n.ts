@@ -121,6 +121,9 @@ const resources = {
       onboardingAddPhoto: "Add photo",
       onboardingAddUpToPhotos: "Add up to 3 photos",
       onboardingAddOnePhoto: "Add at least one photo, up to 3",
+      launchEmailConsent: "Email me when the Tulum app is out",
+      launchEmailConsentNote:
+        "Only for that. You can turn it off any time in Settings.",
       onboardingBirthdayHint: "Scroll to your date of birth",
       onboardingPhotosAdded: "{{count}}/3 photos added",
       onboardingMissingRequiredFields: "Missing required fields",
@@ -629,6 +632,9 @@ const resources = {
       onboardingAddPhoto: "Dodaj fotografiju",
       onboardingAddUpToPhotos: "Dodaj do 3 fotografije",
       onboardingAddOnePhoto: "Dodaj bar jednu fotografiju, najviše 3",
+      launchEmailConsent: "Pošalji mi email kad Tulum aplikacija izađe",
+      launchEmailConsentNote:
+        "Samo zbog toga. Možeš to da isključiš kad god želiš u Podešavanjima.",
       onboardingBirthdayHint: "Odaberi svoj datum rođenja",
       onboardingPhotosAdded: "Dodato fotografija: {{count}}/3",
       onboardingMissingRequiredFields: "Nedostaju obavezna polja",
@@ -1137,6 +1143,10 @@ const resources = {
       onboardingAddPhoto: "Добавить фото",
       onboardingAddUpToPhotos: "Добавьте до 3 фото",
       onboardingAddOnePhoto: "Добавьте хотя бы одно фото, максимум 3",
+      launchEmailConsent:
+        "Сообщите мне по email, когда выйдет приложение Tulum",
+      launchEmailConsentNote:
+        "Только для этого. Это можно отключить в любой момент в настройках.",
       onboardingBirthdayHint: "Прокрутите до даты рождения",
       onboardingPhotosAdded: "Добавлено фото: {{count}}/3",
       onboardingMissingRequiredFields: "Не заполнены обязательные поля",

@@ -564,6 +564,19 @@ describe('MatchesService getMyMatches', () => {
     expect(matches.map((match) => match.id)).toEqual([5, 7]);
   });
 
+  it('leaves out matches an admin clean-up archived', async () => {
+    const { service } = createServiceWithRows([
+      matchRow(5, null),
+      { ...matchRow(6, null), archived_at: hoursFromNow(-0.5) },
+      // Before the archive migration the column isn't there at all.
+      matchRow(7, null),
+    ]);
+
+    const matches = await service.getMyMatches('me-user');
+
+    expect(matches.map((match) => match.id)).toEqual([5, 7]);
+  });
+
   it("reads only each chat's newest message", async () => {
     const { service, query } = createServiceWithRows([]);
 

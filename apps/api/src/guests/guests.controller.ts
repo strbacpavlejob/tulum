@@ -7,6 +7,7 @@ import {
   Delete,
   FileTypeValidator,
   Get,
+  Logger,
   MaxFileSizeValidator,
   ParseFilePipe,
   Post,
@@ -18,13 +19,21 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { parsePageLimit } from '../common/paging';
+import { AttributionService } from '../retention/attribution.service';
+import { ConsentsService } from '../retention/consents.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { GuestsService } from './guests.service';
 
 @ApiTags('guests')
 @Controller('guests')
 export class GuestsController {
-  constructor(private readonly guestsService: GuestsService) {}
+  private readonly logger = new Logger(GuestsController.name);
+
+  constructor(
+    private readonly guestsService: GuestsService,
+    private readonly consents: ConsentsService,
+    private readonly attribution: AttributionService,
+  ) {}
 
   @Get('me')
   async getMe(@UserId() userId: string) {
@@ -88,7 +97,33 @@ export class GuestsController {
   async submitOnboarding(@UserId() userId: string, @Body() dto: OnboardingDto) {
     if (!userId)
       throw new BadRequestException('Missing required header: x-user-id');
-    return this.guestsService.upsertOnboarding(userId, dto);
+    const result = await this.guestsService.upsertOnboarding(userId, dto);
+    await this.recordSignup(userId, dto);
+    return result;
+  }
+
+  /**
+   * The guest's answer to the launch email checkbox and the platform they
+   * signed up on. Kept beside the profile: a failure here is logged and
+   * doesn't undo onboarding.
+   */
+  private async recordSignup(userId: string, dto: OnboardingDto) {
+    if (dto.launch_email_opt_in !== undefined && dto.consent_wording) {
+      try {
+        await this.consents.recordAppLaunch(userId, {
+          granted: dto.launch_email_opt_in,
+          wording: dto.consent_wording,
+          language: dto.language,
+          platform: dto.signup_platform,
+          source: 'onboarding',
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Launch email answer not recorded: ${(err as Error).message}`,
+        );
+      }
+    }
+    await this.attribution.recordSignupPlatform(userId, dto.signup_platform);
   }
 
   /**

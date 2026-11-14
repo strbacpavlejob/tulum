@@ -13,6 +13,7 @@ import {
   ScraperResult,
 } from '../../domain/scraper.interface';
 import { Venue } from '../../domain/scraper-venue.interfaces';
+import { isPlausibleEventStart } from '../../shared/event-date-guard';
 import { sanitizeScrapedText } from '../../shared/scraper.helpers';
 import {
   AiEventProcessingService,
@@ -201,7 +202,18 @@ export class InstagramScraperService implements Scraper<
     }
 
     const processedEvents = await this.processEventsSafely(candidateEvents);
-    const scrapedEvents = processedEvents.map((event) => this.mapEvent(event));
+    // A start far from the post that announced it is a misread date
+    // (BUG-041); such an event is left out rather than listed on it.
+    const datedEvents = processedEvents.filter((event) => {
+      if (isPlausibleEventStart(event.startDateTime, event.postDate)) {
+        return true;
+      }
+      this.logger.warn(
+        `Skipping "${event.title}" from @${event.ownerUsername}: starts ${event.startDateTime}, posted ${event.postDate ?? 'at an unknown time'}.`,
+      );
+      return false;
+    });
+    const scrapedEvents = datedEvents.map((event) => this.mapEvent(event));
 
     this.logger.log(
       `Instagram bulk scrape produced ${scrapedEvents.length} events.`,

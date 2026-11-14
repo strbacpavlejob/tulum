@@ -2,6 +2,9 @@ import { cn } from '@/lib/utils';
 import * as SwitchPrimitives from '@rn-primitives/switch';
 import { Platform } from 'react-native';
 
+// The template's colours (bg-primary, bg-input, bg-background) aren't
+// defined in this app, so the switch drew nothing; it uses the app's own,
+// as ui/button does (BUG-050).
 function Switch({
   className,
   ...props
@@ -9,24 +12,24 @@ function Switch({
   return (
     <SwitchPrimitives.Root
       className={cn(
-        'flex h-[1.15rem] w-8 shrink-0 flex-row items-center rounded-full border border-transparent shadow-sm shadow-black/5',
+        'flex h-6 w-10 shrink-0 flex-row items-center rounded-full border border-transparent px-0.5',
         Platform.select({
-          web: 'focus-visible:border-ring focus-visible:ring-ring/50 peer inline-flex outline-none transition-all focus-visible:ring-[3px] disabled:cursor-not-allowed',
+          web: 'peer inline-flex outline-none transition-all disabled:cursor-not-allowed',
         }),
-        props.checked ? 'bg-primary' : 'bg-input dark:bg-input/80',
+        props.checked
+          ? 'bg-light-color dark:bg-dark-color'
+          : 'bg-light-gray5 dark:bg-dark-gray5',
         props.disabled && 'opacity-50',
         className
       )}
       {...props}>
       <SwitchPrimitives.Thumb
         className={cn(
-          'bg-background size-4 rounded-full transition-transform',
+          'size-5 rounded-full bg-white shadow-sm shadow-black/20 transition-transform',
           Platform.select({
             web: 'pointer-events-none block ring-0',
           }),
-          props.checked
-            ? 'dark:bg-primary-foreground translate-x-3.5'
-            : 'dark:bg-foreground translate-x-0'
+          props.checked ? 'translate-x-4' : 'translate-x-0'
         )}
       />
     </SwitchPrimitives.Root>

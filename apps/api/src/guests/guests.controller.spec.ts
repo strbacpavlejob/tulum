@@ -15,12 +15,15 @@ import {
   describe,
   expect,
   it,
+  jest,
 } from '@jest/globals';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ClerkAuthGuard } from '../common/guards/clerk-auth.guard';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { R2Service } from '../r2/r2.service';
+import { AttributionService } from '../retention/attribution.service';
+import { ConsentsService } from '../retention/consents.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { UserProvisioningService } from '../users/user-provisioning.service';
 import { AccountDeletionService } from '../users/account-deletion.service';
@@ -155,6 +158,19 @@ function from(table: string) {
 
 const callerUser = () => tables.users.find((u) => u.id === CALLER);
 
+// Consent and attribution are stored by their own services, checked in
+// src/retention; here only what onboarding hands them.
+const consents = {
+  recordAppLaunch: jest.fn((_userId: string, _answer: unknown) =>
+    Promise.resolve(),
+  ),
+};
+const attribution = {
+  recordSignupPlatform: jest.fn((_userId: string, _platform: unknown) =>
+    Promise.resolve(),
+  ),
+};
+
 // What the app sends after the last step, apart from the name.
 const answers = {
   gender: 'female',
@@ -198,6 +214,8 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },
         { provide: R2Service, useValue: {} },
         { provide: AccountDeletionService, useValue: {} },
+        { provide: ConsentsService, useValue: consents },
+        { provide: AttributionService, useValue: attribution },
       ],
     }).compile();
 
@@ -216,6 +234,7 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
   beforeEach(() => {
     tables = seedTables();
     failUsersWrites = false;
+    jest.clearAllMocks();
   });
 
   const http = () => request(app.getHttpServer());
@@ -258,6 +277,62 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
 
     const status = await http().get('/guests/me').set(AS_CALLER).expect(200);
     expect(status.body.isOnboardingComplete).toBe(true);
+  });
+
+  it('records the launch email answer, with its wording, and the sign-up platform', async () => {
+    const wording = 'Email me when the Tulum app is out';
+    await http()
+      .post('/guests/onboarding')
+      .set(AS_CALLER)
+      .send({
+        ...answers,
+        first_name: 'Ana',
+        launch_email_opt_in: true,
+        consent_wording: wording,
+        language: 'sr',
+        signup_platform: 'web-ios-instagram',
+      })
+      .expect(201);
+
+    expect(consents.recordAppLaunch).toHaveBeenCalledWith(CALLER, {
+      granted: true,
+      wording,
+      language: 'sr',
+      platform: 'web-ios-instagram',
+      source: 'onboarding',
+    });
+    expect(attribution.recordSignupPlatform).toHaveBeenCalledWith(
+      CALLER,
+      'web-ios-instagram',
+    );
+    // Neither is stored on the profile itself.
+    expect(tables.guests[0]).not.toHaveProperty('launch_email_opt_in');
+  });
+
+  it('still completes onboarding when the answer cannot be stored', async () => {
+    consents.recordAppLaunch.mockRejectedValueOnce(
+      new Error('Consents are not set up yet'),
+    );
+    const submitted = await http()
+      .post('/guests/onboarding')
+      .set(AS_CALLER)
+      .send({
+        ...answers,
+        first_name: 'Ana',
+        launch_email_opt_in: false,
+        consent_wording: 'Email me when the Tulum app is out',
+      })
+      .expect(201);
+    expect(submitted.body.isOnboardingComplete).toBe(true);
+  });
+
+  it('refuses a malformed sign-up platform', async () => {
+    await http()
+      .post('/guests/onboarding')
+      .set(AS_CALLER)
+      .send({ ...answers, first_name: 'Ana', signup_platform: 'Web iOS!' })
+      .expect(400);
+    expect(consents.recordAppLaunch).not.toHaveBeenCalled();
   });
 
   it('accepts a 50-character name', async () => {
