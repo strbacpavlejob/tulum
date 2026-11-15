@@ -246,16 +246,23 @@ export class MatchesService {
       if (error) throw error;
       return data;
     };
-    const swipeSession = await activeSession(userId);
-    const targetSession = await activeSession(otherUserId);
-
-    const { data: targetTicket, error: targetTicketError } = await this.db
-      .from('tickets')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('guest_id', otherUserId)
-      .maybeSingle();
-    if (targetTicketError) throw targetTicketError;
+    const ticketOf = async (guestId: string) => {
+      const { data, error } = await this.db
+        .from('tickets')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('guest_id', guestId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    };
+    // Independent lookups, so together: one round trip instead of three on
+    // every swipe.
+    const [swipeSession, targetSession, targetTicket] = await Promise.all([
+      activeSession(userId),
+      activeSession(otherUserId),
+      ticketOf(otherUserId),
+    ]);
 
     if (!swipeSession || (!targetSession && !targetTicket)) {
       throw new BadRequestException(

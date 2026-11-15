@@ -1,0 +1,3 @@
+# Clerk session ids of the load-test users, and run results.
+.token-users.json
+results/

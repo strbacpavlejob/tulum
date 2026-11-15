@@ -3,13 +3,16 @@ import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './chats/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // Shares socket rooms across instances through Redis when it's there.
+  const socketAdapter = new RedisIoAdapter(app);
+  await socketAdapter.connectToRedis();
+  app.useWebSocketAdapter(socketAdapter);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const normalizeOrigin = (value: string) => value.replace(/\/$/, '');
