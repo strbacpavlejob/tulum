@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Logo from "../common/logo";
 import LanguageSelector from "../common/language-selector";
 
@@ -22,6 +23,8 @@ interface NavbarProps {
 
 export default function Navbar({ scrollToSection, cta }: NavbarProps) {
   const { t } = useTranslation();
+  // Only the venue page has a pricing section; guests' Premium isn't out.
+  const hasPricing = usePathname() === "/host";
   const activeCta =
     cta === undefined
       ? {
@@ -34,7 +37,9 @@ export default function Navbar({ scrollToSection, cta }: NavbarProps) {
   const navItems = [
     { id: "map", label: t("landingpage.nav.liveMap") },
     { id: "how-it-works", label: t("landingpage.nav.howItWorks") },
-    { id: "pricing", label: t("landingpage.nav.pricing") },
+    ...(hasPricing
+      ? [{ id: "pricing", label: t("landingpage.nav.pricing") }]
+      : []),
     { id: "faq", label: t("landingpage.nav.faq") },
   ];
   const [isOpen, setIsOpen] = useState(false);

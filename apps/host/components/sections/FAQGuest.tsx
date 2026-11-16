@@ -111,18 +111,6 @@ export default function FAQGuest() {
           </AccordionItem>
 
           <AccordionItem
-            value="item-7"
-            className="last:border-b-0 border-0 grid gap-2"
-          >
-            <AccordionTrigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 text-left text-sm font-medium transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180 border bg-accent border-border rounded-lg px-4 py-3.5 cursor-pointer no-underline hover:no-underline data-[state=open]:ring data-[state=open]:ring-primary/20">
-              {t("landingpage.faqGuest.q7.question")}
-            </AccordionTrigger>
-            <AccordionContent className="overflow-hidden text-sm px-4 text-muted-foreground">
-              {t("landingpage.faqGuest.q7.answer")}
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
             value="item-8"
             className="last:border-b-0 border-0 grid gap-2"
           >

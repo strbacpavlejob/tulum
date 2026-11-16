@@ -153,6 +153,7 @@ the code before the next stage, not waved through.
 | `SOCKETS_PER_VU` | guests per VU, up to 10 | Open sockets per VU. |
 | `LIKE_SHARE` | 0.1 | Share of swipes that are likes. |
 | `EVENT_ID` | the seeded event | |
+| `VENUE_LAT`, `VENUE_LNG` | the seeded venue | Where the users check in; the API checks it against the event's venue. |
 | `VUS` | all load users | Fewer VUs, each standing for more guests. |
 | `USERS_FILE` | `loadtest/.token-users.json` | Relative to `k6/`. |
 | `CLERK_API_URL` | Clerk's Backend API | For a dry run against stand-ins. |

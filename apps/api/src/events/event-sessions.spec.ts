@@ -5,10 +5,11 @@
  * against in-memory tables. Like PostgREST, maybeSingle() errors when more
  * than one row matches, and the unique index from
  * supabase/migrations/20261024134453_one_active_event_session.sql can be
- * switched on or off.
+ * switched on or off. Also N-6: a check-in needs a ticket, the event on and
+ * a position near the venue.
  */
-import { BadRequestException } from '@nestjs/common';
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { InboxPushService } from '../chats/inbox-push.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { GuestsService } from '../guests/guests.service';
@@ -67,6 +68,7 @@ function from(table: string) {
     }
     const row = {
       ...session(String(values.user_id), new Date().toISOString()),
+      ticket_id: values.ticket_id ?? null,
     };
     tables.event_sessions.push(row);
     return { rows: [{ ...row }], error: null };
@@ -200,9 +202,36 @@ beforeEach(() => {
   };
 });
 
+const VENUE = { latitude: 44.8176, longitude: 20.4569 };
+const MINUTE = 60_000;
+// As supabase-js returns the events' times: UTC without an offset.
+const dbTime = (ms: number) => new Date(ms).toISOString().slice(0, 19);
+// A latitude this many metres north of the venue.
+const north = (metres: number) => VENUE.latitude + metres / 111_194.93;
+
+// My ticket, for an event that started an hour ago and ends in three.
+const myTicket = (
+  times = { start: Date.now() - 60 * MINUTE, end: Date.now() + 180 * MINUTE },
+  venue: Row | null = VENUE,
+) => ({
+  id: 'ticket_me',
+  guest_id: ME,
+  event_id: EVENT,
+  events: {
+    start_date_time: dbTime(times.start),
+    end_date_time: dbTime(times.end),
+    venues: venue,
+  },
+});
+
 describe('Checking in (POST /events/sessions, BUG-030)', () => {
   const controller = new EventsController(supabaseService);
-  const checkIn = () => controller.createSession(ME, { event_id: EVENT });
+  const checkIn = () =>
+    controller.createSession(ME, { event_id: EVENT, ...VENUE, accuracy: 20 });
+
+  beforeEach(() => {
+    tables.tickets.push(myTicket());
+  });
 
   it('returns the open session instead of adding another', async () => {
     const first = await checkIn();
@@ -241,6 +270,100 @@ describe('Checking in (POST /events/sessions, BUG-030)', () => {
     };
     await checkIn();
     expect(activeSessions(ME)).toHaveLength(2);
+  });
+});
+
+describe('Checking in needs a ticket, the event on and the venue near (N-6)', () => {
+  const controller = new EventsController(supabaseService);
+  const checkIn = (position: { latitude?: number; accuracy?: number } = {}) =>
+    controller.createSession(ME, {
+      event_id: EVENT,
+      latitude: position.latitude ?? VENUE.latitude,
+      longitude: VENUE.longitude,
+      accuracy: position.accuracy ?? 20,
+    });
+  // The refusal's reason, or null when the check-in went through.
+  const reasonOf = async (attempt: Promise<unknown>) => {
+    try {
+      await attempt;
+      return null;
+    } catch (error) {
+      if (!(error instanceof ForbiddenException)) throw error;
+      return (error.getResponse() as { reason: string }).reason;
+    }
+  };
+  const radius = process.env.CHECKIN_RADIUS_METERS;
+
+  beforeEach(() => {
+    delete process.env.CHECKIN_RADIUS_METERS;
+  });
+  afterEach(() => {
+    if (radius === undefined) delete process.env.CHECKIN_RADIUS_METERS;
+    else process.env.CHECKIN_RADIUS_METERS = radius;
+  });
+
+  it('checks in a guest at the venue and records the ticket', async () => {
+    tables.tickets.push(myTicket());
+    const { session: opened } = await checkIn();
+    expect(opened).toMatchObject({ user_id: ME, ticket_id: 'ticket_me' });
+  });
+
+  it('refuses a guest without a ticket', async () => {
+    expect(await reasonOf(checkIn())).toBe('no_ticket');
+    expect(tables.event_sessions).toHaveLength(0);
+  });
+
+  it('refuses before the event and after it, and opens 5 minutes early', async () => {
+    const now = Date.now();
+    tables.tickets = [
+      myTicket({ start: now + 6 * MINUTE, end: now + 240 * MINUTE }),
+    ];
+    expect(await reasonOf(checkIn())).toBe('not_live');
+    tables.tickets = [
+      myTicket({ start: now - 240 * MINUTE, end: now - MINUTE }),
+    ];
+    expect(await reasonOf(checkIn())).toBe('not_live');
+    tables.tickets = [
+      myTicket({ start: now + 4 * MINUTE, end: now + 240 * MINUTE }),
+    ];
+    expect(await reasonOf(checkIn())).toBeNull();
+  });
+
+  it('allows for the reported accuracy, up to the radius', async () => {
+    tables.tickets.push(myTicket());
+    // The radius is 300 m. 450 m away needs at least 150 m of accuracy, and
+    // the allowance never passes the radius, so 650 m away is always too far.
+    expect(
+      await reasonOf(checkIn({ latitude: north(450), accuracy: 100 })),
+    ).toBe('too_far');
+    expect(
+      await reasonOf(checkIn({ latitude: north(650), accuracy: 5000 })),
+    ).toBe('too_far');
+    expect(tables.event_sessions).toHaveLength(0);
+    expect(
+      await reasonOf(checkIn({ latitude: north(450), accuracy: 200 })),
+    ).toBeNull();
+  });
+
+  it('uses CHECKIN_RADIUS_METERS', async () => {
+    tables.tickets.push(myTicket());
+    process.env.CHECKIN_RADIUS_METERS = '1000';
+    expect(
+      await reasonOf(checkIn({ latitude: north(900), accuracy: 0 })),
+    ).toBeNull();
+  });
+
+  it('refuses at a venue that was never located', async () => {
+    tables.tickets = [myTicket(undefined, { latitude: 0, longitude: 0 })];
+    expect(await reasonOf(checkIn())).toBe('no_venue_location');
+    tables.tickets = [myTicket(undefined, { latitude: null, longitude: null })];
+    expect(await reasonOf(checkIn())).toBe('no_venue_location');
+  });
+
+  it('returns an open check-in as it is, checked when it opened', async () => {
+    tables.event_sessions.push(session(ME, '2026-10-24T20:00:00Z'));
+    const { session: open } = await checkIn({ latitude: north(5000) });
+    expect(open).toMatchObject({ user_id: ME, exited_at: null });
   });
 });
 

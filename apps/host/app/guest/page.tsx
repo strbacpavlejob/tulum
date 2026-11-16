@@ -4,12 +4,13 @@ import MapSection from "@/components/sections/MapSection";
 import FeatureHighlight from "@/components/sections/FeatureHighlight";
 import Footer from "@/components/sections/Footer";
 import HeroGuest from "@/components/sections/HeroGuest";
-import PricingGuest from "@/components/sections/PricingGuest";
 import FAQGuest from "@/components/sections/FAQGuest";
 import CTAGuest from "@/components/sections/CTAGuest";
 
 export default function TulumLanding() {
   const mobileUrl = process.env.NEXT_PUBLIC_TULUM_MOBILE_URL;
+  // The hero links to the KST Maskenbal while /maskenbal has its event.
+  const showMaskenbal = Boolean(process.env.MASKENBAL_EVENT_ID);
 
   return (
     <ClientI18nProvider>
@@ -28,10 +29,9 @@ export default function TulumLanding() {
           />
 
           <main className="flex flex-col items-center justify-center divide-y divide-border min-h-screen w-full">
-            <HeroGuest />
+            <HeroGuest showMaskenbal={showMaskenbal} />
             <MapSection />
             <FeatureHighlight />
-            <PricingGuest />
             <FAQGuest />
             <CTAGuest />
           </main>

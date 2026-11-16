@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Tulum — Real Events. Real People. Real Moments.";
+export const alt = "Tulum — See who’s going. Match with who’s there.";
 export const size = {
   width: 1200,
   height: 630,
@@ -171,9 +171,9 @@ export default async function OpenGraphImage() {
               letterSpacing: -1.8,
             }}
           >
-            <span>Real Events.</span>
-            <span>Real People.</span>
-            <span style={{ color: "#6747f7" }}>Real Moments.</span>
+            <span>See who’s going.</span>
+            <span style={{ color: "#6747f7" }}>Match with</span>
+            <span style={{ color: "#6747f7" }}>who’s there.</span>
           </div>
           <div
             style={{
@@ -183,8 +183,8 @@ export default async function OpenGraphImage() {
               lineHeight: 1.38,
             }}
           >
-            Discover events, meet people who are actually there, and turn nights
-            out into real connections.
+            Find what’s on in Belgrade, join an event, and match with the people
+            at the same party.
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div

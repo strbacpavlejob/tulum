@@ -23,7 +23,7 @@ function IsRealDate(options?: ValidationOptions) {
   return (object: object, propertyName: string) => {
     registerDecorator({
       name: 'isRealDate',
-      target: (object as { constructor: Function }).constructor,
+      target: object.constructor,
       propertyName,
       options: {
         message: 'birthday must be a valid date in YYYY-MM-DD format',
@@ -40,6 +40,36 @@ function IsRealDate(options?: ValidationOptions) {
             date.getMonth() === m - 1 &&
             date.getDate() === d
           );
+        },
+      },
+    });
+  };
+}
+
+/** Tulum is for adults; the app's date picker also stops 18 years back. */
+const MIN_AGE = 18;
+
+/** At least MIN_AGE years old today (UTC). IsRealDate reports bad dates. */
+function IsOldEnough(options?: ValidationOptions) {
+  return (object: object, propertyName: string) => {
+    registerDecorator({
+      name: 'isOldEnough',
+      target: object.constructor,
+      propertyName,
+      options: {
+        message: `Tulum is for people aged ${MIN_AGE} or older`,
+        ...options,
+      },
+      validator: {
+        validate(value: unknown) {
+          if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+            return true;
+          const [y, m, d] = value.split('-').map(Number);
+          const now = new Date();
+          const month = now.getUTCMonth() + 1;
+          const hadBirthday =
+            month > m || (month === m && now.getUTCDate() >= d);
+          return now.getUTCFullYear() - y - (hadBirthday ? 0 : 1) >= MIN_AGE;
         },
       },
     });
@@ -116,6 +146,7 @@ export class OnboardingDto {
   @ApiProperty({ description: 'Date of birth in YYYY-MM-DD format' })
   @IsString()
   @IsRealDate()
+  @IsOldEnough()
   birthday!: string;
 
   // Stored apart from the profile (ConsentsService, AttributionService).

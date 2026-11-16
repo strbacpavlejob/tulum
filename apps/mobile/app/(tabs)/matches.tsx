@@ -11,7 +11,9 @@ import {
   fetchMyTickets,
   fetchSwipeableProfiles,
   createEventSession,
+  CheckInRefusedError,
   GuestUnavailableError,
+  type CheckInPosition,
   type SwipeFilters,
   type SwipeableProfile,
   type SwipeableResponse,
@@ -322,6 +324,8 @@ export default function MatchesScreen() {
   const filteredProfilesRef = useRef<SwipeCandidate[]>([]);
   filteredProfilesRef.current = filteredProfiles;
   const checkedInEventIdRef = useRef<string | null>(null);
+  // The position that passed the location check; the check-in sends it.
+  const checkInPositionRef = useRef<CheckInPosition | null>(null);
   const loadingProfilesRef = useRef(false);
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
@@ -363,6 +367,7 @@ export default function MatchesScreen() {
         ticket.venue_lng,
       );
       if (isAtVenue(dist, accuracy, ticket.checkin_radius_m)) {
+        checkInPositionRef.current = { latitude, longitude, accuracy };
         setEligibility("eligible");
       } else {
         setEligibility("location_required");
@@ -517,7 +522,11 @@ export default function MatchesScreen() {
 
   // ── Load swipeable profiles once eligible ─────────────────────────────────
   // The first page of the deck, for the filters on now. It replaces the deck.
-  const loadProfiles = useCallback(async () => {
+  // When the API refuses the check-in, nothing loads, and it resolves to the
+  // screen to show instead.
+  const loadProfiles = useCallback(async (): Promise<
+    EligibilityState | undefined
+  > => {
     if (!userId || loadingProfilesRef.current) return;
     loadingProfilesRef.current = true;
     setLoadingProfiles(true);
@@ -531,12 +540,26 @@ export default function MatchesScreen() {
       if (!token) return;
       const activeEventId = liveEventId;
       // Ensure the backend records this user's active event session (check-in)
-      if (activeEventId && checkedInEventIdRef.current !== activeEventId) {
+      const position = checkInPositionRef.current;
+      if (
+        activeEventId &&
+        position &&
+        checkedInEventIdRef.current !== activeEventId
+      ) {
         try {
-          await createEventSession(token, activeEventId);
+          await createEventSession(token, activeEventId, position);
           checkedInEventIdRef.current = activeEventId;
-        } catch {
-          // ignore check-in failures — still try to load profiles
+        } catch (error) {
+          // The API checks the ticket, the time and the position as this
+          // screen does. When it refuses, the screen for its reason shows
+          // rather than a deck whose swipes would fail.
+          if (error instanceof CheckInRefusedError) {
+            return error.reason === "too_far" ||
+              error.reason === "no_venue_location"
+              ? "location_required"
+              : "locked";
+          }
+          // Other failures: still try to load profiles.
         }
       }
       const data = await fetchSwipeableProfiles(
@@ -703,7 +726,10 @@ export default function MatchesScreen() {
     checkTickets();
   }, [checkTickets]);
   useEffect(() => {
-    if (eligibility === "eligible") loadProfiles();
+    if (eligibility !== "eligible") return;
+    void loadProfiles().then((refusedTo) => {
+      if (refusedTo) setEligibility(refusedTo);
+    });
   }, [eligibility, loadProfiles]);
 
   // The API filters the deck: other filters load it again, once the slider

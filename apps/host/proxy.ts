@@ -14,6 +14,9 @@ const isPublicRoute = createRouteMatcher([
   "/terms(.*)",
   "/terms-of-service(.*)",
   "/support(.*)",
+  "/delete-account(.*)",
+  "/child-safety(.*)",
+  "/maskenbal(.*)",
   "/sso-callback",
   "/api/events/active",
 ]);
@@ -47,14 +50,15 @@ export const config = {
   matcher: [
     // Every route except Next.js internals, static files (unless found in
     // search params) and the public marketing pages: /, /guest, /host,
-    // /privacy, /privacy-policy, /terms, /terms-of-service, /support and
-    // anything under them (.+ rather than .*, so / itself is skipped too).
+    // /privacy, /privacy-policy, /terms, /terms-of-service, /support,
+    // /delete-account, /child-safety, the /maskenbal poster link and anything
+    // under them (.+ rather than .*, so / itself is skipped too).
     // Those pages don't use Clerk. Running clerkMiddleware on them sent every
     // first visit through the development instance's handshake, 3 redirects
     // before the page, and clients without cookies (crawlers) looped forever
     // (QA TASK-004). Next reads the matcher at build time, so it must stay a
     // string literal.
-    "/((?!_next|(?:guest|host|privacy|privacy-policy|terms|terms-of-service|support)(?:/|$)|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).+)",
+    "/((?!_next|(?:guest|host|privacy|privacy-policy|terms|terms-of-service|support|delete-account|child-safety|maskenbal)(?:/|$)|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).+)",
     // Always run for API routes
     "/(api|trpc)(.*)",
   ],

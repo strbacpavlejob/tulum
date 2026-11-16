@@ -18,6 +18,15 @@ import { openSocket } from "./lib/socketio.js";
 
 const API = (__ENV.API || "").replace(/\/+$/, "");
 const EVENT_ID = __ENV.EVENT_ID || "b6b6b6b6-0000-4000-8000-000000000001";
+// A check-in sends where the phone is, and the API compares it with the
+// venue's: the seeded venue (sql/seed-staging.sql), as a phone indoors
+// reports it.
+const CHECK_IN = {
+  event_id: EVENT_ID,
+  latitude: Number(__ENV.VENUE_LAT || 44.8176),
+  longitude: Number(__ENV.VENUE_LNG || 20.4569),
+  accuracy: 25,
+};
 const SECRET = __ENV.CLERK_SECRET_KEY || "";
 const EQUIV = Number(__ENV.EQUIV || 100);
 const HOLD_MINUTES = Number(__ENV.HOLD_MINUTES || 30);
@@ -141,7 +150,7 @@ export function setup() {
     check(attend, { "setup: attend 2xx": (r) => r.status < 300 });
     const checkIn = http.post(
       `${API}/events/sessions`,
-      JSON.stringify({ event_id: EVENT_ID }),
+      JSON.stringify(CHECK_IN),
       { headers: h, tags },
     );
     check(checkIn, { "setup: check-in 2xx": (r) => r.status < 300 });
@@ -318,7 +327,7 @@ export default function (data) {
     deckCounts: () =>
       app("GET", `/guests/swipeable?event_id=${EVENT_ID}&limit=0`, null, "deck_counts"),
     matches: () => app("GET", "/matches/mine", null, "matches"),
-    checkIn: () => app("POST", "/events/sessions", { event_id: EVENT_ID }, "check_in"),
+    checkIn: () => app("POST", "/events/sessions", CHECK_IN, "check_in"),
     eventDetails: () => app("GET", `/events/active/${EVENT_ID}`, null, "event_details"),
     guestList: () =>
       app("GET", `/tickets/attendees?event_id=${EVENT_ID}&limit=30`, null, "guest_list"),

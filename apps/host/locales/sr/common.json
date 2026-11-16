@@ -30,8 +30,8 @@
     },
     "guest": {
       "hero": {
-        "title": "Pravi događaji. Pravi ljudi. Pravi trenuci.",
-        "subtitle": "Otkrij događaje i upoznaj ljude koji su već tu. Započnite veče uz nešto zajedničko.",
+        "title": "Vidi ko dolazi. Mečuj se sa onima koji su tu.",
+        "subtitle": "Pronađi šta se dešava u Beogradu, pridruži se događaju, a kad stigneš, mečuj se sa ljudima na istoj žurci.",
         "downloadOn": "Preuzmi na",
         "appStore": "App Store",
         "getItOn": "Dostupno na",
@@ -43,7 +43,15 @@
         "openTulum": "Otvori Tulum",
         "worksInBrowser": "Radi u pregledaču na telefonu. Ništa ne preuzimaš.",
         "appsSoon": "Aplikacije za iPhone i Android stižu uskoro.",
-        "followForNews": "Prati nas za novosti"
+        "followForNews": "Prati nas za novosti",
+        "liveTonight_one": "{{count}} događaj u Beogradu večeras",
+        "liveTonight_few": "{{count}} događaja u Beogradu večeras",
+        "liveTonight_other": "{{count}} događaja u Beogradu večeras",
+        "liveWeek_one": "{{count}} događaj u Beogradu ove nedelje",
+        "liveWeek_few": "{{count}} događaja u Beogradu ove nedelje",
+        "liveWeek_other": "{{count}} događaja u Beogradu ove nedelje",
+        "maskenbal": "KST Maskenbal je na Tulum-u",
+        "maskenbalCta": "Pridruži se žurki"
       }
     },
     "hero": {
@@ -181,15 +189,15 @@
         },
         "guestList": {
           "title": "Priključi se listi posetilaca",
-          "description": "Klikni “Prisustvuj” da se priključiš događaju. Tvoj profil će se naći se na listi gostiju i otključava se mečovanje sa ljudima."
+          "description": "Dodirni „Prisustvuj“ i naći ćeš se na listi gostiju. Mečovanje se otvara kada događaj počne i kada si na mestu događaja."
         },
         "match": {
           "title": "Mečuj se samo sa osobama koje su tu",
-          "description": "Kada počne događaj, listaj profle ljudi koji su takođe došli. Nema spojeva na daljinu ni random profila."
+          "description": "Kada događaj počne i stigneš na mesto, listaj profile ljudi koji su takođe tu. Nema mečeva na daljinu ni nasumičnih profila."
         },
         "chat": {
           "title": "Idemo korak dalje",
-          "description": "Našao si svoj spoj. Započnite lagano ćaskanje ili se odmah nađite uživo. Chatovi ističu nakon događaja, nema usiljene priče."
+          "description": "Imaš meč? Javi se ili se odmah nađite uživo. Ćaskanje ostaje otvoreno 6 sati od meča, pa sve ostaje stvarno."
         },
         "find": {
           "title": "Lako prepoznavanje, gde god da se nalazite",
@@ -278,7 +286,7 @@
       },
       "match": {
         "title": "MEČ!",
-        "description": "Imaš priliku da pišeš svom meču do kraja događaja",
+        "description": "Možete da se dopisujete narednih 6 sati",
         "messagePlaceholder": "Poruka…",
         "matchProfileAlt": "Profilna fotografija Ane",
         "yourProfileAlt": "Tvoja profilna fotografija"
@@ -483,7 +491,9 @@
     },
     "legal": {
       "privacyPolicy": "Politika privatnosti",
-      "termsOfService": "Uslovi korišćenja"
+      "termsOfService": "Uslovi korišćenja",
+      "deleteAccount": "Brisanje naloga",
+      "childSafety": "Zaštita dece"
     },
     "ctaGuest": {
       "title": "Kuda večeras?",
@@ -495,19 +505,19 @@
       "subtitle": "Sve što trebaš znati o korišćenju Tulum-a kao gost.",
       "q1": {
         "question": "Kako funkcioniše Tulum?",
-        "answer": "Tulum te povezuje sa ljudima koji već idu na iste događaje kao i ti. Otkrivаš događaje, pridružuješ im se i uparuješ se samo sa onima koji takođe dolaze."
+        "answer": "Tulum te povezuje sa ljudima koji idu na iste događaje kao i ti. Otkrivaš događaje, pridružuješ im se i mečuješ se samo sa onima koji su takođe tu."
       },
       "q2": {
         "question": "Moram li da \"swipe-ujem\" kao na drugim aplikacijama?",
-        "answer": "Ne. Više se ne uparuješ sa random ljudima, uparuješ se na licu mesta sa onima sa kojima već imaš nešto zajedničko. I nisu daleko… oni su tu, u blizini."
+        "answer": "Da, ali samo kroz ljude koji su na istom događaju kao ti, dok on traje. Nema nepoznatih s drugog kraja grada, samo ljudi u istoj prostoriji."
       },
       "q3": {
         "question": "Kada mogu da počnem da razgovaram s nekim?",
-        "answer": "Čet se otključava kada se upariš na istom događaju. Ostaje otvoren kratko vreme nakon završetka da te podstakne da iskoristiš trenutak i upoznaš se uživo."
+        "answer": "Ćaskanje se otvara kada se mečujete na događaju i ostaje otvoreno 6 sati, da vas podstakne da se upoznate uživo dok ste oboje tu."
       },
       "q4": {
         "question": "Mogu li se uparivati s bilo kim u bilo kom trenutku?",
-        "answer": "Ne. Možeš se upariti samo sa osobama koje idu fizički na isti događaj kao i ti."
+        "answer": "Ne. Možeš da se mečuješ samo sa ljudima na istom događaju kao ti, dok on traje. Tulum proverava da li si na mestu događaja pre nego što se mečovanje otvori."
       },
       "q5": {
         "question": "Mogu li videti ko ide na događaj?",
@@ -515,11 +525,7 @@
       },
       "q6": {
         "question": "Da li je Tulum besplatan?",
-        "answer": "Da. Sve osnovne funkcije su besplatne. Premium otključava dodatnu vidljivost, detaljnije uvide i napredne funkcije."
-      },
-      "q7": {
-        "question": "Šta mi daje Premium?",
-        "answer": "Premium ti daje veću vidljivost, pametnije filtere i više načina za povezivanje kao što su slanje poruke pre uparivanja, isticanje profila i pregled ljudi koji su zainteresovani za tebe."
+        "answer": "Da. Tulum je besplatan, kao i sve što piše na ovoj stranici."
       },
       "q8": {
         "question": "Da li je bezbedno?",
@@ -527,11 +533,11 @@
       },
       "q9": {
         "question": "Po čemu se Tulum razlikuje od aplikacija za upoznavanje?",
-        "answer": "Ne uparuješ se bez-veze uparuješ se kroz događaje iz stvarnog života koje ti biraš. To znači preskakanje površnih razgovora i više pravog povezivanja."
+        "answer": "Ne mečuješ se nasumično: mečuješ se kroz prave događaje koje ti biraš. To znači manje površnih razgovora i više pravog povezivanja."
       },
       "q10": {
-        "question": "Šta ako se ne upаrim ni sa kim?",
-        "answer": "I dalje ideš na sjajan događaj. Tulum je izgrađen oko odabranih iskustava upoznavanje ljudi uživo ti olakšavamo, nema pritiska, a nikad ne reci nikad, možda se u toku večeri pojavi iskra."
+        "question": "Šta ako se ne mečujem ni sa kim?",
+        "answer": "I dalje ideš na sjajan događaj. Tulum je izgrađen pre svega oko pravih iskustava: upoznavanje ljudi je bonus, a ne pritisak."
       }
     }
   },

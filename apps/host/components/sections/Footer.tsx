@@ -30,7 +30,9 @@ export default function Footer() {
   const productLinks = [
     { href: "#map", label: t("landingpage.nav.liveMap") },
     { href: "#how-it-works", label: t("landingpage.nav.howItWorks") },
-    { href: "#pricing", label: t("landingpage.nav.pricing") },
+    ...(pathname === "/host"
+      ? [{ href: "#pricing", label: t("landingpage.nav.pricing") }]
+      : []),
     { href: "#faq", label: t("landingpage.nav.faq") },
   ];
   const socialLinks = [
@@ -49,6 +51,14 @@ export default function Footer() {
     {
       href: "/support",
       label: t("landingpage.footer.support"),
+    },
+    {
+      href: "/delete-account",
+      label: t("landingpage.legal.deleteAccount"),
+    },
+    {
+      href: "/child-safety",
+      label: t("landingpage.legal.childSafety"),
     },
   ];
 

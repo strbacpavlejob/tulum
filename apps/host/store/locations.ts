@@ -47,6 +47,8 @@ export const useLocationsStore = create<LocationsState>((set, get) => ({
   lastFetched: null,
   fetchLocations: async () => {
     const state = get();
+    // Already on its way: the hero and the map both ask on load.
+    if (state.isLoading) return;
 
     // If fetched today, use cached data
     if (
@@ -62,8 +64,12 @@ export const useLocationsStore = create<LocationsState>((set, get) => ({
       if (!response.ok) {
         throw new Error("Failed to fetch active events");
       }
-      const listings: Listings = await response.json();
-      set({ locations: listings.events, lastFetched: Date.now() });
+      // The API sends [] when nothing is on, and { events } otherwise.
+      const listings: Listings | Location[] = await response.json();
+      const events = Array.isArray(listings)
+        ? listings
+        : (listings.events ?? []);
+      set({ locations: events, lastFetched: Date.now() });
     } catch (error) {
       set({ error: (error as Error).message });
     } finally {

@@ -13,6 +13,9 @@ importers:
       supabase:
         specifier: 2.121.0
         version: 2.121.0
+      toqr:
+        specifier: 0.1.1
+        version: 0.1.1
       turbo:
         specifier: 2.9.9
         version: 2.9.9

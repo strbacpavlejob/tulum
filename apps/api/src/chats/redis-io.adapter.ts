@@ -103,7 +103,8 @@ export class RedisIoAdapter extends IoAdapter {
     this.logger.log('Sockets are shared across instances through Redis');
   }
 
-  createIOServer(port: number, options?: ServerOptions): Server {
+  // Nest passes only the options a gateway sets, hence Partial.
+  createIOServer(port: number, options?: Partial<ServerOptions>): Server {
     const server = super.createIOServer(port, options) as Server;
     if (this.adapterConstructor) server.adapter(this.adapterConstructor);
     return server;

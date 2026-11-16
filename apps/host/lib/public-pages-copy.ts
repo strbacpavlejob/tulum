@@ -1,4 +1,9 @@
-export type PublicPageId = "terms" | "privacy" | "support";
+export type PublicPageId =
+  | "terms"
+  | "privacy"
+  | "support"
+  | "delete-account"
+  | "child-safety";
 export type PublicPageSection = { title: string; body: string };
 export type PublicPageCopy = {
   title: string;
@@ -17,7 +22,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Terms of Service",
       intro:
         "These Terms apply to the Tulum mobile app, website, and related tools. By creating an account or using Tulum, you agree to these Terms. If you do not agree, do not use the service.",
-      updated: "Last updated: October 21, 2026",
+      updated: "Last updated: November 16, 2026",
       sections: [
         {
           title: "Eligibility and accounts",
@@ -37,7 +42,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Community standards",
           body:
-            "Do not use Tulum to harass, threaten, deceive, impersonate, spam, or harm others, or to break the law. Only upload content you have the right to share. We may remove content or limit access when reasonably necessary to protect people, comply with law, or maintain the service.",
+            "Do not use Tulum to harass, threaten, deceive, impersonate, spam, or harm others, or to break the law. Only upload content you have the right to share. We may remove content or limit access when reasonably necessary to protect people, comply with law, or maintain the service. Child sexual abuse and exploitation is never allowed; our Child safety standards at tulum-app.com/child-safety explain how we act on it.",
         },
         {
           title: "Your content",
@@ -68,7 +73,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Privacy Policy",
       intro:
         "This Policy explains how Tulum handles information when you use our mobile app, website, and venue tools. It covers information you provide, activity needed to run the service, and choices available to you.",
-      updated: "Last updated: November 14, 2026",
+      updated: "Last updated: November 16, 2026",
       sections: [
         {
           title: "Information you provide",
@@ -83,7 +88,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Location and device permissions",
           body:
-            "If you grant foreground location permission and use a location-based feature, the app may access your device location to check whether you are near an event venue. You can manage or revoke this permission in your device settings; related features may not work without it.",
+            "If you grant foreground location permission and use a location-based feature, the app may access your device location to check whether you are near an event venue. When you start matching at an event, the app sends that position to our servers, which compare it with the venue's location and don't store it. You can manage or revoke this permission in your device settings; related features may not work without it.",
         },
         {
           title: "How information is used",
@@ -108,7 +113,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Retention and requests",
           body:
-            "We keep information for as long as it is needed to operate Tulum and for legitimate safety, security, and legal purposes. You may request access, correction, or deletion by emailing us. We may need to verify your identity and retain limited records where required by law or necessary to address disputes or abuse.",
+            "We keep information for as long as it is needed to operate Tulum and for legitimate safety, security, and legal purposes. You may request access, correction, or deletion by emailing us, and you can delete your account yourself in the app; tulum-app.com/delete-account explains how and what is kept. We may need to verify your identity and retain limited records where required by law or necessary to address disputes or abuse.",
         },
         {
           title: "Security and age",
@@ -133,7 +138,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Account and privacy requests",
           body:
-            "For account access or a request to access, correct, or delete information, write from the email associated with your account when possible. We may ask for additional information to verify that you control the account.",
+            "For account access or a request to access, correct, or delete information, write from the email associated with your account when possible. We may ask for additional information to verify that you control the account. To delete your account, see tulum-app.com/delete-account.",
         },
         {
           title: "Keep your account safe",
@@ -145,13 +150,95 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       contactBody:
         "For a faster review, use a clear subject such as “Account access”, “Privacy request”, or “Technical issue”.",
     },
+    "delete-account": {
+      title: "Delete your Tulum account",
+      intro:
+        "You can delete your Tulum account and its data at any time, in the app or by email. This page explains how, what is deleted and what is kept.",
+      updated: "Last updated: November 16, 2026",
+      sections: [
+        {
+          title: "Delete it in the app",
+          body:
+            "Open Tulum and go to Profile → Settings → Delete account, then tap Confirm. The account is deleted straight away and you are signed out. An account that manages venues has to hand them to another host first; write to us and we'll help.",
+        },
+        {
+          title: "Ask us by email",
+          body:
+            "If you can't use the app, email us from the address you sign in with, with the subject “Delete my account”. If you signed in with Apple and hid your email, tell us the address Apple shows for Tulum. We may ask you to confirm the request, and we delete the account within 30 days, usually much sooner.",
+        },
+        {
+          title: "What is deleted",
+          body:
+            "Your sign-in account, your profile and photos, your event attendance and check-ins, your likes, your matches and chats with the messages in them, your saved and viewed events, your blocks, your settings and your email choice with its consent record.",
+        },
+        {
+          title: "What is kept, and for how long",
+          body:
+            "Reports you made, or that others made about you, stay so that moderators keep the record of what happened, but they are no longer linked to your account. Copies of deleted data can remain in our service providers' logs and backups for up to 30 days, until they expire.",
+        },
+      ],
+      contactTitle: "Delete your account by email",
+      contactBody:
+        "Write from the address you sign in with and use the subject “Delete my account”. Don't send passwords or sign-in codes.",
+    },
+    "child-safety": {
+      title: "Child safety standards",
+      intro:
+        "Tulum has zero tolerance for child sexual abuse and exploitation (CSAE), including child sexual abuse material (CSAM). These standards apply to the Tulum app, the website and everything people share on them.",
+      updated: "Last updated: November 16, 2026",
+      sections: [
+        {
+          title: "Adults only",
+          body:
+            "Tulum is for people aged 18 or older. Every guest enters a date of birth when they join, and Tulum only accepts people who are 18 or older. We remove accounts that appear to belong to someone under 18.",
+        },
+        {
+          title: "What is not allowed",
+          body:
+            "Any content or behaviour that sexualises, exploits or endangers children: sexual images or messages involving minors, grooming, sextortion, and arranging to meet a minor. Trying to contact or meet a minor through Tulum is not allowed in any form.",
+        },
+        {
+          title: "Report it in the app",
+          body:
+            "On a guest's card while matching, or in a chat, tap Report or block, choose Report, pick a reason such as “Might be under 18” and tap Report and block. The guest is blocked for you right away and the report goes to our moderators.",
+        },
+        {
+          title: "Report it by email",
+          body:
+            "Write to the address below with the subject “Child safety”. Describe what happened and name the profile, but never send the images themselves.",
+        },
+        {
+          title: "What we do with a report",
+          body:
+            "Reports about minors come first. We hide the account at once, end its check-in at the event and remove the content, and ban the account when the report is confirmed. We keep the report and the account's records as evidence, and we don't copy or forward the material.",
+        },
+        {
+          title: "Reporting to the authorities",
+          body:
+            "When we find child sexual abuse material or a child at risk, we report it to the police in Serbia and, where it applies, to NCMEC or the relevant national authority, as the law requires, and we cooperate with their investigations.",
+        },
+        {
+          title: "Laws we follow",
+          body:
+            "Tulum complies with the child-safety laws that apply to it, including those of Serbia, where Tulum operates.",
+        },
+        {
+          title: "Child-safety contact",
+          body:
+            "Questions from authorities, organisations or users about child safety go to our child-safety contact at the address below.",
+        },
+      ],
+      contactTitle: "Child-safety contact",
+      contactBody:
+        "Use the subject “Child safety”. If a child is in immediate danger, call the police first: 192 in Serbia.",
+    },
   },
   sr: {
     terms: {
       title: "Uslovi korišćenja",
       intro:
         "Ovi uslovi važe za Tulum mobilnu aplikaciju, veb-sajt i povezane alate. Kreiranjem naloga ili korišćenjem Tulum usluge prihvataš ove uslove. Ako se ne slažeš, nemoj koristiti uslugu.",
-      updated: "Poslednje ažuriranje: 21. oktobar 2026.",
+      updated: "Poslednje ažuriranje: 16. novembar 2026.",
       sections: [
         {
           title: "Uslovi za korišćenje i nalozi",
@@ -171,7 +258,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Pravila zajednice",
           body:
-            "Nemoj koristiti Tulum za uznemiravanje, pretnje, obmanu, lažno predstavljanje, neželjene poruke, nanošenje štete ili kršenje zakona. Objavljuj samo sadržaj koji imaš pravo da deliš. Možemo ukloniti sadržaj ili ograničiti pristup kada je to razumno potrebno radi zaštite ljudi, poštovanja zakona ili održavanja usluge.",
+            "Nemoj koristiti Tulum za uznemiravanje, pretnje, obmanu, lažno predstavljanje, neželjene poruke, nanošenje štete ili kršenje zakona. Objavljuj samo sadržaj koji imaš pravo da deliš. Možemo ukloniti sadržaj ili ograničiti pristup kada je to razumno potrebno radi zaštite ljudi, poštovanja zakona ili održavanja usluge. Seksualno zlostavljanje i iskorišćavanje dece nikada nije dozvoljeno; naši Standardi zaštite dece na tulum-app.com/child-safety objašnjavaju kako postupamo.",
         },
         {
           title: "Tvoj sadržaj",
@@ -202,7 +289,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Politika privatnosti",
       intro:
         "Ova politika objašnjava kako Tulum obrađuje podatke kada koristiš mobilnu aplikaciju, veb-sajt i alate za lokale. Obuhvata podatke koje nam dostavljaš, aktivnost potrebnu za rad usluge i izbore koji su ti dostupni.",
-      updated: "Poslednje ažuriranje: 14. novembar 2026.",
+      updated: "Poslednje ažuriranje: 16. novembar 2026.",
       sections: [
         {
           title: "Podaci koje dostavljaš",
@@ -217,7 +304,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Lokacija i dozvole uređaja",
           body:
-            "Ako odobriš dozvolu za lokaciju u prvom planu i koristiš funkciju koja zavisi od lokacije, aplikacija može pristupiti lokaciji uređaja kako bi proverila da li si blizu mesta događaja. Dozvolu možeš promeniti ili opozvati u podešavanjima uređaja; povezane funkcije tada možda neće biti dostupne.",
+            "Ako odobriš dozvolu za lokaciju u prvom planu i koristiš funkciju koja zavisi od lokacije, aplikacija može pristupiti lokaciji uređaja kako bi proverila da li si blizu mesta događaja. Kada na događaju počneš da tražiš mečeve, aplikacija šalje tu lokaciju našim serverima, koji je upoređuju sa lokacijom mesta i ne čuvaju je. Dozvolu možeš promeniti ili opozvati u podešavanjima uređaja; povezane funkcije tada možda neće biti dostupne.",
         },
         {
           title: "Kako koristimo podatke",
@@ -242,7 +329,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Čuvanje podataka i zahtevi",
           body:
-            "Podatke čuvamo koliko je potrebno za rad Tulum-a i legitimne bezbednosne, sigurnosne i pravne svrhe. Možeš zatražiti pristup, ispravku ili brisanje tako što ćeš nam pisati. Možemo proveriti tvoj identitet i zadržati ograničene zapise kada to nalaže zakon ili je potrebno radi rešavanja sporova ili zloupotreba.",
+            "Podatke čuvamo koliko je potrebno za rad Tulum-a i legitimne bezbednosne, sigurnosne i pravne svrhe. Možeš zatražiti pristup, ispravku ili brisanje tako što ćeš nam pisati, a nalog možeš i sam/a da obrišeš u aplikaciji; na tulum-app.com/delete-account piše kako i šta se zadržava. Možemo proveriti tvoj identitet i zadržati ograničene zapise kada to nalaže zakon ili je potrebno radi rešavanja sporova ili zloupotreba.",
         },
         {
           title: "Bezbednost i uzrast",
@@ -267,7 +354,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Nalog i privatnost",
           body:
-            "Za pristup nalogu ili zahtev za pristup, ispravku ili brisanje podataka, kad god možeš piši sa adrese povezane sa nalogom. Možemo zatražiti dodatne podatke da proverimo da li kontrolišeš nalog.",
+            "Za pristup nalogu ili zahtev za pristup, ispravku ili brisanje podataka, kad god možeš piši sa adrese povezane sa nalogom. Možemo zatražiti dodatne podatke da proverimo da li kontrolišeš nalog. Za brisanje naloga pogledaj tulum-app.com/delete-account.",
         },
         {
           title: "Zaštiti svoj nalog",
@@ -279,13 +366,95 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       contactBody:
         "Za lakšu obradu koristi jasan naslov, na primer „Pristup nalogu“, „Zahtev za privatnost“ ili „Tehnički problem“.",
     },
+    "delete-account": {
+      title: "Brisanje Tulum naloga",
+      intro:
+        "Svoj Tulum nalog i njegove podatke možeš da obrišeš u bilo kom trenutku, u aplikaciji ili putem email-a. Ovde piše kako, šta se briše i šta se zadržava.",
+      updated: "Poslednje ažuriranje: 16. novembar 2026.",
+      sections: [
+        {
+          title: "Brisanje u aplikaciji",
+          body:
+            "Otvori Tulum i idi na Profil → Podešavanja → Obriši nalog, pa dodirni Potvrdi. Nalog se briše odmah i odjavljuješ se. Nalog koji upravlja lokalima mora prvo da ih prenese drugom domaćinu; piši nam i pomoći ćemo.",
+        },
+        {
+          title: "Zahtev putem email-a",
+          body:
+            "Ako ne možeš da koristiš aplikaciju, piši nam sa adrese kojom se prijavljuješ, sa naslovom „Obriši moj nalog“. Ako si se prijavio/la preko Apple-a i sakrio/la email, navedi adresu koju Apple prikazuje za Tulum. Možemo zatražiti da potvrdiš zahtev, a nalog brišemo u roku od 30 dana, obično mnogo brže.",
+        },
+        {
+          title: "Šta se briše",
+          body:
+            "Tvoj nalog za prijavu, profil i fotografije, prisustvo na događajima i prijave dolaska, lajkovi, mečevi i ćaskanja sa porukama u njima, sačuvani i pregledani događaji, blokade, podešavanja i izbor u vezi sa email-ovima, zajedno sa zapisom saglasnosti.",
+        },
+        {
+          title: "Šta se zadržava i koliko dugo",
+          body:
+            "Prijave koje si poslao/la ili koje su drugi poslali o tebi ostaju, da bi moderatori imali zapis o tome šta se desilo, ali više nisu povezane sa tvojim nalogom. Kopije obrisanih podataka mogu ostati u zapisima i rezervnim kopijama naših pružalaca usluga do 30 dana, dok ne isteknu.",
+        },
+      ],
+      contactTitle: "Brisanje naloga putem email-a",
+      contactBody:
+        "Piši sa adrese kojom se prijavljuješ i stavi naslov „Obriši moj nalog“. Nemoj slati lozinke ili kodove za prijavu.",
+    },
+    "child-safety": {
+      title: "Standardi zaštite dece",
+      intro:
+        "Tulum ne toleriše seksualno zlostavljanje i iskorišćavanje dece (CSAE), uključujući materijal sa seksualnim zlostavljanjem dece (CSAM). Ovi standardi važe za Tulum aplikaciju, veb-sajt i sve što se na njima deli.",
+      updated: "Poslednje ažuriranje: 16. novembar 2026.",
+      sections: [
+        {
+          title: "Samo za odrasle",
+          body:
+            "Tulum je za osobe od 18 ili više godina. Svaki gost pri pridruživanju unosi datum rođenja, a Tulum prihvata samo osobe od 18 ili više godina. Uklanjamo naloge za koje izgleda da pripadaju osobi mlađoj od 18 godina.",
+        },
+        {
+          title: "Šta nije dozvoljeno",
+          body:
+            "Bilo kakav sadržaj ili ponašanje koje seksualizuje, iskorišćava ili ugrožava decu: seksualne slike ili poruke u kojima su maloletnici, vrbovanje dece (grooming), seksualna iznuda i dogovaranje susreta sa maloletnikom. Pokušaj da se preko Tulum-a kontaktira ili upozna maloletnik nije dozvoljen ni u kom obliku.",
+        },
+        {
+          title: "Prijava u aplikaciji",
+          body:
+            "Na kartici gosta dok tražiš mečeve ili u ćaskanju dodirni „Prijavi ili blokiraj“, izaberi „Prijavi“, označi razlog kao što je „Možda nema 18 godina“ i dodirni „Prijavi i blokiraj“. Gost ti je odmah blokiran, a prijava stiže našim moderatorima.",
+        },
+        {
+          title: "Prijava putem email-a",
+          body:
+            "Piši na adresu ispod sa naslovom „Zaštita dece“. Opiši šta se desilo i navedi profil, ali nikada ne šalji same slike.",
+        },
+        {
+          title: "Šta radimo sa prijavom",
+          body:
+            "Prijave o maloletnicima rešavamo prve. Nalog odmah sakrivamo, prekidamo njegovu prijavu dolaska na događaj i uklanjamo sadržaj, a kada se prijava potvrdi, nalog trajno zabranjujemo. Prijavu i zapise naloga čuvamo kao dokaz, a materijal ne kopiramo niti prosleđujemo.",
+        },
+        {
+          title: "Prijava nadležnima",
+          body:
+            "Kada pronađemo materijal sa seksualnim zlostavljanjem dece ili dete u opasnosti, prijavljujemo to policiji u Srbiji i, gde je primenljivo, NCMEC-u ili nadležnom nacionalnom telu, kako zakon nalaže, i sarađujemo u istragama.",
+        },
+        {
+          title: "Zakoni koje poštujemo",
+          body:
+            "Tulum poštuje zakone o zaštiti dece koji se na njega primenjuju, uključujući zakone Srbije, gde Tulum posluje.",
+        },
+        {
+          title: "Kontakt za zaštitu dece",
+          body:
+            "Pitanja nadležnih organa, organizacija ili korisnika o zaštiti dece šalju se našem kontaktu za zaštitu dece na adresu ispod.",
+        },
+      ],
+      contactTitle: "Kontakt za zaštitu dece",
+      contactBody:
+        "Stavi naslov „Zaštita dece“. Ako je dete u neposrednoj opasnosti, prvo pozovi policiju na 192.",
+    },
   },
   ru: {
     terms: {
       title: "Условия использования",
       intro:
         "Эти условия распространяются на мобильное приложение Tulum, сайт и связанные инструменты. Создавая аккаунт или пользуясь Tulum, вы соглашаетесь с условиями. Если вы не согласны, не используйте сервис.",
-      updated: "Последнее обновление: 21 октября 2026 г.",
+      updated: "Последнее обновление: 16 ноября 2026 г.",
       sections: [
         {
           title: "Возраст и аккаунты",
@@ -305,7 +474,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Правила сообщества",
           body:
-            "Не используйте Tulum для преследования, угроз, обмана, выдачи себя за другого человека, спама, причинения вреда или нарушения закона. Публикуйте только материалы, которыми имеете право делиться. Мы можем удалить материалы или ограничить доступ, если это разумно необходимо для защиты людей, соблюдения закона или работы сервиса.",
+            "Не используйте Tulum для преследования, угроз, обмана, выдачи себя за другого человека, спама, причинения вреда или нарушения закона. Публикуйте только материалы, которыми имеете право делиться. Мы можем удалить материалы или ограничить доступ, если это разумно необходимо для защиты людей, соблюдения закона или работы сервиса. Сексуальное насилие над детьми и их эксплуатация запрещены без исключений; наши Стандарты защиты детей на tulum-app.com/child-safety описывают, как мы действуем.",
         },
         {
           title: "Ваши материалы",
@@ -336,7 +505,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       title: "Политика конфиденциальности",
       intro:
         "В этой политике описано, как Tulum обрабатывает информацию при использовании мобильного приложения, сайта и инструментов для заведений. Она охватывает сведения, которые вы предоставляете, данные о работе сервиса и доступные вам настройки.",
-      updated: "Последнее обновление: 14 ноября 2026 г.",
+      updated: "Последнее обновление: 16 ноября 2026 г.",
       sections: [
         {
           title: "Предоставляемая вами информация",
@@ -351,7 +520,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Геолокация и разрешения устройства",
           body:
-            "Если вы разрешите доступ к геолокации в foreground-режиме и воспользуетесь функцией, зависящей от местоположения, приложение может получить координаты устройства, чтобы проверить близость к месту события. Разрешение можно изменить или отозвать в настройках устройства; связанные функции могут перестать работать.",
+            "Если вы разрешите доступ к геолокации в foreground-режиме и воспользуетесь функцией, зависящей от местоположения, приложение может получить координаты устройства, чтобы проверить близость к месту события. Когда вы начинаете искать совпадения на событии, приложение отправляет это местоположение на наши серверы, которые сравнивают его с местоположением заведения и не сохраняют. Разрешение можно изменить или отозвать в настройках устройства; связанные функции могут перестать работать.",
         },
         {
           title: "Использование информации",
@@ -376,7 +545,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Хранение данных и запросы",
           body:
-            "Мы храним данные столько, сколько необходимо для работы Tulum и законных целей безопасности и соблюдения закона. Вы можете запросить доступ, исправление или удаление, написав нам. Мы можем проверить вашу личность и сохранить ограниченные записи, если этого требует закон или если это необходимо для разрешения споров либо предотвращения злоупотреблений.",
+            "Мы храним данные столько, сколько необходимо для работы Tulum и законных целей безопасности и соблюдения закона. Вы можете запросить доступ, исправление или удаление, написав нам, а также удалить аккаунт сами в приложении; на tulum-app.com/delete-account описано, как это сделать и что сохраняется. Мы можем проверить вашу личность и сохранить ограниченные записи, если этого требует закон или если это необходимо для разрешения споров либо предотвращения злоупотреблений.",
         },
         {
           title: "Безопасность и возраст",
@@ -401,7 +570,7 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
         {
           title: "Аккаунт и персональные данные",
           body:
-            "Для доступа к аккаунту или запроса на доступ, исправление либо удаление данных по возможности пишите с адреса, связанного с аккаунтом. Мы можем запросить дополнительные сведения, чтобы проверить, что аккаунт принадлежит вам.",
+            "Для доступа к аккаунту или запроса на доступ, исправление либо удаление данных по возможности пишите с адреса, связанного с аккаунтом. Мы можем запросить дополнительные сведения, чтобы проверить, что аккаунт принадлежит вам. Чтобы удалить аккаунт, см. tulum-app.com/delete-account.",
         },
         {
           title: "Защитите аккаунт",
@@ -412,6 +581,88 @@ const publicPages: Record<Locale, Record<PublicPageId, PublicPageCopy>> = {
       contactTitle: "Написать в поддержку Tulum",
       contactBody:
         "Для удобства укажите тему, например «Доступ к аккаунту», «Запрос о данных» или «Техническая проблема».",
+    },
+    "delete-account": {
+      title: "Удаление аккаунта Tulum",
+      intro:
+        "Вы можете удалить аккаунт Tulum и его данные в любой момент — в приложении или по электронной почте. Здесь описано, как это сделать, что удаляется и что сохраняется.",
+      updated: "Последнее обновление: 16 ноября 2026 г.",
+      sections: [
+        {
+          title: "Удаление в приложении",
+          body:
+            "Откройте Tulum, перейдите в Профиль → Настройки → Удалить аккаунт и нажмите «Подтвердить». Аккаунт удаляется сразу, и вы выходите из системы. Если аккаунт управляет заведениями, их сначала нужно передать другому владельцу; напишите нам, и мы поможем.",
+        },
+        {
+          title: "Запрос по электронной почте",
+          body:
+            "Если вы не можете воспользоваться приложением, напишите нам с адреса, с которым входите в Tulum, с темой «Удалить мой аккаунт». Если вы вошли через Apple и скрыли email, укажите адрес, который Apple показывает для Tulum. Мы можем попросить подтвердить запрос и удалим аккаунт в течение 30 дней, обычно намного быстрее.",
+        },
+        {
+          title: "Что удаляется",
+          body:
+            "Аккаунт для входа, профиль и фотографии, участие в событиях и отметки о приходе, лайки, совпадения и чаты вместе с сообщениями, сохраненные и просмотренные события, блокировки, настройки и выбор писем вместе с записью о согласии.",
+        },
+        {
+          title: "Что сохраняется и как долго",
+          body:
+            "Жалобы, которые отправили вы или которые отправили на вас, остаются, чтобы у модераторов была запись о произошедшем, но они больше не связаны с вашим аккаунтом. Копии удаленных данных могут оставаться в журналах и резервных копиях наших поставщиков услуг до 30 дней, пока не истечет срок их хранения.",
+        },
+      ],
+      contactTitle: "Удаление аккаунта по почте",
+      contactBody:
+        "Пишите с адреса, с которым входите в Tulum, с темой «Удалить мой аккаунт». Не отправляйте пароли и коды входа.",
+    },
+    "child-safety": {
+      title: "Стандарты защиты детей",
+      intro:
+        "Tulum не допускает сексуального насилия над детьми и их эксплуатации (CSAE), включая материалы с сексуальным насилием над детьми (CSAM). Эти стандарты действуют в приложении Tulum, на сайте и для всего, чем на них делятся.",
+      updated: "Последнее обновление: 16 ноября 2026 г.",
+      sections: [
+        {
+          title: "Только для взрослых",
+          body:
+            "Tulum предназначен для людей от 18 лет. При регистрации каждый гость указывает дату рождения, и Tulum принимает только тех, кому исполнилось 18. Мы удаляем аккаунты, которые, по всей видимости, принадлежат людям младше 18 лет.",
+        },
+        {
+          title: "Что запрещено",
+          body:
+            "Любые материалы или действия, которые сексуализируют или эксплуатируют детей либо подвергают их опасности: сексуальные изображения или сообщения с участием несовершеннолетних, груминг, сексуальное вымогательство и договоренности о встрече с несовершеннолетним. Попытки связаться или встретиться с несовершеннолетним через Tulum запрещены в любой форме.",
+        },
+        {
+          title: "Жалоба в приложении",
+          body:
+            "На карточке гостя при поиске совпадений или в чате нажмите «Пожаловаться или заблокировать», выберите «Пожаловаться», укажите причину, например «Возможно, младше 18 лет», и нажмите «Пожаловаться и заблокировать». Гость сразу блокируется для вас, а жалоба поступает нашим модераторам.",
+        },
+        {
+          title: "Жалоба по электронной почте",
+          body:
+            "Напишите на адрес ниже с темой «Защита детей». Опишите, что произошло, и укажите профиль, но никогда не отправляйте сами изображения.",
+        },
+        {
+          title: "Что мы делаем с жалобой",
+          body:
+            "Жалобы, касающиеся несовершеннолетних, мы рассматриваем в первую очередь. Мы сразу скрываем аккаунт, завершаем его отметку о присутствии на событии и удаляем материалы, а после подтверждения жалобы блокируем аккаунт. Жалобу и записи аккаунта мы сохраняем как доказательства и не копируем и не пересылаем материалы.",
+        },
+        {
+          title: "Сообщение в органы власти",
+          body:
+            "Обнаружив материалы с сексуальным насилием над детьми или ребенка в опасности, мы сообщаем об этом в полицию Сербии и, если применимо, в NCMEC или соответствующий национальный орган, как того требует закон, и содействуем расследованию.",
+        },
+        {
+          title: "Законы, которые мы соблюдаем",
+          body:
+            "Tulum соблюдает применимые к нему законы о защите детей, включая законы Сербии, где работает Tulum.",
+        },
+        {
+          title: "Контакт по вопросам защиты детей",
+          body:
+            "Вопросы органов власти, организаций или пользователей о защите детей направляйте нашему контакту по защите детей по адресу ниже.",
+        },
+      ],
+      contactTitle: "Контакт по защите детей",
+      contactBody:
+        "Укажите тему «Защита детей». Если ребенок в непосредственной опасности, сначала позвоните в полицию: 192 в Сербии.",
     },
   },
 };

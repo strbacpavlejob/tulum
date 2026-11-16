@@ -30,8 +30,8 @@
     },
     "guest": {
       "hero": {
-        "title": "Real Events. Real People. Real Moments.",
-        "subtitle": "Discover events and match with people already there. Start the night with something in common.",
+        "title": "See who's going. Match with who's there.",
+        "subtitle": "Find what's on in Belgrade, join an event, and once you're there, match with the people at the same party.",
         "downloadOn": "Download on the",
         "appStore": "App Store",
         "getItOn": "Get it on",
@@ -43,7 +43,13 @@
         "openTulum": "Open Tulum",
         "worksInBrowser": "Runs in your phone's browser. Nothing to download.",
         "appsSoon": "Apps for iPhone and Android are on the way.",
-        "followForNews": "Follow us for news"
+        "followForNews": "Follow us for news",
+        "liveTonight_one": "{{count}} event in Belgrade tonight",
+        "liveTonight_other": "{{count}} events in Belgrade tonight",
+        "liveWeek_one": "{{count}} event in Belgrade this week",
+        "liveWeek_other": "{{count}} events in Belgrade this week",
+        "maskenbal": "KST Maskenbal is on Tulum",
+        "maskenbalCta": "Join the party"
       }
     },
     "hero": {
@@ -181,15 +187,15 @@
         },
         "guestList": {
           "title": "Get on the List",
-          "description": "Tap Attend to be part of the night. You'll appear on the guest list and unlock matching."
+          "description": "Tap Attend to join the guest list. Matching opens when the event starts and you're at the venue."
         },
         "match": {
           "title": "Match Only With People There",
-          "description": "Once the event starts, swipe through people who are actually there. No long-distance matches or random profiles."
+          "description": "Once the event starts and you're at the venue, swipe through the people who are there too. No long-distance matches, no random profiles."
         },
         "chat": {
           "title": "Take It Further",
-          "description": "Got a match. Start a conversation or meet up right away. Chats expire after the event, so it stays real."
+          "description": "Got a match? Say hi or meet up right away. The chat stays open for 6 hours after you match, so it stays real."
         },
         "find": {
           "title": "Find Them. No Guessing.",
@@ -278,7 +284,7 @@
       },
       "match": {
         "title": "MATCH!",
-        "description": "You have a chance to message your match until the end of the event",
+        "description": "You can message each other for the next 6 hours",
         "messagePlaceholder": "Message…",
         "matchProfileAlt": "Ana's profile picture",
         "yourProfileAlt": "Your profile picture"
@@ -483,7 +489,9 @@
     },
     "legal": {
       "privacyPolicy": "Privacy Policy",
-      "termsOfService": "Terms of Service"
+      "termsOfService": "Terms of Service",
+      "deleteAccount": "Delete account",
+      "childSafety": "Child safety"
     },
     "ctaGuest": {
       "title": "Find Your Scene Tonight.",
@@ -495,19 +503,19 @@
       "subtitle": "Everything you need to know about using Tulum as a guest.",
       "q1": {
         "question": "How does Tulum work?",
-        "answer": "Tulum connects you with people who are already going to the same events as you. You discover events, join them, and match only with people who will actually be there."
+        "answer": "Tulum connects you with people who are going to the same events as you. You discover events, join them, and match only with people who are there too."
       },
       "q2": {
         "question": "Do I have to swipe like on other apps?",
-        "answer": "No. You don't match with random people anymore you match with people who already share something in common with you, right now. And they're not miles away… they're right there, nearby."
+        "answer": "Yes, but only through the people at the same event as you, while it's on. No strangers from across town: just the people in the room."
       },
       "q3": {
         "question": "When can I start chatting with someone?",
-        "answer": "Chat unlocks once you match at the same event. It stays open for a short time after the event ends so you're encouraged to take the moment and meet in real life."
+        "answer": "Chat opens when you match at an event and stays open for 6 hours, so you're nudged to meet in person while you're both there."
       },
       "q4": {
         "question": "Can I match with anyone anytime?",
-        "answer": "No. You can only match with people who are physically at the same event as you."
+        "answer": "No. You can only match with people at the same event as you, while it's on. Tulum checks that you're at the venue before matching opens."
       },
       "q5": {
         "question": "Can I see who is going to an event?",
@@ -515,11 +523,7 @@
       },
       "q6": {
         "question": "Is Tulum free to use?",
-        "answer": "Yes. You can use all core features for free. Premium unlocks extra visibility, insights, and advanced features."
-      },
-      "q7": {
-        "question": "What does Premium give me?",
-        "answer": "Premium gives you more visibility, smarter filters, and more ways to connect like sending a message before matching, boosting your profile, and seeing who's interested in you."
+        "answer": "Yes. Tulum is free, and so is everything on this page."
       },
       "q8": {
         "question": "Is it safe?",
@@ -527,11 +531,11 @@
       },
       "q9": {
         "question": "What makes Tulum different from dating apps?",
-        "answer": "You don't match randomly you match through real-life events. That means less small talk and more real moments."
+        "answer": "You don't match at random: you match through real events you choose. That means less small talk and more real moments."
       },
       "q10": {
         "question": "What if I don't match with anyone?",
-        "answer": "You still go to a great event. Tulum is built around real experiences first meeting people is a bonus, not pressure."
+        "answer": "You still go to a great event. Tulum is built around real experiences first: meeting people is a bonus, not pressure."
       }
     }
   },

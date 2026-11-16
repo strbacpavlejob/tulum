@@ -1302,16 +1302,61 @@ export async function createMatchSwipe(
   }>;
 }
 
+/** Why POST /events/sessions refused a check-in. */
+export type CheckInRefusal =
+  | "no_ticket"
+  | "not_live"
+  | "no_venue_location"
+  | "too_far";
+
+/**
+ * POST /events/sessions answered 403: the API checks the ticket, the event's
+ * time and the position as the app does, and refused this check-in.
+ */
+export class CheckInRefusedError extends Error {
+  name = "CheckInRefusedError";
+  constructor(
+    message: string,
+    readonly reason: CheckInRefusal | null,
+  ) {
+    super(message);
+  }
+}
+
+/** Where the phone was when it passed the location check. */
+export interface CheckInPosition {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+}
+
 export async function createEventSession(
   token: string,
   eventId: string,
+  position: CheckInPosition,
 ): Promise<void> {
   const url = `${TULUM_API_URL}/events/sessions`;
+  const { latitude, longitude, accuracy } = position;
   const response = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ event_id: eventId }),
+    body: JSON.stringify({
+      event_id: eventId,
+      latitude,
+      longitude,
+      ...(typeof accuracy === "number" && accuracy >= 0 ? { accuracy } : {}),
+    }),
   });
+  if (response.status === 403) {
+    const body = (await response.json().catch(() => null)) as {
+      message?: string;
+      reason?: CheckInRefusal;
+    } | null;
+    throw new CheckInRefusedError(
+      body?.message ?? "Check-in refused",
+      body?.reason ?? null,
+    );
+  }
   // If already checked in, server may return 409 or 4xx; ignore non-fatal errors
   if (!response.ok && response.status !== 409) {
     throw new Error(`Failed to create event session: ${response.status}`);

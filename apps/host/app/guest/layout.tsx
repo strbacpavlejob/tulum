@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Tulum — Discover Events & Meet People",
+  title: "Tulum — See who’s going. Match with who’s there.",
   description:
-    "Discover events near you, see who’s going, and match with people already there. Tulum turns nights out into real-life connections.",
+    "Find what’s on in Belgrade, join an event, and once you’re there, match with the people at the same party.",
   alternates: {
     canonical: "/guest",
   },
@@ -12,9 +12,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Tulum — Discover Events & Meet People",
+    title: "Tulum — See who’s going. Match with who’s there.",
     description:
-      "Discover events near you, see who’s going, and match with people already there. Tulum turns nights out into real-life connections.",
+      "Find what’s on in Belgrade, join an event, and once you’re there, match with the people at the same party.",
     url: "https://tulum-app.com/guest",
     siteName: "Tulum",
     locale: "en_US",
@@ -24,15 +24,15 @@ export const metadata: Metadata = {
         url: "/guest/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Tulum — discover events, meet people, and go out together.",
+        alt: "Tulum — see who’s going, match with who’s there.",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tulum — Discover Events & Meet People",
+    title: "Tulum — See who’s going. Match with who’s there.",
     description:
-      "Discover events near you, see who’s going, and match with people already there. Tulum turns nights out into real-life connections.",
+      "Find what’s on in Belgrade, join an event, and once you’re there, match with the people at the same party.",
     images: ["/guest/opengraph-image"],
   },
 };

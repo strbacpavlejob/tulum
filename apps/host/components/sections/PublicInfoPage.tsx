@@ -27,7 +27,20 @@ const pageLinks: { page: PublicPageId; href: string; labelKey: string }[] = [
     href: "/support",
     labelKey: "landingpage.footer.support",
   },
+  {
+    page: "delete-account",
+    href: "/delete-account",
+    labelKey: "landingpage.legal.deleteAccount",
+  },
+  {
+    page: "child-safety",
+    href: "/child-safety",
+    labelKey: "landingpage.legal.childSafety",
+  },
 ];
+
+// Pages that help with an account; the rest are legal texts.
+const supportPages: PublicPageId[] = ["support", "delete-account"];
 
 export default function PublicInfoPage({ page }: { page: PublicPageId }) {
   const { i18n, t } = useTranslation();
@@ -72,7 +85,7 @@ export default function PublicInfoPage({ page }: { page: PublicPageId }) {
 
         <article className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-10">
           <p className="text-sm font-semibold text-primary">
-            {page === "support"
+            {supportPages.includes(page)
               ? t("landingpage.footer.support")
               : t("landingpage.footer.legal")}
           </p>
