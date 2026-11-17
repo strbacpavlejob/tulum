@@ -41,5 +41,19 @@ describe('scraper venue type mappings', () => {
     expect(getMappings(ScraperSource.INSTAGRAM)).toEqual(
       new Map([['Nightclub', VenueTypeEnum.CLUB]]),
     );
+    expect(getMappings(ScraperSource.EVENTZEKA)).toEqual(
+      new Map([
+        ['club', VenueTypeEnum.CLUB],
+        ['restaurant/cafe', VenueTypeEnum.RESTAURANT],
+        ['culture', VenueTypeEnum.EVENT_VENUE],
+        ['live', VenueTypeEnum.EVENT_VENUE],
+        ['venue', VenueTypeEnum.EVENT_VENUE],
+      ]),
+    );
+  });
+
+  it('gives every scraper its own id', () => {
+    const ids = Object.values(SCRAPER_CONFIGS).map((config) => config.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

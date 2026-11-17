@@ -3,11 +3,17 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { parseDbTimestamp } from '../../common/db-timestamp';
 import { Scraper } from '../domain/scraper.interface';
+import { EventZekaScraperService } from '../scrapers/eventzeka/eventzeka-scraper.service';
 import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { GuestListSerbiaScraperService } from '../scrapers/guest-list/guest-list-serbia-scraper.service';
 import { InstagramScraperService } from '../scrapers/instagram/instagram-scraper.service';
-import { SupabaseService } from 'src/supabase/supabase.service';
-import { DuplicateCheckerService } from 'src/duplicate-checker/duplicate-checker.service';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { DuplicateCheckerService } from '../../duplicate-checker/duplicate-checker.service';
+
+interface ExistingVenueContactRow {
+  phoneNumber?: string | null;
+  instagramHandle?: string | null;
+}
 
 @Injectable()
 export class ScraperService {
@@ -17,6 +23,7 @@ export class ScraperService {
     private readonly goOutScraperService: GoOutScraperService,
     private readonly guestListSerbiaScraperService: GuestListSerbiaScraperService,
     private readonly instagramScraperService: InstagramScraperService,
+    private readonly eventZekaScraperService: EventZekaScraperService,
     private readonly duplicateCheckerService: DuplicateCheckerService,
     private readonly supabaseService: SupabaseService,
   ) {}
@@ -31,6 +38,9 @@ export class ScraperService {
 
       case 3:
         return this.instagramScraperService;
+
+      case 4:
+        return this.eventZekaScraperService;
 
       default:
         throw new Error(`Scraper with id ${scraperId} not found`);
@@ -57,19 +67,41 @@ export class ScraperService {
     ]).then(([venues, events]) => ({ venues, events }));
   }
 
+  /*
+   * getExistingVenuesWithContacts returns camelCase rows with the venue's
+   * contact as venueContacts. Its Instagram account and phone let the
+   * duplicate checker recognise a venue that another source names
+   * differently.
+   */
   private mapToExistingVenues(
     data: any[],
   ): Parameters<DuplicateCheckerService['filterDuplicateVenues']>[1] {
-    return (data ?? []).map((v) => ({
-      id: v.id as string,
-      name: v.name as string,
-      address: (v.address as string | null) ?? null,
-      latitude: (v.latitude as number | null) ?? null,
-      longitude: (v.longitude as number | null) ?? null,
-      min_age_male: (v.min_age_male as number | null) ?? null,
-      min_age_female: (v.min_age_female as number | null) ?? null,
-      contact: null,
-    }));
+    return (data ?? []).map((v) => {
+      const contacts = (v.venueContacts ?? v.venue_contacts) as
+        | ExistingVenueContactRow
+        | ExistingVenueContactRow[]
+        | null
+        | undefined;
+      const contact = Array.isArray(contacts) ? contacts[0] : contacts;
+
+      return {
+        id: v.id as string,
+        name: v.name as string,
+        address: (v.address as string | null) ?? null,
+        latitude: (v.latitude as number | null) ?? null,
+        longitude: (v.longitude as number | null) ?? null,
+        min_age_male:
+          ((v.minAgeMale ?? v.min_age_male) as number | null) ?? null,
+        min_age_female:
+          ((v.minAgeFemale ?? v.min_age_female) as number | null) ?? null,
+        contact: contact
+          ? {
+              phoneNumber: contact.phoneNumber ?? null,
+              instagramHandle: contact.instagramHandle ?? null,
+            }
+          : null,
+      };
+    });
   }
 
   private mapToExistingEvents(

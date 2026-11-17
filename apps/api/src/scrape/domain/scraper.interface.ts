@@ -2,7 +2,10 @@ import { ScraperConfig } from './scraper-config';
 import { Event } from './scraper-event.interfaces';
 import { Venue } from './scraper-venue.interfaces';
 
-export type ScrapedVenue = Omit<Venue, 'id'>;
+export type ScrapedVenue = Omit<Venue, 'id'> & {
+  /** Other names the source gives the venue, used to find it among saved ones. */
+  aliases?: string[];
+};
 
 export type ScrapedEvent = Omit<Event, 'id'> & {
   id?: string;

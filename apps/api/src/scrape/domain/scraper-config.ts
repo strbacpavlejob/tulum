@@ -5,6 +5,7 @@ export enum ScraperSource {
   GOOUT = 'goout',
   GUEST_LIST = 'guest_list',
   INSTAGRAM = 'instagram',
+  EVENTZEKA = 'eventzeka',
 }
 
 export enum ImageStoragePolicy {
@@ -47,6 +48,8 @@ export interface ScraperConfig {
     checkDuplicates?: boolean;
     fetchDelay?: number; // Delay in milliseconds between fetches to avoid rate limiting
     defaultDurationHour: number;
+    daysAhead?: number; // How many days to list, starting today
+    includeTypes?: string[]; // Raw event types to keep; all of them when unset
     //updateExistingVenues?: boolean;
   };
   venues: {
@@ -60,6 +63,7 @@ export interface ScraperConfig {
     };
     checkDuplicates?: boolean;
     scrapeContacts?: boolean;
+    listAll?: boolean; // Import every venue the source lists, not only those hosting kept events
     venueTypeMapping: VenueTypeMapping[];
     fetchDelay?: number; // Delay in milliseconds between fetches to avoid rate limiting
     //updateExistingVenues?: boolean;
@@ -173,6 +177,42 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
         male: 18,
         female: 18,
       },
+    },
+  },
+
+  [ScraperSource.EVENTZEKA]: {
+    id: 4,
+    baseUrl: 'https://eventzeka.com',
+    source: ScraperSource.EVENTZEKA,
+
+    events: {
+      defaultDurationHour: 4,
+      imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
+      defaultStatus: EventStatusEnum.ACTIVE,
+      checkDuplicates: true,
+      fetchDelay: 1_000,
+      daysAhead: 14,
+      includeTypes: ['nightlife', 'live music'],
+    },
+
+    venues: {
+      defaultCapacity: 100,
+      imagePolicy: ImageStoragePolicy.KEEP_EMPTY,
+      defaultAgeRestriction: {
+        male: 18,
+        female: 18,
+      },
+      checkDuplicates: true,
+      listAll: true,
+      // The venue's category, or the event's when the venue's is the generic
+      // "venue".
+      venueTypeMapping: [
+        { queryValue: 'club', venueType: VenueTypeEnum.CLUB },
+        { queryValue: 'restaurant/cafe', venueType: VenueTypeEnum.RESTAURANT },
+        { queryValue: 'culture', venueType: VenueTypeEnum.EVENT_VENUE },
+        { queryValue: 'live', venueType: VenueTypeEnum.EVENT_VENUE },
+        { queryValue: 'venue', venueType: VenueTypeEnum.EVENT_VENUE },
+      ],
     },
   },
 };

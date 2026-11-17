@@ -193,3 +193,91 @@ export function normalizeText(value: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+/** What a time zone's clock reads at an instant, as numbers. */
+function zonedClock(instant: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+
+  return {
+    year: part('year'),
+    month: part('month'),
+    day: part('day'),
+    hour: part('hour'),
+    minute: part('minute'),
+    second: part('second'),
+  };
+}
+
+/** The calendar date, YYYY-MM-DD, in a time zone at an instant. */
+export function calendarDateInZone(instant: Date, timeZone: string): string {
+  const { year, month, day } = zonedClock(instant, timeZone);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** A YYYY-MM-DD date moved by a number of calendar days. */
+export function addCalendarDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days))
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * The instant a wall-clock date and time happen in a time zone, e.g.
+ * ("2026-11-21", "22:00", "Europe/Belgrade") is 2026-11-21T21:00:00Z, and in
+ * July 20:00Z. Throws for a date or time that doesn't exist.
+ */
+export function zonedTimeToUtc(
+  date: string,
+  time: string,
+  timeZone: string,
+): Date {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!dateMatch || !timeMatch) {
+    throw new Error(`Invalid local date or time: ${date} ${time}`);
+  }
+
+  const [year, month, day] = dateMatch.slice(1).map(Number);
+  const [hour, minute] = timeMatch.slice(1).map(Number);
+  const wallClockAsUtc = Date.UTC(year, month - 1, day, hour, minute);
+  const check = new Date(wallClockAsUtc);
+  if (
+    hour > 23 ||
+    minute > 59 ||
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month - 1 ||
+    check.getUTCDate() !== day
+  ) {
+    throw new Error(`Invalid local date or time: ${date} ${time}`);
+  }
+
+  // The zone's offset is what its clock reads minus the instant. A second
+  // pass settles times next to a daylight-saving change.
+  const offsetAt = (instant: number) => {
+    const clock = zonedClock(new Date(instant), timeZone);
+    return (
+      Date.UTC(
+        clock.year,
+        clock.month - 1,
+        clock.day,
+        clock.hour,
+        clock.minute,
+        clock.second,
+      ) - instant
+    );
+  };
+  const firstGuess = wallClockAsUtc - offsetAt(wallClockAsUtc);
+  return new Date(wallClockAsUtc - offsetAt(firstGuess));
+}

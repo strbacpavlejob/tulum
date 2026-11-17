@@ -2,11 +2,8 @@
 import { Injectable } from '@nestjs/common';
 import { differenceInMinutes } from 'date-fns';
 
-import {
-  ScrapedEvent,
-  ScrapedVenue,
-} from 'src/scrape/domain/scraper.interface';
-import { ScraperLogs } from 'src/scrape/shared/scraper-logs';
+import { ScrapedEvent, ScrapedVenue } from '../scrape/domain/scraper.interface';
+import { ScraperLogs } from '../scrape/shared/scraper-logs';
 
 interface ExistingVenueContact {
   phoneNumber: string | null;
@@ -67,6 +64,43 @@ export class DuplicateCheckerService {
 
   private readonly INSTAGRAM_MATCH_SCORE = 100;
   private readonly PHONE_MATCH_SCORE = 90;
+
+  /*
+   * Venues with the same name this close are one place, whatever their
+   * addresses say: one source gives the street, another only the city, or
+   * puts the pin at the entrance. Venue names are unique in the DB, so the
+   * save step would merge them by name anyway, overwriting the stored
+   * venue. Farther apart they may be namesakes in another part of town.
+   */
+  private readonly SAME_NAME_MAX_DISTANCE_METERS = 1_000;
+
+  /*
+   * Names that differ only in words like these ("Klub Drugstore",
+   * "Drugstore Belgrade") are the same venue when this close.
+   */
+  private readonly CORE_NAME_MAX_DISTANCE_METERS = 300;
+
+  private readonly VENUE_NAME_FILLER_WORDS = new Set([
+    'the',
+    'bar',
+    'club',
+    'klub',
+    'night',
+    'nightclub',
+    'pub',
+    'kafana',
+    'kafe',
+    'cafe',
+    'caffe',
+    'restoran',
+    'restaurant',
+    'bistro',
+    'lounge',
+    'splav',
+    'official',
+    'belgrade',
+    'beograd',
+  ]);
 
   /*
    * Event matching
@@ -203,7 +237,16 @@ export class DuplicateCheckerService {
         continue;
       }
 
-      filteredScrapedEvents.push(scrapedEvent);
+      /*
+       * The event is at a venue already in the DB, which may go by
+       * another name there: point it at that venue by id, since the
+       * save step looks venues up by name.
+       */
+      filteredScrapedEvents.push(
+        venueMatch
+          ? { ...scrapedEvent, venueId: venueMatch.venue.id }
+          : scrapedEvent,
+      );
     }
 
     return filteredScrapedEvents;
@@ -223,10 +266,9 @@ export class DuplicateCheckerService {
         venue.longitude,
       );
 
-      const nameScore = this.calculateTextSimilarity(
-        scrapedVenue.name,
+      const nameScore = this.bestNameSimilarity(this.namesOf(scrapedVenue), [
         venue.name,
-      );
+      ]);
 
       const addressScore = this.calculateTextSimilarity(
         scrapedVenue.address ?? '',
@@ -248,6 +290,12 @@ export class DuplicateCheckerService {
 
       const hasPhoneMatch = contactScore === this.PHONE_MATCH_SCORE;
 
+      const hasNearbySameName = this.isNearbySameName(
+        this.namesOf(scrapedVenue),
+        [venue.name],
+        distanceMeters,
+      );
+
       /*
        * When both records have coordinates and are too far apart,
        * discard them unless a strong contact identifier matches.
@@ -256,7 +304,8 @@ export class DuplicateCheckerService {
         distanceMeters != null &&
         distanceMeters > this.MAX_VENUE_DISTANCE_METERS &&
         !hasInstagramMatch &&
-        !hasPhoneMatch
+        !hasPhoneMatch &&
+        !hasNearbySameName
       ) {
         continue;
       }
@@ -271,11 +320,12 @@ export class DuplicateCheckerService {
 
       /*
        * Exact Instagram match is considered strong enough
-       * to identify the same venue.
+       * to identify the same venue, and so is the same name nearby.
        */
-      const candidateScore = hasInstagramMatch
-        ? Math.max(totalScore, this.VENUE_MATCH_THRESHOLD)
-        : totalScore;
+      const candidateScore =
+        hasInstagramMatch || hasNearbySameName
+          ? Math.max(totalScore, this.VENUE_MATCH_THRESHOLD)
+          : totalScore;
 
       if (!bestMatch || candidateScore > bestMatch.score) {
         bestMatch = {
@@ -415,9 +465,9 @@ export class DuplicateCheckerService {
       secondVenue.longitude ?? null,
     );
 
-    const nameScore = this.calculateTextSimilarity(
-      firstVenue.name,
-      secondVenue.name,
+    const nameScore = this.bestNameSimilarity(
+      this.namesOf(firstVenue),
+      this.namesOf(secondVenue),
     );
 
     const addressScore = this.calculateTextSimilarity(
@@ -444,11 +494,18 @@ export class DuplicateCheckerService {
 
     const hasPhoneMatch = contactScore === this.PHONE_MATCH_SCORE;
 
+    const hasNearbySameName = this.isNearbySameName(
+      this.namesOf(firstVenue),
+      this.namesOf(secondVenue),
+      distanceMeters,
+    );
+
     if (
       distanceMeters != null &&
       distanceMeters > this.MAX_VENUE_DISTANCE_METERS &&
       !hasInstagramMatch &&
-      !hasPhoneMatch
+      !hasPhoneMatch &&
+      !hasNearbySameName
     ) {
       return false;
     }
@@ -461,11 +518,71 @@ export class DuplicateCheckerService {
       addressScore * this.VENUE_ADDRESS_WEIGHT +
       contactScore * this.VENUE_CONTACT_WEIGHT;
 
-    const candidateScore = hasInstagramMatch
-      ? Math.max(totalScore, this.VENUE_MATCH_THRESHOLD)
-      : totalScore;
+    const candidateScore =
+      hasInstagramMatch || hasNearbySameName
+        ? Math.max(totalScore, this.VENUE_MATCH_THRESHOLD)
+        : totalScore;
 
     return candidateScore >= this.VENUE_MATCH_THRESHOLD;
+  }
+
+  /** A venue's name, then the other names its source gives it. */
+  private namesOf(venue: Pick<ScrapedVenue, 'name' | 'aliases'>): string[] {
+    return [venue.name, ...(venue.aliases ?? [])];
+  }
+
+  private bestNameSimilarity(
+    firstNames: string[],
+    secondNames: string[],
+  ): number {
+    let best = 0;
+
+    for (const first of firstNames) {
+      for (const second of secondNames) {
+        best = Math.max(best, this.calculateTextSimilarity(first, second));
+      }
+    }
+
+    return best;
+  }
+
+  /** The name without the words that only say what kind of place it is. */
+  private coreName(value: string): string {
+    return this.normalizeText(value)
+      .split(' ')
+      .filter((word) => word && !this.VENUE_NAME_FILLER_WORDS.has(word))
+      .join(' ');
+  }
+
+  /**
+   * Whether two venues share a name and are close enough to be one place:
+   * the same name within SAME_NAME_MAX_DISTANCE_METERS, or the same name
+   * without filler words within CORE_NAME_MAX_DISTANCE_METERS.
+   */
+  private isNearbySameName(
+    firstNames: string[],
+    secondNames: string[],
+    distanceMeters: number | null,
+  ): boolean {
+    const within = (meters: number) =>
+      distanceMeters == null || distanceMeters <= meters;
+
+    const pairs = firstNames.flatMap((first) =>
+      secondNames.map((second) => [first, second] as const),
+    );
+
+    const sameName = pairs.some(([first, second]) => {
+      const name = this.normalizeText(first);
+      return name !== '' && name === this.normalizeText(second);
+    });
+    if (sameName && within(this.SAME_NAME_MAX_DISTANCE_METERS)) return true;
+
+    const sameCoreName = pairs.some(([first, second]) => {
+      const core = this.coreName(first);
+      return core.length >= 3 && core === this.coreName(second);
+    });
+
+    return sameCoreName && within(this.CORE_NAME_MAX_DISTANCE_METERS);
   }
 
   private calculateEventTimeScore(timeDeltaMinutes: number): number {

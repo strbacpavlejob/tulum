@@ -10,6 +10,7 @@ import { DuplicateCheckerModule } from '../duplicate-checker/duplicate-checker.m
 import { UsersModule } from '../users/users.module';
 import { InstagramModule } from '../instagram/instagram.module';
 import { R2Module } from '../r2/r2.module';
+import { EventZekaScraperService } from './scrapers/eventzeka/eventzeka-scraper.service';
 import { GuestListSerbiaScraperService } from './scrapers/guest-list/guest-list-serbia-scraper.service';
 import { InstagramScraperService } from './scrapers/instagram/instagram-scraper.service';
 import { InstagramApifyService } from './scrapers/instagram/instagram-apify.service';
@@ -32,6 +33,7 @@ import { AiEventProcessingService } from './application/ai-event-processing/ai-e
     GoOutScraperService,
     GuestListSerbiaScraperService,
     InstagramScraperService,
+    EventZekaScraperService,
     InstagramApifyService,
     ScrapeCronService,
     ScraperService,

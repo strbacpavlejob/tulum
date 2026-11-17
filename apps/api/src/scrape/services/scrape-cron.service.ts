@@ -14,11 +14,11 @@ export class ScrapeCronService {
   @Cron('30 10 * * 1', { name: 'monday-scraper-1030' })
   async mondayScraper(): Promise<void> {
     this.logger.log(
-      `Starting scheduled scrape for: ${ScraperSource.GOOUT}, ${ScraperSource.GUEST_LIST}`,
+      `Starting scheduled scrape for: ${ScraperSource.GOOUT}, ${ScraperSource.GUEST_LIST}, ${ScraperSource.EVENTZEKA}`,
     );
 
     try {
-      await this.scraperService.scrapeWithMultipleScrapers([1, 2]);
+      await this.scraperService.scrapeWithMultipleScrapers([1, 2, 4]);
     } catch (error) {
       this.logger.error(
         'Scheduled scrape failed for all scrapers',
@@ -30,11 +30,11 @@ export class ScrapeCronService {
   @Cron('30 10 * * 4', { name: 'thursday-scraper-1030' })
   async thursdayScraper(): Promise<void> {
     this.logger.log(
-      `Starting scheduled scrape for: ${ScraperSource.GOOUT}, ${ScraperSource.GUEST_LIST}, ${ScraperSource.INSTAGRAM}`,
+      `Starting scheduled scrape for: ${ScraperSource.GOOUT}, ${ScraperSource.GUEST_LIST}, ${ScraperSource.INSTAGRAM}, ${ScraperSource.EVENTZEKA}`,
     );
 
     try {
-      await this.scraperService.scrapeWithMultipleScrapers([1, 2, 3]);
+      await this.scraperService.scrapeWithMultipleScrapers([1, 2, 3, 4]);
     } catch (error) {
       this.logger.error(
         'Scheduled scrape failed for all scrapers',
