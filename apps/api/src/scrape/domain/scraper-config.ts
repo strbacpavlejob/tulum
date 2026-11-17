@@ -208,6 +208,7 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
       // "venue".
       venueTypeMapping: [
         { queryValue: 'club', venueType: VenueTypeEnum.CLUB },
+        { queryValue: 'bar', venueType: VenueTypeEnum.BAR },
         { queryValue: 'restaurant/cafe', venueType: VenueTypeEnum.RESTAURANT },
         { queryValue: 'culture', venueType: VenueTypeEnum.EVENT_VENUE },
         { queryValue: 'live', venueType: VenueTypeEnum.EVENT_VENUE },

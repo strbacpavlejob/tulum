@@ -15,8 +15,11 @@ import {
 } from '@jest/globals';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { AxiosError, AxiosResponse } from 'axios';
 import { of } from 'rxjs';
 
+import { Coordinates } from '../../../geocoder/coordinates';
+import { GeocoderService } from '../../../geocoder/geocoder.service';
 import { ExistingData } from '../../domain/scraper.interface';
 import { VenueTypeEnum } from '../../domain/scraper-venue.interfaces';
 import {
@@ -147,24 +150,50 @@ const venueUrl = (id: string) => `${BASE_URL}/en/venues/${id}`;
 const directoryUrl = (page: number) =>
   `${BASE_URL}/en/venues/directory${page > 1 ? `?page=${page}` : ''}`;
 
+/** A page, or the error its request fails with. */
+type Answer = string | Error;
+
+/** An error like axios's for a response with this status. */
+const httpError = (status: number) =>
+  new AxiosError(
+    `Request failed with status code ${status}`,
+    status >= 500 ? 'ERR_BAD_RESPONSE' : 'ERR_BAD_REQUEST',
+    undefined,
+    undefined,
+    { status } as AxiosResponse,
+  );
+
 const setup = (
-  pages: Map<string, string | Error>,
+  pages: Map<string, Answer | Answer[]>,
   { listAll = false }: { listAll?: boolean } = {},
 ) => {
   const requested: string[] = [];
   const httpService = {
     get: jest.fn((url: string) => {
       requested.push(url);
-      const page = pages.get(url);
-      if (page === undefined) throw new Error(`Unexpected request: ${url}`);
+      const answers = pages.get(url);
+      if (answers === undefined) throw new Error(`Unexpected request: ${url}`);
+      // A list is answered in turn, then its last answer from then on.
+      const times = requested.filter((earlier) => earlier === url).length;
+      const page = Array.isArray(answers)
+        ? answers[Math.min(times, answers.length) - 1]
+        : answers;
       if (page instanceof Error) throw page;
       return of({ data: page });
     }),
+  };
+  const geocoder = {
+    geocodeVenueAddress: jest
+      .fn<
+        (address: string, countryCode?: string) => Promise<Coordinates | null>
+      >()
+      .mockResolvedValue(null),
   };
   const configService = { getOrThrow: () => 'host-user-id' };
 
   const scraper = new EventZekaScraperService(
     httpService as unknown as HttpService,
+    geocoder as unknown as GeocoderService,
     configService as unknown as ConfigService,
   );
   // No pause between requests in tests, and two days of listings.
@@ -172,7 +201,7 @@ const setup = (
   scraper.config.events.daysAhead = 2;
   scraper.config.venues.listAll = listAll;
 
-  return { scraper, requested };
+  return { scraper, requested, geocoder };
 };
 
 const saved = (...venues: [id: string, name: string][]): ExistingData =>
@@ -228,7 +257,7 @@ describe('EventZekaScraperService', () => {
   });
 
   const sitePages = () =>
-    new Map<string, string | Error>([
+    new Map<string, Answer | Answer[]>([
       [dayUrl('2026-11-21'), flightPage(rokam, jazz, theatre, noTime)],
       // The next day lists Rokam again: one event, one page request.
       [dayUrl('2026-11-22'), flightPage(sunday, rokam)],
@@ -350,7 +379,8 @@ describe('EventZekaScraperService', () => {
       venues.find((venue) => venue.name === 'Sinnerman Jazz Club'),
     ).toMatchObject({
       address: 'Belgrade',
-      venueType: VenueTypeEnum.EVENT_VENUE,
+      // A generic "venue" with a concert: its name makes it a bar.
+      venueType: VenueTypeEnum.BAR,
       venueContacts: null,
     });
     expect(venues.find((venue) => venue.name === 'Drugstore')).toMatchObject({
@@ -414,7 +444,7 @@ describe('EventZekaScraperService', () => {
 
   describe('with listAll', () => {
     const directorySite = () =>
-      new Map<string, string | Error>([
+      new Map<string, Answer | Answer[]>([
         [dayUrl('2026-11-21'), flightPage()],
         [dayUrl('2026-11-22'), flightPage()],
         [
@@ -448,7 +478,7 @@ describe('EventZekaScraperService', () => {
       ]);
 
     it('imports every venue the directory lists, with no events needed', async () => {
-      const { scraper, requested } = setup(directorySite(), {
+      const { scraper, requested, geocoder } = setup(directorySite(), {
         listAll: true,
       });
 
@@ -470,6 +500,141 @@ describe('EventZekaScraperService', () => {
         venueUrl('k17hype'),
         venueUrl('k17after'),
         venueUrl('k17ulus'),
+      ]);
+      // Their pages place HYPE and After, and ULUS has no address to look up.
+      expect(geocoder.geocodeVenueAddress).not.toHaveBeenCalled();
+    });
+
+    it('reads a venue page that failed with a server error once more, after the others', async () => {
+      const pages = directorySite();
+      // The site answers 500 for a while: all three tries fail, a later one
+      // doesn't.
+      pages.set(venueUrl('k17hype'), [
+        httpError(500),
+        httpError(500),
+        httpError(500),
+        venuePage('k17hype', {
+          name: 'HYPE Night Club',
+          geo: [44.8186, 20.4568],
+        }),
+      ]);
+      // A missing page isn't read again.
+      pages.set(venueUrl('k17after'), httpError(404));
+      const { scraper, requested } = setup(pages, { listAll: true });
+
+      const { venues } = await scraper.scrape();
+
+      expect(venues.map((venue) => venue.name)).toEqual(['HYPE Night Club']);
+      expect(requested.filter((url) => url.includes('/venues/k17'))).toEqual([
+        venueUrl('k17hype'),
+        venueUrl('k17hype'),
+        venueUrl('k17hype'),
+        venueUrl('k17after'),
+        venueUrl('k17ulus'),
+        venueUrl('k17hype'),
+      ]);
+    });
+
+    it('places a venue with a street address but no point at that address', async () => {
+      const pages = directorySite();
+      pages.set(
+        directoryUrl(2),
+        directoryPage(
+          ['k17ulus', 'ULUS'],
+          ['k17bristol', 'The Bristol Belgrade'],
+          ['k17vuk', 'Teatar Vuk'],
+        ),
+      );
+      pages.set(
+        venueUrl('k17bristol'),
+        venuePage('k17bristol', {
+          name: 'The Bristol Belgrade',
+          street: 'Karađorđeva 50 (Hotel Bristol)',
+        }),
+      );
+      pages.set(
+        venueUrl('k17vuk'),
+        venuePage('k17vuk', {
+          name: 'Teatar Vuk',
+          street: 'Bulevar kralja Aleksandra 77A, Beograd',
+          category: 'culture',
+        }),
+      );
+      const { scraper, geocoder } = setup(pages, { listAll: true });
+      geocoder.geocodeVenueAddress.mockImplementation((address) =>
+        Promise.resolve(
+          address.startsWith('Karađorđeva 50')
+            ? { latitude: 44.8127, longitude: 20.4526 }
+            : null,
+        ),
+      );
+
+      const { venues } = await scraper.scrape();
+
+      // In Belgrade, without the note in brackets, and only for venues whose
+      // page has an address but no point.
+      expect(geocoder.geocodeVenueAddress.mock.calls).toEqual([
+        ['Karađorđeva 50, Beograd', 'RS'],
+        ['Bulevar kralja Aleksandra 77A, Beograd', 'RS'],
+      ]);
+      expect(
+        venues.find((venue) => venue.name === 'The Bristol Belgrade'),
+      ).toMatchObject({
+        latitude: 44.8127,
+        longitude: 20.4526,
+        address: 'Karađorđeva 50 (Hotel Bristol)',
+      });
+      // Nominatim had no building for Teatar Vuk's address: without a point
+      // it isn't imported, and never at the city centre.
+      expect(venues.map((venue) => venue.name)).toEqual([
+        'HYPE Night Club',
+        'After',
+        'The Bristol Belgrade',
+      ]);
+    });
+
+    it('types a generic "venue" by the words in its name', async () => {
+      const named: [id: string, name: string, category?: string][] = [
+        ['k17kafana', 'Kafana Bajka Official'],
+        ['k17sinatra', 'Jazz bar Sinatra'],
+        ['k17gypsy', 'Gypsy Jazz club'],
+        ['k17fest', 'Klub Fest'],
+        ['k17bistro', 'Bistro Mali Pijac'],
+        ['k17pivo', 'Bluz i Pivo'],
+        ['k17loza', 'Dc Loza'],
+        // A specific category on the page wins over the name.
+        ['k17levo', 'Teatar Levo Bar', 'culture'],
+        ['k17petra', 'Petra 45', 'bar'],
+      ];
+      const pages = new Map<string, Answer | Answer[]>([
+        [dayUrl('2026-11-21'), flightPage()],
+        [dayUrl('2026-11-22'), flightPage()],
+        [
+          directoryUrl(1),
+          directoryPage(
+            ...named.map(([id, name]): [string, string] => [id, name]),
+          ),
+        ],
+        [directoryUrl(2), directoryPage()],
+        ...named.map(([id, name, category]): [string, string] => [
+          venueUrl(id),
+          venuePage(id, { name, geo: [44.81, 20.46], category }),
+        ]),
+      ]);
+      const { scraper } = setup(pages, { listAll: true });
+
+      const { venues } = await scraper.scrape();
+
+      expect(venues.map((venue) => [venue.name, venue.venueType])).toEqual([
+        ['Kafana Bajka Official', VenueTypeEnum.TAVERN],
+        ['Jazz bar Sinatra', VenueTypeEnum.BAR],
+        ['Gypsy Jazz club', VenueTypeEnum.BAR],
+        ['Klub Fest', VenueTypeEnum.CLUB],
+        ['Bistro Mali Pijac', VenueTypeEnum.RESTAURANT],
+        ['Bluz i Pivo', VenueTypeEnum.BAR],
+        ['Dc Loza', VenueTypeEnum.EVENT_VENUE],
+        ['Teatar Levo Bar', VenueTypeEnum.EVENT_VENUE],
+        ['Petra 45', VenueTypeEnum.BAR],
       ]);
     });
 

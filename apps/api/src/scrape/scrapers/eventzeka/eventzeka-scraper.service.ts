@@ -5,6 +5,7 @@ import { addHours } from 'date-fns';
 import { firstValueFrom } from 'rxjs';
 
 import { Coordinates, toCoordinates } from '../../../geocoder/coordinates';
+import { GeocoderService } from '../../../geocoder/geocoder.service';
 import {
   ImageStoragePolicy,
   SCRAPER_CONFIGS,
@@ -54,6 +55,30 @@ const TIME_PATTERN = /^(\d{1,2}:\d{2})(?:\s*[–-]\s*(\d{1,2}:\d{2}))?$/;
 /** The directory had 45 pages of 12 venues in November 2026. */
 const MAX_DIRECTORY_PAGES = 200;
 const MAX_DIRECTORY_FAILURES = 3;
+/**
+ * The site answers 500 for minutes at a time now and then. A failed request
+ * is tried again after 3 fetchDelays and then 6, and a venue page that still
+ * fails is read once more at the end, 30 fetchDelays after the others.
+ */
+const RETRY_DELAY_FETCH_DELAYS = 3;
+const SECOND_READ_PAUSE_FETCH_DELAYS = 30;
+/**
+ * Words in a normalized venue name that say what kind of place it is, the
+ * first match winning. Names are padded with spaces, so these match whole
+ * words.
+ */
+const VENUE_TYPE_NAME_WORDS: [RegExp, VenueTypeEnum][] = [
+  // A jazz or blues club is a bar with a stage, not a nightclub.
+  [/ (jazz|blues) (club|klub|bar) /, VenueTypeEnum.BAR],
+  [/ (club|klub|nightclub|disco|diskoteka) /, VenueTypeEnum.CLUB],
+  [/ (kafana|kafane) /, VenueTypeEnum.TAVERN],
+  [/ (bar|pub|pab|pivnica|pivara|pivo|speakeasy) /, VenueTypeEnum.BAR],
+  [
+    / (restoran|restaurant|bistro|trattoria|pizzeria) /,
+    VenueTypeEnum.RESTAURANT,
+  ],
+  [/ (cafe|caffe|kafe|kafic|coffee) /, VenueTypeEnum.CAFE],
+];
 
 interface EventTimes {
   startDate: Date;
@@ -73,8 +98,9 @@ interface VenueDetails {
  * Instagram posts. A day page lists that day's events; each event's own page
  * adds the venue's position and Instagram account and the post's caption.
  * The venue directory lists every venue, whose own page gives its street
- * address, position, Instagram account and category. Only those public
- * pages are read: robots.txt disallows /api/.
+ * address, position, Instagram account and category; a venue with an
+ * address but no position is placed by geocoding the address. Only those
+ * public pages are read: robots.txt disallows /api/.
  */
 @Injectable()
 export class EventZekaScraperService implements Scraper<
@@ -92,6 +118,7 @@ export class EventZekaScraperService implements Scraper<
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly geocoder: GeocoderService,
     private readonly configService: ConfigService,
   ) {
     const baseConfig = SCRAPER_CONFIGS[ScraperSource.EVENTZEKA];
@@ -208,26 +235,32 @@ export class EventZekaScraperService implements Scraper<
       if (!names.has(event.venueId)) names.set(event.venueId, event.venue);
     }
 
-    const venuesById = new Map<string, ScrapedVenue>();
     const savedIds = new Map<string, string>();
-    let withoutPoint = 0;
+    const unsaved = new Map<string, string>();
 
     for (const [id, name] of names) {
-      const event = eventAt.get(id);
       const savedId = this.findSavedVenue(savedIdsByName, [
         name,
-        ...(event?.venueAliases ?? []),
+        ...(eventAt.get(id)?.venueAliases ?? []),
       ]);
 
       // Venue names are unique in the DB, so a venue saved under one of
       // these names is this one: its events point at it, its page isn't
       // read again, and it isn't saved over.
-      if (savedId) {
-        savedIds.set(id, savedId);
-        continue;
-      }
+      if (savedId) savedIds.set(id, savedId);
+      else unsaved.set(id, name);
+    }
 
-      const venue = this.toVenue(name, await this.fetchVenue(id, name), event);
+    const pages = await this.fetchVenues(unsaved);
+    const venuesById = new Map<string, ScrapedVenue>();
+    let withoutPoint = 0;
+
+    for (const [id, name] of unsaved) {
+      const venue = await this.toVenue(
+        name,
+        pages.get(id) ?? null,
+        eventAt.get(id),
+      );
 
       if (venue) {
         venuesById.set(id, venue);
@@ -241,7 +274,8 @@ export class EventZekaScraperService implements Scraper<
 
     for (const event of events) {
       const venue =
-        venuesById.get(event.venueId) ?? this.toVenue(event.venue, null, event);
+        venuesById.get(event.venueId) ??
+        (await this.toVenue(event.venue, null, event));
 
       // Without a point the venue can't be saved, and a made-up one would
       // put it in the wrong place on the map.
@@ -421,38 +455,83 @@ export class EventZekaScraperService implements Scraper<
     return [...venues.values()];
   }
 
-  /** The venue from its own page, or null when the page fails or lacks it. */
+  /**
+   * These venues' pages by id, without the ones that fail. A page that
+   * fails with a server or network error is read once more after the
+   * others, when a burst of errors has likely passed.
+   */
+  private async fetchVenues(
+    names: Map<string, string>,
+  ): Promise<Map<string, EventZekaVenue | null>> {
+    const pages = new Map<string, EventZekaVenue | null>();
+    const failed: [id: string, name: string][] = [];
+
+    for (const [id, name] of names) {
+      try {
+        pages.set(id, await this.fetchVenue(id, name));
+      } catch (error) {
+        if (isRetryableHttpError(error)) failed.push([id, name]);
+        this.logs.warning(
+          `Can't read the page of "${name}": ${(error as Error).message}`,
+        );
+      }
+    }
+
+    if (failed.length === 0) return pages;
+
+    await sleep(
+      (this.config.events.fetchDelay ?? 0) * SECOND_READ_PAUSE_FETCH_DELAYS,
+    );
+
+    for (const [id, name] of failed) {
+      try {
+        pages.set(id, await this.fetchVenue(id, name));
+      } catch (error) {
+        this.logs.warning(
+          `Skipping the page of "${name}": ${(error as Error).message}`,
+        );
+      }
+    }
+
+    const read = failed.filter(([id]) => pages.has(id)).length;
+    this.logs.info(
+      `Read ${read} of ${failed.length} failed venue pages on a second try`,
+    );
+
+    return pages;
+  }
+
+  /** The venue from its own page, or null when the page lacks it. */
   private async fetchVenue(
     id: string,
     name: string,
   ): Promise<EventZekaVenue | null> {
     const url = `${this.config.baseUrl}/en/venues/${encodeURIComponent(id)}`;
-
-    try {
-      const venue = parseEventZekaVenue(await this.fetchHtml(url), id);
-      if (!venue) this.logs.warning(`No data for "${name}" on ${url}`);
-      return venue;
-    } catch (error) {
-      this.logs.warning(
-        `Skipping the page of "${name}": ${(error as Error).message}`,
-      );
-      return null;
-    }
+    const venue = parseEventZekaVenue(await this.fetchHtml(url), id);
+    if (!venue) this.logs.warning(`No data for "${name}" on ${url}`);
+    return venue;
   }
 
   /**
    * The venue from its page, filled in from one of its events: the page
    * gives the street address and category, the event the venue's other
-   * names. Null without a point.
+   * names. Its point is the page's, else the event's, else where Nominatim
+   * puts its street address; null without one, never the city centre.
    */
-  private toVenue(
+  private async toVenue(
     name: string,
     page: EventZekaVenue | null,
     event?: EventZekaEvent,
-  ): ScrapedVenue | null {
+  ): Promise<ScrapedVenue | null> {
     const coordinates =
       toCoordinates(page?.latitude, page?.longitude) ??
-      toCoordinates(event?.venueLatitude, event?.venueLongitude);
+      toCoordinates(event?.venueLatitude, event?.venueLongitude) ??
+      (page?.streetAddress
+        ? await this.geocoder.geocodeVenueAddress(
+            this.addressQuery(page.streetAddress),
+            'RS',
+          )
+        : null);
     if (!coordinates) return null;
 
     return this.mapVenue(
@@ -462,9 +541,19 @@ export class EventZekaScraperService implements Scraper<
         instagramHandle: page?.instagramHandle ?? event?.venueInstagramHandle,
         aliases: event?.venueAliases ?? [],
       },
-      this.venueTypeOf(page?.category, event),
+      this.venueTypeOf(name, page?.category, event),
       coordinates,
     );
+  }
+
+  /**
+   * A street address as a Nominatim query: without notes in brackets
+   * ("Karađorđeva 50 (Hotel Bristol)"), and in Belgrade unless a place
+   * follows a comma ("Zmaj Jovina 2, Novi Sad 21000").
+   */
+  private addressQuery(streetAddress: string): string {
+    const address = streetAddress.replace(/\s*\([^)]*\)/g, '').trim();
+    return address.includes(',') ? address : `${address}, Beograd`;
   }
 
   /** The DB's venues by normalized name; names are unique there. */
@@ -531,24 +620,32 @@ export class EventZekaScraperService implements Scraper<
   }
 
   /**
-   * The venue's own category (from its page, else its events'), or its
-   * event's category when the venue's is the generic "venue": a club night
-   * makes its venue a club.
+   * The venue's own category (from its page, else its events'). The site
+   * calls most venues just "venue": then a club night at it makes it a club,
+   * and otherwise its name may say what it is ("Jazz bar Sinatra").
    */
   private venueTypeOf(
+    name: string,
     pageCategory: string | undefined,
     event?: EventZekaCard,
   ): VenueTypeEnum {
     const types = buildVenueTypeMap(this.config.venues.venueTypeMapping);
-    const own = (pageCategory ?? event?.venueCategory)?.toLowerCase();
-    const category =
-      !own || own === 'venue' ? (event?.category?.toLowerCase() ?? own) : own;
+    const generic = types.get('venue') ?? VenueTypeEnum.EVENT_VENUE;
 
-    return (
-      (category ? types.get(category) : undefined) ??
-      types.get('venue') ??
-      VenueTypeEnum.EVENT_VENUE
+    const own = (pageCategory ?? event?.venueCategory)?.toLowerCase();
+    const ownType = own && own !== 'venue' ? types.get(own) : undefined;
+    if (ownType) return ownType;
+
+    const eventCategory = event?.category?.toLowerCase();
+    const eventType = eventCategory ? types.get(eventCategory) : undefined;
+    if (eventType && eventType !== generic) return eventType;
+
+    const words = ` ${normalizeText(name)} `;
+    const named = VENUE_TYPE_NAME_WORDS.find(([pattern]) =>
+      pattern.test(words),
     );
+
+    return named?.[1] ?? generic;
   }
 
   /** The announcement's caption, or who plays and the price without one. */
@@ -605,7 +702,8 @@ export class EventZekaScraperService implements Scraper<
       },
       {
         retries: 3,
-        delayMs: this.config.events.fetchDelay ?? 0,
+        delayMs:
+          (this.config.events.fetchDelay ?? 0) * RETRY_DELAY_FETCH_DELAYS,
         shouldRetry: isRetryableHttpError,
         onRetry: ({ error, attempt, retries, waitMs }) =>
           this.logs.requestRetry({

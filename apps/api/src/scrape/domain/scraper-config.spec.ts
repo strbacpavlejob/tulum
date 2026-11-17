@@ -44,6 +44,7 @@ describe('scraper venue type mappings', () => {
     expect(getMappings(ScraperSource.EVENTZEKA)).toEqual(
       new Map([
         ['club', VenueTypeEnum.CLUB],
+        ['bar', VenueTypeEnum.BAR],
         ['restaurant/cafe', VenueTypeEnum.RESTAURANT],
         ['culture', VenueTypeEnum.EVENT_VENUE],
         ['live', VenueTypeEnum.EVENT_VENUE],
