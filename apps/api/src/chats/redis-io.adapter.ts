@@ -39,7 +39,8 @@ export function redisClientsFrom(env: Env): [Redis, Redis] | null {
  * reachable at startup) sockets work within one instance, as before.
  */
 export class RedisIoAdapter extends IoAdapter {
-  private readonly logger = new Logger(RedisIoAdapter.name);
+  // Not `logger`: newer IoAdapter versions declare a protected one.
+  private readonly redisLogger = new Logger(RedisIoAdapter.name);
   private adapterConstructor?: ReturnType<typeof createAdapter>;
 
   constructor(
@@ -60,7 +61,9 @@ export class RedisIoAdapter extends IoAdapter {
   async connectToRedis(env: Env = process.env): Promise<void> {
     const clients = this.createClients(env);
     if (!clients) {
-      this.logger.log('No Redis configured: sockets work within one instance');
+      this.redisLogger.log(
+        'No Redis configured: sockets work within one instance',
+      );
       return;
     }
     const [pub, sub] = clients;
@@ -76,7 +79,7 @@ export class RedisIoAdapter extends IoAdapter {
         }),
       ]);
     } catch (err) {
-      this.logger.warn(
+      this.redisLogger.warn(
         `Redis unreachable (${(err as Error).message}): sockets work within one instance`,
       );
       pub.disconnect();
@@ -95,12 +98,12 @@ export class RedisIoAdapter extends IoAdapter {
     ) => Promise<number>;
     pub.publish = (...args: unknown[]) =>
       publish(...args).catch((err: Error) => {
-        this.logger.warn(`Socket push not shared: ${err.message}`);
+        this.redisLogger.warn(`Socket push not shared: ${err.message}`);
         return 0;
       });
 
     this.adapterConstructor = createAdapter(pub, sub);
-    this.logger.log('Sockets are shared across instances through Redis');
+    this.redisLogger.log('Sockets are shared across instances through Redis');
   }
 
   // Nest passes only the options a gateway sets, hence Partial.
