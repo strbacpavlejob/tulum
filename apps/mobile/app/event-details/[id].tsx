@@ -1,6 +1,6 @@
-import AttendButton from "@/components/AttendButton";
+import AttendButton from "@/components/attend-button";
 import { useTranslation } from "react-i18next";
-import GuestListModal from "@/components/GuestListModal";
+import GuestListModal from "@/components/guest-list-modal";
 import { Text } from "@/components/ui/text";
 import {
   AttendConflictError,
@@ -9,7 +9,7 @@ import {
   fetchEventAttendees,
   unattendEvent,
 } from "@/lib/api";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import { Ticket } from "@/types/ticket";
 import { useAuth } from "@clerk/expo";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -22,10 +22,10 @@ import * as Clipboard from "expo-clipboard";
 import { Alert, View, Share } from "react-native";
 import LoadingIndicator from "@/components/loading-indicator";
 import { AuthGuard } from "@/components/auth-guard";
-import { ReservationModal } from "@/components/event-details/ReservationModal";
-import { useEventDetailsData } from "@/components/event-details/useEventDetailsData";
-import { EventDetailsContent } from "@/components/event-details/EventDetailsContent";
-import { EventHero } from "@/components/event-details/EventHero";
+import { ReservationModal } from "@/components/event-details/reservation-modal";
+import { useEventDetailsData } from "@/components/event-details/use-event-details-data";
+import { EventDetailsContent } from "@/components/event-details/event-details-content";
+import { EventHero } from "@/components/event-details/event-hero";
 
 // ─── Helpers for deep-linking to contact apps ────────────────────────────
 

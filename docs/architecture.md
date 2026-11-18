@@ -14,6 +14,7 @@ A pnpm workspace (`pnpm-workspace.yaml`) with Turborepo for `dev`, `build`,
 | `scripts/`      | Test browser and emulator launchers, read-only API proxy, poster kit       |
 | `docs/`         | This documentation                                                         |
 | `knip.jsonc`    | Dead-code check for the whole workspace ([refactoring.md](refactoring.md)) |
+| `eslint-rules/` | The shared ESLint rule for file and folder names ([conventions.md](conventions.md)) |
 
 ## How the parts talk
 
@@ -75,7 +76,7 @@ responsibility; pure rules in plain modules with their own specs.
 ## apps/mobile
 
 Expo SDK 58, React Native 0.88, Expo Router, NativeWind 4, Zustand
-(`store/useStore.ts`), Clerk (`@clerk/expo`). Shipped first as a static web
+(`store/use-store.ts`), Clerk (`@clerk/expo`). Shipped first as a static web
 export on Vercel (mobile.tulum-app.com); Android and iOS builds follow.
 
 - `app/`: routes only. `(auth)/` sign-in, email code, sign-up, onboarding;

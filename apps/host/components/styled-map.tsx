@@ -12,8 +12,8 @@ import {
   MapMarkerClusterGroup,
 } from "@/components/ui/map";
 import Marker from "@/components/common/marker";
-import { getNewDarkMapStyle } from "@/public/map-styles/dark";
-import { getNewLightMapStyle } from "@/public/map-styles/light";
+import { getNewDarkMapStyle } from "@/lib/map-styles/dark";
+import { getNewLightMapStyle } from "@/lib/map-styles/light";
 import Cluster from "./common/cluster";
 
 interface Location {

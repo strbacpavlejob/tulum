@@ -32,7 +32,7 @@ import {
   daysInMonth,
   clampDate,
   getDateLocale,
-} from "@/components/birthday-picker/pickerDates";
+} from "@/components/birthday-picker/picker-dates";
 import { styles } from "@/components/birthday-picker/styles";
 
 type BirthdayPickerModalProps = {

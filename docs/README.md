@@ -18,7 +18,8 @@ build, test and ship it. App READMEs only point here.
 | [testing.md](testing.md)                   | Checks per app, their known baselines, browser and emulator testing      |
 | [deployment.md](deployment.md)             | Vercel, Railway, Supabase and Clerk: how a change reaches production     |
 | [launch-plan.md](launch-plan.md)           | The KST Maskenbal web launch: batches, status and completion criteria    |
-| [refactoring.md](refactoring.md)           | The safe order for cleanups, code organization rules, the dead-code check |
+| [conventions.md](conventions.md)           | File and folder naming, folder structure, where code goes               |
+| [refactoring.md](refactoring.md)           | The safe order for cleanups and the dead-code check                      |
 | [images-and-storage.md](images-and-storage.md) | Picture sizes, the upload path and Cloudflare R2                     |
 | [moderation-runbook.md](moderation-runbook.md) | Handling guest reports before and during an event                    |
 
@@ -35,8 +36,9 @@ and [scripts/poster-kit/README.md](../scripts/poster-kit/README.md).
 3. Before changing code, run that app's checks from [testing.md](testing.md)
    and compare against the baselines listed there. Many errors already exist
    and are not regressions.
-4. Keep changes behavior-preserving unless the task says otherwise, and follow
-   the order in [refactoring.md](refactoring.md) for any cleanup.
+4. Name and place new files as [conventions.md](conventions.md) says. Keep
+   changes behavior-preserving unless the task says otherwise, and follow the
+   order in [refactoring.md](refactoring.md) for any cleanup.
 5. Project skills in `.agents/skills/` (also at `.claude/skills/`) cover Clerk
    auth (`tulum-clerk-api-auth`), matching (`tulum-matching-reliability`) and
    frontend styling (`tulum-frontend-patterns`). Use them when they apply.

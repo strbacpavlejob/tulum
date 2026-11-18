@@ -1,9 +1,9 @@
-import { useAppTheme } from "@/hooks/useAppTheme";
-import { useInboxSocket } from "@/hooks/useInboxSocket";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { useInboxSocket } from "@/hooks/use-inbox-socket";
 import Logo from "@/components/illustrations/logo";
 import { fetchMyMatches, fetchMyProfile, fetchSettings } from "@/lib/api";
-import { getUnreadChatsCount } from "@/lib/inboxUnread";
-import useStore from "@/store/useStore";
+import { getUnreadChatsCount } from "@/lib/inbox-unread";
+import useStore from "@/store/use-store";
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
 import {

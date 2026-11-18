@@ -1,6 +1,6 @@
 import LoadingIndicator from "@/components/loading-indicator";
 import { Text } from "@/components/ui/text";
-import ClerkCaptcha from "@/components/ClerkCaptcha";
+import ClerkCaptcha from "@/components/clerk-captcha";
 import { savePendingJoin } from "@/lib/pending-join";
 import { useClerk } from "@clerk/expo";
 import { useLocalSearchParams, useRouter } from "expo-router";

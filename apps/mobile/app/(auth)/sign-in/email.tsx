@@ -1,8 +1,8 @@
-import ClerkCaptcha from "@/components/ClerkCaptcha";
+import ClerkCaptcha from "@/components/clerk-captcha";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { isRateLimited, retryOnRateLimit } from "@/lib/clerk-retry";
 import { savePendingJoin } from "@/lib/pending-join";
 import { generatedPassword, generatedUsername } from "@/lib/sign-up-fields";

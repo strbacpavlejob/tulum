@@ -1,11 +1,11 @@
-import MatchModal from "@/components/MatchModal";
-import MatchesDeck from "@/components/matches/MatchesDeck";
+import MatchModal from "@/components/match-modal";
+import MatchesDeck from "@/components/matches/matches-deck";
 import {
   EmptyMatchesView,
   LoadingStateView,
   LocationRequiredView,
   LockedStateView,
-} from "@/components/matches/MatchesEligibilityViews";
+} from "@/components/matches/matches-eligibility-views";
 import {
   createMatchSwipe,
   fetchSwipeableProfiles,
@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { toast } from "sonner-native";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import {
   PROFILE_REFRESH_INTERVAL_MS,
   DECK_PAGE_SIZE,
@@ -37,8 +37,8 @@ import {
   applyProfileFilters,
   filtersKey,
   toSwipeCandidates,
-} from "@/components/matches/matchesModel";
-import { useMatchesEligibility } from "@/components/matches/useMatchesEligibility";
+} from "@/components/matches/matches-model";
+import { useMatchesEligibility } from "@/components/matches/use-matches-eligibility";
 
 // The API filters the deck it sends; an API from before paging sent everyone
 // at the event, so the deck is filtered here as well. Between a filter change

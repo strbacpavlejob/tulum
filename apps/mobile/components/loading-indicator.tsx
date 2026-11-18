@@ -1,7 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import LottieView, { type AnimationObject } from "lottie-react-native";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import loadingAnimation from "../animations/loading.json";
 
 type LayerShape = {

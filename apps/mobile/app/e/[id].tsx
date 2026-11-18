@@ -1,7 +1,7 @@
 import LoadingIndicator from "@/components/loading-indicator";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import {
   AttendConflictError,
   EventNotFoundError,
@@ -15,7 +15,7 @@ import {
   getPendingJoin,
   savePendingJoin,
 } from "@/lib/pending-join";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import { Event } from "@/types/event";
 import { useAuth } from "@clerk/expo";
 import { format } from "date-fns";

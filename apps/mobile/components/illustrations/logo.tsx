@@ -1,4 +1,4 @@
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import * as React from "react";
 import { View } from "react-native";
 import {

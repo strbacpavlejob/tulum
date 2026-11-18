@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PublicInfoPage from "@/components/sections/PublicInfoPage";
+import PublicInfoPage from "@/components/sections/public-info-page";
 
 export const metadata: Metadata = {
   title: "Delete your account | Tulum",

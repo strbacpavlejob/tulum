@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Writes components/map/leafletAssets.ts: the Leaflet and Leaflet.markercluster
+ * Writes components/map/leaflet-assets.ts: the Leaflet and Leaflet.markercluster
  * JavaScript and CSS as strings, so the native maps' WebView page works
  * without loading anything from unpkg. Run it after changing the leaflet or
  * leaflet.markercluster versions in package.json:
@@ -44,7 +44,7 @@ const output = [
 ].join("\n");
 
 const target = fileURLToPath(
-  new URL("../components/map/leafletAssets.ts", import.meta.url),
+  new URL("../components/map/leaflet-assets.ts", import.meta.url),
 );
 writeFileSync(target, output);
 console.log(

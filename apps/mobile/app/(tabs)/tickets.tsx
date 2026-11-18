@@ -1,8 +1,8 @@
-import EmptyIndicator from "@/components/EmptyIndicator";
+import EmptyIndicator from "@/components/empty-indicator";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { fetchMyTickets } from "@/lib/api";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import { Ticket } from "@/types/ticket";
 import { EventSummary } from "@/types/event";
 import { useAuth } from "@clerk/expo";
@@ -18,7 +18,7 @@ import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import LoadingIndicator from "@/components/loading-indicator";
-import { TicketCard } from "@/components/TicketCard";
+import { TicketCard } from "@/components/ticket-card";
 import { StyleSheet } from "nativewind";
 
 const noTicketsIllustration = require("@/assets/images/tulum-no-tickets.webp");

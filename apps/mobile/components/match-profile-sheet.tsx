@@ -1,0 +1,114 @@
+import ProfileInfoView from "@/components/profile-info/profile-info-view";
+import { Text } from "@/components/ui/text";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { useTranslation } from "react-i18next";
+import { Match } from "@/types/chat";
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+} from "@gorhom/bottom-sheet";
+import React, { useCallback, useMemo } from "react";
+import { Image } from "expo-image";
+import { Flag } from "lucide-react-native";
+import { Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+type Props = {
+  match: Match;
+  sheetRef: React.RefObject<BottomSheetModal>;
+  /** Opens the report/block sheet; this sheet closes first. */
+  onReportOrBlock?: () => void;
+};
+
+export default function MatchProfileSheet({
+  match,
+  sheetRef,
+  onReportOrBlock,
+}: Props) {
+  const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const snapPoints = useMemo(() => ["85%"], []);
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    [],
+  );
+
+  // Merge Match fields with any richer profile data we have
+  const userForView = {
+    ...match.profile,
+    firstName: match.name,
+    age: match.profile?.age ?? match.age,
+    photos:
+      match.profile?.photos && match.profile.photos.length > 0
+        ? match.profile.photos
+        : [match.photo],
+  };
+
+  return (
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={snapPoints}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: theme.backgroundPopover }}
+      handleIndicatorStyle={{ backgroundColor: theme.gray5 }}
+    >
+      {/* Compact header */}
+      <View className="flex-row items-center gap-3 border-b border-light-border px-4 py-3 dark:border-dark-border">
+        <Image
+          source={{ uri: match.photo }}
+          style={{ width: 44, height: 44, borderRadius: 22 }}
+          contentFit="cover"
+          cachePolicy="disk"
+        />
+        <View>
+          <Text className="text-[18px] font-bold text-light-colorStrong dark:text-dark-colorStrong">
+            {match.name}
+            {match.age ? `, ${match.age}` : ""}
+          </Text>
+          <Text className="text-[13px] text-light-colorMuted dark:text-dark-colorMuted">
+            {t("atVenue", { venue: match.venue })}
+          </Text>
+        </View>
+      </View>
+
+      {/* Scrollable profile info (read-only) */}
+      <BottomSheetScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <ProfileInfoView user={userForView} />
+        {onReportOrBlock ? (
+          <Pressable
+            onPress={() => {
+              sheetRef.current?.dismiss();
+              onReportOrBlock();
+            }}
+            accessibilityRole="button"
+            className="mx-4 mt-2 flex-row items-center justify-center gap-2 rounded-full border border-light-border py-3 dark:border-dark-border"
+          >
+            <Flag size={16} color={theme.destructiveForeground} />
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "600",
+                color: theme.destructiveForeground,
+              }}
+            >
+              {t("reportOrBlock")}
+            </Text>
+          </Pressable>
+        ) : null}
+      </BottomSheetScrollView>
+    </BottomSheetModal>
+  );
+}

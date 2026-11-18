@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type MapLibreGL from "maplibre-gl";
-import { getNewDarkMapStyle } from "@/public/map-styles/dark";
-import { getNewLightMapStyle } from "@/public/map-styles/light";
+import { getNewDarkMapStyle } from "@/lib/map-styles/dark";
+import { getNewLightMapStyle } from "@/lib/map-styles/light";
 
 export type MapStyle = string | MapLibreGL.StyleSpecification | null;
 

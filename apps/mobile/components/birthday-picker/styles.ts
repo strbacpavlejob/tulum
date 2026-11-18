@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { ITEM_HEIGHT, LIST_HEIGHT } from "./pickerDates";
+import { ITEM_HEIGHT, LIST_HEIGHT } from "./picker-dates";
 
 export const styles = StyleSheet.create({
   pickerContent: {

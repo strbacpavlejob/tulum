@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
-import LanguageSelector from "@/components/LanguageSelector";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import LanguageSelector from "@/components/language-selector";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { fetchGuestMe, submitOnboarding } from "@/lib/api";
 import type { GenderValue } from "@/lib/api";
 import { appPlatform } from "@/lib/app-platform";
 import { signedInHomeHref } from "@/lib/pending-join";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import { LookingForGender } from "@/types/user";
 import { useAuth, useUser } from "@clerk/expo";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -26,15 +26,15 @@ import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import LoadingIndicator from "@/components/loading-indicator";
 import BirthdayInput from "@/components/birthday-input";
 import { differenceInYears, format, subYears } from "date-fns";
-import { CardOption } from "@/components/onboarding/CardOption";
-import { PhotoPickerStep } from "@/components/onboarding/PhotoPickerStep";
+import { CardOption } from "@/components/onboarding/card-option";
+import { PhotoPickerStep } from "@/components/onboarding/photo-picker-step";
 import {
   FIRST_NAME_MAX_LENGTH,
   GENDER_OPTIONS,
   LOOKING_FOR_GENDER_OPTIONS,
   TOTAL_STEPS,
   STEP_CONTENT_STYLE,
-} from "@/components/onboarding/onboardingSteps";
+} from "@/components/onboarding/onboarding-steps";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

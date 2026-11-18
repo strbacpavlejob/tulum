@@ -22,7 +22,7 @@ Check the relevant app's `package.json` before relying on version-specific behav
 
 ## Zustand
 
-- Reuse the existing store at `apps/mobile/store/useStore.ts` before creating another global store.
+- Reuse the existing store at `apps/mobile/store/use-store.ts` before creating another global store.
 - Preserve its typed `MyStore` state-and-actions shape, default-exported `useStore` hook, immutable updates, and individually selected state/actions in components.
 - Keep related derived state in sync. For example, event changes may also affect filtered events, map pins, tickets, and cached per-event swipe candidates.
 - Do not add `subscribeWithSelector`, persistence middleware, a new store folder, or a store rewrite merely to follow a generic template. Add middleware only for a demonstrated requirement and verify it against the installed Zustand version.

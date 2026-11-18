@@ -1,12 +1,12 @@
-import LanguageSelector from "@/components/LanguageSelector";
-import ClerkCaptcha from "@/components/ClerkCaptcha";
+import LanguageSelector from "@/components/language-selector";
+import ClerkCaptcha from "@/components/clerk-captcha";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 
-import { useAppTheme } from "@/hooks/useAppTheme";
-import { useInAppBrowser } from "@/hooks/useInAppBrowser";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { useInAppBrowser } from "@/hooks/use-in-app-browser";
 import {
   isRateLimited,
   retryDelayMs,

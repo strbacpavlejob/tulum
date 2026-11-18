@@ -3,6 +3,7 @@ import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import tulum from '../../eslint-rules/file-naming.cjs';
 
 export default tseslint.config(
   {
@@ -22,6 +23,17 @@ export default tseslint.config(
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+  },
+  {
+    // File and folder names: kebab-case with NestJS role suffixes, see
+    // docs/conventions.md.
+    plugins: { tulum },
+    rules: {
+      'tulum/file-naming': [
+        'error',
+        { routes: null, middleExtensions: 'any' },
+      ],
     },
   },
   {

@@ -1,11 +1,11 @@
 import ClientI18nProvider from "@/components/client-i18n-provider";
-import Navbar from "@/components/sections/Navbar";
-import MapSection from "@/components/sections/MapSection";
-import FeatureHighlight from "@/components/sections/FeatureHighlight";
-import Footer from "@/components/sections/Footer";
-import HeroGuest from "@/components/sections/HeroGuest";
-import FAQGuest from "@/components/sections/FAQGuest";
-import CTAGuest from "@/components/sections/CTAGuest";
+import Navbar from "@/components/sections/navbar";
+import MapSection from "@/components/sections/map-section";
+import FeatureHighlight from "@/components/sections/feature-highlight";
+import Footer from "@/components/sections/footer";
+import HeroGuest from "@/components/sections/hero-guest";
+import FAQGuest from "@/components/sections/faq-guest";
+import CTAGuest from "@/components/sections/cta-guest";
 
 export default function TulumLanding() {
   const mobileUrl = process.env.NEXT_PUBLIC_TULUM_MOBILE_URL;

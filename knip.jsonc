@@ -45,8 +45,8 @@
     "apps/host": {
       "entry": ["components/ui/**/*.tsx"],
       "project": ["**/*.{ts,tsx,js,jsx,mjs,css}"],
-      // PricingGuest waits for Premium (QA TASK-013 took it off the page).
-      "ignore": ["supabase/functions/**", "components/sections/PricingGuest.tsx"]
+      // pricing-guest.tsx waits for Premium (QA TASK-013 took it off the page).
+      "ignore": ["supabase/functions/**", "components/sections/pricing-guest.tsx"]
     }
   }
 }

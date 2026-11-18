@@ -1,0 +1,431 @@
+import { Separator } from "@/components/ui/separator";
+import { Text } from "@/components/ui/text";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { cn } from "@/lib/utils";
+import { User } from "@/types/user";
+import {
+  Baby,
+  BookOpen,
+  Briefcase,
+  Camera,
+  Cigarette,
+  Globe,
+  Heart,
+  PawPrint,
+  Ruler,
+  Star,
+  Trash2,
+  Users,
+  Wine,
+} from "lucide-react-native";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { Image } from "expo-image";
+import { Pressable, View } from "react-native";
+import {
+  capitalize,
+  formatList,
+  ProfileRow,
+} from "@/components/profile-info/profile-row";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/**
+ * Pass this to make ProfileInfoView editable.
+ * When omitted, the view is fully read-only.
+ */
+export type ProfileInfoEditCallbacks = {
+  onAddPhoto(): void;
+  onRemovePhoto(url: string): void;
+  onEditTags(): void;
+  onEditWork(): void;
+  onEditEducation(): void;
+  onEditLookingFor(): void;
+  onEditBio(): void;
+  onEditField(fieldKey: ProfileInfoFieldKey): void;
+};
+
+export type ProfileInfoFieldKey =
+  | "height"
+  | "children"
+  | "drinking"
+  | "languages"
+  | "relationship"
+  | "sexuality"
+  | "smoking"
+  | "starSign"
+  | "pets"
+  | "religion";
+
+export type ProfileInfoField = {
+  key: ProfileInfoFieldKey;
+  icon: React.ComponentType<any>;
+  label: string;
+  value?: string;
+};
+
+type ProfileInfoViewProps = {
+  user: Partial<User>;
+  editCallbacks?: ProfileInfoEditCallbacks;
+  profileFields?: ProfileInfoField[];
+};
+
+// ─── ProfileRow ───────────────────────────────────────────────────────────────
+
+// ─── ProfileInfoView ──────────────────────────────────────────────────────────
+
+/**
+ * Renders the profile info content (photos, bio, attributes, etc.).
+ * Does NOT include its own scroll wrapper — wrap in ScrollView or
+ * BottomSheetScrollView in the parent as needed.
+ *
+ * Pass `editCallbacks` to enable editable mode (chevrons + onPress).
+ * Omit `editCallbacks` for a read-only view of someone else's profile, which
+ * leaves out the details they haven't filled in.
+ */
+export default function ProfileInfoView({
+  user,
+  editCallbacks,
+  profileFields,
+}: ProfileInfoViewProps) {
+  const theme = useAppTheme();
+  const { t } = useTranslation();
+  const editable = !!editCallbacks;
+  const resolvedProfileFields =
+    profileFields ??
+    ([
+      {
+        key: "height",
+        icon: Ruler,
+        label: t("height"),
+        value: user.height ? `${user.height} cm` : undefined,
+      },
+      {
+        key: "children",
+        icon: Baby,
+        label: t("children"),
+        value: user.hasChildren ? capitalize(user.hasChildren) : undefined,
+      },
+      {
+        key: "drinking",
+        icon: Wine,
+        label: t("drinking"),
+        value: user.drinking ? capitalize(user.drinking) : undefined,
+      },
+      {
+        key: "languages",
+        icon: Globe,
+        label: t("languages"),
+        value: formatList(user.languages),
+      },
+      {
+        key: "relationship",
+        icon: Heart,
+        label: t("relationship"),
+        value: user.relationship ? capitalize(user.relationship) : undefined,
+      },
+      {
+        key: "sexuality",
+        icon: Users,
+        label: t("sexuality"),
+        value: user.sexuality ? capitalize(user.sexuality) : undefined,
+      },
+      {
+        key: "smoking",
+        icon: Cigarette,
+        label: t("smoking"),
+        value: user.smoking ? capitalize(user.smoking) : undefined,
+      },
+      {
+        key: "starSign",
+        icon: Star,
+        label: t("starSign"),
+        value: user.starSign,
+      },
+      {
+        key: "pets",
+        icon: PawPrint,
+        label: t("pets"),
+        value: formatList(user.pets),
+      },
+      {
+        key: "religion",
+        icon: Heart,
+        label: t("religion"),
+        value: user.religion ? capitalize(user.religion) : undefined,
+      },
+    ] satisfies ProfileInfoField[]);
+
+  // On someone else's profile, leave out what they haven't filled in.
+  const visibleProfileFields = editable
+    ? resolvedProfileFields
+    : resolvedProfileFields.filter((field) => field.value);
+  const showTags = editable || (user.tags ?? []).length > 0;
+  const showWork = editable || !!user.work;
+  const showEducation = editable || !!user.education;
+  const showLookingFor = editable || (user.lookingFor ?? []).length > 0;
+  const showBio = editable || !!user.info;
+
+  return (
+    <View>
+      {/* Photos */}
+      <View className="px-4 pt-4">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+          {t("photos")}
+        </Text>
+        <View className="flex-row h-[200px] gap-1.5 mt-2">
+          {/* Slot 0 — large left */}
+          <View className="flex-1 relative">
+            {user.photos?.[0] ? (
+              <>
+                <Image
+                  source={{ uri: user.photos[0] }}
+                  style={{ flex: 1, borderRadius: 12 }}
+                  contentFit="cover"
+                  cachePolicy="disk"
+                />
+                {editable && (
+                  <Pressable
+                    onPress={() =>
+                      editCallbacks!.onRemovePhoto(user.photos![0])
+                    }
+                    className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full items-center justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                  >
+                    <Trash2 size={13} color="#fff" />
+                  </Pressable>
+                )}
+              </>
+            ) : (
+              <Pressable
+                onPress={
+                  editable && (user.photos?.length ?? 0) < 3
+                    ? editCallbacks!.onAddPhoto
+                    : undefined
+                }
+                disabled={!editable}
+                className="flex-1 items-center justify-center rounded-xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
+              >
+                {editable ? (
+                  <Camera size={26} color={theme.colorMuted} />
+                ) : (
+                  <Text className="text-[28px] text-light-colorMuted dark:text-dark-colorMuted">
+                    —
+                  </Text>
+                )}
+              </Pressable>
+            )}
+          </View>
+
+          {/* Slots 1 & 2 — right column */}
+          <View className="flex-1 gap-1.5">
+            {[1, 2].map((idx) => (
+              <View key={idx} className="flex-1 relative">
+                {user.photos?.[idx] ? (
+                  <>
+                    <Image
+                      source={{ uri: user.photos[idx] }}
+                      style={{ flex: 1, borderRadius: 12 }}
+                      contentFit="cover"
+                      cachePolicy="disk"
+                    />
+                    {editable && (
+                      <Pressable
+                        onPress={() =>
+                          editCallbacks!.onRemovePhoto(user.photos![idx])
+                        }
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full items-center justify-center"
+                        style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                      >
+                        <Trash2 size={11} color="#fff" />
+                      </Pressable>
+                    )}
+                  </>
+                ) : (
+                  <Pressable
+                    onPress={
+                      editable && (user.photos?.length ?? 0) < 3
+                        ? editCallbacks!.onAddPhoto
+                        : undefined
+                    }
+                    disabled={!editable}
+                    className="flex-1 items-center justify-center rounded-xl bg-light-backgroundMuted dark:bg-dark-backgroundMuted"
+                  >
+                    {editable ? (
+                      <Camera size={18} color={theme.colorMuted} />
+                    ) : (
+                      <Text className="text-[22px] text-light-colorMuted dark:text-dark-colorMuted">
+                        —
+                      </Text>
+                    )}
+                  </Pressable>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* Name / Gender / Location block */}
+      <View className="mx-4 mt-4 rounded-2xl bg-light-backgroundMuted p-4 dark:bg-dark-backgroundMuted">
+        <Text className="text-[20px] font-bold text-light-colorStrong dark:text-dark-colorStrong">
+          {user.firstName}
+          {user.age ? `, ${user.age}` : ""}
+        </Text>
+        <Text className="mt-0.5 text-sm text-light-colorMuted dark:text-dark-colorMuted">
+          {capitalize(user.gender ?? "")}
+          {user.gender && user.location ? ", " : ""}
+          {user.location}
+        </Text>
+      </View>
+
+      <Separator className="mx-4 mt-3" />
+
+      {/* Interests */}
+      {showTags && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditTags}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("interests")}
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mt-2">
+              {(user.tags ?? []).map((tag, i) => (
+                <View
+                  key={i}
+                  className="rounded-full bg-light-color025 px-3 py-1 dark:bg-dark-color025"
+                >
+                  <Text className="text-[13px] text-light-color dark:text-dark-color">
+                    {tag}
+                  </Text>
+                </View>
+              ))}
+              {(user.tags ?? []).length === 0 && (
+                <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
+                  {t("addInterests")}
+                </Text>
+              )}
+            </View>
+          </Pressable>
+
+          <Separator className="mx-4" />
+        </>
+      )}
+
+      {/* Work & Education */}
+      {(showWork || showEducation) && (
+        <>
+          <View className="mx-4 mt-1">
+            <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("workAndEducation")}
+            </Text>
+            {showWork && (
+              <ProfileRow
+                icon={Briefcase}
+                label={t("work")}
+                value={user.work}
+                onPress={editCallbacks?.onEditWork}
+              />
+            )}
+            {showWork && showEducation && <Separator />}
+            {showEducation && (
+              <ProfileRow
+                icon={BookOpen}
+                label={t("education")}
+                value={user.education}
+                onPress={editCallbacks?.onEditEducation}
+              />
+            )}
+          </View>
+
+          <Separator className="mx-4 mt-1" />
+        </>
+      )}
+
+      {/* Why you're here */}
+      {showLookingFor && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditLookingFor}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("whyYoureHere")}
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mt-2">
+              {(user.lookingFor ?? []).map((item, i) => (
+                <View
+                  key={i}
+                  className="rounded-full bg-light-color px-3.5 py-1.5 dark:bg-dark-color"
+                >
+                  <Text style={{ fontSize: 13, color: "#fff" }}>
+                    {capitalize(item)}
+                  </Text>
+                </View>
+              ))}
+              {(user.lookingFor ?? []).length === 0 && (
+                <Text className="text-sm text-light-colorMuted dark:text-dark-colorMuted">
+                  {t("select")}
+                </Text>
+              )}
+            </View>
+          </Pressable>
+
+          <Separator className="mx-4" />
+        </>
+      )}
+
+      {/* Bio */}
+      {showBio && (
+        <>
+          <Pressable
+            onPress={editCallbacks?.onEditBio}
+            disabled={!editable}
+            className="mx-4 mt-3 pb-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-wide text-light-colorMuted dark:text-dark-colorMuted">
+              {t("bio")}
+            </Text>
+            <Text
+              className={cn(
+                "mt-1 text-[15px] leading-[22px]",
+                user.info
+                  ? "text-light-colorStrong dark:text-dark-colorStrong"
+                  : "text-light-colorMuted dark:text-dark-colorMuted",
+              )}
+            >
+              {user.info ?? t("tellOthersAboutYourself")}
+            </Text>
+          </Pressable>
+
+          <Separator className="mx-4" />
+        </>
+      )}
+
+      {/* Attribute rows */}
+      <View className="mx-4 mt-1">
+        {visibleProfileFields.map((field, index) => (
+          <React.Fragment key={`${field.key}-${index}`}>
+            <ProfileRow
+              icon={field.icon}
+              label={field.label}
+              value={field.value}
+              onPress={
+                editCallbacks
+                  ? () => editCallbacks.onEditField(field.key)
+                  : undefined
+              }
+            />
+            {index < visibleProfileFields.length - 1 && <Separator />}
+          </React.Fragment>
+        ))}
+      </View>
+    </View>
+  );
+}

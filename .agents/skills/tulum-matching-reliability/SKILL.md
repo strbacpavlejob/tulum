@@ -7,7 +7,7 @@ description: Use when changing Tulum event eligibility, swipe filters, like limi
 
 Before changing matching behavior, trace the current flow across:
 
-- `apps/mobile/app/(tabs)/matches.tsx` and `apps/mobile/components/matches/MatchesDeck.tsx`
+- `apps/mobile/app/(tabs)/matches.tsx` and `apps/mobile/components/matches/matches-deck.tsx`
 - `apps/mobile/lib/api.ts`
 - `apps/api/src/matches/matches.controller.ts`
 - `apps/api/src/matches/matches.service.ts` and `apps/api/src/matches/dto/swipe-decision.dto.ts`

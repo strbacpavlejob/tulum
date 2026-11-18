@@ -1,4 +1,4 @@
-import ListingsMap from "@/components/ListingsMap";
+import ListingsMap from "@/components/listings-map/listings-map";
 import { View } from "react-native";
 
 export default function HomeScreen() {

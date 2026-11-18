@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { getDateRangeBounds } from "@/lib/dateRange";
+import { getDateRangeBounds } from "@/lib/date-range";
 import { Event, EventPin, EventSummary, VenueContact } from "@/types/event";
 import { Filter } from "@/types/filter";
 import type { VenueType } from "@/types/filter";

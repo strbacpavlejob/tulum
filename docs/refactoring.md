@@ -39,22 +39,8 @@ Leave a file alone when splitting it would need runtime tests that don't exist
 
 ## Organization rules
 
-- One component per file, named after it. A screen's pieces go in
-  `components/<screen>/`, never under `apps/mobile/app/` (Expo Router would
-  turn them into routes).
-- Pure logic (no React, no I/O) in its own module with a spec: `like-limit.ts`,
-  `venue-similarity.ts`, `scraped-rows.ts`, `matchesModel.ts`.
-- Data fetching and side effects in hooks named after what they do
-  (`useMatchesEligibility`, `useEventDetailsData`), state shared by a sheet and
-  its screen in a hook (`useFieldEditSheet`).
-- Shared helpers once: `apps/mobile/lib/geo.ts` (distance),
-  `apps/host/components/common/use-image-file.ts` (picture picking).
-- `components/ui/` in both apps is a UI kit: keep it whole, even where a
-  component is unused.
-- API: one module per feature, thin controllers, one service per
-  responsibility. Only `SupabaseService` creates the database client.
-- Aim for files under about 300 lines. Data files (translations, copy, option
-  lists, API clients) can be longer.
+Naming, folder structure and where code goes are in
+[conventions.md](conventions.md).
 
 ## Dead-code check (knip)
 
@@ -70,7 +56,7 @@ pnpm dlx knip@6.45.1
   dependencies count as used.
 - Exports used inside their own file don't count as unused
   (`ignoreExportsUsedInFile`), and request-DTO enum members are API values.
-- Ignored on purpose: `components/sections/PricingGuest.tsx` (waits for
+- Ignored on purpose: `components/sections/pricing-guest.tsx` (waits for
   Premium), the Supabase CLI and k6.
 
 Before deleting a finding, search for it across the repo, including config

@@ -1,7 +1,7 @@
-import ClerkCaptcha from "@/components/ClerkCaptcha";
+import ClerkCaptcha from "@/components/clerk-captcha";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
 

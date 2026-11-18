@@ -1,17 +1,17 @@
-import Blob from "@/components/Blob";
+import Blob from "@/components/blob";
 import LoadingIndicator from "@/components/loading-indicator";
 
-import Tags from "@/components/Tags";
+import Tags from "@/components/tags";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
-import useStore from "@/store/useStore";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import useStore from "@/store/use-store";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
 import { GuestVisibility } from "@/types/user";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import type { ProfileInfoFieldKey } from "@/components/ProfileInfoView";
+import type { ProfileInfoFieldKey } from "@/components/profile-info/profile-info-view";
 import {
   appLanguageOptions,
   themeOptions,
@@ -22,22 +22,22 @@ import { useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import SettingsTab from "@/components/SettingsTab";
-import ProfileTab from "@/components/ProfileTab";
-import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
-import { SuggestVenueSheet } from "@/components/profile/SuggestVenueSheet";
-import { BugReportSheet } from "@/components/profile/BugReportSheet";
-import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
+import SettingsTab from "@/components/settings-tab";
+import ProfileTab from "@/components/profile-tab";
+import { DeleteAccountDialog } from "@/components/profile/delete-account-dialog";
+import { SuggestVenueSheet } from "@/components/profile/suggest-venue-sheet";
+import { BugReportSheet } from "@/components/profile/bug-report-sheet";
+import { ProfileEditSheet } from "@/components/profile/profile-edit-sheet";
 import {
   buildProfileEditCallbacks,
   buildProfileFields,
   openProfileFieldEditor,
-} from "@/components/profile/profileFields";
-import { useFieldEditSheet } from "@/components/profile/useFieldEditSheet";
-import { useLaunchEmailOptIn } from "@/components/profile/useLaunchEmailOptIn";
-import { useProfileActions } from "@/components/profile/useProfileActions";
-import { useProfileSaving } from "@/components/profile/useProfileSaving";
-import { ProfileTabTrigger } from "@/components/profile/ProfileTabTrigger";
+} from "@/components/profile/profile-fields";
+import { useFieldEditSheet } from "@/components/profile/use-field-edit-sheet";
+import { useLaunchEmailOptIn } from "@/components/profile/use-launch-email-opt-in";
+import { useProfileActions } from "@/components/profile/use-profile-actions";
+import { useProfileSaving } from "@/components/profile/use-profile-saving";
+import { ProfileTabTrigger } from "@/components/profile/profile-tab-trigger";
 
 export default function ProfileScreen() {
   const theme = useAppTheme();

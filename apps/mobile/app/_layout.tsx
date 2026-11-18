@@ -1,10 +1,10 @@
 import "@/global.css";
 import "@/lib/i18n";
-import { useAppTheme } from "@/hooks/useAppTheme";
-import { useLanguageSync } from "@/hooks/useLanguageSync";
-import useStoreSetup from "@/hooks/useStoreSetup";
+import { useAppTheme } from "@/hooks/use-app-theme";
+import { useLanguageSync } from "@/hooks/use-language-sync";
+import useStoreSetup from "@/hooks/use-store-setup";
 import { captureError, initSentry } from "@/lib/sentry";
-import { ThemeProvider } from "@/providers/ThemeProvider";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";

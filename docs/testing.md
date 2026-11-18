@@ -11,7 +11,7 @@ the counts are what main already has, so only differences are regressions.
 |               | `./node_modules/.bin/tsc --noEmit -p tsconfig.json`    | 0 errors (specs included)                 |
 |               | `./node_modules/.bin/eslint "src/**/*.ts" "test/**/*.ts"` | about 245 errors, mostly `no-unsafe-*` on mocks in specs |
 |               | `./node_modules/.bin/nest build`                       | passes                                    |
-| `apps/mobile` | `./node_modules/.bin/tsc --noEmit -p tsconfig.json`    | 69 errors (svg props in `illustrations/Hands.tsx`, untyped store selectors) |
+| `apps/mobile` | `./node_modules/.bin/tsc --noEmit -p tsconfig.json`    | 69 errors (svg props in `illustrations/hands.tsx`, untyped store selectors) |
 |               | `./node_modules/.bin/eslint .` (or `pnpm lint`)        | about 43 errors, 27 warnings, mostly React Compiler rules (`react-hooks/refs`, `set-state-in-effect`) |
 | `apps/host`   | `./node_modules/.bin/tsc --noEmit -p tsconfig.json`    | 0 errors                                  |
 |               | `./node_modules/.bin/eslint`                           | about 33 errors, 17 warnings, mostly React Compiler rules |

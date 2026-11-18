@@ -1,6 +1,6 @@
-import ChatModal from "@/components/ChatModal";
+import ChatModal from "@/components/chat-modal";
 import { Text } from "@/components/ui/text";
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import { useTranslation } from "react-i18next";
 import {
   ChatUnavailableError,
@@ -9,7 +9,7 @@ import {
   fetchOrCreateChat,
   type ChatMessage,
 } from "@/lib/api";
-import { getUnreadChatsCount, markMatchAsRead } from "@/lib/inboxUnread";
+import { getUnreadChatsCount, markMatchAsRead } from "@/lib/inbox-unread";
 import type { Match, Message } from "@/types/chat";
 import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
@@ -18,19 +18,19 @@ import { FlatList, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import LoadingIndicator from "@/components/loading-indicator";
-import EmptyIndicator from "@/components/EmptyIndicator";
+import EmptyIndicator from "@/components/empty-indicator";
 import { useFocusEffect, useRouter } from "expo-router";
-import useStore from "@/store/useStore";
+import useStore from "@/store/use-store";
 import { haversineMeters } from "@/lib/geo";
-import { isChatExpired, mapToMatch } from "@/components/inbox/inboxModel";
-import { EmptyChatIllustration } from "@/components/inbox/EmptyChatIllustration";
-import { NewMatchBubble } from "@/components/inbox/NewMatchBubble";
+import { isChatExpired, mapToMatch } from "@/components/inbox/inbox-model";
+import { EmptyChatIllustration } from "@/components/inbox/empty-chat-illustration";
+import { NewMatchBubble } from "@/components/inbox/new-match-bubble";
 import {
   PROXIMITY_RADIUS_M,
   LOCATION_POLL_INTERVAL_MS,
   LocationGateScreen,
-} from "@/components/inbox/LocationGateScreen";
-import { ChatListItem } from "@/components/inbox/ChatListItem";
+} from "@/components/inbox/location-gate-screen";
+import { ChatListItem } from "@/components/inbox/chat-list-item";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 

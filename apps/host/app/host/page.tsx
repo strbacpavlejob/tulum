@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import Navbar from "@/components/sections/Navbar";
-import Hero from "@/components/sections/Hero";
-import MapSection from "@/components/sections/MapSection";
-import BentoBenefits from "@/components/sections/BentoBenefits";
-import Problem from "@/components/sections/Problem";
-import HowItWorks from "@/components/sections/HowItWorks";
-import Pricing from "@/components/sections/Pricing";
-import FAQ from "@/components/sections/FAQ";
-import CTA from "@/components/sections/CTA";
-import Footer from "@/components/sections/Footer";
+import Navbar from "@/components/sections/navbar";
+import Hero from "@/components/sections/hero";
+import MapSection from "@/components/sections/map-section";
+import BentoBenefits from "@/components/sections/bento-benefits";
+import Problem from "@/components/sections/problem";
+import HowItWorks from "@/components/sections/how-it-works";
+import Pricing from "@/components/sections/pricing";
+import FAQ from "@/components/sections/faq";
+import CTA from "@/components/sections/cta";
+import Footer from "@/components/sections/footer";
 
 export default function TulumLanding() {
   const { t, i18n } = useTranslation();

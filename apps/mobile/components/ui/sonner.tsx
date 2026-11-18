@@ -1,4 +1,4 @@
-import { useAppTheme } from "@/hooks/useAppTheme";
+import { useAppTheme } from "@/hooks/use-app-theme";
 import {
   CircleCheckIcon,
   InfoIcon,
