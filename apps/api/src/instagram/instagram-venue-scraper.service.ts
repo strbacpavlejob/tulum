@@ -3,6 +3,7 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import { GeocoderService } from '../geocoder/geocoder.service';
 import { R2Service } from '../r2/r2.service';
+import { ScrapedDataService } from '../supabase/scraped-data.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RedisService } from '../redis/redis.service';
 import { Venue, VenueContact } from '../scrape/interfaces/venue.interface';
@@ -48,6 +49,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
 
   constructor(
     private readonly supabaseService: SupabaseService,
+    private readonly scrapedDataService: ScrapedDataService,
     private readonly r2Service: R2Service,
     private readonly redisService: RedisService,
     private readonly geocoder: GeocoderService,
@@ -190,7 +192,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     skipped: number;
     errors: { username: string; reason: string }[];
   }> {
-    const allVenues = await this.supabaseService.fetchAllVenues();
+    const allVenues = await this.scrapedDataService.fetchAllVenues();
 
     // Build a map from instagram handle → venue id
     const handleToVenueId = new Map<string, string>();
@@ -249,7 +251,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
           continue;
         }
 
-        const wasNew = await this.supabaseService.upsertVenueContactById(
+        const wasNew = await this.scrapedDataService.upsertVenueContactById(
           venueId,
           contact,
         );
@@ -278,7 +280,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
     errors: { venueId: string; name: string; reason: string }[];
   }> {
     const venues =
-      await this.supabaseService.fetchVenuesWithInstagramByScraper(scraper);
+      await this.scrapedDataService.fetchVenuesWithInstagramByScraper(scraper);
 
     const stats = {
       total: venues.length,
@@ -366,7 +368,7 @@ export class InstagramVenueScraperService implements OnModuleDestroy {
       }
     }
 
-    const saved = await this.supabaseService.saveScrapedData({
+    const saved = await this.scrapedDataService.saveScrapedData({
       venues: allVenues as any,
       events: allEvents as any,
     });

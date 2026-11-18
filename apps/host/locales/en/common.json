@@ -600,12 +600,8 @@
       "settings": "Settings",
       "getHelp": "Get Help",
       "search": "Search",
-      "dataLibrary": "Data Library",
-      "reports": "Reports",
-      "wordAssistant": "Word Assistant",
       "quickCreate": "Quick Event Creation",
       "inbox": "Inbox",
-      "documents": "Documents",
       "guestReports": "Guest reports"
     },
     "userMenu": {

@@ -8,220 +8,41 @@ import {
 } from "@/components/matches/MatchesEligibilityViews";
 import {
   createMatchSwipe,
-  fetchMyTickets,
   fetchSwipeableProfiles,
   createEventSession,
   CheckInRefusedError,
   GuestUnavailableError,
-  type CheckInPosition,
   type SwipeFilters,
-  type SwipeableProfile,
   type SwipeableResponse,
 } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { Profile } from "@/types/profile";
 import type { GenderFilter } from "@/types/user";
 import { useAuth } from "@clerk/expo";
-import * as Location from "expo-location";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { AppState } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { toast } from "sonner-native";
 import useStore from "@/store/useStore";
-
-// ── Constants ──────────────────────────────────────────────────────────────────
-
-/**
- * Metres within which the user is considered "at the venue", when the API
- * sends no checkin_radius_m with the ticket
- */
-const PROXIMITY_RADIUS_M = 300;
-
-/** How often (ms) to re-check position on the location verification screen */
-const LOCATION_POLL_INTERVAL_MS = 5_000;
-
-/** How often (ms) the locked screen checks again for a ticket whose event is live */
-const LOCKED_RECHECK_INTERVAL_MS = 30_000;
-
-/** How often (ms) the deck's counts are checked again while it is open */
-const PROFILE_REFRESH_INTERVAL_MS = 30_000;
-/** Profiles in a page of the deck */
-const DECK_PAGE_SIZE = 25;
-/** The next page loads when the card shown is this close to the last one */
-const DECK_PREFETCH_CARDS = 5;
-/** Wait (ms) after a filter change before the deck loads again */
-const FILTER_RELOAD_DELAY_MS = 400;
-const MAX_LIKE_PERCENTAGE = 0.2;
-const MIN_LIKE_LIMIT = 3;
-const PRE_EVENT_GRACE_MS = 5 * 60 * 1000;
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function haversineMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6_371_000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function mapToProfile(p: SwipeableProfile, eventTitle: string): Profile {
-  const images =
-    p.picture_urls.length > 0
-      ? p.picture_urls
-      : p.avatar_url
-        ? [p.avatar_url]
-        : ["https://picsum.photos/400/600"];
-  return {
-    id: p.user_id,
-    name: p.first_name ?? "Unknown",
-    age: p.age,
-    bio: p.bio ?? "",
-    images,
-    distance: 1, // any truthy value so SwipeCard shows event title
-    hobbies: p.interests,
-    event: {
-      id: String(p.event_id),
-      image: "",
-      title: eventTitle,
-      venueName: "",
-      address: "",
-      location: { latitude: 0, longitude: 0 },
-      isFavorite: false,
-      guestCount: 0,
-      date: "",
-      tags: [],
-    },
-  };
-}
-
-function calculateRawLikeLimit(eligibleGuestCount: number): number {
-  const normalizedEligibleCount = Math.max(0, Math.floor(eligibleGuestCount));
-
-  if (normalizedEligibleCount === 0) {
-    return 0;
-  }
-
-  const percentageLimit = Math.floor(
-    normalizedEligibleCount * MAX_LIKE_PERCENTAGE,
-  );
-
-  return Math.min(
-    normalizedEligibleCount,
-    Math.max(MIN_LIKE_LIMIT, percentageLimit),
-  );
-}
-
-function calculateEffectiveLikeLimit(
-  eligibleGuestCount: number,
-  likesUsed: number,
-): number {
-  return Math.max(
-    Math.max(0, likesUsed),
-    calculateRawLikeLimit(eligibleGuestCount),
-  );
-}
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-type EligibilityState =
-  | "checking"
-  | "locked" // no ticket or event not live
-  | "location_required" // ticket + live event, but not within GPS range
-  | "eligible"; // all 3 conditions met
-
-interface LiveTicket {
-  event_id: string;
-  venue_lat: number;
-  venue_lng: number;
-  venue_name: string;
-  event_title: string;
-  /** How near the venue the user must be, in metres; set by the API. */
-  checkin_radius_m: number;
-}
-
-/**
- * Whether a position counts as at the venue: within the radius once its
- * reported accuracy is allowed for. Indoors a browser's position can be a few
- * hundred metres off. The allowance is at most the radius, so a position that
- * vague still has to be nearby.
- */
-function isAtVenue(
-  distanceM: number,
-  accuracyM: number | null | undefined,
-  radiusM: number,
-): boolean {
-  const allowance = Math.min(Math.max(accuracyM ?? 0, 0), radiusM);
-  return distanceM - allowance <= radiusM;
-}
-
-interface SwipeCandidate {
-  profile: Profile;
-  gender: "male" | "female" | "other" | null;
-  likedByMe: boolean;
-}
-
-interface LikeStats {
-  likesUsed: number;
-  likeLimit: number;
-  eligibleGuestCount: number;
-}
+import {
+  PROFILE_REFRESH_INTERVAL_MS,
+  DECK_PAGE_SIZE,
+  DECK_PREFETCH_CARDS,
+  FILTER_RELOAD_DELAY_MS,
+  calculateEffectiveLikeLimit,
+  EligibilityState,
+  SwipeCandidate,
+  LikeStats,
+  applyProfileFilters,
+  filtersKey,
+  toSwipeCandidates,
+} from "@/components/matches/matchesModel";
+import { useMatchesEligibility } from "@/components/matches/useMatchesEligibility";
 
 // The API filters the deck it sends; an API from before paging sent everyone
 // at the event, so the deck is filtered here as well. Between a filter change
 // and the deck it loads, this also narrows the deck shown at once.
-function applyProfileFilters(
-  candidates: SwipeCandidate[],
-  genderFilter: GenderFilter,
-  ageMin: number,
-  ageMax: number,
-): SwipeCandidate[] {
-  return candidates.filter((candidate) => {
-    const genderMatch =
-      genderFilter === "everyone" || candidate.gender === genderFilter;
-    const ageMatch =
-      candidate.profile.age >= ageMin && candidate.profile.age <= ageMax;
-    return genderMatch && ageMatch;
-  });
-}
-
-/** Which filters a deck was loaded for. */
-function filtersKey(filters: SwipeFilters): string {
-  return `${filters.genderFilter}|${filters.ageMin}|${filters.ageMax}`;
-}
-
-/** The deck's cards for the profiles in an answer, without blocked guests. */
-function toSwipeCandidates(
-  profiles: SwipeableProfile[],
-  eventTitle: string,
-  blockedIds: ReadonlySet<string>,
-): SwipeCandidate[] {
-  return profiles
-    .filter((p) => !blockedIds.has(p.user_id))
-    .map((p) => ({
-      profile: mapToProfile(p, eventTitle),
-      gender: p.gender,
-      likedByMe: Boolean(p.liked_by_me),
-    }));
-}
-
-// ── Screen ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesScreen() {
   const { t } = useTranslation();
@@ -232,19 +53,17 @@ export default function MatchesScreen() {
     (s) => s.user?.lookingForGender ?? "everyone",
   );
 
-  // ── Eligibility ────────────────────────────────────────────────────────────
-  const [eligibility, setEligibility] = useState<EligibilityState>("checking");
-  const eligibilityRef = useRef(eligibility);
-  eligibilityRef.current = eligibility;
-  const checkingTicketsRef = useRef(false);
-  const [liveTicket, setLiveTicket] = useState<LiveTicket | null>(null);
-  const [userCoords, setUserCoords] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  // The browser or the phone refuses Tulum the location: the gate says how
-  // to allow it.
-  const [locationDenied, setLocationDenied] = useState(false);
+  const {
+    eligibility,
+    setEligibility,
+    liveTicket,
+    userCoords,
+    setUserCoords,
+    locationDenied,
+    checkLocation,
+    checkTickets,
+    checkInPositionRef,
+  } = useMatchesEligibility();
 
   // ── Swipe state ────────────────────────────────────────────────────────────
   const [profiles, setProfiles] = useState<SwipeCandidate[]>([]);
@@ -324,8 +143,6 @@ export default function MatchesScreen() {
   const filteredProfilesRef = useRef<SwipeCandidate[]>([]);
   filteredProfilesRef.current = filteredProfiles;
   const checkedInEventIdRef = useRef<string | null>(null);
-  // The position that passed the location check; the check-in sends it.
-  const checkInPositionRef = useRef<CheckInPosition | null>(null);
   const loadingProfilesRef = useRef(false);
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
@@ -344,127 +161,6 @@ export default function MatchesScreen() {
   );
 
   const isLikeDisabled = likeStats.likesUsed >= likeStats.likeLimit;
-
-  // ── GPS proximity check ───────────────────────────────────────────────────
-  const checkLocation = useCallback(async (ticket: LiveTicket) => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocationDenied(true);
-        setEligibility("location_required");
-        return;
-      }
-      setLocationDenied(false);
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const { latitude, longitude, accuracy } = pos.coords;
-      setUserCoords({ lat: latitude, lng: longitude });
-      const dist = haversineMeters(
-        latitude,
-        longitude,
-        ticket.venue_lat,
-        ticket.venue_lng,
-      );
-      if (isAtVenue(dist, accuracy, ticket.checkin_radius_m)) {
-        checkInPositionRef.current = { latitude, longitude, accuracy };
-        setEligibility("eligible");
-      } else {
-        setEligibility("location_required");
-      }
-    } catch {
-      setEligibility("location_required");
-    }
-  }, []);
-
-  // ── Find live-event ticket then check GPS ─────────────────────────────────
-  const checkTickets = useCallback(async () => {
-    if (!userId || checkingTicketsRef.current) return;
-    checkingTicketsRef.current = true;
-    try {
-      const token = await getToken();
-      if (!token) {
-        setEligibility("locked");
-        return;
-      }
-
-      const tickets = await fetchMyTickets(token, userId);
-      const now = Date.now();
-      const live = tickets.find((tk: any) => {
-        const start = tk.date ? new Date(tk.date).getTime() : null;
-        const end = tk.end_date_time
-          ? new Date(tk.end_date_time).getTime()
-          : null;
-        return (
-          start !== null &&
-          end !== null &&
-          now >= start - PRE_EVENT_GRACE_MS &&
-          now <= end
-        );
-      });
-
-      if (!live) {
-        setEligibility("locked");
-        return;
-      }
-
-      const ticket: LiveTicket = {
-        event_id: live.event_id,
-        venue_lat: live.latitude ?? live.location?.latitude ?? 0,
-        venue_lng: live.longitude ?? live.location?.longitude ?? 0,
-        venue_name: live.venue_name ?? "",
-        event_title: live.title ?? "",
-        checkin_radius_m:
-          typeof live.checkin_radius_m === "number"
-            ? live.checkin_radius_m
-            : PROXIMITY_RADIUS_M,
-      };
-      setLiveTicket(ticket);
-      // A re-check from the locked screen shows the loading view while the
-      // location is read, as the first check does.
-      setEligibility("checking");
-
-      await checkLocation(ticket);
-    } catch {
-      setEligibility("locked");
-    } finally {
-      checkingTicketsRef.current = false;
-    }
-  }, [userId, checkLocation]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Re-check while locked ─────────────────────────────────────────────────
-  // The tab stays mounted while other tabs are open, so checking only on
-  // mount would keep it locked after the event goes live. While it is locked,
-  // check again when the tab regains focus, when the app returns to the
-  // foreground, and every LOCKED_RECHECK_INTERVAL_MS while the tab is shown.
-  useFocusEffect(
-    useCallback(() => {
-      const recheckIfLocked = () => {
-        if (AppState.currentState !== "active") return;
-        if (eligibilityRef.current === "locked") void checkTickets();
-      };
-      recheckIfLocked();
-      const interval = setInterval(recheckIfLocked, LOCKED_RECHECK_INTERVAL_MS);
-      const appStateSubscription = AppState.addEventListener(
-        "change",
-        recheckIfLocked,
-      );
-      return () => {
-        clearInterval(interval);
-        appStateSubscription.remove();
-      };
-    }, [checkTickets]),
-  );
-
-  // ── Periodic re-check while on location_required screen ──────────────────
-  useEffect(() => {
-    if (eligibility !== "location_required" || !liveTicket) return;
-    const id = setInterval(
-      () => checkLocation(liveTicket),
-      LOCATION_POLL_INTERVAL_MS,
-    );
-    return () => clearInterval(id);
-  }, [eligibility, liveTicket, checkLocation]);
 
   const liveEventId = liveTicket?.event_id;
 
@@ -622,7 +318,14 @@ export default function MatchesScreen() {
       setLoadingProfiles(false);
       loadingProfilesRef.current = false;
     }
-  }, [userId, liveEventId, currentFilters, syncDeckCounts, setMoreProfiles]);
+  }, [
+    userId,
+    liveEventId,
+    currentFilters,
+    syncDeckCounts,
+    setMoreProfiles,
+    checkInPositionRef,
+  ]);
 
   // The next page, after the end of the loaded deck.
   const loadMoreProfiles = useCallback(async () => {
@@ -730,7 +433,7 @@ export default function MatchesScreen() {
     void loadProfiles().then((refusedTo) => {
       if (refusedTo) setEligibility(refusedTo);
     });
-  }, [eligibility, loadProfiles]);
+  }, [eligibility, loadProfiles, setEligibility]);
 
   // The API filters the deck: other filters load it again, once the slider
   // or the gender choice has settled, and after a load already on its way.

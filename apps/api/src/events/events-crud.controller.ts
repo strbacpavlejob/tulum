@@ -20,11 +20,15 @@ import { Public } from '../common/decorators/public.decorator';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { GetActiveEventsDto } from './dto/get-active-events.dto';
 import { EventsCrudService } from './events-crud.service';
+import { EventsFeedService } from './events-feed.service';
 
 @ApiTags('events')
 @Controller('events')
 export class EventsCrudController {
-  constructor(private readonly eventsCrudService: EventsCrudService) {}
+  constructor(
+    private readonly eventsCrudService: EventsCrudService,
+    private readonly eventsFeedService: EventsFeedService,
+  ) {}
 
   /**
    * Public — no authentication required. With a valid Bearer token,
@@ -37,7 +41,7 @@ export class EventsCrudController {
     @Query() query: GetActiveEventsDto,
     @UserId() userId?: string,
   ) {
-    return this.eventsCrudService.getActiveEvents(query, userId);
+    return this.eventsFeedService.getActiveEvents(query, userId);
   }
 
   /** Public — full details for a single active event */
@@ -48,7 +52,7 @@ export class EventsCrudController {
     @Param('id', ParseUUIDPipe) id: string,
     @UserId() userId?: string,
   ) {
-    return this.eventsCrudService.getActiveEventById(id, userId);
+    return this.eventsFeedService.getActiveEventById(id, userId);
   }
 
   @Post('upload')

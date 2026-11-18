@@ -33,7 +33,8 @@ export const lookingForOptions: SelectOption[] = [
   },
 ];
 
-export const lifestyleOptions: SelectOption[] = [
+// Drinking and smoking share these answers.
+const lifestyleOptions: SelectOption[] = [
   {
     name: "never",
     value: "never",

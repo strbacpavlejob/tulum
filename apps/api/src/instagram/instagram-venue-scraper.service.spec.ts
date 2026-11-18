@@ -8,6 +8,7 @@ import { Coordinates } from '../geocoder/coordinates';
 import { GeocoderService } from '../geocoder/geocoder.service';
 import { R2Service } from '../r2/r2.service';
 import { RedisService } from '../redis/redis.service';
+import { ScrapedDataService } from '../supabase/scraped-data.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   InstagramVenueData,
@@ -43,7 +44,7 @@ const setup = (data: InstagramVenueData, coordinates: Coordinates | null) => {
       .fn<(url: string, key: string) => Promise<string | null>>()
       .mockResolvedValue('https://r2.example/profile.webp'),
   };
-  const supabaseService = {
+  const scrapedDataService = {
     saveScrapedData: jest
       .fn<
         (data: {
@@ -55,14 +56,15 @@ const setup = (data: InstagramVenueData, coordinates: Coordinates | null) => {
   };
 
   const service = new InstagramVenueScraperService(
-    supabaseService as unknown as SupabaseService,
+    {} as SupabaseService,
+    scrapedDataService as unknown as ScrapedDataService,
     r2Service as unknown as R2Service,
     {} as RedisService,
     geocoder as unknown as GeocoderService,
   );
   jest.spyOn(service, 'scrapeVenue').mockResolvedValue(data);
 
-  return { service, geocoder, r2Service, supabaseService };
+  return { service, geocoder, r2Service, scrapedDataService };
 };
 
 afterEach(() => {
@@ -125,7 +127,7 @@ describe('InstagramVenueScraperService venue coordinates', () => {
   });
 
   it('saves nothing for a profile it cannot locate when scraping all venues', async () => {
-    const { service, supabaseService } = setup(
+    const { service, scrapedDataService } = setup(
       {
         profile: profile({
           username: 'freestylerbelgrade_official',
@@ -139,7 +141,7 @@ describe('InstagramVenueScraperService venue coordinates', () => {
 
     await service.scrapeAllVenues();
 
-    expect(supabaseService.saveScrapedData).toHaveBeenCalledWith({
+    expect(scrapedDataService.saveScrapedData).toHaveBeenCalledWith({
       venues: [],
       events: [],
     });

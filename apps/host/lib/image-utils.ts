@@ -121,53 +121,6 @@ export async function processEventImage(
 }
 
 /**
- * Upload processed event image to the API
- * @param file - The image file to upload
- * @param venueId - The venue ID for the event
- * @returns Upload response with image URL
- */
-export async function uploadEventImage(
-  file: File,
-  venueId: number
-): Promise<{ url: string; fileName: string }> {
-  // Process image on client side
-  const processedBlob = await processEventImage(file);
-
-  // Create form data
-  const formData = new FormData();
-  formData.append("file", processedBlob, "event-image.webp");
-  formData.append("venue_id", venueId.toString());
-
-  // Upload to API
-  const response = await fetch("/api/events/upload", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to upload image");
-  }
-
-  return response.json();
-}
-
-/**
- * Delete an event image
- * @param fileName - The file name/path to delete
- */
-export async function deleteEventImage(fileName: string): Promise<void> {
-  const response = await fetch(`/api/events/upload?file=${encodeURIComponent(fileName)}`, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to delete image");
-  }
-}
-
-/**
  * Validate image file before upload
  * @param file - The file to validate
  * @returns Validation result
@@ -208,56 +161,6 @@ export async function processVenueImage(
   options: ImageProcessOptions = {}
 ): Promise<Blob> {
   return processImage(file, VENUE_IMAGE_OPTIONS, options);
-}
-
-/**
- * Upload processed venue image to the API
- * @param file - The image file to upload
- * @param venueId - Optional venue ID (for existing venues)
- * @returns Upload response with image URL
- */
-export async function uploadVenueImage(
-  file: File,
-  venueId?: number
-): Promise<{ url: string; fileName: string }> {
-  // Process image on client side
-  const processedBlob = await processVenueImage(file);
-
-  // Create form data
-  const formData = new FormData();
-  formData.append("file", processedBlob, "venue-image.webp");
-  
-  if (venueId) {
-    formData.append("venue_id", venueId.toString());
-  }
-
-  // Upload to API
-  const response = await fetch("/api/venues/upload", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to upload image");
-  }
-
-  return response.json();
-}
-
-/**
- * Delete a venue image
- * @param fileName - The file name/path to delete
- */
-export async function deleteVenueImage(fileName: string): Promise<void> {
-  const response = await fetch(`/api/venues/upload?file=${encodeURIComponent(fileName)}`, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to delete image");
-  }
 }
 
 /**

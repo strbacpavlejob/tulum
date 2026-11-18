@@ -19,11 +19,9 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it } from '@jest/globals';
 import { ChatsService } from '../chats/chats.service';
 import { InboxPushService } from '../chats/inbox-push.service';
-import { GuestsService } from '../guests/guests.service';
+import { SwipeDeckService } from '../guests/swipe-deck.service';
 import { MatchesService } from '../matches/matches.service';
-import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { UserProvisioningService } from '../users/user-provisioning.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { GuestSafetyService } from './guest-safety.service';
 
@@ -255,9 +253,7 @@ const db = {
 };
 const supabase = { getClient: () => db } as unknown as SupabaseService;
 const guestSafety = new GuestSafetyService(supabase);
-const guests = new GuestsService(supabase, {} as R2Service, guestSafety, {
-  ensureUserRow: () => Promise.resolve(),
-} as unknown as UserProvisioningService);
+const guests = new SwipeDeckService(supabase, guestSafety);
 const tickets = new TicketsService(supabase, guestSafety);
 const matches = new MatchesService(
   supabase,

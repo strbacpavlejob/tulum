@@ -4,12 +4,9 @@ import * as React from "react";
 import {
   IconCamera,
   IconChartBar,
-  IconDatabase,
   IconFileAi,
   IconFileDescription,
-  IconFileWord,
   IconHelp,
-  IconReport,
   IconSearch,
   IconSettings,
   IconCalendarEvent,
@@ -36,7 +33,6 @@ import {
 } from "@/components/ui/sidebar";
 import "../i18n";
 import Link from "next/link";
-// import { NavDocuments } from "./nav-documents";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation();
@@ -167,23 +163,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconSearch,
       },
     ],
-    documents: [
-      {
-        name: t("dashboard.navigation.dataLibrary"),
-        url: "#",
-        icon: IconDatabase,
-      },
-      {
-        name: t("dashboard.navigation.reports"),
-        url: "#",
-        icon: IconReport,
-      },
-      {
-        name: t("dashboard.navigation.wordAssistant"),
-        url: "#",
-        icon: IconFileWord,
-      },
-    ],
   };
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -204,7 +183,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

@@ -31,6 +31,7 @@ import { UsersController } from '../users/users.controller';
 import { UsersService } from '../users/users.service';
 import { GuestsController } from './guests.controller';
 import { GuestsService } from './guests.service';
+import { SwipeDeckService } from './swipe-deck.service';
 
 const CALLER = 'user_caller';
 const AS_CALLER = { Authorization: 'Bearer caller-token' };
@@ -206,6 +207,7 @@ describe('POST /guests/onboarding saves the first name (BUG-011)', () => {
       controllers: [GuestsController, UsersController],
       providers: [
         GuestsService,
+        SwipeDeckService,
         GuestSafetyService,
         UsersService,
         // Real: the caller's users row exists, so it only looks it up.

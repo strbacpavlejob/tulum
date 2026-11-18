@@ -28,13 +28,6 @@ export interface VenueTypeMapping {
   venueType: VenueTypeEnum;
 }
 
-export interface VenueTypeMapper {
-  mapVenueType(
-    scraperSource: ScraperSource,
-    scraperVenueType: string,
-  ): VenueTypeEnum | null;
-}
-
 export interface ScraperConfig {
   id: number;
   baseUrl: string;

@@ -22,20 +22,6 @@ export interface EventLocation {
   address?: string;
 }
 
-export interface EventUser {
-  firstName: string;
-  lastName: string;
-  avatar: string;
-}
-
-export interface EventComment {
-  user: EventUser;
-  host: EventUser;
-  text: string;
-  date: Date;
-  rating: number;
-}
-
 /** Lightweight event data used in lists, maps, and cards */
 export interface EventSummary {
   id: string;

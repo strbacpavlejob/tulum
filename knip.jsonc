@@ -1,0 +1,52 @@
+{
+  // Dead-code check for the whole workspace: `pnpm dlx knip@6.45.1`.
+  // See docs/refactoring.md before acting on its report.
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // An export its own file uses is over-exported, not dead.
+  "ignoreExportsUsedInFile": true,
+  // Enum members of request DTOs are values the API accepts, used or not.
+  "rules": { "enumMembers": "off" },
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.mjs",
+        "loadtest/token-users.mjs",
+        "loadtest/tools/*.mjs",
+        "loadtest/k6/tulum.js"
+      ],
+      "project": ["scripts/**/*.mjs", "loadtest/**/*.{js,mjs}"],
+      // The Supabase CLI runs as `pnpm exec supabase`. k6 provides its own
+      // modules, and the load-test tools borrow @clerk/backend from apps/api.
+      "ignoreDependencies": ["supabase", "k6", "@clerk/backend"]
+    },
+    "apps/api": {
+      "entry": ["src/main.ts", "test/**/*.e2e-spec.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    "apps/mobile": {
+      // Metro picks *.web.tsx and *.native.tsx by platform, which knip can't
+      // follow, and the UI kit in components/ui stays even where no screen
+      // uses a component yet.
+      "entry": [
+        "metro.config.js",
+        "scripts/*.{js,mjs}",
+        "**/*.web.{ts,tsx}",
+        "**/*.native.{ts,tsx}",
+        "components/ui/**/*.{ts,tsx}"
+      ],
+      "project": ["**/*.{ts,tsx,js,jsx,mjs,css}"],
+      // knip can't load metro.config.js (NativeWind looks for tailwind.config
+      // in its own working directory).
+      "metro": false,
+      // NativeWind's runtime, used through Babel and Metro rather than imports;
+      // knip's Expo plugin asks for expo-updates, which the app doesn't use.
+      "ignoreDependencies": ["react-native-css-interop", "expo-updates"]
+    },
+    "apps/host": {
+      "entry": ["components/ui/**/*.tsx"],
+      "project": ["**/*.{ts,tsx,js,jsx,mjs,css}"],
+      // PricingGuest waits for Premium (QA TASK-013 took it off the page).
+      "ignore": ["supabase/functions/**", "components/sections/PricingGuest.tsx"]
+    }
+  }
+}

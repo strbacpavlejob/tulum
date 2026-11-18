@@ -7,7 +7,8 @@ import { EventZekaScraperService } from '../scrapers/eventzeka/eventzeka-scraper
 import { GoOutScraperService } from '../scrapers/go-out/go-out-scraper.service';
 import { GuestListSerbiaScraperService } from '../scrapers/guest-list/guest-list-serbia-scraper.service';
 import { InstagramScraperService } from '../scrapers/instagram/instagram-scraper.service';
-import { SupabaseService } from '../../supabase/supabase.service';
+import { CleanupService } from '../../cleanup/cleanup.service';
+import { ScrapedDataService } from '../../supabase/scraped-data.service';
 import { DuplicateCheckerService } from '../../duplicate-checker/duplicate-checker.service';
 
 interface ExistingVenueContactRow {
@@ -25,7 +26,8 @@ export class ScraperService {
     private readonly instagramScraperService: InstagramScraperService,
     private readonly eventZekaScraperService: EventZekaScraperService,
     private readonly duplicateCheckerService: DuplicateCheckerService,
-    private readonly supabaseService: SupabaseService,
+    private readonly scrapedDataService: ScrapedDataService,
+    private readonly cleanupService: CleanupService,
   ) {}
 
   private getScraper(scraperId: number): Scraper {
@@ -62,8 +64,8 @@ export class ScraperService {
 
   private getExistingData() {
     return Promise.all([
-      this.supabaseService.getExistingVenuesWithContacts(),
-      this.supabaseService.getExistingEvents(),
+      this.scrapedDataService.getExistingVenuesWithContacts(),
+      this.scrapedDataService.getExistingEvents(),
     ]).then(([venues, events]) => ({ venues, events }));
   }
 
@@ -142,12 +144,12 @@ export class ScraperService {
       );
 
     const { venues: savedVenues, events: savedEvents } =
-      await this.supabaseService.saveScrapedData({
+      await this.scrapedDataService.saveScrapedData({
         venues: filteredScrapedVenues,
         events: filteredScrapedEvents,
       });
 
-    const deletedOldEvents = await this.supabaseService.deleteOldEvents();
+    const deletedOldEvents = await this.cleanupService.deleteOldEvents();
 
     this.logScraperResult(
       scraperId,

@@ -14,7 +14,6 @@ import {
   it,
   jest,
 } from '@jest/globals';
-import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import {
   GenderEnum,
   OnboardingDto,
@@ -297,12 +296,7 @@ describe('Onboarding before the create-user webhook arrives', () => {
     birthday: '1998-04-12',
   };
   const guestsWith = (userProvisioning: UserProvisioningService) =>
-    new GuestsService(
-      supabase,
-      {} as R2Service,
-      new GuestSafetyService(supabase),
-      userProvisioning,
-    );
+    new GuestsService(supabase, {} as R2Service, userProvisioning);
 
   it('could not save the guests row without the users row', async () => {
     const noFallback = {

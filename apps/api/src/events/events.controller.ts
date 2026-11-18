@@ -11,6 +11,7 @@ import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { checkinRadiusMeters } from '../common/checkin-radius';
 import { UserId } from '../common/decorators/user-id.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { CleanupService } from '../cleanup/cleanup.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import {
   haversineMeters,
@@ -54,14 +55,17 @@ function refusal(reason: CheckInRefusal, message: string) {
 @ApiTags('events')
 @Controller('events')
 export class EventsController {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly cleanupService: CleanupService,
+  ) {}
 
   @Delete('cleanup')
   @UseGuards(AdminGuard)
   @ApiOperation({
     summary: 'Delete past events (admin only)',
     description:
-      'Deletes events whose end_date_time is older than now, or older than a provided cutoff date.',
+      'Deletes events whose end_date_time is older than now, or older than a provided cutoff date, and that have no matches. Events with matches stay, with their matches, chats and messages.',
   })
   @ApiBody({
     type: CleanupEventsDto,
@@ -76,7 +80,7 @@ export class EventsController {
     },
   })
   async cleanup(@Body() body?: CleanupEventsDto) {
-    const deleted = await this.supabaseService.deleteOldEvents(body?.before);
+    const deleted = await this.cleanupService.deleteOldEvents(body?.before);
     return { deleted };
   }
 

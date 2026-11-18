@@ -2,524 +2,81 @@ import Blob from "@/components/Blob";
 import LoadingIndicator from "@/components/loading-indicator";
 
 import Tags from "@/components/Tags";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList } from "@/components/ui/tabs";
 import { Text } from "@/components/ui/text";
-import { Textarea } from "@/components/ui/textarea";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import {
-  AccountOwnsVenuesError,
-  deleteGuestPhoto,
-  deleteMyAccount,
-  fetchLaunchEmailConsent,
-  mapUserPatchToGuestUpdates,
-  saveLaunchEmailConsent,
-  updateMyProfile,
-  updateSettings,
-  uploadGuestPhoto,
-  submitBugReport,
-  submitVenueSuggestion,
-} from "@/lib/api";
-import { appPlatform } from "@/lib/app-platform";
 import useStore from "@/store/useStore";
 import { VenueType } from "@/types/filter";
 import { Settings } from "@/types/settings";
-import { GuestVisibility, User } from "@/types/user";
-import { useAuth } from "@clerk/expo";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import {
-  Baby,
-  Cigarette,
-  Check,
-  Globe,
-  Heart,
-  PawPrint,
-  Ruler,
-  Send,
-  Star,
-  Users,
-  Wine,
-} from "lucide-react-native";
-import type {
-  ProfileInfoField,
-  ProfileInfoFieldKey,
-} from "@/components/ProfileInfoView";
+import { GuestVisibility } from "@/types/user";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import type { ProfileInfoFieldKey } from "@/components/ProfileInfoView";
 import {
   appLanguageOptions,
-  EditConfig,
-  SelectOption,
-  childrenOptions,
-  drinkingOptions,
-  languageOptions,
-  lookingForOptions,
-  petsOptions,
-  relationshipOptions,
-  religionOptions,
-  sexualityOptions,
-  smokingOptions,
-  starSignOptions,
-  tagsOptions,
   themeOptions,
   venueOptions,
   visibilityOptions,
 } from "@/constants/options";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useRef, useState } from "react";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner-native";
 import SettingsTab from "@/components/SettingsTab";
 import ProfileTab from "@/components/ProfileTab";
-import { cn } from "@/lib/utils";
+import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
+import { SuggestVenueSheet } from "@/components/profile/SuggestVenueSheet";
+import { BugReportSheet } from "@/components/profile/BugReportSheet";
+import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
+import {
+  buildProfileEditCallbacks,
+  buildProfileFields,
+  openProfileFieldEditor,
+} from "@/components/profile/profileFields";
+import { useFieldEditSheet } from "@/components/profile/useFieldEditSheet";
+import { useLaunchEmailOptIn } from "@/components/profile/useLaunchEmailOptIn";
+import { useProfileActions } from "@/components/profile/useProfileActions";
+import { useProfileSaving } from "@/components/profile/useProfileSaving";
+import { ProfileTabTrigger } from "@/components/profile/ProfileTabTrigger";
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
-  const { t, i18n } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
-  const { user, settings, setUser, setSettings } = useStore();
-
-  const { userId, signOut, getToken } = useAuth();
+  const { user, settings } = useStore();
 
   const [activeTab, setActiveTab] = useState("profile");
 
-  const [editConfig, setEditConfig] = useState<EditConfig | null>(null);
-
-  const [singleValue, setSingleValue] = useState("");
-  const [multiValues, setMultiValues] = useState<string[]>([]);
-  const [textValue, setTextValue] = useState("");
-
-  const [bugText, setBugText] = useState("");
-  const [sendingBug, setSendingBug] = useState(false);
-  const [venueName, setVenueName] = useState("");
-  const [venueInstagram, setVenueInstagram] = useState("");
-  const [venueNotes, setVenueNotes] = useState("");
-  const [sendingVenue, setSendingVenue] = useState(false);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-
-  const editSheetRef = useRef<BottomSheetModal>(null);
+  const {
+    editSheetRef,
+    editConfig,
+    setEditConfig,
+    singleValue,
+    setSingleValue,
+    multiValues,
+    textValue,
+    setTextValue,
+    openSingleSelect,
+    openMultiSelect,
+    openTextEdit,
+    confirmEdit,
+    toggleMultiValue,
+  } = useFieldEditSheet();
   const bugSheetRef = useRef<BottomSheetModal>(null);
   const venueSheetRef = useRef<BottomSheetModal>(null);
 
-  const editSnapPoints = useMemo(() => ["50%", "85%"], []);
-
-  const bugSnapPoints = useMemo(() => ["45%"], []);
-  const venueSnapPoints = useMemo(() => ["55%"], []);
-
-  const renderBackdrop = useCallback(
-    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
-    ),
-    [],
-  );
-
-  const openSingleSelect = (
-    title: string,
-    options: SelectOption[],
-    current: string,
-    onSave: (value: string) => void,
-  ) => {
-    setSingleValue(current);
-
-    setEditConfig({
-      title,
-      type: "single",
-      options,
-      onSave: (value) => {
-        onSave(value as string);
-      },
-    });
-
-    editSheetRef.current?.present();
-  };
-
-  const openMultiSelect = (
-    title: string,
-    options: SelectOption[],
-    current: string[],
-    onSave: (value: string[]) => void,
-  ) => {
-    setMultiValues([...current]);
-
-    setEditConfig({
-      title,
-      type: "multi",
-      options,
-      onSave: (value) => {
-        onSave(value as string[]);
-      },
-    });
-
-    editSheetRef.current?.present();
-  };
-
-  const openTextEdit = (
-    title: string,
-    current: string,
-    onSave: (value: string) => void,
-  ) => {
-    setTextValue(current);
-
-    setEditConfig({
-      title,
-      type: "text",
-      onSave: (value) => {
-        onSave(value as string);
-      },
-    });
-
-    editSheetRef.current?.present();
-  };
-
-  const patchUser = (patch: Partial<User>) => {
-    // The store's user, not this render's: a save or an upload may have
-    // finished since.
-    const currentUser = useStore.getState().user;
-
-    if (!currentUser) {
-      return;
-    }
-
-    setUser({
-      ...currentUser,
-      ...patch,
-    });
-  };
-
-  // Shows the edit at once, saves it with PATCH /users/me and puts the old
-  // values back if the save fails. Returns whether it was saved.
-  const saveProfile = async (patch: Partial<User>): Promise<boolean> => {
-    const previousUser = useStore.getState().user;
-
-    if (!previousUser || !userId) {
-      return false;
-    }
-
-    patchUser(patch);
-
-    try {
-      const token = await getToken();
-
-      if (!token) {
-        throw new Error("No authentication token available");
-      }
-
-      await updateMyProfile(
-        token,
-        userId,
-        {},
-        mapUserPatchToGuestUpdates(patch),
-      );
-      return true;
-    } catch (error) {
-      console.error("Failed to save profile", error);
-
-      // Only the fields that still show this edit, so a newer edit stays.
-      const currentUser = useStore.getState().user;
-      const fields = (Object.keys(patch) as (keyof User)[]).filter(
-        (field) => currentUser?.[field] === patch[field],
-      );
-
-      patchUser(
-        Object.fromEntries(
-          fields.map((field) => [field, previousUser[field]]),
-        ) as Partial<User>,
-      );
-
-      // A toast, not Alert.alert: Alert.alert does nothing on web, and a
-      // visibility change that silently failed would leave you seen.
-      toast.error(t("saveFailed"), {
-        description: t("profileChangeNotSaved"),
-      });
-      return false;
-    }
-  };
-
-  // Who sees you on guest lists and in Matches. Confirmed with a toast,
-  // because it decides who can see you.
-  const saveVisibility = async (visibility: GuestVisibility) => {
-    if (await saveProfile({ visibility })) {
-      const option = visibilityOptions.find((o) => o.value === visibility);
-      toast.success(
-        t("visibilitySaved", { option: t(option?.name ?? visibility) }),
-      );
-    }
-  };
-
-  // "Email me when the Tulum app is out": null until loaded, and while the
-  // API can't store the answer yet, which hides the switch.
-  const [launchEmailOptIn, setLaunchEmailOptIn] = useState<boolean | null>(
-    null,
-  );
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    getToken()
-      .then((token) => (token ? fetchLaunchEmailConsent(token) : null))
-      .then((consent) => {
-        if (!cancelled && consent?.available) {
-          setLaunchEmailOptIn(consent.granted);
-        }
-      })
-      .catch((error) => console.warn("Failed to load consent", error));
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const changeLaunchEmailOptIn = async (optIn: boolean) => {
-    const previous = launchEmailOptIn;
-    setLaunchEmailOptIn(optIn);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("No authentication token available");
-      await saveLaunchEmailConsent(token, {
-        granted: optIn,
-        wording: t("launchEmailConsent"),
-        language: i18n.language,
-        platform: appPlatform(),
-      });
-    } catch (error) {
-      console.error("Failed to save consent", error);
-      setLaunchEmailOptIn(previous);
-      toast.error(t("saveFailed"), {
-        description: t("profileChangeNotSaved"),
-      });
-    }
-  };
-
-  const patchSettings = async (patch: Partial<Settings>) => {
-    const nextSettings = {
-      ...settings,
-      ...patch,
-    };
-
-    setSettings(nextSettings);
-
-    const shouldUpdateRemote =
-      patch.language !== undefined ||
-      patch.theme !== undefined ||
-      patch.defaultVenueType !== undefined;
-
-    if (!userId || !shouldUpdateRemote) {
-      return;
-    }
-
-    const token = await getToken();
-
-    if (!token) {
-      return;
-    }
-
-    const remoteSettings: Record<string, string> = {};
-
-    if (patch.language !== undefined) {
-      remoteSettings.language = patch.language;
-    }
-
-    if (patch.theme !== undefined) {
-      remoteSettings.theme = patch.theme;
-    }
-
-    if (patch.defaultVenueType !== undefined) {
-      remoteSettings.default_venue_type = patch.defaultVenueType;
-    }
-
-    try {
-      await updateSettings(token, userId, remoteSettings);
-    } catch (error) {
-      console.error("Failed to update settings", error);
-    }
-  };
-
-  const handleAddPhoto = async () => {
-    if (!userId) {
-      return;
-    }
-
-    const token = await getToken();
-
-    if (!token) {
-      return;
-    }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (permission.status !== "granted") {
-      Alert.alert(
-        t("permissionRequired"),
-        t("photoLibraryPermissionDescription"),
-      );
-
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.9,
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    const asset = result.assets[0];
-
-    try {
-      const updatedUrls = await uploadGuestPhoto(
-        token,
-        asset.uri,
-        asset.mimeType ?? "image/jpeg",
-      );
-
-      patchUser({
-        photos: updatedUrls,
-        imgUrl: updatedUrls[0],
-      });
-    } catch (error) {
-      Alert.alert(
-        t("uploadFailed"),
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-  };
-
-  const handleRemovePhoto = async (url: string) => {
-    if (!userId) {
-      return;
-    }
-
-    const token = await getToken();
-
-    if (!token) {
-      return;
-    }
-
-    try {
-      const updatedUrls = await deleteGuestPhoto(token, url);
-
-      patchUser({
-        photos: updatedUrls,
-        imgUrl: updatedUrls[0],
-      });
-    } catch (error) {
-      Alert.alert(
-        t("removeFailed"),
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-  };
-
-  const confirmEdit = () => {
-    if (!editConfig) {
-      return;
-    }
-
-    if (editConfig.type === "single") {
-      editConfig.onSave(singleValue);
-    }
-
-    if (editConfig.type === "multi") {
-      editConfig.onSave(multiValues);
-    }
-
-    if (editConfig.type === "text") {
-      editConfig.onSave(textValue);
-    }
-
-    editSheetRef.current?.close();
-    setEditConfig(null);
-  };
-
-  const toggleMultiValue = (value: string) => {
-    setMultiValues((currentValues) => {
-      if (currentValues.includes(value)) {
-        return currentValues.filter((currentValue) => currentValue !== value);
-      }
-
-      return [...currentValues, value];
-    });
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    setUser(null);
-
-    router.replace("/(auth)/sign-in");
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deletingAccount) return;
-    setDeletingAccount(true);
-
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("No authentication token available");
-      await deleteMyAccount(token);
-    } catch (error) {
-      console.error("Failed to delete account", error);
-
-      // The dialog stays open, so the user can try again or cancel.
-      toast.error(t("deleteAccountFailed"), {
-        description: t(
-          error instanceof AccountOwnsVenuesError
-            ? "deleteAccountHostsVenues"
-            : "deleteAccountTryAgain",
-        ),
-      });
-      setDeletingAccount(false);
-      return;
-    }
-
-    setShowDeleteAlert(false);
-    setDeletingAccount(false);
-    toast.success(t("accountDeleted"));
-
-    // Deleting the Clerk user already ended the session on the server;
-    // signOut clears it on this device.
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Sign-out after deleting the account failed", error);
-    }
-    setUser(null);
-
-    router.replace("/(auth)/sign-in");
-  };
+  const { patchUser, saveProfile, saveVisibility } = useProfileSaving();
+  const { launchEmailOptIn, changeLaunchEmailOptIn } = useLaunchEmailOptIn();
+  const {
+    patchSettings,
+    handleAddPhoto,
+    handleRemovePhoto,
+    handleLogout,
+    showDeleteAlert,
+    setShowDeleteAlert,
+    deletingAccount,
+    handleDeleteAccount,
+  } = useProfileActions(patchUser);
 
   if (!user) {
     return (
@@ -529,229 +86,17 @@ export default function ProfileScreen() {
     );
   }
 
-  const profileFields: ProfileInfoField[] = [
-    {
-      key: "height",
-      icon: Ruler,
-      label: t("height"),
-      value: user.height ? `${user.height} cm` : undefined,
-    },
-    {
-      key: "children",
-      icon: Baby,
-      label: t("children"),
-      value: user.hasChildren
-        ? user.hasChildren.charAt(0).toUpperCase() + user.hasChildren.slice(1)
-        : undefined,
-    },
-    {
-      key: "drinking",
-      icon: Wine,
-      label: t("drinking"),
-      value: user.drinking
-        ? user.drinking.charAt(0).toUpperCase() + user.drinking.slice(1)
-        : undefined,
-    },
-    {
-      key: "languages",
-      icon: Globe,
-      label: t("languages"),
-      value:
-        user.languages && user.languages.length > 0
-          ? user.languages
-              .map(
-                (language) =>
-                  language.charAt(0).toUpperCase() + language.slice(1),
-              )
-              .join(", ")
-          : undefined,
-    },
-    {
-      key: "relationship",
-      icon: Heart,
-      label: t("relationship"),
-      value: user.relationship
-        ? user.relationship.charAt(0).toUpperCase() + user.relationship.slice(1)
-        : undefined,
-    },
-    {
-      key: "sexuality",
-      icon: Users,
-      label: t("sexuality"),
-      value: user.sexuality
-        ? user.sexuality.charAt(0).toUpperCase() + user.sexuality.slice(1)
-        : undefined,
-    },
-    {
-      key: "smoking",
-      icon: Cigarette,
-      label: t("smoking"),
-      value: user.smoking
-        ? user.smoking.charAt(0).toUpperCase() + user.smoking.slice(1)
-        : undefined,
-    },
-    {
-      key: "starSign",
-      icon: Star,
-      label: t("starSign"),
-      value: user.starSign,
-    },
-    {
-      key: "pets",
-      icon: PawPrint,
-      label: t("pets"),
-      value:
-        user.pets && user.pets.length > 0
-          ? user.pets
-              .map((pet) => pet.charAt(0).toUpperCase() + pet.slice(1))
-              .join(", ")
-          : undefined,
-    },
-    {
-      key: "religion",
-      icon: Heart,
-      label: t("religion"),
-      value: user.religion
-        ? user.religion.charAt(0).toUpperCase() + user.religion.slice(1)
-        : undefined,
-    },
-  ];
+  const profileFields = buildProfileFields(user, t);
 
-  const handleEditProfileField = (fieldKey: ProfileInfoFieldKey) => {
-    switch (fieldKey) {
-      case "height": {
-        openTextEdit(t("heightCm"), user.height?.toString() ?? "", (value) => {
-          const parsedHeight = Number.parseInt(value, 10);
-
-          void saveProfile({
-            height: Number.isNaN(parsedHeight) ? undefined : parsedHeight,
-          });
-        });
-        break;
-      }
-
-      case "children": {
-        openSingleSelect(
-          t("children"),
-          childrenOptions,
-          user.hasChildren ?? "",
-          (value) => {
-            void saveProfile({
-              hasChildren: value as User["hasChildren"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "drinking": {
-        openSingleSelect(
-          t("drinking"),
-          drinkingOptions,
-          user.drinking ?? "",
-          (value) => {
-            void saveProfile({
-              drinking: value as User["drinking"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "languages": {
-        openMultiSelect(
-          t("languages"),
-          languageOptions,
-          user.languages ?? [],
-          (value) => {
-            void saveProfile({
-              languages: value,
-            });
-          },
-        );
-        break;
-      }
-
-      case "relationship": {
-        openSingleSelect(
-          t("relationshipStatus"),
-          relationshipOptions,
-          user.relationship ?? "",
-          (value) => {
-            void saveProfile({
-              relationship: value as User["relationship"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "sexuality": {
-        openSingleSelect(
-          t("sexuality"),
-          sexualityOptions,
-          user.sexuality ?? "",
-          (value) => {
-            void saveProfile({
-              sexuality: value as User["sexuality"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "smoking": {
-        openSingleSelect(
-          t("smoking"),
-          smokingOptions,
-          user.smoking ?? "",
-          (value) => {
-            void saveProfile({
-              smoking: value as User["smoking"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "starSign": {
-        openSingleSelect(
-          t("starSign"),
-          starSignOptions,
-          user.starSign ?? "",
-          (value) => {
-            void saveProfile({
-              starSign: value as User["starSign"],
-            });
-          },
-        );
-        break;
-      }
-
-      case "pets": {
-        openMultiSelect(t("pets"), petsOptions, user.pets ?? [], (value) => {
-          void saveProfile({
-            pets: value,
-          });
-        });
-        break;
-      }
-
-      case "religion": {
-        openSingleSelect(
-          t("religion"),
-          religionOptions,
-          user.religion ?? "",
-          (value) => {
-            void saveProfile({
-              religion: value as User["religion"],
-            });
-          },
-        );
-        break;
-      }
-    }
-  };
+  const handleEditProfileField = (fieldKey: ProfileInfoFieldKey) =>
+    openProfileFieldEditor(fieldKey, {
+      user,
+      t,
+      openTextEdit,
+      openSingleSelect,
+      openMultiSelect,
+      saveProfile,
+    });
 
   const profileAvatarUri = user.photos?.[0] || user.imgUrl;
 
@@ -821,107 +166,33 @@ export default function ProfileScreen() {
           className="flex-1 gap-0"
         >
           <TabsList className="h-12 w-full rounded-none border-b px-0 py-0 bg-light-background dark:bg-dark-background border-b-light-border dark:border-b-dark-border">
-            <TabsTrigger
+            <ProfileTabTrigger
               value="profile"
-              className={`h-full flex-1 rounded-none ${activeTab === "profile" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
-            >
-              <Text
-                className={cn(
-                  "text-sm",
-                  activeTab === "profile"
-                    ? "font-semibold text-light-color dark:text-dark-color"
-                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
-                )}
-              >
-                {t("profile")}
-              </Text>
-            </TabsTrigger>
+              label={t("profile")}
+              active={activeTab === "profile"}
+            />
 
-            <TabsTrigger
+            <ProfileTabTrigger
               value="settings"
-              className={`h-full flex-1 rounded-none ${activeTab === "settings" ? "border-b-2 border-b-light-color dark:border-b-dark-color" : ""}`}
-            >
-              <Text
-                className={cn(
-                  "text-sm",
-                  activeTab === "settings"
-                    ? "font-semibold text-light-color dark:text-dark-color"
-                    : "font-normal text-light-colorMuted dark:text-dark-colorMuted",
-                )}
-              >
-                {t("settings")}
-              </Text>
-            </TabsTrigger>
+              label={t("settings")}
+              active={activeTab === "settings"}
+            />
           </TabsList>
 
           <ProfileTab
             user={user}
             profileFields={profileFields}
-            editCallbacks={{
-              onAddPhoto: () => {
-                void handleAddPhoto();
-              },
-
-              onRemovePhoto: (url) => {
-                void handleRemovePhoto(url);
-              },
-
-              onEditTags: () => {
-                openMultiSelect(
-                  t("tags"),
-                  tagsOptions,
-                  user.tags ?? [],
-                  (value) => {
-                    void saveProfile({
-                      tags: value,
-                    });
-                  },
-                );
-              },
-
-              onEditWork: () => {
-                openTextEdit(t("work"), user.work ?? "", (value) => {
-                  void saveProfile({
-                    work: value.trim() || undefined,
-                  });
-                });
-              },
-
-              onEditEducation: () => {
-                openTextEdit(t("education"), user.education ?? "", (value) => {
-                  void saveProfile({
-                    education: value.trim() || undefined,
-                  });
-                });
-              },
-
-              onEditLookingFor: () => {
-                // One choice: it is stored as the "seeking" answer from
-                // onboarding.
-                openSingleSelect(
-                  t("whyYoureHere"),
-                  lookingForOptions,
-                  user.lookingFor?.[0] ?? "",
-                  (value) => {
-                    void saveProfile({
-                      lookingFor: [value] as User["lookingFor"],
-                    });
-                  },
-                );
-              },
-
-              onEditBio: () => {
-                openTextEdit(t("bio"), user.info ?? "", (value) => {
-                  void saveProfile({
-                    info: value.trim() || undefined,
-                  });
-                });
-              },
-
-              onEditField: (fieldKey) => {
-                handleEditProfileField(fieldKey);
-              },
-            }}
+            editCallbacks={buildProfileEditCallbacks({
+              user,
+              t,
+              openTextEdit,
+              openSingleSelect,
+              openMultiSelect,
+              saveProfile,
+              handleAddPhoto,
+              handleRemovePhoto,
+              handleEditProfileField,
+            })}
             onVisibilityPress={() => {
               openSingleSelect(
                 t("whoCanSeeMe"),
@@ -997,446 +268,29 @@ export default function ProfileScreen() {
         </Tabs>
       </View>
 
-      <BottomSheetModal
-        ref={editSheetRef}
-        snapPoints={editSnapPoints}
-        keyboardBlurBehavior="restore"
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{
-          backgroundColor: theme.backgroundPopover,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: theme.gray5,
-        }}
-        onDismiss={() => {
-          setEditConfig(null);
-        }}
-      >
-        <BottomSheetScrollView
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: insets.bottom + 20,
-          }}
-        >
-          {editConfig ? (
-            <>
-              <Text
-                style={{
-                  marginTop: 4,
-                  marginBottom: 16,
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: theme.colorStrong,
-                }}
-              >
-                {editConfig.title}
-              </Text>
+      <ProfileEditSheet
+        editSheetRef={editSheetRef}
+        setEditConfig={setEditConfig}
+        editConfig={editConfig}
+        singleValue={singleValue}
+        setSingleValue={setSingleValue}
+        multiValues={multiValues}
+        toggleMultiValue={toggleMultiValue}
+        confirmEdit={confirmEdit}
+        textValue={textValue}
+        setTextValue={setTextValue}
+      />
 
-              {editConfig.type === "single"
-                ? (editConfig.options ?? []).map((option) => {
-                    const selected = singleValue === option.value;
+      <BugReportSheet bugSheetRef={bugSheetRef} />
 
-                    return (
-                      <Button
-                        key={option.value}
-                        variant="ghost"
-                        onPress={() => {
-                          setSingleValue(option.value);
-                          editConfig.onSave(option.value);
-                          editSheetRef.current?.close();
-                          setEditConfig(null);
-                        }}
-                        // sm:h-auto too: the button's sm:h-9 would cut off a
-                        // description on screens 640 px and wider.
-                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5 sm:h-auto"
-                        style={
-                          selected
-                            ? {
-                                backgroundColor: theme.color025,
-                              }
-                            : undefined
-                        }
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              textAlign: "left",
-                              fontSize: 16,
-                              color: selected ? theme.color : theme.colorStrong,
-                            }}
-                          >
-                            {t(option.name)}
-                          </Text>
-                          {option.description ? (
-                            <Text
-                              style={{
-                                marginTop: 2,
-                                textAlign: "left",
-                                fontSize: 13,
-                                lineHeight: 18,
-                                color: theme.colorMuted,
-                              }}
-                            >
-                              {t(option.description)}
-                            </Text>
-                          ) : null}
-                        </View>
+      <SuggestVenueSheet venueSheetRef={venueSheetRef} />
 
-                        {selected ? (
-                          <Check size={18} color={theme.color} />
-                        ) : null}
-                      </Button>
-                    );
-                  })
-                : null}
-
-              {editConfig.type === "multi" ? (
-                <>
-                  {(editConfig.options ?? []).map((option) => {
-                    const selected = multiValues.includes(option.value);
-
-                    return (
-                      <Button
-                        key={option.value}
-                        variant="ghost"
-                        onPress={() => {
-                          toggleMultiValue(option.value);
-                        }}
-                        className="mb-0.5 h-auto w-full justify-between rounded-xl px-3 py-3.5"
-                        style={
-                          selected
-                            ? {
-                                backgroundColor: theme.color025,
-                              }
-                            : undefined
-                        }
-                      >
-                        <Text
-                          style={{
-                            flex: 1,
-                            textAlign: "left",
-                            fontSize: 16,
-                            color: selected ? theme.color : theme.colorStrong,
-                          }}
-                        >
-                          {t(option.name)}
-                        </Text>
-
-                        {selected ? (
-                          <Check size={18} color={theme.color} />
-                        ) : null}
-                      </Button>
-                    );
-                  })}
-
-                  <Button onPress={confirmEdit} className="mt-4 w-full">
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: "#fff",
-                      }}
-                    >
-                      {t("confirm")}
-                    </Text>
-                  </Button>
-                </>
-              ) : null}
-
-              {editConfig.type === "text" ? (
-                <>
-                  <Textarea
-                    inBottomSheet
-                    value={textValue}
-                    onChangeText={setTextValue}
-                    placeholder={`${editConfig.title}…`}
-                    autoFocus
-                    className="min-h-[100px]"
-                  />
-
-                  <Button onPress={confirmEdit} className="mt-3 w-full">
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: "#fff",
-                      }}
-                    >
-                      {t("confirm")}
-                    </Text>
-                  </Button>
-                </>
-              ) : null}
-            </>
-          ) : null}
-        </BottomSheetScrollView>
-      </BottomSheetModal>
-
-      <BottomSheetModal
-        ref={bugSheetRef}
-        snapPoints={bugSnapPoints}
-        keyboardBlurBehavior="restore"
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{
-          backgroundColor: theme.backgroundPopover,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: theme.gray5,
-        }}
-      >
-        <BottomSheetView
-          style={{
-            flex: 1,
-            paddingHorizontal: 20,
-            paddingBottom: insets.bottom + 20,
-          }}
-        >
-          <Text
-            style={{
-              marginTop: 4,
-              marginBottom: 12,
-              fontSize: 18,
-              fontWeight: "700",
-              color: theme.colorStrong,
-            }}
-          >
-            {t("reportBug")}
-          </Text>
-
-          <Textarea
-            inBottomSheet
-            value={bugText}
-            onChangeText={setBugText}
-            placeholder={t("bugReportPlaceholder")}
-            className="max-h-[140px] flex-1"
-          />
-
-          <Button
-            disabled={!bugText.trim() || sendingBug}
-            onPress={async () => {
-              const description = bugText.trim();
-
-              if (!description || sendingBug) {
-                return;
-              }
-
-              setSendingBug(true);
-
-              try {
-                const token = await getToken();
-
-                await submitBugReport(token ?? undefined, {
-                  description,
-                  additional_info: null,
-                });
-
-                setBugText("");
-                bugSheetRef.current?.close();
-                toast.success(t("bugReportSent"));
-              } catch (error) {
-                console.error("Failed to send bug report", error);
-
-                // A toast, not Alert.alert: Alert.alert does nothing on web.
-                // The draft stays in the sheet for another try.
-                toast.error(t("sendFailed"), {
-                  description: t("bugReportNotSent"),
-                });
-              } finally {
-                setSendingBug(false);
-              }
-            }}
-            className="mt-4 w-full gap-2"
-          >
-            <Send size={16} color="#fff" />
-
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: "#fff",
-              }}
-            >
-              {t("send")}
-            </Text>
-          </Button>
-        </BottomSheetView>
-      </BottomSheetModal>
-
-      <BottomSheetModal
-        ref={venueSheetRef}
-        snapPoints={venueSnapPoints}
-        keyboardBlurBehavior="restore"
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{
-          backgroundColor: theme.backgroundPopover,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: theme.gray5,
-        }}
-      >
-        <BottomSheetView
-          style={{
-            flex: 1,
-            paddingHorizontal: 20,
-            paddingBottom: insets.bottom + 20,
-          }}
-        >
-          <Text
-            style={{
-              marginTop: 4,
-              marginBottom: 12,
-              fontSize: 18,
-              fontWeight: "700",
-              color: theme.colorStrong,
-            }}
-          >
-            {t("suggestVenue")}
-          </Text>
-
-          <Textarea
-            inBottomSheet
-            value={venueName}
-            onChangeText={setVenueName}
-            placeholder={t("venueNamePlaceholder")}
-            className="mb-2"
-          />
-
-          <Textarea
-            inBottomSheet
-            value={venueInstagram}
-            onChangeText={setVenueInstagram}
-            placeholder={t("instagramHandlePlaceholder")}
-            className="mb-2"
-          />
-
-          <Textarea
-            inBottomSheet
-            value={venueNotes}
-            onChangeText={setVenueNotes}
-            placeholder={t("additionalInfoPlaceholder")}
-            className="max-h-[140px] flex-1"
-          />
-
-          <Button
-            disabled={sendingVenue}
-            onPress={async () => {
-              if (sendingVenue) {
-                return;
-              }
-
-              const name = venueName.trim();
-
-              // Toasts, not Alert.alert: Alert.alert does nothing on web.
-              if (!name) {
-                toast.error(t("nameRequired"), {
-                  description: t("pleaseProvideVenueName"),
-                });
-                return;
-              }
-
-              setSendingVenue(true);
-
-              try {
-                const token = await getToken();
-
-                await submitVenueSuggestion(token ?? undefined, {
-                  name,
-                  // The field asks for the handle without "@"; drop one
-                  // typed anyway.
-                  instagram_handle:
-                    venueInstagram.trim().replace(/^@+/, "").trim() || null,
-                  additionalInfo: venueNotes.trim() || null,
-                });
-
-                setVenueName("");
-                setVenueInstagram("");
-                setVenueNotes("");
-                venueSheetRef.current?.close();
-                toast.success(t("venueSuggestionSent"));
-              } catch (error) {
-                console.error("Failed to send venue suggestion", error);
-
-                // The draft stays in the sheet for another try.
-                toast.error(t("sendFailed"), {
-                  description: t("venueSuggestionNotSent"),
-                });
-              } finally {
-                setSendingVenue(false);
-              }
-            }}
-            className="mt-4 w-full gap-2"
-          >
-            <Send size={16} color="#fff" />
-
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: "#fff",
-              }}
-            >
-              {t("send")}
-            </Text>
-          </Button>
-        </BottomSheetView>
-      </BottomSheetModal>
-
-      <AlertDialog
-        open={showDeleteAlert}
-        onOpenChange={(open) => {
-          // Stays open while the account is being deleted.
-          if (!deletingAccount) setShowDeleteAlert(open);
-        }}
-      >
-        {/* Colors come from the theme: this app's Tailwind config has no
-            bg-background or bg-destructive, so the dialog was see-through. */}
-        <AlertDialogContent
-          style={{
-            backgroundColor: theme.backgroundPopover,
-            borderColor: theme.border,
-          }}
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle style={{ color: theme.colorStrong }}>
-              {t("deleteAlertTitle")}
-            </AlertDialogTitle>
-
-            <AlertDialogDescription style={{ color: theme.colorMuted }}>
-              {t("deleteAlertDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={deletingAccount}
-              style={{
-                borderColor: theme.border,
-                backgroundColor: theme.backgroundStrong,
-              }}
-            >
-              <Text style={{ color: theme.colorStrong }}>{t("cancel")}</Text>
-            </AlertDialogCancel>
-
-            {/* A plain Button: AlertDialogAction would close the dialog
-                before the deletion has finished. */}
-            <Button
-              disabled={deletingAccount}
-              onPress={() => {
-                void handleDeleteAccount();
-              }}
-              style={{ backgroundColor: theme.destructive }}
-            >
-              {deletingAccount ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : null}
-
-              <Text style={{ color: "#fff" }}>
-                {deletingAccount ? t("deletingAccount") : t("confirm")}
-              </Text>
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteAccountDialog
+        showDeleteAlert={showDeleteAlert}
+        deletingAccount={deletingAccount}
+        setShowDeleteAlert={setShowDeleteAlert}
+        handleDeleteAccount={handleDeleteAccount}
+      />
     </SafeAreaView>
   );
 }

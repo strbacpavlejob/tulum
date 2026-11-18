@@ -30,8 +30,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useStatisticsStore } from "@/store/statistics";
 import "../i18n";
 
-export const description = "An interactive area chart";
-
 interface ChartAreaInteractiveProps {
   venueId?: string | null;
   eventId?: string | null;

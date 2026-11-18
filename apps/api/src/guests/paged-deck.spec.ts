@@ -7,10 +7,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { beforeEach, describe, expect, it } from '@jest/globals';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
-import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { UserProvisioningService } from '../users/user-provisioning.service';
-import { GuestsService } from './guests.service';
+import { SwipeDeckService } from './swipe-deck.service';
 
 const CALLER = 'user_caller';
 const ANA = 'user_ana';
@@ -83,14 +81,7 @@ const db = {
   },
 };
 const supabase = { getClient: () => db } as unknown as SupabaseService;
-const guests = new GuestsService(
-  supabase,
-  {} as R2Service,
-  new GuestSafetyService(supabase),
-  {
-    ensureUserRow: () => Promise.resolve(),
-  } as unknown as UserProvisioningService,
-);
+const guests = new SwipeDeckService(supabase, new GuestSafetyService(supabase));
 
 const guestRow = (userId: string, name: string, gender: string): Row => ({
   user_id: userId,

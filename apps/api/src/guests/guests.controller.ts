@@ -23,6 +23,7 @@ import { AttributionService } from '../retention/attribution.service';
 import { ConsentsService } from '../retention/consents.service';
 import { OnboardingDto } from './dto/onboarding.dto';
 import { GuestsService } from './guests.service';
+import { SwipeDeckService } from './swipe-deck.service';
 
 @ApiTags('guests')
 @Controller('guests')
@@ -31,6 +32,7 @@ export class GuestsController {
 
   constructor(
     private readonly guestsService: GuestsService,
+    private readonly swipeDeckService: SwipeDeckService,
     private readonly consents: ConsentsService,
     private readonly attribution: AttributionService,
   ) {}
@@ -80,7 +82,7 @@ export class GuestsController {
         ? selectedInterests.split(',')
         : [];
 
-    return this.guestsService.getSwipeableGuests(
+    return this.swipeDeckService.getSwipeableGuests(
       userId,
       eventId,
       {

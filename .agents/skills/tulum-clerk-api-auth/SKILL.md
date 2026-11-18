@@ -15,7 +15,7 @@ Before changing auth behavior, inspect the relevant callers and contracts in:
 - `apps/api/src/common/guards/admin.guard.ts` and `apps/api/src/app.module.ts`
 - `apps/api/src/main.ts`
 - `apps/mobile/lib/api.ts` and the relevant `useAuth()` caller
-- `apps/host/lib/nestjs-client.ts`, `apps/host/proxy.ts`, and `apps/host/lib/use-supabase.tsx` when those integrations are involved
+- `apps/host/lib/nestjs-client.ts` and `apps/host/proxy.ts` when the host is involved
 
 ## Integration rules
 
@@ -24,7 +24,7 @@ Before changing auth behavior, inspect the relevant callers and contracts in:
 - `ChatsGateway` authenticates each socket in a handshake middleware: the client sends its Clerk session token as `auth: { token }`, and the gateway verifies it with the same `verifySessionUserId` check as `ClerkAuthGuard` and stores the result in `socket.data.userId`. Never take a socket's identity from `handshake.auth.userId` or a header, and check chat membership in every event handler.
 - `@Public()` is an intentional route opt-out. Review the route and its data exposure before changing its status or adding public routes. On a public route a valid Bearer token still sets the user id; an invalid or missing one leaves the caller anonymous.
 - `UserId` and `AdminGuard` read only the Clerk-verified user id; the legacy `x-user-id` fallback was removed. Do not reintroduce it or take the acting user from query or body parameters. A route that reads or changes another user's records must check ownership or use `AdminGuard`.
-- Mobile and host NestJS clients forward Clerk session tokens to the API. The host Supabase integration requests its configured `supabase` JWT template; do not substitute that token flow for the NestJS API token without verifying the Clerk and Supabase configuration.
+- Mobile and host NestJS clients forward Clerk session tokens to the API. The host's `app/api/*` routes check the Clerk session and forward through `callTulumApi`; the host has no direct Supabase access (its old `use-supabase.tsx` client was removed as unused in November 2026).
 - Never expose Clerk secret keys in mobile or browser bundles, and do not log bearer tokens or full authentication headers.
 
 ## Verification

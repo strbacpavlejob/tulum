@@ -17,7 +17,9 @@ function serviceAnswering(result: Result) {
       return Promise.resolve(result);
     }),
   };
-  const from = jest.fn(() => ({
+  const from = jest.fn<
+    (table: string) => { update: (values: unknown) => typeof chain }
+  >(() => ({
     update: (values: unknown) => {
       calls.values = values;
       return chain;

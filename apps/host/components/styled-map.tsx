@@ -194,10 +194,6 @@ export function StyledMap({
 }
 
 // Export a ref handle for external map control
-export interface StyledMapHandle {
-  flyTo: (longitude: number, latitude: number, zoom?: number) => void;
-}
-
 export function StyledMapWithHandle({
   locations,
   selectedLocation,

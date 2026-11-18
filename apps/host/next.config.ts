@@ -54,6 +54,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "framerusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "eventzeka.com",
+      },
     ],
   },
 };

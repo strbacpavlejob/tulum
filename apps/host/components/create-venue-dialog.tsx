@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import {
@@ -14,101 +13,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
-import { ImageUpload } from "@/components/common/image-upload";
-import { LocationPicker } from "@/components/common/location-picker";
-import { validateVenueImage, processVenueImage } from "@/lib/image-utils";
-import { getNewDarkMapStyle } from "@/public/map-styles/dark";
-import { getNewLightMapStyle } from "@/public/map-styles/light";
-import type MapLibreGL from "maplibre-gl";
-import { Instagram, RefreshCw, Download } from "lucide-react";
 import * as api from "@/lib/api-client";
-import type { VenueType } from "@/lib/types/database";
 import "../i18n";
-
-// Venue type options for the select dropdown
-const VENUE_TYPE_OPTIONS: { value: VenueType; key: string }[] = [
-  { value: "bar", key: "bar" },
-  { value: "club", key: "club" },
-  { value: "restaurant", key: "restaurant" },
-  { value: "tavern", key: "tavern" },
-  { value: "cafe", key: "cafe" },
-  { value: "event_venue", key: "event_venue" },
-];
-
-// Form validation schema factory
-const createVenueFormSchema = (t: (key: string) => string) =>
-  z.object({
-    name: z
-      .string()
-      .min(1, t("venueDialog.validation.nameRequired") || "Name is required"),
-    description: z.string().optional(),
-    venue_type: z
-      .string()
-      .min(
-        1,
-        t("venueDialog.validation.typeRequired") || "Venue type is required",
-      ),
-    latitude: z
-      .string()
-      .min(
-        1,
-        t("venueDialog.validation.latitudeRequired") || "Latitude is required",
-      ),
-    longitude: z
-      .string()
-      .min(
-        1,
-        t("venueDialog.validation.longitudeRequired") ||
-          "Longitude is required",
-      ),
-    address: z
-      .string()
-      .min(
-        1,
-        t("venueDialog.validation.addressRequired") || "Address is required",
-      ),
-    capacity: z
-      .string()
-      .min(
-        1,
-        t("venueDialog.validation.capacityRequired") || "Capacity is required",
-      ),
-    picture_url: z.string().optional(),
-  });
-
-export type VenueFormData = z.infer<ReturnType<typeof createVenueFormSchema>>;
-
-interface Venue {
-  id: string;
-  name: string;
-  longitude: number;
-  latitude: number;
-  type: string;
-  capacity: number;
-  address?: string;
-  description?: string;
-  picture_url?: string;
-  picture_urls?: string[];
-  requires_reservation?: boolean;
-}
+import { VenueContactSection } from "./venue-dialog/venue-contact-section";
+import { useMapStyles } from "./venue-dialog/use-map-styles";
+import { useImageFile } from "./common/use-image-file";
+import { validateVenueImage } from "@/lib/image-utils";
+import { useVenueContact } from "./venue-dialog/use-venue-contact";
+import {
+  createVenueFormSchema,
+  DEFAULT_MAP_POSITION,
+  EMPTY_CONTACT_FORM,
+  EMPTY_VENUE_FORM,
+  type EditableVenue,
+  type VenueFormData,
+} from "./venue-dialog/venue-form";
+import { VenueFormFields } from "./venue-dialog/venue-form-fields";
+import { saveVenue, saveVenueErrorMessage } from "./venue-dialog/save-venue";
+import { VenuePictureField } from "./venue-dialog/venue-picture-field";
 
 interface CreateVenueDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  venue?: Venue | null;
+  venue?: EditableVenue | null;
 }
 
 export function CreateVenueDialog({
@@ -118,38 +47,30 @@ export function CreateVenueDialog({
 }: CreateVenueDialogProps) {
   const { t } = useTranslation();
   const { userId } = useAuth();
-  const [picturePreview, setPicturePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [instagramHandle, setInstagramHandle] = useState<string | null>(null);
+  const {
+    picturePreview,
+    setPicturePreview,
+    imageFile,
+    setImageFile,
+    handleFileChange,
+  } = useImageFile(validateVenueImage);
   const [isRefreshingInstagram, setIsRefreshingInstagram] = useState(false);
   const [requiresReservation, setRequiresReservation] = useState(false);
-  const [contactForm, setContactForm] = useState({
-    phone_number: "",
-    is_phone: false,
-    is_viber: false,
-    is_sms: false,
-    is_whatsapp: false,
-    instagram_handle: "",
-    is_instagram: false,
-  });
-  const [hasExistingContact, setHasExistingContact] = useState(false);
-  const [isDeletingContact, setIsDeletingContact] = useState(false);
-  const [isImportingContact, setIsImportingContact] = useState(false);
   const [mapPosition, setMapPosition] = useState<[number, number]>([
-    20.4489, 44.8125,
+    ...DEFAULT_MAP_POSITION,
   ]);
-  const [detectedTheme, setDetectedTheme] = useState<"light" | "dark">(
-    typeof document !== "undefined" &&
-      document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light",
-  );
-  const [dark, setDark] = useState<
-    string | MapLibreGL.StyleSpecification | null
-  >(null);
-  const [light, setLight] = useState<
-    string | MapLibreGL.StyleSpecification | null
-  >(null);
+  const { detectedTheme, dark, light } = useMapStyles();
+  const {
+    instagramHandle,
+    contactForm,
+    setContactForm,
+    hasExistingContact,
+    setHasExistingContact,
+    isDeletingContact,
+    isImportingContact,
+    handleImportContactFromInstagram,
+    handleDeleteContact,
+  } = useVenueContact(isOpen, venue?.id);
   const isEditing = !!venue;
 
   const {
@@ -161,101 +82,8 @@ export function CreateVenueDialog({
     formState: { errors },
   } = useForm<VenueFormData>({
     resolver: zodResolver(createVenueFormSchema(t)),
-    defaultValues: {
-      name: "",
-      description: "",
-      venue_type: "club",
-      latitude: "",
-      longitude: "",
-      address: "",
-      capacity: "100",
-      picture_url: "",
-    },
+    defaultValues: EMPTY_VENUE_FORM,
   });
-
-  // Load map styles
-  useEffect(() => {
-    (async () => {
-      const darkStyle = await getNewDarkMapStyle();
-      const lightStyle = await getNewLightMapStyle();
-      setDark(darkStyle);
-      setLight(lightStyle);
-    })();
-  }, []);
-
-  // Detect theme changes
-  useEffect(() => {
-    const updateTheme = () => {
-      setDetectedTheme(
-        document.documentElement.classList.contains("dark") ? "dark" : "light",
-      );
-    };
-    updateTheme();
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  // Fetch venue contact when editing
-  useEffect(() => {
-    if (!isOpen || !venue?.id) return;
-
-    let cancelled = false;
-    api
-      .getVenueContact(venue.id)
-      .then((contact: unknown) => {
-        if (cancelled) return;
-        const c = contact as {
-          instagram_handle?: string | null;
-          phone_number?: string;
-          is_phone?: boolean;
-          is_viber?: boolean;
-          is_sms?: boolean;
-          is_whatsapp?: boolean;
-          is_instagram?: boolean;
-        } | null;
-        if (c) {
-          setHasExistingContact(true);
-          setInstagramHandle(c.instagram_handle ?? null);
-          setContactForm({
-            phone_number: c.phone_number ?? "",
-            is_phone: c.is_phone ?? false,
-            is_viber: c.is_viber ?? false,
-            is_sms: c.is_sms ?? false,
-            is_whatsapp: c.is_whatsapp ?? false,
-            instagram_handle: c.instagram_handle ?? "",
-            is_instagram: c.is_instagram ?? !!c.instagram_handle,
-          });
-        } else {
-          setHasExistingContact(false);
-          setInstagramHandle(null);
-          setContactForm({
-            phone_number: "",
-            is_phone: false,
-            is_viber: false,
-            is_sms: false,
-            is_whatsapp: false,
-            instagram_handle: "",
-            is_instagram: false,
-          });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setInstagramHandle(null);
-          setHasExistingContact(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      setInstagramHandle(null);
-      setHasExistingContact(false);
-    };
-  }, [isOpen, venue?.id]);
 
   // Reset form when venue changes or dialog opens
   useEffect(() => {
@@ -278,18 +106,12 @@ export function CreateVenueDialog({
       });
     } else {
       // Create mode - reset to defaults
-      const defaultLng = 20.4489;
-      const defaultLat = 44.8125;
+      const [defaultLng, defaultLat] = DEFAULT_MAP_POSITION;
 
       reset({
-        name: "",
-        description: "",
-        venue_type: "club",
+        ...EMPTY_VENUE_FORM,
         latitude: defaultLat.toString(),
         longitude: defaultLng.toString(),
-        address: "",
-        capacity: "100",
-        picture_url: "",
       });
     }
   }, [isOpen, venue, reset]);
@@ -314,48 +136,13 @@ export function CreateVenueDialog({
         );
       } else {
         setPicturePreview(null);
-        setMapPosition([20.4489, 44.8125]);
+        setMapPosition([...DEFAULT_MAP_POSITION]);
         setRequiresReservation(false);
-        setContactForm({
-          phone_number: "",
-          is_phone: false,
-          is_viber: false,
-          is_sms: false,
-          is_whatsapp: false,
-          instagram_handle: "",
-          is_instagram: false,
-        });
+        setContactForm({ ...EMPTY_CONTACT_FORM });
         setHasExistingContact(false);
       }
     });
-  }, [isOpen, venue]);
-
-  const handleFileChange = async (file: File | null) => {
-    if (!file) {
-      setImageFile(null);
-      setPicturePreview(null);
-      return;
-    }
-
-    // Validate image
-    const validation = validateVenueImage(file);
-    if (!validation.valid) {
-      alert(validation.error);
-      setImageFile(null);
-      setPicturePreview(null);
-      return;
-    }
-
-    // Store the file for later upload
-    setImageFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPicturePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
+  }, [isOpen, venue, setPicturePreview, setContactForm, setHasExistingContact]);
 
   const handleFormSubmit = async (data: VenueFormData) => {
     if (!userId) {
@@ -366,106 +153,25 @@ export function CreateVenueDialog({
     }
 
     try {
-      let processedFile: File | undefined;
-
-      // Process image before upload
-      if (imageFile) {
-        const processedBlob = await processVenueImage(imageFile);
-        processedFile = new File([processedBlob], "venue-image.webp", {
-          type: "image/webp",
-        });
-      }
-
-      if (venue?.id) {
-        // Update existing venue
-        const updates = {
-          name: data.name,
-          description: data.description,
-          venue_type: data.venue_type as VenueType,
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
-          address: data.address,
-          capacity: parseInt(data.capacity),
-          picture_url: data.picture_url,
-          requires_reservation: requiresReservation,
-        };
-
-        await api.updateVenue(venue.id, updates, processedFile);
-
-        // Save contact if phone number provided
-        if (contactForm.phone_number.trim()) {
-          await api.upsertVenueContact(venue.id, {
-            phone_number: contactForm.phone_number.trim(),
-            is_phone: contactForm.is_phone,
-            is_viber: contactForm.is_viber,
-            is_sms: contactForm.is_sms,
-            is_whatsapp: contactForm.is_whatsapp,
-            instagram_handle: contactForm.is_instagram
-              ? contactForm.instagram_handle || null
-              : null,
-            is_instagram: contactForm.is_instagram,
-          });
-        }
-
-        toast.success(
-          t("dashboard.venuesPage.toast.updated") ||
-            "Venue updated successfully",
-        );
-      } else {
-        // Create new venue
-        const newVenueData = {
-          host_id: userId,
-          name: data.name,
-          description: data.description,
-          venue_type: data.venue_type as VenueType,
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
-          address: data.address,
-          capacity: parseInt(data.capacity),
-          requires_reservation: requiresReservation,
-        };
-
-        await api.createVenue(newVenueData, processedFile);
-
-        toast.success(
-          t("dashboard.venuesPage.toast.created") ||
-            "Venue created successfully",
-        );
-      }
-
+      await saveVenue({
+        data,
+        userId,
+        venueId: venue?.id,
+        imageFile,
+        requiresReservation,
+        contactForm,
+      });
+      toast.success(
+        venue?.id
+          ? t("dashboard.venuesPage.toast.updated") ||
+              "Venue updated successfully"
+          : t("dashboard.venuesPage.toast.created") ||
+              "Venue created successfully",
+      );
       onClose();
     } catch (error) {
       console.error("Error saving venue:", error);
-
-      // Provide more specific error messages
-      let errorMessage = venue?.id
-        ? t("dashboard.venuesPage.toast.updateError") ||
-          "Failed to update venue"
-        : t("dashboard.venuesPage.toast.createError") ||
-          "Failed to create venue";
-
-      // Type guard for Supabase errors
-      interface SupabaseError {
-        message?: string;
-        details?: string;
-        hint?: string;
-        code?: string;
-      }
-
-      const isSupabaseError = (err: unknown): err is SupabaseError => {
-        return typeof err === "object" && err !== null && "message" in err;
-      };
-
-      if (isSupabaseError(error)) {
-        if (error.code === "23503") {
-          errorMessage =
-            "Foreign key constraint failed. Please ensure you have a valid user and host profile.";
-        } else if (error.message) {
-          errorMessage += `: ${error.message}`;
-        }
-      }
-
-      toast.error(errorMessage);
+      toast.error(saveVenueErrorMessage(error, !!venue?.id, t));
     }
   };
 
@@ -493,69 +199,8 @@ export function CreateVenueDialog({
     }
   };
 
-  const handleImportContactFromInstagram = async () => {
-    if (!venue?.id || !contactForm.instagram_handle.trim()) return;
-    setIsImportingContact(true);
-    try {
-      const contact = await api.importContactFromInstagram(
-        venue.id,
-        contactForm.instagram_handle.trim(),
-      );
-      setContactForm({
-        phone_number: contact.phone_number ?? "",
-        is_phone: contact.is_phone ?? false,
-        is_viber: contact.is_viber ?? false,
-        is_sms: contact.is_sms ?? false,
-        is_whatsapp: contact.is_whatsapp ?? false,
-        instagram_handle:
-          contact.instagram_handle ?? contactForm.instagram_handle,
-        is_instagram: contact.is_instagram ?? true,
-      });
-      setHasExistingContact(true);
-      setInstagramHandle(
-        contact.instagram_handle ?? contactForm.instagram_handle,
-      );
-      toast.success(
-        t("venueDialog.toast.contactImported") ??
-          "Contact imported from Instagram",
-      );
-    } catch (err) {
-      toast.error(
-        (err as Error).message ??
-          t("venueDialog.toast.contactImportError") ??
-          "Failed to import contact from Instagram",
-      );
-    } finally {
-      setIsImportingContact(false);
-    }
-  };
-
   const handleCancel = () => {
     onClose();
-  };
-
-  const handleDeleteContact = async () => {
-    if (!venue?.id) return;
-    setIsDeletingContact(true);
-    try {
-      await api.deleteVenueContact(venue.id);
-      setHasExistingContact(false);
-      setInstagramHandle(null);
-      setContactForm({
-        phone_number: "",
-        is_phone: false,
-        is_viber: false,
-        is_sms: false,
-        is_whatsapp: false,
-        instagram_handle: "",
-        is_instagram: false,
-      });
-      toast.success("Contact removed");
-    } catch {
-      toast.error("Failed to remove contact");
-    } finally {
-      setIsDeletingContact(false);
-    }
   };
 
   return (
@@ -580,291 +225,42 @@ export function CreateVenueDialog({
           className="flex flex-col flex-1 min-h-0"
         >
           <div className="grid gap-4 py-4 overflow-y-auto flex-1 px-1">
-            {/* Picture Upload */}
-            <ImageUpload
-              type="venue"
-              label={t("venueDialog.fields.picture") || "Picture"}
-              description={
-                t("venueDialog.fields.pictureDescription") ||
-                "Upload a picture of the venue (optional)"
-              }
-              onFileChange={handleFileChange}
-              preview={picturePreview}
+            <VenuePictureField
+              handleFileChange={handleFileChange}
+              picturePreview={picturePreview}
+              isEditing={isEditing}
+              instagramHandle={instagramHandle}
+              isRefreshingInstagram={isRefreshingInstagram}
+              handleRefreshInstagramPicture={handleRefreshInstagramPicture}
             />
 
-            {/* Refresh picture from Instagram (only when venue has instagram contact) */}
-            {isEditing && instagramHandle && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-fit gap-2"
-                disabled={isRefreshingInstagram}
-                onClick={handleRefreshInstagramPicture}
-              >
-                {isRefreshingInstagram ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Instagram className="h-4 w-4" />
-                )}
-                {isRefreshingInstagram
-                  ? (t("venueDialog.buttons.refreshingInstagram") ??
-                    "Refreshing…")
-                  : (t("venueDialog.buttons.refreshInstagram") ??
-                    `Refresh picture from @${instagramHandle}`)}
-              </Button>
-            )}
-
-            {/* Name and Venue Type Row */}
-            <div className="flex gap-3">
-              {/* Name */}
-              <div className="grid gap-2 flex-2">
-                <Label htmlFor="name">
-                  {t("venueDialog.fields.name") || "Name"} *
-                </Label>
-                <Input
-                  id="name"
-                  placeholder={
-                    t("venueDialog.placeholders.name") || "Enter venue name"
-                  }
-                  {...register("name")}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-              </div>
-
-              {/* Venue Type */}
-              <div className="grid gap-2 flex-1">
-                <Label htmlFor="venue_type">
-                  {t("venueDialog.fields.type") || "Type"} *
-                </Label>
-                <Controller
-                  name="venue_type"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            t("venueDialog.placeholders.type") ||
-                            "Select venue type"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VENUE_TYPE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {t(`venueDialog.types.${option.key}`) ||
-                              option.value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.venue_type && (
-                  <p className="text-sm text-red-500">
-                    {errors.venue_type.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="grid gap-2">
-              <Label htmlFor="description">
-                {t("venueDialog.fields.description") || "Description"}
-              </Label>
-              <Textarea
-                id="description"
-                placeholder={
-                  t("venueDialog.placeholders.description") ||
-                  "Enter venue description"
-                }
-                rows={4}
-                {...register("description")}
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            {/* Location Picker (Address + Map) */}
-            <LocationPicker
+            <VenueFormFields
               register={register}
-              setValue={setValue}
               errors={errors}
+              control={control}
+              setValue={setValue}
               mapPosition={mapPosition}
-              onMapPositionChange={setMapPosition}
-              theme={detectedTheme}
-              darkStyle={dark}
-              lightStyle={light}
-              t={t}
+              setMapPosition={setMapPosition}
+              detectedTheme={detectedTheme}
+              dark={dark}
+              light={light}
+              requiresReservation={requiresReservation}
+              setRequiresReservation={setRequiresReservation}
             />
-
-            {/* Capacity */}
-            <div className="grid gap-2">
-              <Label htmlFor="capacity">
-                {t("venueDialog.fields.capacity") || "Capacity"} *
-              </Label>
-              <Input
-                id="capacity"
-                type="number"
-                placeholder={t("venueDialog.placeholders.capacity") || "100"}
-                min="1"
-                {...register("capacity")}
-              />
-              {errors.capacity && (
-                <p className="text-sm text-red-500">
-                  {errors.capacity.message}
-                </p>
-              )}
-            </div>
-
-            {/* Requires Reservation */}
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="grid gap-0.5">
-                <Label htmlFor="requires_reservation">
-                  {t("venueDialog.fields.requiresReservation") ||
-                    "Requires Reservation"}
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {t("venueDialog.fields.requiresReservationDescription") ||
-                    "Guests must make a reservation to attend"}
-                </p>
-              </div>
-              <Switch
-                id="requires_reservation"
-                checked={requiresReservation}
-                onCheckedChange={setRequiresReservation}
-              />
-            </div>
 
             {/* Contact Information (edit mode only) */}
             {isEditing && (
-              <div className="grid gap-3 rounded-lg border p-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-medium">
-                    {t("venueDialog.fields.contact") || "Contact Information"}
-                  </Label>
-                  {hasExistingContact && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDeleteContact}
-                      disabled={isDeletingContact}
-                    >
-                      {isDeletingContact
-                        ? (t("venueDialog.buttons.removingContact") ??
-                          "Removing…")
-                        : (t("venueDialog.buttons.removeContact") ??
-                          "Remove Contact")}
-                    </Button>
-                  )}
-                </div>
-
-                {/* Phone Number */}
-                <div className="grid gap-2">
-                  <Label htmlFor="contact_phone">
-                    {t("venueDialog.fields.phoneNumber") || "Phone Number"}
-                  </Label>
-                  <Input
-                    id="contact_phone"
-                    placeholder="+1234567890"
-                    value={contactForm.phone_number}
-                    onChange={(e) =>
-                      setContactForm((prev) => ({
-                        ...prev,
-                        phone_number: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                {/* Contact Method Toggles */}
-                <div className="grid grid-cols-2 gap-3">
-                  {(
-                    [
-                      { key: "is_phone", label: "Phone" },
-                      { key: "is_viber", label: "Viber" },
-                      { key: "is_sms", label: "SMS" },
-                      { key: "is_whatsapp", label: "WhatsApp" },
-                    ] as const
-                  ).map(({ key, label }) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <Switch
-                        id={`contact_${key}`}
-                        size="sm"
-                        checked={contactForm[key]}
-                        onCheckedChange={(v) =>
-                          setContactForm((prev) => ({ ...prev, [key]: v }))
-                        }
-                      />
-                      <Label htmlFor={`contact_${key}`}>{label}</Label>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Instagram */}
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="contact_is_instagram"
-                      size="sm"
-                      checked={contactForm.is_instagram}
-                      onCheckedChange={(v) =>
-                        setContactForm((prev) => ({
-                          ...prev,
-                          is_instagram: v,
-                          instagram_handle: v ? prev.instagram_handle : "",
-                        }))
-                      }
-                    />
-                    <Label htmlFor="contact_is_instagram">Instagram</Label>
-                  </div>
-                  {contactForm.is_instagram && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground text-sm">@</span>
-                      <Input
-                        placeholder="instagram_handle"
-                        value={contactForm.instagram_handle}
-                        onChange={(e) =>
-                          setContactForm((prev) => ({
-                            ...prev,
-                            instagram_handle: e.target.value,
-                          }))
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="shrink-0"
-                        disabled={
-                          isImportingContact ||
-                          !contactForm.instagram_handle.trim()
-                        }
-                        onClick={handleImportContactFromInstagram}
-                      >
-                        {isImportingContact ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                        {isImportingContact
-                          ? (t("venueDialog.buttons.importingContact") ??
-                            "Importing…")
-                          : (t("venueDialog.buttons.importContact") ??
-                            "Import")}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <VenueContactSection
+                hasExistingContact={hasExistingContact}
+                handleDeleteContact={handleDeleteContact}
+                isDeletingContact={isDeletingContact}
+                contactForm={contactForm}
+                setContactForm={setContactForm}
+                isImportingContact={isImportingContact}
+                handleImportContactFromInstagram={
+                  handleImportContactFromInstagram
+                }
+              />
             )}
           </div>
 

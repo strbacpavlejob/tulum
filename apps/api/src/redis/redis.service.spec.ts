@@ -7,7 +7,9 @@ function serviceWithClient(status: string) {
   const client = {
     status,
     get: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
-    set: jest.fn((key: string, value: string) => {
+    set: jest.fn<
+      (key: string, value: string, ...options: unknown[]) => Promise<string>
+    >((key, value) => {
       store.set(key, value);
       return Promise.resolve('OK');
     }),

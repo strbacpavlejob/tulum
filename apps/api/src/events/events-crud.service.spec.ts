@@ -4,6 +4,7 @@ import { R2Service } from '../r2/r2.service';
 import { RedisService } from '../redis/redis.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EventsCrudService } from './events-crud.service';
+import { EventsFeedService } from './events-feed.service';
 
 type Row = Record<string, unknown>;
 type Result = { data: unknown; error: unknown };
@@ -84,9 +85,10 @@ function from(table: string): Query {
   return query;
 }
 
-const service = new EventsCrudService(
-  { getClient: () => ({ from }) } as unknown as SupabaseService,
-  {} as R2Service,
+const supabase = { getClient: () => ({ from }) } as unknown as SupabaseService;
+const service = new EventsCrudService(supabase, {} as R2Service);
+const feed = new EventsFeedService(
+  supabase,
   {} as FavoritesService,
   // No cache: every call reads the tables.
   {
@@ -95,9 +97,9 @@ const service = new EventsCrudService(
   } as unknown as RedisService,
 );
 
-describe('EventsCrudService start times (BUG-009)', () => {
+describe('EventsFeedService start times (BUG-009)', () => {
   it('GET /events/active sends the start time as a UTC instant', async () => {
-    const listing = (await service.getActiveEvents()) as {
+    const listing = (await feed.getActiveEvents()) as {
       events: { id: string; date: unknown }[];
     };
     expect(listing.events).toEqual([
@@ -109,7 +111,7 @@ describe('EventsCrudService start times (BUG-009)', () => {
   });
 
   it('GET /events/active/:id sends the start and end times as UTC instants', async () => {
-    const details = await service.getActiveEventById(EVENT_ID);
+    const details = await feed.getActiveEventById(EVENT_ID);
     expect(details).toMatchObject({
       id: EVENT_ID,
       date: '2026-10-29T19:00:00.000Z',

@@ -11,12 +11,11 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { InboxPushService } from '../chats/inbox-push.service';
+import { CleanupService } from '../cleanup/cleanup.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
-import { GuestsService } from '../guests/guests.service';
+import { SwipeDeckService } from '../guests/swipe-deck.service';
 import { MatchesService } from '../matches/matches.service';
-import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { UserProvisioningService } from '../users/user-provisioning.service';
 import { EventsController } from './events.controller';
 
 const EVENT = 'f5f8b2e0-bfcf-4a77-90b7-e7631f38a101';
@@ -225,7 +224,10 @@ const myTicket = (
 });
 
 describe('Checking in (POST /events/sessions, BUG-030)', () => {
-  const controller = new EventsController(supabaseService);
+  const controller = new EventsController(
+    supabaseService,
+    {} as CleanupService,
+  );
   const checkIn = () =>
     controller.createSession(ME, { event_id: EVENT, ...VENUE, accuracy: 20 });
 
@@ -274,7 +276,10 @@ describe('Checking in (POST /events/sessions, BUG-030)', () => {
 });
 
 describe('Checking in needs a ticket, the event on and the venue near (N-6)', () => {
-  const controller = new EventsController(supabaseService);
+  const controller = new EventsController(
+    supabaseService,
+    {} as CleanupService,
+  );
   const checkIn = (position: { latitude?: number; accuracy?: number } = {}) =>
     controller.createSession(ME, {
       event_id: EVENT,
@@ -416,14 +421,7 @@ describe('Swiping with duplicate sessions (BUG-030)', () => {
 });
 
 describe('The deck with duplicate sessions (BUG-030)', () => {
-  const service = new GuestsService(
-    supabaseService,
-    {} as R2Service,
-    guestSafety,
-    {
-      ensureUserRow: () => Promise.resolve(),
-    } as unknown as UserProvisioningService,
-  );
+  const service = new SwipeDeckService(supabaseService, guestSafety);
 
   it('shows the deck to a guest with two active sessions and no ticket', async () => {
     tables.event_sessions.push(

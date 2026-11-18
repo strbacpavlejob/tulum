@@ -604,12 +604,8 @@
       "settings": "Настройки",
       "getHelp": "Получить помощь",
       "search": "Поиск",
-      "dataLibrary": "Библиотека данных",
-      "reports": "Отчеты",
-      "wordAssistant": "Word помощник",
       "quickCreate": "Быстрое создание события",
       "inbox": "Входящие",
-      "documents": "Документы",
       "guestReports": "Жалобы гостей"
     },
     "userMenu": {

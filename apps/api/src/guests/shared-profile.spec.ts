@@ -8,10 +8,8 @@ import { describe, expect, it } from '@jest/globals';
 import { InboxPushService } from '../chats/inbox-push.service';
 import { GuestSafetyService } from '../guest-safety/guest-safety.service';
 import { MatchesService } from '../matches/matches.service';
-import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { UserProvisioningService } from '../users/user-provisioning.service';
-import { GuestsService } from './guests.service';
+import { SwipeDeckService } from './swipe-deck.service';
 
 const CALLER = 'user_caller';
 const OTHER = 'user_other';
@@ -137,13 +135,9 @@ describe('Profile details other guests see', () => {
       guests: [{ ...guestColumns(OTHER, 'Ana'), users: names('Ana') }],
       events: [{ id: EVENT_ID, title: 'Jazz night', venues: { name: 'Bar' } }],
     });
-    const guests = new GuestsService(
+    const guests = new SwipeDeckService(
       supabase,
-      {} as R2Service,
       new GuestSafetyService(supabase),
-      {
-        ensureUserRow: () => Promise.resolve(),
-      } as unknown as UserProvisioningService,
     );
 
     const result = await guests.getSwipeableGuests(CALLER, EVENT_ID);

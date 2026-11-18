@@ -9,6 +9,9 @@ import {
 } from './instagram-apify.service';
 import { InstagramScraperService } from './instagram-scraper.service';
 
+type FetchPosts = (usernames: string[]) => Promise<InstagramPost[]>;
+type ProcessEvents = (events: unknown[]) => Promise<unknown[]>;
+
 describe('InstagramScraperService', () => {
   const makeVenue = (
     id: string,
@@ -58,17 +61,14 @@ describe('InstagramScraperService', () => {
   });
 
   const setup = () => {
-    const instagramApifyService = {
-      fetchPosts: jest.fn<Promise<InstagramPost[]>, [string[]]>(),
-    } as unknown as InstagramApifyService;
-
+    const instagramApifyService = { fetchPosts: jest.fn<FetchPosts>() };
     const aiEventProcessingService = {
-      processEvents: jest.fn(),
-    } as unknown as AiEventProcessingService;
+      processEvents: jest.fn<ProcessEvents>(),
+    };
 
     const service = new InstagramScraperService(
-      instagramApifyService,
-      aiEventProcessingService,
+      instagramApifyService as unknown as InstagramApifyService,
+      aiEventProcessingService as unknown as AiEventProcessingService,
     );
 
     return {
@@ -118,9 +118,11 @@ describe('InstagramScraperService', () => {
       setup();
 
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([]);
-    aiEventProcessingService.processEvents = jest.fn().mockResolvedValue([]);
+    aiEventProcessingService.processEvents = jest
+      .fn<ProcessEvents>()
+      .mockResolvedValue([]);
 
     const existingData: ExistingData = {
       venues: [
@@ -143,14 +145,14 @@ describe('InstagramScraperService', () => {
       setup();
 
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([
         makePost('knownvenue', 'Tonight live DJ set'),
         makePost('unknownvenue', 'Should be ignored'),
       ]);
 
     aiEventProcessingService.processEvents = jest
-      .fn()
+      .fn<ProcessEvents>()
       .mockImplementation(async (events) => events);
 
     const existingData: ExistingData = {
@@ -170,14 +172,14 @@ describe('InstagramScraperService', () => {
       setup();
 
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([
         makePost('clubx', 'Big party Friday night'),
         makePost('clubx', 'Regular promo post'),
       ]);
 
     aiEventProcessingService.processEvents = jest
-      .fn()
+      .fn<ProcessEvents>()
       .mockImplementation(async (events) => [events[0]]);
 
     const existingData: ExistingData = {
@@ -197,10 +199,10 @@ describe('InstagramScraperService', () => {
     // Posted 2026-09-10: "May 30th" read as 2029, a night two weeks after
     // the post, and one the day before it went up.
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([makePost('clubx', 'INNER GROOVE returns')]);
     aiEventProcessingService.processEvents = jest
-      .fn()
+      .fn<ProcessEvents>()
       .mockImplementation(async (events) =>
         [
           ['Misread', '2029-08-19T20:00:00.000Z'],
@@ -226,9 +228,11 @@ describe('InstagramScraperService', () => {
       setup();
 
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([]);
-    aiEventProcessingService.processEvents = jest.fn().mockResolvedValue([]);
+    aiEventProcessingService.processEvents = jest
+      .fn<ProcessEvents>()
+      .mockResolvedValue([]);
 
     const result = await service.scrape({
       venues: [makeVenue('venue-1', 'clubx')],
@@ -242,11 +246,11 @@ describe('InstagramScraperService', () => {
       setup();
 
     instagramApifyService.fetchPosts = jest
-      .fn<Promise<InstagramPost[]>, [string[]]>()
+      .fn<FetchPosts>()
       .mockResolvedValue([makePost('clubx', 'Party from 22h')]);
 
     aiEventProcessingService.processEvents = jest
-      .fn()
+      .fn<ProcessEvents>()
       .mockRejectedValue(new Error('AI unavailable'));
 
     const result = await service.scrape({

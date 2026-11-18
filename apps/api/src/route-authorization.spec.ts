@@ -29,6 +29,7 @@ import { CleanupService } from './cleanup/cleanup.service';
 import { ClerkAuthGuard } from './common/guards/clerk-auth.guard';
 import { EventsCrudController } from './events/events-crud.controller';
 import { EventsCrudService } from './events/events-crud.service';
+import { EventsFeedService } from './events/events-feed.service';
 import { EventsController } from './events/events.controller';
 import { InstagramScraperController } from './instagram/instagram-scraper.controller';
 import { InstagramVenueScraperService } from './instagram/instagram-venue-scraper.service';
@@ -60,7 +61,8 @@ const AS_ADMIN = { Authorization: 'Bearer admin-token' };
 const CHAT_ID = '0b6c3f0e-5f8e-4a3e-9d7a-1c2b3d4e5f60';
 const EVENT_ID = 'f5f8b2e0-bfcf-4a77-90b7-e7631f38a101';
 
-const resolved = <T>(value: T) => jest.fn(() => Promise.resolve(value));
+const resolved = <T>(value: T) =>
+  jest.fn<(...args: unknown[]) => Promise<T>>(() => Promise.resolve(value));
 
 const attributionService = {
   recordFirstEvent: resolved(undefined),
@@ -126,13 +128,14 @@ const cleanupService = {
   previewExpiredMatches: resolved({ total_matches: 0 }),
   cleanupExpiredMatches: resolved({}),
   cleanupMatchesForEvent: resolved({}),
+  deleteOldEvents: resolved(0),
 };
-const eventsCrudService = {
+const eventsFeedService = {
   getActiveEvents: resolved([]),
   getActiveEventById: resolved({}),
 };
 const statisticsService = { getStatistics: resolved({}) };
-const supabaseService = { deleteOldEvents: resolved(0), getClient: jest.fn() };
+const supabaseService = { getClient: jest.fn() };
 const instagramVenueScraperService = {
   scrapeAllVenues: resolved({}),
   scrapeVenue: resolved({}),
@@ -192,7 +195,8 @@ describe('Route authorization (BUG-004)', () => {
         { provide: AttributionService, useValue: attributionService },
         { provide: SettingsService, useValue: settingsService },
         { provide: CleanupService, useValue: cleanupService },
-        { provide: EventsCrudService, useValue: eventsCrudService },
+        { provide: EventsCrudService, useValue: {} },
+        { provide: EventsFeedService, useValue: eventsFeedService },
         { provide: StatisticsService, useValue: statisticsService },
         { provide: SupabaseService, useValue: supabaseService },
         {
@@ -266,7 +270,7 @@ describe('Route authorization (BUG-004)', () => {
         .get(`/events/active?user_id=${OTHER}&only_favorites=true`)
         .set('x-user-id', OTHER)
         .expect(200);
-      expect(eventsCrudService.getActiveEvents).toHaveBeenCalledWith(
+      expect(eventsFeedService.getActiveEvents).toHaveBeenCalledWith(
         { only_favorites: 'true' },
         undefined,
       );
@@ -277,7 +281,7 @@ describe('Route authorization (BUG-004)', () => {
         .get(`/events/active/${EVENT_ID}`)
         .set('x-user-id', OTHER)
         .expect(200);
-      expect(eventsCrudService.getActiveEventById).toHaveBeenCalledWith(
+      expect(eventsFeedService.getActiveEventById).toHaveBeenCalledWith(
         EVENT_ID,
         undefined,
       );
@@ -295,13 +299,13 @@ describe('Route authorization (BUG-004)', () => {
         .get('/events/active?only_favorites=true')
         .set(AS_CALLER)
         .expect(200);
-      expect(eventsCrudService.getActiveEvents).toHaveBeenCalledWith(
+      expect(eventsFeedService.getActiveEvents).toHaveBeenCalledWith(
         { only_favorites: 'true' },
         CALLER,
       );
 
       await http().get(`/events/active/${EVENT_ID}`).set(AS_CALLER).expect(200);
-      expect(eventsCrudService.getActiveEventById).toHaveBeenCalledWith(
+      expect(eventsFeedService.getActiveEventById).toHaveBeenCalledWith(
         EVENT_ID,
         CALLER,
       );
@@ -312,7 +316,7 @@ describe('Route authorization (BUG-004)', () => {
         .get('/events/active')
         .set('Authorization', 'Bearer expired')
         .expect(200);
-      expect(eventsCrudService.getActiveEvents).toHaveBeenCalledWith(
+      expect(eventsFeedService.getActiveEvents).toHaveBeenCalledWith(
         {},
         undefined,
       );

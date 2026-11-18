@@ -8,5 +8,6 @@ import { CleanupService } from './cleanup.service';
   imports: [SupabaseModule, UsersModule],
   controllers: [CleanupController],
   providers: [CleanupService],
+  exports: [CleanupService],
 })
 export class CleanupModule {}

@@ -1,4 +1,8 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { parseDbTimestamp, toUtcIsoString } from '../common/db-timestamp';
 import { isMissingTableOrColumn } from '../common/missing-schema';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -10,8 +14,13 @@ import { SupabaseService } from '../supabase/supabase.service';
  * reports can still be looked into.
  */
 
+/** How many events deleteOldEvents checks for matches at once. */
+const MATCH_CHECK_BATCH = 20;
+
 @Injectable()
 export class CleanupService {
+  private readonly logger = new Logger(CleanupService.name);
+
   constructor(private readonly supabaseService: SupabaseService) {}
 
   private get db() {
@@ -131,5 +140,143 @@ export class CleanupService {
       throw error;
     }
     return (data ?? []).length;
+  }
+
+  /**
+   * Deletes the events that ended before the cutoff (now by default) and
+   * have no match. An event with a match stays, with its matches, chats and
+   * messages: those are archived, never deleted, and deleting the event
+   * would cascade to them. Returns how many events went.
+   */
+  async deleteOldEvents(before?: string): Promise<number> {
+    const cutoff = before ?? new Date().toISOString();
+
+    const { data: oldEvents, error: oldEventsError } = await this.db
+      .from('events')
+      .select('id')
+      .lt('end_date_time', cutoff);
+
+    if (oldEventsError) {
+      this.logger.error('Error selecting old events:', oldEventsError.message);
+      throw new Error(`Failed to select old events: ${oldEventsError.message}`);
+    }
+
+    const pastIds = (oldEvents ?? []).map((e) => e.id as string);
+    const withMatches = await this.eventsWithMatches(pastIds);
+    if (withMatches.size > 0) {
+      this.logger.log(
+        `Keeping ${withMatches.size} events with matches that ended before ${cutoff}`,
+      );
+    }
+
+    const eventIds = pastIds.filter((id) => !withMatches.has(id));
+    if (eventIds.length === 0) {
+      this.logger.log(`Deleted 0 events with end_date_time before ${cutoff}`);
+      return 0;
+    }
+
+    const { data: chats, error: chatsError } = await this.db
+      .from('chats')
+      .select('id')
+      .in('event_id', eventIds);
+
+    if (chatsError) {
+      this.logger.error(
+        'Error selecting chats for old events:',
+        chatsError.message,
+      );
+      throw new Error(`Failed to select old chats: ${chatsError.message}`);
+    }
+
+    const chatIds = (chats ?? []).map((c) => c.id as string);
+
+    if (chatIds.length > 0) {
+      const { error: deleteMessagesError } = await this.db
+        .from('chat_messages')
+        .delete()
+        .in('chat_id', chatIds);
+
+      if (deleteMessagesError) {
+        this.logger.error(
+          'Error deleting chat messages for old events:',
+          deleteMessagesError.message,
+        );
+        throw new Error(
+          `Failed to delete old chat messages: ${deleteMessagesError.message}`,
+        );
+      }
+
+      const { error: deleteChatsError } = await this.db
+        .from('chats')
+        .delete()
+        .in('id', chatIds);
+
+      if (deleteChatsError) {
+        this.logger.error(
+          'Error deleting chats for old events:',
+          deleteChatsError.message,
+        );
+        throw new Error(
+          `Failed to delete old chats: ${deleteChatsError.message}`,
+        );
+      }
+    }
+
+    const { data, error } = await this.db
+      .from('events')
+      .delete()
+      .in('id', eventIds)
+      .select('id');
+
+    if (error) {
+      this.logger.error('Error deleting old events:', error.message);
+      throw new Error(`Failed to delete old events: ${error.message}`);
+    }
+
+    const count = data?.length ?? 0;
+    this.logger.log(
+      `Deleted ${count} events with end_date_time before ${cutoff}`,
+    );
+    return count;
+  }
+
+  /**
+   * The events among these that have a match, archived or not. One small
+   * query per event, MATCH_CHECK_BATCH at a time: a single query over all of
+   * their matches could be cut off at PostgREST's row limit.
+   */
+  private async eventsWithMatches(eventIds: string[]): Promise<Set<string>> {
+    const withMatches = new Set<string>();
+
+    for (let i = 0; i < eventIds.length; i += MATCH_CHECK_BATCH) {
+      const batch = eventIds.slice(i, i + MATCH_CHECK_BATCH);
+      const found = await Promise.all(
+        batch.map(async (eventId) => {
+          const { data, error } = await this.db
+            .from('matches')
+            .select('id')
+            .eq('event_id', eventId)
+            .limit(1);
+
+          if (error) {
+            this.logger.error(
+              'Error checking matches of old events:',
+              error.message,
+            );
+            throw new Error(
+              `Failed to check matches of old events: ${error.message}`,
+            );
+          }
+
+          return (data ?? []).length > 0 ? eventId : null;
+        }),
+      );
+
+      for (const eventId of found) {
+        if (eventId) withMatches.add(eventId);
+      }
+    }
+
+    return withMatches;
   }
 }

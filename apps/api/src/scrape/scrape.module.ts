@@ -5,6 +5,7 @@ import { ScrapeController } from './scrape.controller';
 import { GoOutScraperService } from './scrapers/go-out/go-out-scraper.service';
 import { ScrapeCronService } from './services/scrape-cron.service';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { CleanupModule } from '../cleanup/cleanup.module';
 import { GeocoderModule } from '../geocoder/geocoder.module';
 import { DuplicateCheckerModule } from '../duplicate-checker/duplicate-checker.module';
 import { UsersModule } from '../users/users.module';
@@ -22,6 +23,7 @@ import { AiEventProcessingService } from './application/ai-event-processing/ai-e
     HttpModule,
     ConfigModule,
     SupabaseModule,
+    CleanupModule,
     InstagramModule,
     R2Module,
     UsersModule,

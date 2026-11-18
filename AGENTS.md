@@ -1,5 +1,7 @@
 # Repository instructions
 
+Project documentation (architecture, business rules, local setup, testing, deployment, the launch plan and the refactoring order) is in [docs/](docs/README.md). Read [docs/README.md](docs/README.md) before changing code; the rules below are binding.
+
 ## Supabase access is read-only for AI
 
 - Use the project-local CLI through `pnpm exec supabase`.

@@ -6,6 +6,7 @@ import { RetentionModule } from '../retention/retention.module';
 import { UsersModule } from '../users/users.module';
 import { GuestsController } from './guests.controller';
 import { GuestsService } from './guests.service';
+import { SwipeDeckService } from './swipe-deck.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { GuestsService } from './guests.service';
     RetentionModule,
   ],
   controllers: [GuestsController],
-  providers: [GuestsService],
+  providers: [GuestsService, SwipeDeckService],
 })
 export class GuestsModule {}

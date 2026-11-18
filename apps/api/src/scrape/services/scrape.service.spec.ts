@@ -7,7 +7,8 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import { DuplicateCheckerService } from '../../duplicate-checker/duplicate-checker.service';
-import { SupabaseService } from '../../supabase/supabase.service';
+import { CleanupService } from '../../cleanup/cleanup.service';
+import { ScrapedDataService } from '../../supabase/scraped-data.service';
 import { ScrapedEvent, ScrapedVenue } from '../domain/scraper.interface';
 import { EventStatusEnum } from '../domain/scraper-event.interfaces';
 import { VenueTypeEnum } from '../domain/scraper-venue.interfaces';
@@ -125,7 +126,8 @@ describe('ScraperService with Event Zeka (scraper 4)', () => {
       new DuplicateCheckerService({
         debug: () => undefined,
       } as unknown as ScraperLogs),
-      supabase as unknown as SupabaseService,
+      supabase as unknown as ScrapedDataService,
+      supabase as unknown as CleanupService,
     );
 
     await service.scrapeWithSingleScraper(4);

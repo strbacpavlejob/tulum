@@ -59,7 +59,9 @@ function createServiceWithScript(
     return query;
   };
 
-  const rpc = jest.fn(async (fn: string) => consume(`rpc.${fn}`));
+  const rpc = jest.fn<(fn: string, params?: unknown) => Promise<unknown>>(
+    async (fn) => consume(`rpc.${fn}`),
+  );
   const db = {
     from: jest.fn((table: string) => getQuery(table)),
     rpc,

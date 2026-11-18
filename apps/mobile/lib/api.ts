@@ -932,18 +932,6 @@ export async function fetchMyMatches(token: string): Promise<MatchListItem[]> {
 
 // ─── Favorites ────────────────────────────────────────────────────────────────
 
-export async function trackEventSeen(
-  token: string,
-  eventId: string | number,
-): Promise<void> {
-  const url = `${TULUM_API_URL}/favorites/seen`;
-  await fetch(url, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ event_id: eventId }),
-  });
-}
-
 /**
  * Saves the event as a favorite or removes it. It sends the state the user
  * chose instead of a toggle, so a heart that showed a saved event as not

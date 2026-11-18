@@ -25,6 +25,7 @@ import { RedisService } from '../redis/redis.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { EventsCrudController } from './events-crud.controller';
 import { EventsCrudService } from './events-crud.service';
+import { EventsFeedService } from './events-feed.service';
 
 const CALLER = 'user_caller';
 const OTHER = 'user_other';
@@ -211,6 +212,7 @@ describe('Favorites on the active events routes (BUG-008)', () => {
       controllers: [EventsCrudController, FavoritesController],
       providers: [
         EventsCrudService,
+        EventsFeedService,
         FavoritesService,
         { provide: APP_GUARD, useValue: clerkGuard },
         { provide: SupabaseService, useValue: { getClient: () => ({ from }) } },

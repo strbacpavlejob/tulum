@@ -1,5 +1,4 @@
 import ChatModal from "@/components/ChatModal";
-import { MatchLocationMap } from "@/components/MatchLocationMap";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTranslation } from "react-i18next";
@@ -8,355 +7,40 @@ import {
   fetchMyMatches,
   fetchMyTickets,
   fetchOrCreateChat,
-  mapGuestDetails,
   type ChatMessage,
-  type MatchListItem,
 } from "@/lib/api";
 import { getUnreadChatsCount, markMatchAsRead } from "@/lib/inboxUnread";
-import type { Match, Message, NewMatch } from "@/types/chat";
+import type { Match, Message } from "@/types/chat";
 import { useAuth } from "@clerk/expo";
 import * as Location from "expo-location";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Image } from "expo-image";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import Svg, { Circle } from "react-native-svg";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FlatList, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import LoadingIndicator from "@/components/loading-indicator";
 import EmptyIndicator from "@/components/EmptyIndicator";
 import { useFocusEffect, useRouter } from "expo-router";
 import useStore from "@/store/useStore";
-
-const emptyChatIllustration = require("@/assets/images/tulum-empty-chat.webp");
-
-function EmptyChatIllustration() {
-  const { width, height } = useWindowDimensions();
-
-  return (
-    <Image
-      source={emptyChatIllustration}
-      style={{
-        width: width * 0.8,
-        height: height * 0.42,
-        alignSelf: "center",
-      }}
-      contentFit="contain"
-      accessibilityLabel="Tulum capybara relaxing and waiting for messages"
-    />
-  );
-}
+import { haversineMeters } from "@/lib/geo";
+import { isChatExpired, mapToMatch } from "@/components/inbox/inboxModel";
+import { EmptyChatIllustration } from "@/components/inbox/EmptyChatIllustration";
+import { NewMatchBubble } from "@/components/inbox/NewMatchBubble";
+import {
+  PROXIMITY_RADIUS_M,
+  LOCATION_POLL_INTERVAL_MS,
+  LocationGateScreen,
+} from "@/components/inbox/LocationGateScreen";
+import { ChatListItem } from "@/components/inbox/ChatListItem";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const CHAT_AVATAR_SIZE = 54;
-const CHAT_RING_SIZE = 68;
-const MATCH_AVATAR_SIZE = 52;
-const MATCH_RING_SIZE = 66;
-const STROKE_WIDTH = 3;
-const TOTAL_WINDOW_MS = 6 * 60 * 60 * 1000;
-
-/** Metres within which the user is considered "at the venue" for chat access */
-const PROXIMITY_RADIUS_M = 300;
-
-/** How often (ms) to re-check position on the location verification screen */
-const LOCATION_POLL_INTERVAL_MS = 5_000;
-
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-function haversineMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6_371_000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function ringColor(expiresAt: Date): string {
-  const ms = expiresAt.getTime() - Date.now();
-  if (ms < 60 * 60 * 1000) return "#ef4444";
-  if (ms < 2 * 60 * 60 * 1000) return "#f97316";
-  return "#22c55e";
-}
-
-/** The six-hour chat window after the match has closed. */
-function isChatExpired(expiresAt: Date): boolean {
-  return expiresAt.getTime() <= Date.now();
-}
-
-function formatTimeRemaining(expiresAt: Date): string {
-  const diff = expiresAt.getTime() - Date.now();
-  if (diff <= 0) return "Expired";
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-
-function formatLastMessageTime(timestamp: Date): string {
-  const diff = Date.now() - timestamp.getTime();
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor(diff / 60000);
-  if (d > 0) return `${d}d`;
-  if (h > 0) return `${h}h`;
-  if (m > 0) return `${m}m`;
-  return "now";
-}
-
-function mapToMatch(item: MatchListItem): Match {
-  const matchedAt = new Date(item.matched_at);
-  const expiresAt = new Date(matchedAt.getTime() + 6 * 60 * 60 * 1000);
-  const photo =
-    item.other_guest.picture_urls[0] ?? item.other_guest.avatar_url ?? "";
-  const firstName = item.other_guest.first_name ?? "Unknown";
-  const birthday = item.other_guest.birthday
-    ? new Date(item.other_guest.birthday)
-    : null;
-  const age = birthday
-    ? Math.floor(
-        (Date.now() - birthday.getTime()) / (365.25 * 24 * 3600 * 1000),
-      )
-    : 0;
-  return {
-    id: String(item.id),
-    otherUserId: item.other_guest.user_id ?? undefined,
-    chatId: item.chat_id ?? undefined,
-    eventId: item.event?.id ?? undefined,
-    venueLat: item.event?.venue_lat ?? null,
-    venueLng: item.event?.venue_lng ?? null,
-    name: firstName,
-    age,
-    photo,
-    venue: item.event?.venue_name ?? item.event?.title ?? "Unknown venue",
-    lastMessage: item.last_message?.text ?? "",
-    lastMessageTime: item.last_message
-      ? new Date(item.last_message.sent_at)
-      : matchedAt,
-    expiresAt,
-    messages: [],
-    // For the profile sheet in the chat.
-    profile: {
-      photos: item.other_guest.picture_urls,
-      tags: item.other_guest.interests,
-      ...mapGuestDetails(item.other_guest),
-    },
-  };
-}
 
 // ── TimerRing ──────────────────────────────────────────────────────────────────
 
-function TimerRing({ expiresAt, size }: { expiresAt: Date; size: number }) {
-  const radius = (size - STROKE_WIDTH) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const timeLeft = Math.max(0, expiresAt.getTime() - Date.now());
-  const progress = Math.min(1, timeLeft / TOTAL_WINDOW_MS);
-  const strokeDashoffset = circumference * (1 - progress);
-  const stroke = ringColor(expiresAt);
-
-  return (
-    <Svg
-      width={size}
-      height={size}
-      style={{ position: "absolute", top: 0, left: 0 }}
-    >
-      <Circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        stroke="rgba(0,0,0,0.1)"
-        strokeWidth={STROKE_WIDTH}
-        fill="none"
-      />
-      <Circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        stroke={stroke}
-        strokeWidth={STROKE_WIDTH}
-        fill="none"
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
-    </Svg>
-  );
-}
-
 // ── NewMatchBubble ─────────────────────────────────────────────────────────────
 
-function NewMatchBubble({
-  match,
-  textColor,
-  onPress,
-}: {
-  match: NewMatch;
-  textColor: string;
-  onPress: () => void;
-}) {
-  const avatarMargin = (MATCH_RING_SIZE - MATCH_AVATAR_SIZE) / 2;
-  // Dimmed like an expired Messages row; the inbox refuses to open it.
-  const isExpired = isChatExpired(match.expiresAt);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        alignItems: "center",
-        marginRight: 20,
-        width: MATCH_RING_SIZE,
-        opacity: isExpired ? 0.5 : 1,
-      }}
-    >
-      <View style={{ width: MATCH_RING_SIZE, height: MATCH_RING_SIZE }}>
-        <Image
-          source={{ uri: match.photo }}
-          style={{
-            width: MATCH_AVATAR_SIZE,
-            height: MATCH_AVATAR_SIZE,
-            borderRadius: MATCH_AVATAR_SIZE / 2,
-            margin: avatarMargin,
-          }}
-          contentFit="cover"
-          cachePolicy="disk"
-        />
-        <TimerRing expiresAt={match.expiresAt} size={MATCH_RING_SIZE} />
-      </View>
-      <Text
-        style={{ fontSize: 12, marginTop: 5, color: textColor }}
-        numberOfLines={1}
-      >
-        {match.name}
-      </Text>
-    </Pressable>
-  );
-}
-
 // ── LocationGateScreen ─────────────────────────────────────────────────────────
-
-function LocationGateScreen({
-  venueLat,
-  venueLng,
-  userLat,
-  userLng,
-  venueName,
-  onCheckLocation,
-  onBack,
-}: {
-  venueLat: number;
-  venueLng: number;
-  userLat?: number;
-  userLng?: number;
-  venueName: string;
-  onCheckLocation: () => void;
-  onBack: () => void;
-}) {
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-
-  return (
-    <View className="flex-1 bg-light-background dark:bg-dark-background">
-      {/* Full-screen map */}
-      <MatchLocationMap
-        venueLat={venueLat}
-        venueLng={venueLng}
-        userLat={userLat}
-        userLng={userLng}
-      />
-
-      {/* Overlay card */}
-      <View
-        className="gap-2 rounded-[20px] bg-light-backgroundStrong p-5 dark:bg-dark-backgroundStrong"
-        style={{
-          position: "absolute",
-          top: insets.top + 16,
-          left: 16,
-          right: 16,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-          elevation: 8,
-        }}
-      >
-        <Text className="text-[18px] font-bold leading-[26px] text-light-color dark:text-dark-color">
-          {t("chatLocationRequired")}
-        </Text>
-        <Text className="text-[13px] leading-5 text-light-gray10 dark:text-dark-gray10">
-          {t("chatLocationRequiredSubtitle")}
-        </Text>
-        <View className="mt-1 flex-row flex-wrap gap-2">
-          <TouchableOpacity
-            onPress={onCheckLocation}
-            className="rounded-full bg-light-color px-5 py-2.5 dark:bg-dark-color"
-          >
-            <Text className="text-[13px] font-semibold text-light-background dark:text-dark-background">
-              {t("matchesCheckLocation")}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={onBack}
-            className="rounded-full bg-light-gray3 px-5 py-2.5 dark:bg-dark-gray3"
-          >
-            <Text className="text-[13px] font-semibold text-light-gray10 dark:text-dark-gray10">
-              {t("back")}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Legend */}
-      <View
-        className="flex-row gap-4 rounded-[14px] bg-light-backgroundStrong p-[14px] dark:bg-dark-backgroundStrong"
-        style={{
-          position: "absolute",
-          bottom: insets.bottom + 24,
-          left: 16,
-          right: 16,
-        }}
-      >
-        <View className="flex-row items-center gap-2">
-          <View
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: 6,
-              backgroundColor: "#3b82f6",
-              borderWidth: 2,
-              borderColor: "white",
-            }}
-          />
-          <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
-            {t("matchesYourLocation")}
-          </Text>
-        </View>
-        <View className="flex-row items-center gap-2">
-          <View className="h-3 w-3 rounded-full bg-light-color dark:bg-dark-color" />
-          <Text className="text-xs text-light-gray10 dark:text-dark-gray10">
-            {venueName || t("matchesEventVenue")}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
 
 // ── Main Screen ────────────────────────────────────────────────────────────────
 
@@ -638,76 +322,13 @@ export default function InboxScreen() {
     );
   }
 
-  const renderChatItem = ({ item }: { item: Match }) => {
-    const timeRemaining = formatTimeRemaining(item.expiresAt);
-    const isExpired = timeRemaining === "Expired";
-    const expiryColor = isExpired ? theme.gray10 : ringColor(item.expiresAt);
-    const avatarMargin = (CHAT_RING_SIZE - CHAT_AVATAR_SIZE) / 2;
-
-    return (
-      <Pressable
-        style={{ opacity: isExpired ? 0.5 : 1 }}
-        onPress={() => {
-          if (isChatExpired(item.expiresAt)) {
-            showChatExpired();
-            return;
-          }
-          checkChatLocation(item);
-        }}
-      >
-        <View className="flex-row items-center gap-3 border-b border-light-gray3 px-4 py-3 dark:border-dark-gray3">
-          <View style={{ width: CHAT_RING_SIZE, height: CHAT_RING_SIZE }}>
-            <Image
-              source={{ uri: item.photo }}
-              style={{
-                width: CHAT_AVATAR_SIZE,
-                height: CHAT_AVATAR_SIZE,
-                borderRadius: CHAT_AVATAR_SIZE / 2,
-                margin: avatarMargin,
-              }}
-              contentFit="cover"
-              cachePolicy="disk"
-            />
-            <TimerRing expiresAt={item.expiresAt} size={CHAT_RING_SIZE} />
-          </View>
-
-          <View className="flex-1 gap-0.5">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[17px] font-semibold text-light-gray12 dark:text-dark-gray12">
-                {item.name}
-              </Text>
-              <Text className="text-[13px] text-light-gray10 dark:text-dark-gray10">
-                {formatLastMessageTime(item.lastMessageTime)}
-              </Text>
-            </View>
-
-            <Text className="mb-px text-sm text-light-gray10 dark:text-dark-gray10">
-              at {item.venue}
-            </Text>
-
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="flex-1 text-[15px] text-light-gray10 dark:text-dark-gray10"
-                numberOfLines={1}
-              >
-                {item.lastMessage || t("sayHello")}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: expiryColor,
-                  fontWeight: "600",
-                  marginLeft: 8,
-                }}
-              >
-                {timeRemaining}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Pressable>
-    );
-  };
+  const renderChatItem = ({ item }: { item: Match }) => (
+    <ChatListItem
+      item={item}
+      onOpen={checkChatLocation}
+      onExpired={showChatExpired}
+    />
+  );
 
   if (selectedMatch) {
     return (

@@ -36,7 +36,9 @@ function fakeSocket({
     data: {} as { userId?: string },
     rooms: new Set(rooms),
     join: jest.fn(),
-    to: jest.fn(() => ({ emit: emitToOthers })),
+    to: jest.fn<(room: string) => { emit: typeof emitToOthers }>(() => ({
+      emit: emitToOthers,
+    })),
     emitToOthers,
   };
 }
@@ -88,7 +90,9 @@ function createGateway() {
     use: jest.fn((fn: Middleware) => {
       middleware = fn;
     }),
-    to: jest.fn(() => ({ emit: roomEmit })),
+    to: jest.fn<(room: string) => { emit: typeof roomEmit }>(() => ({
+      emit: roomEmit,
+    })),
   };
   gateway.server = server as unknown as Server;
   gateway.afterInit(server as unknown as Server);
