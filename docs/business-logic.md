@@ -37,6 +37,18 @@ one.
 - **QR posters** link to `https://mobile.tulum-app.com/e/{eventId}?src=pNN`.
   The page joins the event after sign-in, and the poster code is kept as the
   guest's first source (attribution, recorded once).
+- **At the event without the link** (QR-8): on the feed, the app compares the
+  guest's position with the events that are on (from 5 minutes before the
+  start) and offers "You're at {event}. Join?", which opens the QR join page
+  with `src=nearby`. It reads the position only once location is allowed;
+  until then it offers to look ("Find my event") when people are going to an
+  event that is on. It uses the default 300 m radius with the accuracy
+  allowance, the position stays on the phone, and "Not now" keeps an offer
+  away for 12 hours (`components/nearby-event/`).
+- **Event details** loads the numbers and the first page of the guest list
+  when it opens, then the numbers alone (`GET /tickets/attendees?limit=0`)
+  every 30 seconds while it is shown and the app is in the foreground
+  (BUG-042). Pages of the guest list already loaded stay as they are.
 
 ## Check-in
 

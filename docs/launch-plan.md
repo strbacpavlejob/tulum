@@ -7,7 +7,7 @@ to the event's join page. Android and iOS apps follow in January.
 The full plan, with its findings, lives in the plan document
 (https://claude.ai/artifact/LPZiix9JRzgfEmVHVnsfny, private to the team).
 This page is the working summary: what is done, what is left and when the
-launch counts as complete. Status is as of **18 November 2026**.
+launch counts as complete. Status is as of **19 November 2026**.
 
 ## Dates
 
@@ -30,6 +30,7 @@ date between 13 and 31 December:
 | B5 | Consent log, attribution, match archive, moderation views and runbook, misdated-events guard | On main, live; 2 migrations and 1 data fix not applied; privacy wording awaits approval |
 | B6 | Redis socket adapter, load-test kit | On main, live; the staging load runs are not done |
 | B7 | Server-side check-in, deletion and child-safety pages, landing copy, poster kit, 18+ on the API | On main, live; copy awaits approval |
+| P2s | QR-8 "You're at {event}. Join?" on the feed for guests who arrive without the link; BUG-042 going count refreshed every 30 s on event details | Committed 19 November on branch `claude/mobile-src-layout-qr8-bug042`, not on main yet; checked in the browser against a stand-in API; the prompt's copy awaits approval |
 | B8 | Native-app availability | January |
 
 ## Owner tasks (not code)

@@ -492,6 +492,19 @@ const resources = {
       eventSignInToJoin: "Sign in with Google or Apple to join.",
       countdownHoursMinutes: "{{hours}} h {{minutes}} min",
       countdownMinutes: "{{minutes}} min",
+      // Feed prompt for guests at an event they haven't joined (QR-8)
+      nearbyJoinTitle: "You're at {{event}}",
+      nearbyJoinBody: "Join to see who else is here and start matching.",
+      nearbyJoinCta: "Join",
+      nearbyAskTitle: "At an event right now?",
+      nearbyAskBody:
+        "Tulum can use your location to find the event you're at, so you can join it and start matching.",
+      nearbyAskCta: "Find my event",
+      nearbyLocating: "Finding your event…",
+      nearbyNoneTitle: "No event is on here right now",
+      nearbyNoneBody: "Find your event on the map and join it there.",
+      nearbyNotNow: "Not now",
+      nearbyOk: "OK",
       // Matches location gate and empty deck
       matchesLocationOffTitle: "Location is off for Tulum",
       matchesLocationOffIos:
@@ -1006,6 +1019,19 @@ const resources = {
         "Prijavi se preko Google-a ili Apple-a da se pridružiš.",
       countdownHoursMinutes: "{{hours}} h {{minutes}} min",
       countdownMinutes: "{{minutes}} min",
+      // Feed prompt for guests at an event they haven't joined (QR-8)
+      nearbyJoinTitle: "Na događaju si: {{event}}",
+      nearbyJoinBody: "Pridruži se da vidiš ko je još ovde i počni mečevanje.",
+      nearbyJoinCta: "Pridruži se",
+      nearbyAskTitle: "Da li si sada na nekom događaju?",
+      nearbyAskBody:
+        "Tulum može da iskoristi tvoju lokaciju da pronađe događaj na kom si, da mu se pridružiš i počneš mečevanje.",
+      nearbyAskCta: "Pronađi moj događaj",
+      nearbyLocating: "Tražimo tvoj događaj…",
+      nearbyNoneTitle: "Ovde sada nema događaja",
+      nearbyNoneBody: "Pronađi svoj događaj na mapi i pridruži mu se tamo.",
+      nearbyNotNow: "Ne sada",
+      nearbyOk: "U redu",
       // Matches location gate and empty deck
       matchesLocationOffTitle: "Lokacija je isključena za Tulum",
       matchesLocationOffIos:
@@ -1518,6 +1544,20 @@ const resources = {
         "Войдите через Google или Apple, чтобы присоединиться.",
       countdownHoursMinutes: "{{hours}} ч {{minutes}} мин",
       countdownMinutes: "{{minutes}} мин",
+      // Feed prompt for guests at an event they haven't joined (QR-8)
+      nearbyJoinTitle: "Вы на событии: {{event}}",
+      nearbyJoinBody:
+        "Присоединяйтесь, чтобы увидеть, кто ещё здесь, и начать знакомиться.",
+      nearbyJoinCta: "Присоединиться",
+      nearbyAskTitle: "Вы сейчас на событии?",
+      nearbyAskBody:
+        "Tulum может использовать ваше местоположение, чтобы найти событие, на котором вы находитесь: тогда вы сможете присоединиться и начать знакомиться.",
+      nearbyAskCta: "Найти моё событие",
+      nearbyLocating: "Ищем ваше событие…",
+      nearbyNoneTitle: "Здесь сейчас нет событий",
+      nearbyNoneBody: "Найдите своё событие на карте и присоединитесь к нему там.",
+      nearbyNotNow: "Не сейчас",
+      nearbyOk: "Хорошо",
       // Matches location gate and empty deck
       matchesLocationOffTitle: "Геолокация для Tulum выключена",
       matchesLocationOffIos:

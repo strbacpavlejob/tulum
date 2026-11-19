@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
+import { AppState } from "react-native";
 import { useAuth } from "@clerk/expo";
+import { useFocusEffect } from "expo-router";
 import {
   fetchEventAttendees,
   fetchEventDetails,
@@ -8,10 +16,16 @@ import {
 import useStore from "@/store/use-store";
 import type { Event } from "@/types/event";
 
+/** How often the event's numbers load again while the screen is shown. */
+const ATTENDEE_COUNTS_REFRESH_MS = 30_000;
+
 /**
- * The event and its guest list for the details screen, loaded once when it
- * opens. Either answer adds a missing ticket to the store when it shows the
- * user is going.
+ * The event and its guest list for the details screen. The event loads once
+ * when the screen opens. The numbers and the first page of the guest list
+ * load when the screen gains focus, then the numbers alone every
+ * ATTENDEE_COUNTS_REFRESH_MS while it is shown (BUG-042); the pages already
+ * loaded stay as they are. Either answer adds a missing ticket to the store
+ * when it shows the user is going.
  */
 export function useEventDetailsData(id: string | undefined) {
   const { userId, getToken } = useAuth();
@@ -19,7 +33,7 @@ export function useEventDetailsData(id: string | undefined) {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
-  const [attendeesData, setAttendeesData] = useState<EventAttendeesData>({
+  const [attendeesData, setAttendeesState] = useState<EventAttendeesData>({
     maxSpots: 0,
     averageAge: null,
     females: 0,
@@ -29,6 +43,18 @@ export function useEventDetailsData(id: string | undefined) {
     hiddenCount: 0,
     nextCursor: null,
   });
+
+  // Every change made on this screen (attending, cancelling, another page)
+  // moves the revision. Numbers that loaded across a change are dropped:
+  // they may not count it yet.
+  const revisionRef = useRef(0);
+  const setAttendeesData = useCallback(
+    (update: SetStateAction<EventAttendeesData>) => {
+      revisionRef.current += 1;
+      setAttendeesState(update);
+    },
+    [],
+  );
 
   // Fetch full event details on mount
   useEffect(() => {
@@ -70,60 +96,102 @@ export function useEventDetailsData(id: string | undefined) {
     eventRef.current = event;
   }, [event]);
 
-  // Fetch attendees once when this screen loads: the numbers and the first
-  // page of the guest list.
-  useEffect(() => {
-    if (!id || !userId) return;
+  // The numbers and the first page of the guest list when the screen gains
+  // focus, then the numbers alone every ATTENDEE_COUNTS_REFRESH_MS while the
+  // app is in the foreground, and at once when it comes back to it. A
+  // refresh waits while a request is out, and none runs after the screen
+  // loses focus.
+  const requestsOutRef = useRef(0);
+  useFocusEffect(
+    useCallback(() => {
+      if (!id || !userId) return;
 
-    let mounted = true;
+      let focused = true;
 
-    const refresh = async () => {
-      try {
-        const token = await getToken();
-        if (!token) return;
+      const load = async (numbersOnly: boolean) => {
+        requestsOutRef.current += 1;
+        const revision = revisionRef.current;
+        try {
+          const token = await getToken();
+          if (!token) return;
 
-        const data = await fetchEventAttendees(id, token);
-        if (!mounted || !data) return;
+          const data = await fetchEventAttendees(
+            id,
+            token,
+            null,
+            numbersOnly ? 0 : undefined,
+          );
+          if (!focused || !data) return;
 
-        setAttendeesData(data);
+          if (numbersOnly) {
+            if (revisionRef.current !== revision) return;
+            setAttendeesState((prev) => ({
+              ...prev,
+              maxSpots: data.maxSpots,
+              averageAge: data.averageAge,
+              females: data.females,
+              males: data.males,
+              goingCount: data.goingCount,
+              hiddenCount: data.hiddenCount,
+            }));
+            return;
+          }
 
-        // If backend indicates the user is in the guest list but local tickets
-        // don't have the event, add a minimal ticket to keep UI consistent.
-        // The going count already includes you.
-        const isUserInList = data.guestList.some((g) => g.isViewer);
+          setAttendeesData(data);
 
-        const hasTicket = useStore
-          .getState()
-          .tickets?.some((t) => t.event_id === id);
+          // If backend indicates the user is in the guest list but local
+          // tickets don't have the event, add a minimal ticket to keep UI
+          // consistent. The going count already includes you.
+          const isUserInList = data.guestList.some((g) => g.isViewer);
 
-        const currentEvent = eventRef.current;
+          const hasTicket = useStore
+            .getState()
+            .tickets?.some((t) => t.event_id === id);
 
-        if (isUserInList && !hasTicket && currentEvent) {
-          addTicket({
-            id: `remote-${id}`,
-            event_id: currentEvent.id,
-            image: currentEvent.image ?? null,
-            title: currentEvent.title,
-            description: currentEvent.description,
-            date: currentEvent.date,
-            tags: currentEvent.tags,
-            venue_name: String(currentEvent.venueName ?? ""),
-            location: currentEvent.location,
-          });
+          const currentEvent = eventRef.current;
+
+          if (isUserInList && !hasTicket && currentEvent) {
+            addTicket({
+              id: `remote-${id}`,
+              event_id: currentEvent.id,
+              image: currentEvent.image ?? null,
+              title: currentEvent.title,
+              description: currentEvent.description,
+              date: currentEvent.date,
+              tags: currentEvent.tags,
+              venue_name: String(currentEvent.venueName ?? ""),
+              location: currentEvent.location,
+            });
+          }
+        } catch {
+          // The next refresh asks again.
+        } finally {
+          requestsOutRef.current -= 1;
         }
-      } catch {
-        // ignore
-      }
-    };
+      };
 
-    refresh();
+      const refreshNumbers = () => {
+        if (AppState.currentState !== "active") return;
+        if (requestsOutRef.current > 0) return;
+        void load(true);
+      };
 
-    return () => {
-      mounted = false;
-    };
+      void load(false);
+      const interval = setInterval(refreshNumbers, ATTENDEE_COUNTS_REFRESH_MS);
+      const appStateSubscription = AppState.addEventListener(
+        "change",
+        refreshNumbers,
+      );
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, userId]);
+      return () => {
+        focused = false;
+        clearInterval(interval);
+        appStateSubscription.remove();
+      };
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, userId]),
+  );
 
   return {
     event,

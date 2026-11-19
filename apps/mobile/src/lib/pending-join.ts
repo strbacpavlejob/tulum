@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { webStorage } from "@/lib/web-storage";
 
 /**
  * The event a guest asked to join before signing in: they scanned a QR code
@@ -21,20 +21,10 @@ const PENDING_JOIN_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 // Native keeps it while the app runs: its links don't leave the app.
 let memoryJoin: PendingJoin | null = null;
 
-function storage(): Storage | null {
-  if (Platform.OS !== "web") return null;
-  try {
-    return window.localStorage;
-  } catch {
-    // Static rendering has no window, and some private modes refuse storage.
-    return null;
-  }
-}
-
 export function savePendingJoin(eventId: string, src?: string | null) {
   memoryJoin = { eventId, src: src || null, savedAt: Date.now() };
   try {
-    storage()?.setItem(STORAGE_KEY, JSON.stringify(memoryJoin));
+    webStorage()?.setItem(STORAGE_KEY, JSON.stringify(memoryJoin));
   } catch {
     // Kept in memory only.
   }
@@ -42,7 +32,7 @@ export function savePendingJoin(eventId: string, src?: string | null) {
 
 function readStoredJoin(): PendingJoin | null {
   try {
-    const stored = storage()?.getItem(STORAGE_KEY);
+    const stored = webStorage()?.getItem(STORAGE_KEY);
     return stored ? (JSON.parse(stored) as PendingJoin) : null;
   } catch {
     return null;
@@ -68,7 +58,7 @@ export function clearPendingJoin(eventId?: string) {
   }
   memoryJoin = null;
   try {
-    storage()?.removeItem(STORAGE_KEY);
+    webStorage()?.removeItem(STORAGE_KEY);
   } catch {
     // Nothing stored.
   }

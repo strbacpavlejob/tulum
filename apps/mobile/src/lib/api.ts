@@ -1076,10 +1076,15 @@ export async function fetchEventAttendees(
   eventId: string | number,
   token: string,
   cursor?: string | null,
+  /** Guests a page, or 0 for the numbers alone; the API's page size if left out. */
+  limit?: number,
 ): Promise<EventAttendeesData> {
   const searchParams = new URLSearchParams({ event_id: String(eventId) });
   if (cursor) {
     searchParams.set("cursor", cursor);
+  }
+  if (limit !== undefined) {
+    searchParams.set("limit", String(limit));
   }
   const url = `${TULUM_API_URL}/tickets/attendees?${searchParams.toString()}`;
   const response = await fetch(url, { headers: authHeaders(token) });
