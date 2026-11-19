@@ -2,8 +2,8 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsIn, IsOptional } from 'class-validator';
 import { VenueTypeEnum } from '../../scrape/domain/scraper-venue.interfaces';
 
-// The values the app's Settings offer (apps/mobile/types/settings.ts). The
-// language and theme lists match the database enums, with RS stored as SR.
+// The values the app's Settings offer (apps/mobile/src/types/settings.ts).
+// The language and theme lists match the database enums, with RS stored as SR.
 const LANGUAGES = ['EN', 'RS', 'RU'] as const;
 const THEMES = ['light', 'dark', 'system'] as const;
 

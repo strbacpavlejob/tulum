@@ -51,20 +51,32 @@ and dot suffixes as listed below, and suggests the kebab-case name.
 
 ## Folder structure
 
-Code sits at each app's root, not in `src/` (the API excepted). Both Expo and
-Next.js support either; `src/` would only add a level here.
+Each app follows the layout its framework's own tooling creates today:
+
+- **apps/mobile** keeps its code in `src/`, as Expo's default template does
+  since SDK 55: routes in `src/app/`, the rest of the code beside them, and
+  `assets/`, `scripts/` and the config files at the app root. The `@/` import
+  alias points at `src/` and `@/assets/` at `assets/` (`tsconfig.json`).
+- **apps/host** keeps its code at the app root, which is what
+  `create-next-app`'s recommended defaults create (no `src/`).
+- **apps/api** keeps its code in `src/` and its end-to-end tests in `test/`,
+  as the Nest CLI creates them.
 
 **apps/mobile**
 
 ```
-app/            routes only: every file here is a screen or a layout
-components/     shared components, plus a folder per screen or feature
-  ui/           the react-native-reusables kit (keep it whole)
-  map/          Leaflet WebView maps for native
-  profile/ matches/ inbox/ event-details/ onboarding/ …
-hooks/          app-wide hooks (use-app-theme.ts, use-chat-socket.ts)
-lib/            plain modules: the API client, i18n, helpers
-constants/ store/ types/ providers/ assets/
+src/
+  app/          routes only: every file here is a screen or a layout
+  components/   shared components, plus a folder per screen or feature
+    ui/         the react-native-reusables kit (keep it whole)
+    map/        Leaflet WebView maps for native
+    profile/ matches/ inbox/ event-details/ onboarding/ …
+  hooks/        app-wide hooks (use-app-theme.ts, use-chat-socket.ts)
+  lib/          plain modules: the API client, i18n, helpers
+  constants/ store/ types/ providers/
+  global.css    Tailwind's entry file (metro.config.js points NativeWind at it)
+assets/         images, fonts, icons, animations
+scripts/        build helpers (build-leaflet-assets.mjs)
 ```
 
 **apps/host**
@@ -86,23 +98,24 @@ public/         static files only, never source modules
 src/<feature>/  <feature>.module.ts, .controller.ts, .service.ts, dto/, specs
 src/common/     guards, decorators, shared rules
 src/scrape/     one folder per source under scrapers/, shared pieces under shared/
+test/           end-to-end specs (*.e2e-spec.ts)
 supabase/       schema.sql, migrations/, data-fixes/
 ```
 
 ## Where code goes
 
 - One component per file, named after it. A screen's pieces go in
-  `components/<screen>/`, never under `apps/mobile/app/` (Expo Router would
-  turn them into routes).
+  `components/<screen>/`, never under `apps/mobile/src/app/` (Expo Router
+  would turn them into routes).
 - Pure logic (no React, no I/O) in its own module with a spec: `like-limit.ts`,
   `venue-similarity.ts`, `scraped-rows.ts`, `matches-model.ts`.
 - Data fetching and side effects in hooks named after what they do
   (`use-matches-eligibility.ts`, `use-event-details-data.ts`); state that a
   sheet and its screen share in a hook (`use-field-edit-sheet.ts`).
-- Shared helpers once: `apps/mobile/lib/geo.ts` (distance),
+- Shared helpers once: `apps/mobile/src/lib/geo.ts` (distance),
   `apps/host/components/common/use-image-file.ts` (picture picking).
-- `components/ui/` in both apps is a UI kit: keep it whole, even where a
-  component is unused.
+- `components/ui/` in both apps (`src/components/ui/` in the mobile app) is a
+  UI kit: keep it whole, even where a component is unused.
 - API: one module per feature, thin controllers, one service per
   responsibility. Only `SupabaseService` creates the database client.
 - Aim for files under about 300 lines. Data files (translations, copy, option

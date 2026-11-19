@@ -16,7 +16,8 @@ import { Transform } from 'class-transformer';
 import { VenueTypeEnum } from '../../scrape/domain/scraper-venue.interfaces';
 
 // The onboarding name field allows the same length
-// (apps/mobile/app/(auth)/onboarding.tsx). Change both together.
+// (apps/mobile/src/components/onboarding/onboarding-steps.ts). Change both
+// together.
 const FIRST_NAME_MAX_LENGTH = 50;
 
 function IsRealDate(options?: ValidationOptions) {

@@ -15,7 +15,7 @@ import { GUEST_VISIBILITIES } from '../../guest-safety/guest-visibility';
 import { OnboardingDto } from '../../guests/dto/onboarding.dto';
 
 // The choices the app's profile editors offer
-// (apps/mobile/constants/options.ts). Change both together.
+// (apps/mobile/src/constants/options.ts). Change both together.
 const HABITS = ['never', 'socially', 'regularly', 'prefer not to say'];
 const CHILDREN = ['no', 'yes', 'prefer not to say'];
 const RELATIONSHIP_STATUSES = [

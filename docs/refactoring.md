@@ -52,8 +52,8 @@ pnpm dlx knip@6.45.1
 
 - `*.web.tsx` and `*.native.tsx` files are entry points, since Metro picks them
   by platform and knip can't follow that.
-- `components/ui/` in both apps is an entry point, so the kit stays and its
-  dependencies count as used.
+- `components/ui/` in both apps (`src/components/ui/` in the mobile app) is
+  an entry point, so the kit stays and its dependencies count as used.
 - Exports used inside their own file don't count as unused
   (`ignoreExportsUsedInFile`), and request-DTO enum members are API values.
 - Ignored on purpose: `components/sections/pricing-guest.tsx` (waits for

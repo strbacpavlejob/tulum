@@ -7,9 +7,9 @@
  *
  *   root             the app folder, which names are checked relative to;
  *                    the folder of the nearest package.json by default
- *   routes           the router's folder ("app"), where Expo Router and
- *                    Next.js route names are allowed: (group), [id],
- *                    [...slug], [[...slug]], _private, @slot, _layout,
+ *   routes           the router's folder ("app", "src/app"), where Expo
+ *                    Router and Next.js route names are allowed: (group),
+ *                    [id], [...slug], [[...slug]], _private, @slot, _layout,
  *                    +not-found, +html
  *   middleExtensions the dot parts allowed between a name and its extension
  *                    ("listings-map.web.tsx"), or "any" (NestJS roles such
@@ -89,7 +89,7 @@ const fileNaming = {
       options.root ??
       packageRoot(path.dirname(context.filename)) ??
       context.cwd;
-    const routes = options.routes ?? null;
+    const routes = options.routes ? options.routes.split('/') : null;
     const middleExtensions = options.middleExtensions ?? 'any';
 
     const relative = path.relative(root, context.filename);
@@ -97,7 +97,8 @@ const fileNaming = {
       return {};
     }
     const segments = relative.split(path.sep);
-    const inRoutes = routes !== null && segments[0] === routes;
+    const inRoutes =
+      routes !== null && routes.every((part, i) => segments[i] === part);
 
     return {
       Program(node) {

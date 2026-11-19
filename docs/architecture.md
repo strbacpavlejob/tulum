@@ -76,21 +76,25 @@ responsibility; pure rules in plain modules with their own specs.
 ## apps/mobile
 
 Expo SDK 58, React Native 0.88, Expo Router, NativeWind 4, Zustand
-(`store/use-store.ts`), Clerk (`@clerk/expo`). Shipped first as a static web
-export on Vercel (mobile.tulum-app.com); Android and iOS builds follow.
+(`src/store/use-store.ts`), Clerk (`@clerk/expo`). Shipped first as a static
+web export on Vercel (mobile.tulum-app.com); Android and iOS builds follow.
 
-- `app/`: routes only. `(auth)/` sign-in, email code, sign-up, onboarding;
+The code is in `src/`; `assets/`, `scripts/` and the configs stay at the app
+root ([conventions.md](conventions.md#folder-structure)).
+
+- `src/app/`: routes only. `(auth)/` sign-in, email code, sign-up, onboarding;
   `(tabs)/` the feed (`index`), tickets, matches, inbox, profile;
   `event-details/[id]`; `e/[id]` (the QR join link).
-- `components/<screen>/`: pieces of one screen (`profile/`, `matches/`,
+- `src/components/<screen>/`: pieces of one screen (`profile/`, `matches/`,
   `inbox/`, `event-details/`, `onboarding/`, `birthday-picker/`,
-  `listings-map/`, `profile-info/`). `components/ui/` is the shared UI kit
+  `listings-map/`, `profile-info/`). `src/components/ui/` is the shared UI kit
   (react-native-reusables); keep it, even where a component is unused.
-- `components/map/`: native maps are Leaflet pages in WebViews;
+- `src/components/map/`: native maps are Leaflet pages in WebViews;
   `*.web.tsx` / `*.native.tsx` files are picked by platform.
-- `lib/api.ts`: the API client (all fetches). `lib/geo.ts`: distance helper.
-  `lib/i18n.ts`: EN, SR and RU strings.
-- Never put a non-route file under `app/`: Expo Router would make it a route.
+- `src/lib/api.ts`: the API client (all fetches). `src/lib/geo.ts`: distance
+  helper. `src/lib/i18n.ts`: EN, SR and RU strings.
+- Never put a non-route file under `src/app/`: Expo Router would make it a
+  route.
 
 ## apps/host
 

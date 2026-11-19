@@ -12,9 +12,9 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-// The reasons the app's report sheet offers (apps/mobile/components/
-// GuestSafetySheet.tsx) and the guest_reports_reason_check constraint
-// allows. Change all three together.
+// The reasons the app's report sheet offers
+// (apps/mobile/src/components/guest-safety-sheet.tsx) and the
+// guest_reports_reason_check constraint allows. Change all three together.
 export const GUEST_REPORT_REASONS = [
   'harassment',
   'inappropriate',

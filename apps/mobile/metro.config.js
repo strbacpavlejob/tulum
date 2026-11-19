@@ -7,4 +7,4 @@ const config = getDefaultConfig(__dirname);
 // (e.g. react-native-reanimated, @gorhom/bottom-sheet web implementations)
 config.resolver.platforms = ["ios", "android", "web"];
 
-module.exports = withNativeWind(config, { input: "./global.css" });
+module.exports = withNativeWind(config, { input: "./src/global.css" });

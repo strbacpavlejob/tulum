@@ -15,7 +15,7 @@ module.exports = defineConfig([
       'tulum/file-naming': [
         'error',
         {
-          routes: 'app',
+          routes: 'src/app',
           // Metro platform files, declarations, tests, configs, CSS modules.
           middleExtensions: [
             'web',

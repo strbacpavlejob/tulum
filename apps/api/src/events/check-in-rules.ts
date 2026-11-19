@@ -1,8 +1,8 @@
 import { parseDbTimestampMs } from '../common/db-timestamp';
 
 // The rules POST /events/sessions checks a guest against. They are the ones
-// the app's Matches screen applies (apps/mobile/app/(tabs)/matches.tsx), so
-// the two agree, and calling the API directly no longer skips them.
+// the app's Matches screen applies (apps/mobile/src/app/(tabs)/matches.tsx),
+// so the two agree, and calling the API directly no longer skips them.
 
 /** Matches opens this long before an event's start, as in the app. */
 export const PRE_EVENT_GRACE_MS = 5 * 60 * 1000;

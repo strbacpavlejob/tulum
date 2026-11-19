@@ -10,11 +10,11 @@ Use the official `clerk-expo` and `clerk-nextjs-patterns` skills for their frame
 Before changing auth behavior, inspect the relevant callers and contracts in:
 
 - `apps/api/src/common/guards/clerk-auth.guard.ts` and `apps/api/src/common/clerk-session.ts`
-- `apps/api/src/chats/chats.gateway.ts` and `apps/mobile/hooks/use-chat-socket.ts` for the chat WebSocket
+- `apps/api/src/chats/chats.gateway.ts` and `apps/mobile/src/hooks/use-chat-socket.ts` for the chat WebSocket
 - `apps/api/src/common/decorators/public.decorator.ts` and `user-id.decorator.ts`
 - `apps/api/src/common/guards/admin.guard.ts` and `apps/api/src/app.module.ts`
 - `apps/api/src/main.ts`
-- `apps/mobile/lib/api.ts` and the relevant `useAuth()` caller
+- `apps/mobile/src/lib/api.ts` and the relevant `useAuth()` caller
 - `apps/host/lib/nestjs-client.ts` and `apps/host/proxy.ts` when the host is involved
 
 ## Integration rules

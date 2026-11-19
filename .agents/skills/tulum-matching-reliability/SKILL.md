@@ -7,8 +7,8 @@ description: Use when changing Tulum event eligibility, swipe filters, like limi
 
 Before changing matching behavior, trace the current flow across:
 
-- `apps/mobile/app/(tabs)/matches.tsx` and `apps/mobile/components/matches/matches-deck.tsx`
-- `apps/mobile/lib/api.ts`
+- `apps/mobile/src/app/(tabs)/matches.tsx` and `apps/mobile/src/components/matches/matches-deck.tsx`
+- `apps/mobile/src/lib/api.ts`
 - `apps/api/src/matches/matches.controller.ts`
 - `apps/api/src/matches/matches.service.ts` and `apps/api/src/matches/dto/swipe-decision.dto.ts`
 - `apps/api/src/common/like-limit.ts` and its `.spec.ts`
@@ -24,7 +24,7 @@ Treat the repository's current behavior and API shapes as the contract. Do not i
 - Eligibility accounts for the selected gender and age range, and selected interests use OR matching. Keep the TypeScript helper and the database calculation aligned.
 - `submit_guest_swipe_with_limit` is the database-side atomic decision. Preserve its transaction/locking and upsert behavior; do not move enforcement to the client or replace it with a non-atomic read-then-write sequence.
 - A match requires a reciprocal like for the same event. Match participant IDs are canonicalized, and concurrent duplicate creation is handled through the unique-violation recovery path.
-- Preserve the existing snake_case request/response fields consumed by `apps/mobile/lib/api.ts`, or update and verify all callers in the same change.
+- Preserve the existing snake_case request/response fields consumed by `apps/mobile/src/lib/api.ts`, or update and verify all callers in the same change.
 
 ## Change and verification workflow
 

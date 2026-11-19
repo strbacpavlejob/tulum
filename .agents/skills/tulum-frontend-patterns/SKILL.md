@@ -10,7 +10,7 @@ Check the relevant app's `package.json` before relying on version-specific behav
 ## Mobile: NativeWind and Tailwind
 
 - The mobile app currently uses NativeWind 4.x with Tailwind CSS 3.x. Do not apply NativeWind v5 / Tailwind v4 setup, CSS-first `@theme` configuration, or migration instructions unless the user explicitly requests an upgrade.
-- Preserve the existing setup: `apps/mobile/tailwind.config.js` uses `nativewind/preset` and the `light`/`dark` theme objects; `global.css` uses Tailwind's three `@tailwind` directives; Metro wraps the Expo config with `withNativeWind` and points to `./global.css`; Babel uses `babel-preset-expo` with NativeWind.
+- Preserve the existing setup: `apps/mobile/tailwind.config.js` uses `nativewind/preset` and the `light`/`dark` theme objects; `src/global.css` uses Tailwind's three `@tailwind` directives; Metro wraps the Expo config with `withNativeWind` and points to `./src/global.css`; Babel uses `babel-preset-expo` with NativeWind.
 - Prefer existing theme values and component patterns over introducing parallel tokens or new styling dependencies. Keep platform-specific behavior explicit and verify that classes work on the intended native and web targets.
 - For third-party components that do not accept `className`, inspect the installed NativeWind v4 API and existing wrappers before adding interop or changing component APIs.
 
@@ -22,7 +22,7 @@ Check the relevant app's `package.json` before relying on version-specific behav
 
 ## Zustand
 
-- Reuse the existing store at `apps/mobile/store/use-store.ts` before creating another global store.
+- Reuse the existing store at `apps/mobile/src/store/use-store.ts` before creating another global store.
 - Preserve its typed `MyStore` state-and-actions shape, default-exported `useStore` hook, immutable updates, and individually selected state/actions in components.
 - Keep related derived state in sync. For example, event changes may also affect filtered events, map pins, tickets, and cached per-event swipe candidates.
 - Do not add `subscribeWithSelector`, persistence middleware, a new store folder, or a store rewrite merely to follow a generic template. Add middleware only for a demonstrated requirement and verify it against the installed Zustand version.

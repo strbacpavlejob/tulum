@@ -10,7 +10,7 @@ one.
 - **Guests** use the app. They sign in with Google, Apple or an email code
   (Clerk), then finish a short onboarding: first name, birthday, gender, who
   they want to meet, and at least one photo
-  (`apps/mobile/components/onboarding/onboarding-steps.ts`). Onboarding counts
+  (`apps/mobile/src/components/onboarding/onboarding-steps.ts`). Onboarding counts
   as complete once gender and "interested in" are set
   (`GuestsService`, `isOnboardingComplete`).
 - **Age.** Tulum is 18+. The API refuses a younger birthday
@@ -78,7 +78,7 @@ session that won.
 ## Chat
 
 - A match opens a chat that lasts **6 hours** from the match
-  (`apps/mobile/components/inbox/inbox-model.ts`). The inbox shows the time left
+  (`apps/mobile/src/components/inbox/inbox-model.ts`). The inbox shows the time left
   as a ring.
 - Opening a chat checks the guest's position against the venue as Matches does
   (`LocationGateScreen`, 300 m).

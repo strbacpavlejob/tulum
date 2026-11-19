@@ -25,14 +25,14 @@
     },
     "apps/mobile": {
       // Metro picks *.web.tsx and *.native.tsx by platform, which knip can't
-      // follow, and the UI kit in components/ui stays even where no screen
-      // uses a component yet.
+      // follow, and the UI kit in src/components/ui stays even where no
+      // screen uses a component yet.
       "entry": [
         "metro.config.js",
         "scripts/*.{js,mjs}",
-        "**/*.web.{ts,tsx}",
-        "**/*.native.{ts,tsx}",
-        "components/ui/**/*.{ts,tsx}"
+        "src/**/*.web.{ts,tsx}",
+        "src/**/*.native.{ts,tsx}",
+        "src/components/ui/**/*.{ts,tsx}"
       ],
       "project": ["**/*.{ts,tsx,js,jsx,mjs,css}"],
       // knip can't load metro.config.js (NativeWind looks for tailwind.config
