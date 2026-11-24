@@ -7,7 +7,7 @@ to the event's join page. Android and iOS apps follow in January.
 The full plan, with its findings, lives in the plan document
 (https://claude.ai/artifact/LPZiix9JRzgfEmVHVnsfny, private to the team).
 This page is the working summary: what is done, what is left and when the
-launch counts as complete. Status is as of **19 November 2026**.
+launch counts as complete. Status is as of **24 November 2026**.
 
 ## Dates
 
@@ -35,15 +35,15 @@ date between 13 and 31 December:
 
 ## Owner tasks (not code)
 
-- **DNS:** move tulum-app.com to Cloudflare, then add the Clerk production
+- **DNS:** moved to Cloudflare on 24 November; next, add the Clerk production
   CNAME records (DNS only).
 - **Clerk production:** Google and Apple production credentials, the mobile SSO
   redirect allowlist; then switch the apps' keys to the production instance.
   The development instance caps at 100 users, so this blocks the launch.
 - **Plans:** Supabase Pro and a staging project; Vercel Pro (Hobby is for
   non-commercial use only).
-- **Pictures:** the R2 custom domain `img.tulum-app.com` (the `r2.dev` address
-  is rate-limited) and the data fix `20261111_r2_custom_domain_urls.sql`.
+- **Pictures:** done 24 November. `img.tulum-app.com` serves the bucket, the
+  API uses it, and the data fix moved every stored URL off `r2.dev`.
 - **Database writes:** applying the migrations and data fixes below (agents
   can't).
 - **Copy:** approve the privacy wording (B5) and the landing and poster copy
@@ -61,8 +61,7 @@ In order, from `apps/api/supabase/`:
 5. `data-fixes/20261114_bug041_misdated_instagram_events.sql`
 6. `data-fixes/20261111_kst_venue.sql` and `20261111_kst_maskenbal_event.sql`
    (the venue's position and the event), once the date is known
-7. `data-fixes/20261111_r2_custom_domain_urls.sql`, once the custom domain
-   serves the bucket
+7. `data-fixes/20261111_r2_custom_domain_urls.sql`: applied 24 November
 
 ## Completion criteria
 
@@ -94,7 +93,7 @@ it.
       Instagram in-app browser.
 - [ ] Supabase Pro and Vercel Pro are active; Redis is reachable from every
       API instance.
-- [ ] Pictures are served from `img.tulum-app.com`.
+- [x] Pictures are served from `img.tulum-app.com`.
 
 **Load and reliability**
 

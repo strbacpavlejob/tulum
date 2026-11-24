@@ -7,10 +7,10 @@ review and check before merging.
 | --------------- | -------- | ----------------- | ---------------- | ----------------------------------------- |
 | Site and dashboard | Vercel | `tulum`           | `apps/host`      | https://tulum-app.com                     |
 | Guest web app   | Vercel   | `tulum-mobile`    | `apps/mobile` (`expo export --platform web`) | https://mobile.tulum-app.com |
-| API             | Railway  | `tulum-api` (production) | `apps/api` | https://tulum-api-production.up.railway.app |
+| API             | Railway  | `tulum-api` (production) | `apps/api` | https://api.tulum-app.com (custom domain since 24 November 2026; https://tulum-api-production.up.railway.app still answers) |
 | Database, edge functions | Supabase | one project for every environment | `apps/api/supabase`, `apps/host/supabase/functions` | |
 | Auth            | Clerk    | development instance (production instance created, not live) | | |
-| Pictures        | Cloudflare R2 | one bucket   | uploads from the API | `R2_PUBLIC_URL`                     |
+| Pictures        | Cloudflare R2 | bucket `tulum-images` | uploads from the API | https://img.tulum-app.com (`R2_PUBLIC_URL`) |
 
 ## Vercel (site and web app)
 
@@ -52,9 +52,17 @@ review and check before merging.
 ## Clerk
 
 All environments use the development instance, which caps at 100 users. The
-production instance exists; going live needs its DNS records at the domain's
-registrar, Google and Apple production credentials, and the mobile SSO
+production instance exists; going live needs its DNS records in Cloudflare
+(DNS only), Google and Apple production credentials, and the mobile SSO
 redirect allowlist. Track this in [launch-plan.md](launch-plan.md).
+
+## DNS
+
+tulum-app.com's DNS is on Cloudflare since 24 November 2026 (registered at
+Namecheap, nameservers `guss` and `jacqueline.ns.cloudflare.com`). The apex,
+`www` and `mobile` point at Vercel, `api` at Railway (DNS only, with Railway's
+`_railway-verify.api` TXT record), and `img` is the R2 bucket's custom domain
+(proxied, managed by R2).
 
 ## Checking that a push went live
 

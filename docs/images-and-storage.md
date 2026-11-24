@@ -25,11 +25,12 @@ and `R2_PUBLIC_URL`, the public address URLs are built with.
 `R2_LEGACY_PUBLIC_URLS` lists older public addresses, so pictures stored under
 them can still be recognized and deleted.
 
-The public address is the bucket's `r2.dev` URL for now, which Cloudflare
-rate-limits and calls non-production. The launch moves it to
-`img.tulum-app.com` (see [launch-plan.md](launch-plan.md)), with the data fix
-`apps/api/supabase/data-fixes/20261111_r2_custom_domain_urls.sql` for stored
-URLs.
+The public address is `https://img.tulum-app.com`, the bucket's custom
+domain on Cloudflare, since 24 November 2026. Before that it was the bucket's
+`r2.dev` URL, which Cloudflare rate-limits and calls non-production; that
+address is now `R2_LEGACY_PUBLIC_URLS`, and the data fix
+`apps/api/supabase/data-fixes/20261111_r2_custom_domain_urls.sql` moved every
+stored URL to the custom domain.
 
 ## Supabase Storage
 
