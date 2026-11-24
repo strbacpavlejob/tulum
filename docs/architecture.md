@@ -24,7 +24,8 @@ A pnpm workspace (`pnpm-workspace.yaml`) with Turborepo for `dev`, `build`,
  hosts ───► apps/host (Next.js) ──► /api/* ───┘        │   │   └──► Redis (feed cache, socket.io adapter)
             route handlers (Clerk check,               │   └──────► Cloudflare R2 (pictures)
             then forward to the API)                   └──────────► GoOut, Guest List Serbia, Apify/Instagram,
-                                                                     EventZeka, OpenAI, Nominatim (scrapers)
+                                                                     EventZeka, OpenAI, Nominatim (scrapers),
+                                                                     Apify/Google Maps (venue pictures)
  Clerk ──webhooks──► Supabase edge functions (apps/host/supabase/functions: create-user, delete-user)
 ```
 
@@ -64,6 +65,7 @@ NestJS 11, one module per feature under `src/`:
 | `venues`, `favorites`, `settings`, `statistics` | What their names say                     |
 | `cleanup`         | Archiving expired matches, deleting past events (admin and after scrapes) |
 | `scrape`, `instagram`, `duplicate-checker`, `geocoder` | Imports, see [scrapers.md](scrapers.md) |
+| `venue-pictures`  | The hourly job that gives imported venues their Instagram profile picture within an Apify budget, see [scrapers.md](scrapers.md#venue-pictures) |
 | `supabase`        | `SupabaseService` (the client), `ScrapedDataService` (scraper reads and writes), `scraped-rows.ts` (pure row mapping) |
 | `r2`, `redis`     | Storage and cache clients                                              |
 | `seed`            | Development seed data                                                  |

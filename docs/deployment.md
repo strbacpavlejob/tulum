@@ -11,6 +11,7 @@ review and check before merging.
 | Database, edge functions | Supabase | one project for every environment | `apps/api/supabase`, `apps/host/supabase/functions` | |
 | Auth            | Clerk    | development instance (production instance created, not live) | | |
 | Pictures        | Cloudflare R2 | bucket `tulum-images` | uploads from the API | https://img.tulum-app.com (`R2_PUBLIC_URL`) |
+| Scraping actors | Apify    | free plan, one account | runs started by the API | https://console.apify.com |
 
 ## Vercel (site and web app)
 
@@ -55,6 +56,46 @@ All environments use the development instance, which caps at 100 users. The
 production instance exists; going live needs its DNS records in Cloudflare
 (DNS only), Google and Apple production credentials, and the mobile SSO
 redirect allowlist. Track this in [launch-plan.md](launch-plan.md).
+
+## Apify
+
+The API runs three public Apify actors with one account's token
+(`APIFY_API_TOKEN`): `apify/instagram-scraper` for the weekly Instagram posts
+scrape, and `apify/instagram-profile-scraper` and
+`compass/crawler-google-places` for venue pictures. All three charge per
+event, and the free plan can run them: no actor needs renting or turning
+on. The free plan includes $5 of usage a month, needs no card, and blocks
+the account until the next cycle once it is used up, so the venue picture
+job keeps to a budget ([scrapers.md](scrapers.md#staying-on-apifys-free-plan)).
+
+Setting it up, or checking it:
+
+1. **Account.** Sign in at https://console.apify.com. The token in Railway
+   belongs to one account; that account's plan and usage are what count.
+2. **Token.** Settings → API & Integrations
+   (https://console.apify.com/settings/integrations) → Personal API tokens.
+   Use the default token, or "Create a new token" (it is shown only once).
+   A token with "Limit token permissions" turned on must still be able to
+   run actors, read their runs' default datasets and read the account's
+   usage; check the last with
+   `curl -H "Authorization: Bearer <token>" https://api.apify.com/v2/users/me/limits`.
+   Without usage, the job looks nothing up.
+3. **Railway.** In the `tulum-api` service's Variables set `APIFY_API_TOKEN`,
+   with `APIFY_API_POSTS_LIMIT` and `APIFY_API_ONLY_POSTS_NEWER_THAN_IN_DAYS`
+   for the posts scrape; the API doesn't start without these three. The
+   venue picture job's settings are optional:
+   `VENUE_PICTURES_APIFY_BUDGET_USD` (default 3.5),
+   `VENUE_PICTURES_PROFILES_PER_RUN` (200) and
+   `VENUE_PICTURES_GOOGLE_MAPS_SEARCHES_PER_RUN` (25). Saving variables
+   redeploys the service.
+4. **Limit.** Billing → Limits (https://console.apify.com/billing#/limits)
+   shows the account's monthly usage limit. The job stays under it and under
+   its own budget, whichever is lower, so lowering the limit there also
+   lowers what the job spends.
+5. **Check.** After a deploy, `GET /venue-pictures/missing` (admin) shows
+   `apifyBudget`: the usage, the ceiling and when the cycle ends. If it is
+   null, the token can't read the usage. Billing → Current period, and each
+   run under Runs, show what was spent.
 
 ## DNS
 

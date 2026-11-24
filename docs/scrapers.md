@@ -56,6 +56,88 @@ with matches stay.
   venues with a street address are placed by Nominatim (`GeocoderService`,
   1 request/s, building-level results only); the rest are skipped.
 
+## Venue pictures
+
+Most imported venues had no picture: EventZeka and Guest List Serbia give
+none (`imagePolicy: KEEP_EMPTY`) and GoOut's are sometimes missing. On 24
+November 2026, 463 of the 643 imported venues had none, and 442 of those had
+an Instagram handle. Guests see the gap as an empty circle on event details
+and on map pins.
+
+`VenuePicturesCronService` (`venue-pictures/`) fills them every hour at :20
+(server time), so a venue a scrape imports gets its picture within the hour.
+For each imported venue (`scraper` set) whose `picture_url` is null or empty:
+
+1. **A venue without a handle** is searched for by name on Google Maps,
+   around its position, through Apify (`compass/crawler-google-places`, with
+   the contacts enrichment, which reads each place's website). A place is
+   the venue when it is open, within 300 m, and has the venue's name, as
+   the duplicate checker compares names or differing only in spacing; within
+   150 m, one name inside the other is enough. The handle is the Instagram
+   profile the listing gives as its website, or else a profile its website
+   links to whose handle is like the venue's name (a footer can link the
+   agency that built the site). The handle is saved on the venue's contact,
+   or on a new contact, unless another venue already has it
+   (`venue-picture-rules.ts`).
+2. **The profile picture** comes from Apify's `apify/instagram-profile-scraper`.
+   The larger picture is downloaded (Instagram's picture URLs expire, so
+   pictures are stored, never linked), cropped to 200×200 WebP and stored in
+   R2 at `venue-images/scraped/<venueId>/instagram-profile.webp`. Instagram's
+   blank avatar is skipped.
+3. **Only an empty picture is filled.** The update checks that `picture_url`
+   is still empty, so a host's upload is never replaced. Venues hosts created
+   themselves are left to them.
+
+Venues with an upcoming event go first. A run looks up at most
+`VENUE_PICTURES_PROFILES_PER_RUN` profiles (default 200) and
+`VENUE_PICTURES_GOOGLE_MAPS_SEARCHES_PER_RUN` venues on Google Maps (default
+25); 0 turns that step off.
+
+### Staying on Apify's free plan
+
+Apify's free plan includes $5 of usage a month, and blocks the account
+when it is used up until the next billing cycle starts, the weekly
+Instagram posts scrape included. So the job spends only within a budget
+(`apify-budget.ts`):
+
+- A run with no venue due, which is most hourly runs, asks Apify nothing.
+- Otherwise it first reads the account's usage in its billing cycle from
+  Apify (`GET /v2/users/me/limits`, free). It spends only while that is
+  under `VENUE_PICTURES_APIFY_BUDGET_USD` (default $3.50, leaving $1.50 for
+  the posts scrape, about $0.25 a month, and manual runs), or under the
+  account's own monthly limit if that is lower. 0 stops all spending. When
+  the usage can't be read, nothing is looked up.
+- Each run is sized to what is left and capped at it (`maxTotalChargeUsd`):
+  $0.005 a profile and $0.03 a Google Maps search, about twice the free
+  plan's prices in November 2026 ($0.0026 a profile; $0.004 a place, plus
+  $0.002 for its contacts and up to $0.002 for its details). The Google Maps
+  actor takes no run capped below $0.50, so venues without a handle wait
+  until that much is left. The usage is read again after a Google Maps run.
+- What was tried waits before it is tried again (Redis key
+  `venue-pictures:tried`): 30 days when nothing was found (no listing, no
+  profile, no picture), 7 days after a failed download, and 6 hours after a
+  failed Apify run or upload. A run stopped by its cap or timeout counts the
+  venues it didn't reach as failed, not as having nothing.
+
+The first backfill of 441 profiles and 21 searches costs about $1.70 and
+takes about three hourly runs. After that the job pays only for the venues
+new scrapes import and for misses tried again after 30 days, about $1 a
+month at most.
+
+Admins can check and run it by hand:
+
+- `GET /venue-pictures/missing` counts the venues without a picture and
+  shows the Apify usage against the budget (`apifyBudget`). It is free:
+  nothing is looked up.
+- `POST /venue-pictures/fill` runs the job now, within the same budget.
+  With `?dryRun=true` it looks the venues up and downloads their pictures but
+  saves nothing (no picture, handle or retry record); Apify still charges for
+  the lookups.
+
+The older manual refreshes (`POST /instagram/refresh-logos/:scraper` and a
+host's `POST /venues/:id/refresh-instagram-picture`) read profiles through
+storiesig.info in Puppeteer instead, and replace the picture a venue has.
+
 ## Adding a source
 
 1. Add the source to `ScraperSource` and `SCRAPER_CONFIGS` with a new id.

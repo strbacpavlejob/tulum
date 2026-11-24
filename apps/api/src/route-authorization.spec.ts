@@ -46,6 +46,8 @@ import { TicketsService } from './tickets/tickets.service';
 import { AccountDeletionService } from './users/account-deletion.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
+import { VenuePicturesController } from './venue-pictures/venue-pictures.controller';
+import { VenuePicturesService } from './venue-pictures/venue-pictures.service';
 import { VenuesController } from './venues/venues.controller';
 import { VenuesService } from './venues/venues.service';
 
@@ -146,6 +148,10 @@ const venuesService = {
   refreshAllGoOutInstagramPictures: resolved({}),
   refreshInstagramPicture: resolved({}),
 };
+const venuePicturesService = {
+  previewMissingPictures: resolved({}),
+  fillMissingPictures: resolved({}),
+};
 
 describe('Route authorization (BUG-004)', () => {
   let app: INestApplication<App>;
@@ -182,6 +188,7 @@ describe('Route authorization (BUG-004)', () => {
         StatisticsController,
         InstagramScraperController,
         VenuesController,
+        VenuePicturesController,
       ],
       providers: [
         { provide: APP_GUARD, useValue: clerkGuard },
@@ -204,6 +211,7 @@ describe('Route authorization (BUG-004)', () => {
           useValue: instagramVenueScraperService,
         },
         { provide: VenuesService, useValue: venuesService },
+        { provide: VenuePicturesService, useValue: venuePicturesService },
       ],
     }).compile();
 
@@ -576,6 +584,8 @@ describe('Route authorization (BUG-004)', () => {
       ['post', '/instagram/sync-contacts'],
       ['post', '/instagram/refresh-logos/go-out'],
       ['post', '/venues/refresh-instagram-picture'],
+      ['get', '/venue-pictures/missing'],
+      ['post', '/venue-pictures/fill?dryRun=true'],
     ];
 
     it.each(adminOnly)(

@@ -70,7 +70,7 @@ export function bestNameSimilarity(
 }
 
 /** The name without the words that only say what kind of place it is. */
-function coreName(value: string): string {
+export function coreName(value: string): string {
   return normalizeText(value)
     .split(' ')
     .filter((word) => word && !VENUE_NAME_FILLER_WORDS.has(word))

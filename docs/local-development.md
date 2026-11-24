@@ -15,13 +15,14 @@ maintainer for the values. Never commit them. The names the code reads:
 
 | App           | File                        | Variables                                                                 |
 | ------------- | --------------------------- | ------------------------------------------------------------------------- |
-| `apps/api`    | `apps/api/.env`             | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_AUTHORIZED_PARTIES`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`, `R2_LEGACY_PUBLIC_URLS`, `REDIS_URL` (or `REDIS_HOST`/`REDIS_PORT`), `OPENAI_API_KEY`, `OPENAI_EVENT_PROCESSING_MODEL`, `APIFY_API_TOKEN`, `CHECKIN_RADIUS_METERS`, `DEFAULT_VENUE_HOST_ID`, `SCRAPE_VENUE_CONTACTS`, `HOST_URL`, `MOBILE_URL`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `PORT` |
+| `apps/api`    | `apps/api/.env`             | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_AUTHORIZED_PARTIES`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`, `R2_LEGACY_PUBLIC_URLS`, `REDIS_URL` (or `REDIS_HOST`/`REDIS_PORT`), `OPENAI_API_KEY`, `OPENAI_EVENT_PROCESSING_MODEL`, `APIFY_API_TOKEN`, `APIFY_API_POSTS_LIMIT`, `APIFY_API_ONLY_POSTS_NEWER_THAN_IN_DAYS`, `VENUE_PICTURES_APIFY_BUDGET_USD`, `VENUE_PICTURES_PROFILES_PER_RUN`, `VENUE_PICTURES_GOOGLE_MAPS_SEARCHES_PER_RUN`, `CHECKIN_RADIUS_METERS`, `DEFAULT_VENUE_HOST_ID`, `SCRAPE_VENUE_CONTACTS`, `HOST_URL`, `MOBILE_URL`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `PORT` |
 | `apps/mobile` | `apps/mobile/.env` (from `.example.env`) | `EXPO_PUBLIC_API_URL` (default `http://localhost:3001`), `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_MAPTILER_KEY`, `EXPO_PUBLIC_ENVIRONMENT`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_SENTRY_ENVIRONMENT`, `EXPO_PUBLIC_SENTRY_RELEASE` |
 | `apps/host`   | `apps/host/.env.local` (from `.env.example`) | `TULUM_API_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_AUTHORIZED_PARTIES`, `NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_TULUM_MOBILE_URL`, `NEXT_PUBLIC_TULUM_APP_STORE_URL`, `NEXT_PUBLIC_TULUM_PLAY_STORE_URL`, `MASKENBAL_EVENT_ID` |
 
 All environments currently use one Supabase project and Clerk's development
 instance (see [deployment.md](deployment.md)), so a local API works on real
-data. Treat it that way: the API's scheduled scrapers write as soon as it runs.
+data. Treat it that way: the API's scheduled scrapers and venue picture job
+write as soon as it runs.
 
 ## Running the apps
 

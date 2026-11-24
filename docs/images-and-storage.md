@@ -9,6 +9,7 @@ R2 (`apps/api/src/r2/r2.service.ts`); the database stores public URLs.
 | Venue        | up to 200×200    | in the browser, WebP 80%                            | set by the API             |
 | Guest photo  | 800×600, cropped | on the API with sharp, WebP 80% (up to 3 per guest) | `guests/<userId>/<uuid>.webp` |
 | Scraped poster or profile picture | as the source | downloaded and stored by the API (`downloadAndUpload`), or kept as the source's URL, per scraper config (`imagePolicy`) | |
+| Imported venue's Instagram picture | 200×200, cropped | the hourly venue picture job, on the API with sharp, WebP 80% ([scrapers.md](scrapers.md#venue-pictures)) | `venue-images/scraped/<venueId>/instagram-profile.webp` |
 
 ## Upload path
 
