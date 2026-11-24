@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
-import sharp from 'sharp';
+import { downloadPicture } from '../common/download-picture';
 import { R2Service } from '../r2/r2.service';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -107,13 +106,6 @@ type TriedVenues = Record<
 
 /* Venue pictures are 200×200 WebP (docs/images-and-storage.md). */
 const PICTURE_SIZE = 200;
-
-const PICTURE_DOWNLOAD_TIMEOUT_MS = 15_000;
-
-const MAX_PICTURE_BYTES = 5 * 1024 * 1024;
-
-const BROWSER_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 /**
  * Fills in the pictures of imported venues that have none, with the venue's
@@ -512,26 +504,13 @@ export class VenuePicturesService {
    * signed and expire within days, so a picture is stored, never linked.
    */
   private async downloadPicture(url: string): Promise<Buffer | null> {
-    try {
-      const response = await axios.get<ArrayBuffer>(url, {
-        responseType: 'arraybuffer',
-        timeout: PICTURE_DOWNLOAD_TIMEOUT_MS,
-        maxContentLength: MAX_PICTURE_BYTES,
-        headers: {
-          'User-Agent': BROWSER_USER_AGENT,
-          Accept: 'image/avif,image/webp,image/*,*/*;q=0.8',
-        },
-      });
-      const picture = Buffer.from(response.data);
-      // Throws for anything sharp can't read as an image.
-      await sharp(picture).metadata();
-      return picture;
-    } catch (error) {
-      this.logger.warn(
-        `Downloading ${url.substring(0, 80)} failed: ${errorMessage(error)}`,
-      );
-      return null;
-    }
+    const download = await downloadPicture(url);
+    if ('picture' in download) return download.picture;
+
+    this.logger.warn(
+      `Downloading ${url.substring(0, 80)} failed: ${download.error}`,
+    );
+    return null;
   }
 
   /** The venues still waiting to be tried again. */

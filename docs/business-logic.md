@@ -105,7 +105,8 @@ session that won.
   for the native apps and for reports (`CleanupService`).
 - Past events **without matches** are deleted after every scrape run and by
   the admin route `DELETE /events/cleanup` (`CleanupService.deleteOldEvents`),
-  with their tickets, swipes and sessions (the foreign keys cascade). A past
+  with their tickets, swipes and sessions (the foreign keys cascade) and their
+  pictures in R2, unless another event or a venue uses the same one. A past
   event with a match, archived or not, is kept, so its matches, chats and
   messages stay too (decided 18 November 2026).
 

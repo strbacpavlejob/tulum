@@ -63,9 +63,10 @@ NestJS 11, one module per feature under `src/`:
 | `retention`       | Consent log (launch email), attribution (first event, QR poster)       |
 | `users`           | `/users/me`, provisioning, account deletion                            |
 | `venues`, `favorites`, `settings`, `statistics` | What their names say                     |
-| `cleanup`         | Archiving expired matches, deleting past events (admin and after scrapes) |
+| `cleanup`         | Archiving expired matches, deleting past events and their pictures (admin and after scrapes) |
 | `scrape`, `instagram`, `duplicate-checker`, `geocoder` | Imports, see [scrapers.md](scrapers.md) |
 | `venue-pictures`  | The hourly job that gives imported venues their Instagram profile picture within an Apify budget, see [scrapers.md](scrapers.md#venue-pictures) |
+| `external-pictures` | Stores in R2 the event and venue pictures scrapers link from other sites, after each scrape and hourly, see [scrapers.md](scrapers.md#pictures-from-sources) |
 | `supabase`        | `SupabaseService` (the client), `ScrapedDataService` (scraper reads and writes), `scraped-rows.ts` (pure row mapping) |
 | `r2`, `redis`     | Storage and cache clients                                              |
 | `seed`            | Development seed data                                                  |

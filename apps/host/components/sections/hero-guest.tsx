@@ -147,9 +147,6 @@ export default function HeroGuest({
                       aria-hidden="true"
                     />
                   </a>
-                  <p className="text-xs text-secondary/70">
-                    {t("landingpage.guest.hero.worksInBrowser")}
-                  </p>
                 </>
               )}
               {appStoreUrl || playStoreUrl ? (
@@ -165,17 +162,7 @@ export default function HeroGuest({
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-secondary/70">
-                  {t("landingpage.guest.hero.appsSoon")}{" "}
-                  <a
-                    href={INSTAGRAM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-secondary underline underline-offset-4"
-                  >
-                    {t("landingpage.guest.hero.followForNews")}
-                  </a>
-                </p>
+                <p className="text-xs text-secondary/70"></p>
               )}
             </div>
           </div>

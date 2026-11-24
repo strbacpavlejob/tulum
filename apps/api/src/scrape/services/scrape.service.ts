@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { parseDbTimestamp } from '../../common/db-timestamp';
 import { Scraper } from '../domain/scraper.interface';
@@ -10,6 +10,7 @@ import { InstagramScraperService } from '../scrapers/instagram/instagram-scraper
 import { CleanupService } from '../../cleanup/cleanup.service';
 import { ScrapedDataService } from '../../supabase/scraped-data.service';
 import { DuplicateCheckerService } from '../../duplicate-checker/duplicate-checker.service';
+import { ExternalPicturesService } from '../../external-pictures/external-pictures.service';
 
 interface ExistingVenueContactRow {
   phoneNumber?: string | null;
@@ -28,6 +29,7 @@ export class ScraperService {
     private readonly duplicateCheckerService: DuplicateCheckerService,
     private readonly scrapedDataService: ScrapedDataService,
     private readonly cleanupService: CleanupService,
+    private readonly externalPicturesService: ExternalPicturesService,
   ) {}
 
   private getScraper(scraperId: number): Scraper {
@@ -151,6 +153,8 @@ export class ScraperService {
 
     const deletedOldEvents = await this.cleanupService.deleteOldEvents();
 
+    await this.storeExternalPictures();
+
     this.logScraperResult(
       scraperId,
       savedVenues,
@@ -163,6 +167,23 @@ export class ScraperService {
       savedEvents,
       deletedOldEvents,
     };
+  }
+
+  /*
+   * Scrapers save pictures as the source links them; this stores them in
+   * R2 and points the rows there, before Instagram's links expire. A run
+   * already going, or a failed one, leaves them to the hourly run.
+   */
+  private async storeExternalPictures(): Promise<void> {
+    try {
+      await this.externalPicturesService.storeExternalPictures();
+    } catch (error) {
+      if (error instanceof ConflictException) return;
+
+      this.logger.error(
+        `Storing scraped pictures failed: ${(error as Error).message}`,
+      );
+    }
   }
 
   async scrapeWithMultipleScrapers(scraperIds: number[]) {

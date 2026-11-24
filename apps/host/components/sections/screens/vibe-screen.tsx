@@ -9,6 +9,8 @@ import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { MapPreview } from "./map-preview";
 
+// Stock photos load as they are: the image optimizer takes only R2 pictures
+// (next.config.ts).
 const DEMO_AVATARS = [
   {
     imageUrl: "https://i.pravatar.cc/150?img=47",
@@ -65,6 +67,7 @@ export function VibeScreen() {
         <Image
           src="https://images.unsplash.com/photo-1570872626485-d8ffea69f463?auto=format&fit=crop&w=640&q=65"
           alt={eventName}
+          unoptimized
           fill
           sizes="240px"
           quality={65}

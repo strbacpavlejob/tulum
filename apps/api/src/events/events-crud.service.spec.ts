@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it } from '@jest/globals';
 import { FavoritesService } from '../favorites/favorites.service';
 import { R2Service } from '../r2/r2.service';
@@ -136,6 +137,28 @@ describe('EventsCrudService raw event routes (host dashboard)', () => {
   it('GET /events/:id sends start and end as UTC instants', async () => {
     await expect(service.getEventById(EVENT_ID)).resolves.toEqual(
       expect.objectContaining({ id: EVENT_ID, ...utcTimes }),
+    );
+  });
+
+  it('PATCH /events/:id refuses a picture linked from another site', async () => {
+    const withR2 = new EventsCrudService(supabase, {
+      extractKeyFromUrl: (url: string) =>
+        url.startsWith('https://img.tulum-app.com/') ? url.slice(26) : null,
+    } as unknown as R2Service);
+
+    await expect(
+      withR2.updateEvent(EVENT_ID, HOST, {
+        picture_url: 'https://images.unsplash.com/photo.jpg',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      withR2.updateEvent(EVENT_ID, HOST, {
+        picture_url: 'https://img.tulum-app.com/event-images/host/new.webp',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        picture_url: 'https://img.tulum-app.com/event-images/host/new.webp',
+      }),
     );
   });
 

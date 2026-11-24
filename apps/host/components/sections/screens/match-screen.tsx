@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next";
 
 export function MatchScreen() {
   const { t } = useTranslation();
+  // Stock photos load as they are: the image optimizer takes only R2
+  // pictures (next.config.ts).
   const avatar1 = "https://mockmind-api.uifaces.co/content/human/218.jpg";
   const avatar2 = "https://mockmind-api.uifaces.co/content/human/207.jpg";
 
@@ -41,6 +43,7 @@ export function MatchScreen() {
             <Image
               src={avatar1}
               alt={t("landingpage.screens.match.matchProfileAlt")}
+              unoptimized
               width={224}
               height={224}
               sizes="112px"
@@ -53,6 +56,7 @@ export function MatchScreen() {
             <Image
               src={avatar2}
               alt={t("landingpage.screens.match.yourProfileAlt")}
+              unoptimized
               width={224}
               height={224}
               sizes="112px"

@@ -1,4 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CleanupService } from './cleanup.service';
 
@@ -57,6 +58,24 @@ function fakeDatabase(tables: Record<string, Row[]>) {
   return { getClient: () => ({ from }) } as unknown as SupabaseService;
 }
 
+const R2 = 'https://img.tulum-app.com';
+
+/** An R2Service that deletes from a set of keys instead of the bucket. */
+function fakeBucket(keys: string[], failOn: string[] = []) {
+  const objects = new Set(keys);
+  const deleteObject = jest.fn((key: string) => {
+    if (failOn.includes(key)) return Promise.reject(new Error('R2 is down'));
+    objects.delete(key);
+    return Promise.resolve();
+  });
+  const r2 = {
+    extractKeyFromUrl: (url: string) =>
+      url.startsWith(`${R2}/`) ? url.slice(R2.length + 1) : null,
+    deleteObject,
+  } as unknown as R2Service;
+  return { r2, objects, deleteObject };
+}
+
 const ENDED = '2026-11-01T22:00:00';
 const LATER = '2026-12-20T22:00:00';
 const CUTOFF = '2026-11-18T12:00:00';
@@ -84,7 +103,7 @@ describe('CleanupService.deleteOldEvents', () => {
         { id: 'cm2', chat_id: 'c2' },
       ],
     };
-    const service = new CleanupService(fakeDatabase(tables));
+    const service = new CleanupService(fakeDatabase(tables), fakeBucket([]).r2);
 
     await expect(service.deleteOldEvents(CUTOFF)).resolves.toBe(1);
 
@@ -105,7 +124,7 @@ describe('CleanupService.deleteOldEvents', () => {
       chats: [],
       chat_messages: [],
     };
-    const service = new CleanupService(fakeDatabase(tables));
+    const service = new CleanupService(fakeDatabase(tables), fakeBucket([]).r2);
 
     await expect(service.deleteOldEvents(CUTOFF)).resolves.toBe(0);
     expect(tables.events).toHaveLength(1);
@@ -124,9 +143,103 @@ describe('CleanupService.deleteOldEvents', () => {
       chats: [],
       chat_messages: [],
     };
-    const service = new CleanupService(fakeDatabase(tables));
+    const service = new CleanupService(fakeDatabase(tables), fakeBucket([]).r2);
 
     await expect(service.deleteOldEvents(CUTOFF)).resolves.toBe(44);
     expect(tables.events.map((e) => e.id)).toEqual(['e44']);
+  });
+
+  it("deletes the deleted events' pictures from R2, keeping those still in use", async () => {
+    const tables: Record<string, Row[]> = {
+      events: [
+        {
+          id: 'own-picture',
+          end_date_time: ENDED,
+          picture_url: `${R2}/event-images/scraped/own-picture/picture.webp`,
+        },
+        {
+          id: 'shares-with-kept-event',
+          end_date_time: ENDED,
+          picture_url: `${R2}/event-images/host/poster.webp`,
+        },
+        {
+          id: 'kept-with-match',
+          end_date_time: ENDED,
+          picture_url: `${R2}/event-images/host/poster.webp`,
+        },
+        {
+          id: 'shares-with-venue',
+          end_date_time: ENDED,
+          picture_url: `${R2}/venue-images/scraped/v1/picture.webp`,
+        },
+        {
+          id: 'external-picture',
+          end_date_time: ENDED,
+          picture_url: 'https://assets.tickets.rs/poster.jpg',
+        },
+        { id: 'no-picture', end_date_time: ENDED, picture_url: null },
+      ],
+      venues: [
+        {
+          id: 'v1',
+          picture_url: `${R2}/venue-images/scraped/v1/picture.webp`,
+        },
+      ],
+      matches: [{ id: 'm1', event_id: 'kept-with-match', archived_at: null }],
+      chats: [],
+      chat_messages: [],
+    };
+    const bucket = fakeBucket([
+      'event-images/scraped/own-picture/picture.webp',
+      'event-images/host/poster.webp',
+      'venue-images/scraped/v1/picture.webp',
+    ]);
+    const service = new CleanupService(fakeDatabase(tables), bucket.r2);
+
+    await expect(service.deleteOldEvents(CUTOFF)).resolves.toBe(5);
+
+    expect(tables.events.map((e) => e.id)).toEqual(['kept-with-match']);
+    expect(bucket.deleteObject.mock.calls.map(([key]) => key)).toEqual([
+      'event-images/scraped/own-picture/picture.webp',
+    ]);
+    expect([...bucket.objects]).toEqual([
+      'event-images/host/poster.webp',
+      'venue-images/scraped/v1/picture.webp',
+    ]);
+  });
+
+  it('still deletes the events when R2 fails to delete a picture', async () => {
+    const tables: Record<string, Row[]> = {
+      events: [
+        {
+          id: 'e1',
+          end_date_time: ENDED,
+          picture_url: `${R2}/event-images/scraped/e1/picture.webp`,
+        },
+        {
+          id: 'e2',
+          end_date_time: ENDED,
+          picture_url: `${R2}/event-images/scraped/e2/picture.webp`,
+        },
+      ],
+      matches: [],
+      chats: [],
+      chat_messages: [],
+    };
+    const bucket = fakeBucket(
+      [
+        'event-images/scraped/e1/picture.webp',
+        'event-images/scraped/e2/picture.webp',
+      ],
+      ['event-images/scraped/e1/picture.webp'],
+    );
+    const service = new CleanupService(fakeDatabase(tables), bucket.r2);
+
+    await expect(service.deleteOldEvents(CUTOFF)).resolves.toBe(2);
+
+    expect(tables.events).toHaveLength(0);
+    expect([...bucket.objects]).toEqual([
+      'event-images/scraped/e1/picture.webp',
+    ]);
   });
 });

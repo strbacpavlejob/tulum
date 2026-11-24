@@ -17,8 +17,9 @@ policy, venue-type mapping, which event types to keep).
 `ScrapeCronService` (server time): Monday 10:30 runs sources 1, 2 and 4;
 Thursday 10:30 runs 1, 2, 3 and 4. Admins can also run all of them
 (`GET /scrape`) or one (`GET /scrape/:scraperId`). After each run, past events
-that have no matches are deleted (`CleanupService.deleteOldEvents`); events
-with matches stay.
+that have no matches are deleted with their pictures
+(`CleanupService.deleteOldEvents`); events with matches stay. Then the
+pictures the run saved are stored in R2 ([below](#pictures-from-sources)).
 
 ## One run
 
@@ -28,7 +29,11 @@ with matches stay.
 3. `DuplicateCheckerService` drops what the database already has and points
    kept events at the stored venue's id.
 4. `ScrapedDataService.saveScrapedData` upserts venues (by name), venue
-   contacts and events (by title, venue and start).
+   contacts and events (by title, venue and start). A picture is saved as
+   the source links it.
+5. Past events without matches are deleted, and their pictures in R2.
+6. `ExternalPicturesService` stores the saved pictures in R2 and points the
+   rows at them.
 
 ## Duplicates
 
@@ -55,6 +60,44 @@ with matches stay.
 - A venue without a position is never put at the city centre. EventZeka
   venues with a street address are placed by Nominatim (`GeocoderService`,
   1 request/s, building-level results only); the rest are skipped.
+
+## Pictures from sources
+
+No event or venue picture stays a link to another site. Instagram's picture
+URLs expire within days, and other sites change or drop theirs, so
+`ExternalPicturesService` (`external-pictures/`) stores every `picture_url`
+that isn't in the R2 bucket:
+
+- It runs at the end of each scrape run and every hour at :40 (server time),
+  which tries failed downloads again and takes what a run left. A run with
+  nothing to store only reads the database.
+- Each picture is downloaded (5 MB at most, as a browser asks for it),
+  cropped to WebP like a host's upload (events 500×375, venues 200×200) and
+  stored under the row's own key: `event-images/scraped/<eventId>/picture.webp`
+  or `venue-images/scraped/<venueId>/picture.webp`. The update checks that
+  `picture_url` is still the source's, so a host's upload made meanwhile is
+  kept (the stored copy is then deleted).
+- Venues go first, as their pictures stand in for their events', then
+  upcoming events, then past ones; 200 a run.
+- A picture that answers 404 or 410 is gone: `picture_url` is cleared, so the
+  event shows its venue's picture, and the venue picture job can fill a
+  venue's. Other failures (a timeout, a 5xx, a 403, a page that isn't a
+  picture) are tried again every run and cleared after a day (Redis key
+  `external-pictures:failing`).
+
+The scraper configs' `imagePolicy` only says whether a source's picture is
+saved (`STORE_IN_R2`) or left out (`KEEP_EMPTY`).
+
+On 24 November 2026 it had 144 event pictures (106 from eventzeka.com, 26
+from assets.tickets.rs, 12 from firebasestorage.googleapis.com) and 8 venue
+pictures (framerusercontent.com, assets.tickets.rs) to move.
+
+Admins can check and run it by hand:
+
+- `GET /external-pictures/pending` counts the pictures still on other sites,
+  by site, and how many are failing.
+- `POST /external-pictures/store` runs it now; with `?dryRun=true` it
+  downloads the pictures and saves nothing.
 
 ## Venue pictures
 

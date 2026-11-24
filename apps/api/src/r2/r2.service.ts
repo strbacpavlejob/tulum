@@ -40,6 +40,16 @@ export class R2Service {
     });
   }
 
+  /** Where stored objects are served from, e.g. https://img.tulum-app.com. */
+  get publicBaseUrl(): string {
+    return this.publicUrl;
+  }
+
+  /** Whether objects can be stored: a bucket and its public address are set. */
+  isConfigured(): boolean {
+    return Boolean(this.bucket && this.publicUrl);
+  }
+
   async uploadBuffer(
     key: string,
     buffer: Buffer,

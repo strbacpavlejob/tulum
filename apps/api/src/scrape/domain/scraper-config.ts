@@ -8,11 +8,14 @@ export enum ScraperSource {
   EVENTZEKA = 'eventzeka',
 }
 
+/*
+ * Whether a scraper saves the picture its source links. A saved picture is
+ * stored in R2 right after the scrape, and the row then points there
+ * (ExternalPicturesService); no picture stays a link to the source.
+ */
 export enum ImageStoragePolicy {
   KEEP_EMPTY = 'keep_empty',
-  KEEP_EXTERNAL_URL = 'keep_external_url',
-  UPLOAD_TO_R2 = 'upload_to_r2',
-  UPLOAD_TO_R2_IF_MISSING = 'upload_to_r2_if_missing',
+  STORE_IN_R2 = 'store_in_r2',
 }
 
 export interface VenueTypeMapping {
@@ -72,13 +75,13 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
 
     events: {
       defaultDurationHour: 4,
-      imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
+      imagePolicy: ImageStoragePolicy.STORE_IN_R2,
       defaultStatus: EventStatusEnum.ACTIVE,
       fetchDelay: 10_000,
     },
 
     venues: {
-      imagePolicy: ImageStoragePolicy.UPLOAD_TO_R2,
+      imagePolicy: ImageStoragePolicy.STORE_IN_R2,
       venueTypeMapping: [
         {
           queryValue: 7058,
@@ -157,12 +160,12 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
 
     events: {
       defaultDurationHour: 4,
-      imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
+      imagePolicy: ImageStoragePolicy.STORE_IN_R2,
       defaultStatus: EventStatusEnum.ACTIVE,
     },
     venues: {
       defaultCapacity: 100,
-      imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
+      imagePolicy: ImageStoragePolicy.STORE_IN_R2,
       venueTypeMapping: [
         { queryValue: 'Nightclub', venueType: VenueTypeEnum.CLUB },
       ],
@@ -180,7 +183,7 @@ export const SCRAPER_CONFIGS: Record<ScraperSource, ScraperConfig> = {
 
     events: {
       defaultDurationHour: 4,
-      imagePolicy: ImageStoragePolicy.KEEP_EXTERNAL_URL,
+      imagePolicy: ImageStoragePolicy.STORE_IN_R2,
       defaultStatus: EventStatusEnum.ACTIVE,
       checkDuplicates: true,
       fetchDelay: 1_000,

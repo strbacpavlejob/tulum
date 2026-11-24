@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { assertStoredPictureUrl } from '../common/stored-picture-url';
 import { InstagramVenueScraperService } from '../instagram/instagram-venue-scraper.service';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -87,6 +88,12 @@ export class VenuesService {
         key,
         200,
         200,
+      );
+    } else {
+      assertStoredPictureUrl(
+        this.r2Service,
+        updates.picture_url,
+        venue.picture_url,
       );
     }
 

@@ -15,6 +15,8 @@ export function ChatScreen() {
   const messages = t("landingpage.screens.chat.messages", {
     returnObjects: true,
   }) as ChatMessage[];
+  // Stock photos load as they are: the image optimizer takes only R2
+  // pictures (next.config.ts).
   const avatar = "https://mockmind-api.uifaces.co/content/human/207.jpg";
 
   return (
@@ -25,6 +27,7 @@ export function ChatScreen() {
           <Image
             src={avatar}
             alt={t("landingpage.screens.chat.avatarAlt")}
+            unoptimized
             width={128}
             height={128}
             sizes="64px"

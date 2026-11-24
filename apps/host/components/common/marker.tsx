@@ -67,9 +67,12 @@ const Marker = ({ image, size = "xl", className }: MarkerProps) => {
           <motion.div
             className={`absolute inset-0 ${config.inner} rounded-full ${config.border} border-primary overflow-hidden bg-background`}
           >
+            {/* The landing page's demo pins show stock photos, which the
+                image optimizer doesn't take (next.config.ts). */}
             <Image
               src={image}
               alt="Marker"
+              unoptimized
               className="w-full h-full object-cover"
               width={200}
               height={200}

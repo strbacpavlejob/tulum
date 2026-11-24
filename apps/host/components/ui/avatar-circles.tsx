@@ -24,6 +24,7 @@ export const AvatarCircles = ({
           <Image
             className="h-10 w-10 rounded-full border-2 border-white dark:border-gray-800"
             src={url.imageUrl}
+            unoptimized
             width={40}
             height={40}
             sizes="40px"

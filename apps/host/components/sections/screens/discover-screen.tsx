@@ -24,6 +24,8 @@ export function DiscoverScreen() {
   const tagLabels = t("landingpage.screens.tags", {
     returnObjects: true,
   }) as Record<string, string>;
+  // Stock photos load as they are: the image optimizer takes only R2
+  // pictures (next.config.ts).
   const events = [
     {
       id: "1",
@@ -116,6 +118,7 @@ export function DiscoverScreen() {
                   <Image
                     src={event.picture}
                     alt=""
+                    unoptimized
                     width={640}
                     height={480}
                     sizes="160px"

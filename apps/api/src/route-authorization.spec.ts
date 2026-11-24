@@ -48,6 +48,8 @@ import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { VenuePicturesController } from './venue-pictures/venue-pictures.controller';
 import { VenuePicturesService } from './venue-pictures/venue-pictures.service';
+import { ExternalPicturesController } from './external-pictures/external-pictures.controller';
+import { ExternalPicturesService } from './external-pictures/external-pictures.service';
 import { VenuesController } from './venues/venues.controller';
 import { VenuesService } from './venues/venues.service';
 
@@ -152,6 +154,10 @@ const venuePicturesService = {
   previewMissingPictures: resolved({}),
   fillMissingPictures: resolved({}),
 };
+const externalPicturesService = {
+  previewExternalPictures: resolved({}),
+  storeExternalPictures: resolved({}),
+};
 
 describe('Route authorization (BUG-004)', () => {
   let app: INestApplication<App>;
@@ -189,6 +195,7 @@ describe('Route authorization (BUG-004)', () => {
         InstagramScraperController,
         VenuesController,
         VenuePicturesController,
+        ExternalPicturesController,
       ],
       providers: [
         { provide: APP_GUARD, useValue: clerkGuard },
@@ -212,6 +219,10 @@ describe('Route authorization (BUG-004)', () => {
         },
         { provide: VenuesService, useValue: venuesService },
         { provide: VenuePicturesService, useValue: venuePicturesService },
+        {
+          provide: ExternalPicturesService,
+          useValue: externalPicturesService,
+        },
       ],
     }).compile();
 
@@ -586,6 +597,8 @@ describe('Route authorization (BUG-004)', () => {
       ['post', '/venues/refresh-instagram-picture'],
       ['get', '/venue-pictures/missing'],
       ['post', '/venue-pictures/fill?dryRun=true'],
+      ['get', '/external-pictures/pending'],
+      ['post', '/external-pictures/store?dryRun=true'],
     ];
 
     it.each(adminOnly)(

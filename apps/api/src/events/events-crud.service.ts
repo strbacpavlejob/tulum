@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { withUtcEventTimes } from '../common/db-timestamp';
+import { assertStoredPictureUrl } from '../common/stored-picture-url';
 import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -108,6 +109,12 @@ export class EventsCrudService {
         key,
         500,
         375,
+      );
+    } else {
+      assertStoredPictureUrl(
+        this.r2Service,
+        updates.picture_url,
+        event.picture_url as string | null,
       );
     }
 

@@ -1,5 +1,6 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
+import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CleanupService } from './cleanup.service';
 
@@ -29,7 +30,7 @@ function createService(matches: unknown[]) {
   const supabaseService = {
     getClient: () => ({ from: () => query }),
   } as unknown as SupabaseService;
-  return new CleanupService(supabaseService);
+  return new CleanupService(supabaseService, {} as R2Service);
 }
 
 describe('CleanupService previewExpiredMatches', () => {
@@ -92,9 +93,10 @@ describe('CleanupService archives instead of deleting', () => {
       }),
     };
     const from = (table: string) => (table === 'events' ? events : matches);
-    const service = new CleanupService({
-      getClient: () => ({ from }),
-    } as unknown as SupabaseService);
+    const service = new CleanupService(
+      { getClient: () => ({ from }) } as unknown as SupabaseService,
+      {} as R2Service,
+    );
     return { service, calls, matches };
   }
 

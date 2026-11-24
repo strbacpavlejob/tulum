@@ -20,6 +20,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
 import { VenuePicturesModule } from './venue-pictures/venue-pictures.module';
+import { ExternalPicturesModule } from './external-pictures/external-pictures.module';
 import { RedisModule } from './redis/redis.module';
 import { GuestsModule } from './guests/guests.module';
 import { SeedModule } from './seed/seed.module';
@@ -47,6 +48,7 @@ import { RetentionModule } from './retention/retention.module';
     UsersModule,
     VenuesModule,
     VenuePicturesModule,
+    ExternalPicturesModule,
     GuestsModule,
     SeedModule,
     SettingsModule,

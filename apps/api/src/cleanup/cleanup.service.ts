@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { parseDbTimestamp, toUtcIsoString } from '../common/db-timestamp';
 import { isMissingTableOrColumn } from '../common/missing-schema';
+import { R2Service } from '../r2/r2.service';
 import { SupabaseService } from '../supabase/supabase.service';
 
 /**
@@ -17,11 +18,17 @@ import { SupabaseService } from '../supabase/supabase.service';
 /** How many events deleteOldEvents checks for matches at once. */
 const MATCH_CHECK_BATCH = 20;
 
+/** How many picture URLs deleteOldEvents looks up at once. */
+const PICTURE_CHECK_BATCH = 50;
+
 @Injectable()
 export class CleanupService {
   private readonly logger = new Logger(CleanupService.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly r2Service: R2Service,
+  ) {}
 
   private get db() {
     return this.supabaseService.getClient();
@@ -144,9 +151,10 @@ export class CleanupService {
 
   /**
    * Deletes the events that ended before the cutoff (now by default) and
-   * have no match. An event with a match stays, with its matches, chats and
-   * messages: those are archived, never deleted, and deleting the event
-   * would cascade to them. Returns how many events went.
+   * have no match, and their pictures in R2. An event with a match stays,
+   * with its matches, chats and messages: those are archived, never
+   * deleted, and deleting the event would cascade to them. Returns how many
+   * events went.
    */
   async deleteOldEvents(before?: string): Promise<number> {
     const cutoff = before ?? new Date().toISOString();
@@ -226,7 +234,7 @@ export class CleanupService {
       .from('events')
       .delete()
       .in('id', eventIds)
-      .select('id');
+      .select('id, picture_url');
 
     if (error) {
       this.logger.error('Error deleting old events:', error.message);
@@ -234,10 +242,78 @@ export class CleanupService {
     }
 
     const count = data?.length ?? 0;
+    const deletedPictures = await this.deleteEventPictures(
+      (data ?? []).map((e) => e.picture_url as string | null),
+    );
     this.logger.log(
-      `Deleted ${count} events with end_date_time before ${cutoff}`,
+      `Deleted ${count} events with end_date_time before ${cutoff}, and ${deletedPictures} of their pictures`,
     );
     return count;
+  }
+
+  /**
+   * Deletes deleted events' pictures from R2, except a picture another event
+   * or a venue still uses; a picture on another site isn't in the bucket.
+   * The events are gone by now, so a failure is only logged: the object
+   * left behind takes space and is shown nowhere. Returns how many went.
+   */
+  private async deleteEventPictures(
+    pictureUrls: (string | null)[],
+  ): Promise<number> {
+    const keysByUrl = new Map<string, string>();
+    for (const url of pictureUrls) {
+      const key = url ? this.r2Service.extractKeyFromUrl(url) : null;
+      if (url && key) keysByUrl.set(url, key);
+    }
+    if (keysByUrl.size === 0) return 0;
+
+    let inUse: Set<string>;
+    try {
+      inUse = await this.picturesInUse([...keysByUrl.keys()]);
+    } catch (error) {
+      this.logger.error(
+        `Keeping the old events' pictures: ${(error as Error).message}`,
+      );
+      return 0;
+    }
+
+    let deleted = 0;
+    for (const [url, key] of keysByUrl) {
+      if (inUse.has(url)) continue;
+      try {
+        await this.r2Service.deleteObject(key);
+        deleted += 1;
+      } catch (error) {
+        this.logger.warn(
+          `Failed to delete the picture ${key}: ${(error as Error).message}`,
+        );
+      }
+    }
+    return deleted;
+  }
+
+  /** The URLs among these that an event or a venue uses as its picture. */
+  private async picturesInUse(urls: string[]): Promise<Set<string>> {
+    const inUse = new Set<string>();
+
+    for (let i = 0; i < urls.length; i += PICTURE_CHECK_BATCH) {
+      const batch = urls.slice(i, i + PICTURE_CHECK_BATCH);
+      for (const table of ['events', 'venues']) {
+        const { data, error } = await this.db
+          .from(table)
+          .select('picture_url')
+          .in('picture_url', batch);
+
+        if (error) {
+          throw new Error(
+            `Failed to check which pictures ${table} use: ${error.message}`,
+          );
+        }
+        for (const row of data ?? []) inUse.add(row.picture_url as string);
+      }
+    }
+
+    return inUse;
   }
 
   /**

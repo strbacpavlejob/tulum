@@ -8,6 +8,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 
 import { DuplicateCheckerService } from '../../duplicate-checker/duplicate-checker.service';
 import { CleanupService } from '../../cleanup/cleanup.service';
+import { ExternalPicturesService } from '../../external-pictures/external-pictures.service';
 import { ScrapedDataService } from '../../supabase/scraped-data.service';
 import { ScrapedEvent, ScrapedVenue } from '../domain/scraper.interface';
 import { EventStatusEnum } from '../domain/scraper-event.interfaces';
@@ -108,6 +109,9 @@ describe('ScraperService with Event Zeka (scraper 4)', () => {
       ),
       deleteOldEvents: jest.fn(async () => 0),
     };
+    const externalPictures = {
+      storeExternalPictures: jest.fn(() => Promise.resolve({})),
+    };
     const eventZeka = {
       scrape: jest.fn(async () => ({
         venues: [theatre, newBar],
@@ -128,6 +132,7 @@ describe('ScraperService with Event Zeka (scraper 4)', () => {
       } as unknown as ScraperLogs),
       supabase as unknown as ScrapedDataService,
       supabase as unknown as CleanupService,
+      externalPictures as unknown as ExternalPicturesService,
     );
 
     await service.scrapeWithSingleScraper(4);
@@ -138,5 +143,10 @@ describe('ScraperService with Event Zeka (scraper 4)', () => {
       ['Udaji se muški', DB_VENUE_ID],
       ['Jelena Jovović & Shoomagnions', 'k17bluz'],
     ]);
+    // The saved rows' pictures go to R2 once old events are gone.
+    expect(externalPictures.storeExternalPictures).toHaveBeenCalledTimes(1);
+    expect(supabase.deleteOldEvents.mock.invocationCallOrder[0]).toBeLessThan(
+      externalPictures.storeExternalPictures.mock.invocationCallOrder[0],
+    );
   });
 });
