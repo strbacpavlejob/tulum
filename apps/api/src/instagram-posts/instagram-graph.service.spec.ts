@@ -11,6 +11,7 @@ import { RedisService } from '../redis/redis.service';
 import {
   CarouselSlide,
   InstagramGraphService,
+  StoryImage,
 } from './instagram-graph.service';
 
 // A Unified login system-user token, and an Instagram Login token.
@@ -33,6 +34,8 @@ interface Call {
 interface GraphBehaviour {
   tags?: 'refuse';
   containerStatus?: string;
+  /** How many container calls get a server error before one goes through. */
+  containerServerErrors?: number;
   publish?: 'refuse' | 'timeout' | 'server-error' | 'expired-token';
   renewal?: 'fail';
 }
@@ -58,6 +61,7 @@ function graphError(
 function graphApi(behaviour: GraphBehaviour = {}): Call[] {
   const calls: Call[] = [];
   let items = 0;
+  let serverErrors = behaviour.containerServerErrors ?? 0;
   const pathOf = (url: string) =>
     new URL(url).pathname.replace(/^\/v\d+\.\d+/, '');
 
@@ -116,11 +120,20 @@ function graphApi(behaviour: GraphBehaviour = {}): Call[] {
       };
       calls.push(call);
       if (call.path.endsWith('/media')) {
+        if (serverErrors > 0) {
+          serverErrors -= 1;
+          return Promise.reject(
+            graphError(503, 'Service temporarily unavailable', 2),
+          );
+        }
         if (call.params.media_type === 'CAROUSEL') {
           return Promise.resolve({ data: { id: 'carousel' } });
         }
         if (call.params.user_tags && behaviour.tags === 'refuse') {
           return Promise.reject(graphError(400, 'Invalid user tag', 100));
+        }
+        if (call.params.media_type === 'STORIES') {
+          return Promise.resolve({ data: { id: 'story' } });
         }
         items += 1;
         return Promise.resolve({ data: { id: `item-${items}` } });
@@ -355,6 +368,120 @@ describe('InstagramGraphService', () => {
         { status: 'failed', error: 'INSTAGRAM_ACCESS_TOKEN is not set' },
       );
       expect(calls).toHaveLength(0);
+    });
+  });
+
+  describe('publishStory', () => {
+    const STORY: StoryImage = {
+      imageUrl: 'https://img.tulum-app.com/instagram-stories/x/01.jpg',
+      mentions: ['kptm.bar'],
+    };
+
+    it('makes a story container that mentions the venue, then publishes it', async () => {
+      const calls = graphApi();
+      const { service } = serviceWith();
+
+      await expect(service.publishStory(STORY)).resolves.toEqual({
+        status: 'published',
+        mediaId: 'media-1',
+        permalink: 'https://www.instagram.com/p/abc/',
+      });
+
+      expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+        'get /me/assigned_instagram_accounts',
+        'post /1789/media',
+        'get /story',
+        'post /1789/media_publish',
+        'get /media-1',
+      ]);
+      expect(calls[1].params).toMatchObject({
+        media_type: 'STORIES',
+        image_url: STORY.imageUrl,
+      });
+      // A story's tags take no position.
+      expect(JSON.parse(calls[1].params.user_tags)).toEqual([
+        { username: 'kptm.bar' },
+      ]);
+      expect(calls[3].params).toMatchObject({ creation_id: 'story' });
+    });
+
+    it('posts the story without the mention when Instagram refuses it', async () => {
+      const calls = graphApi({ tags: 'refuse' });
+      const { service } = serviceWith();
+
+      await expect(service.publishStory(STORY)).resolves.toMatchObject({
+        status: 'published',
+      });
+      const containers = calls.filter((call) => call.path === '/1789/media');
+      expect(containers).toHaveLength(2);
+      expect(containers[1].params.user_tags).toBeUndefined();
+      expect(containers[1].params.media_type).toBe('STORIES');
+    });
+
+    it('sends nothing to tag without a venue handle', async () => {
+      const calls = graphApi();
+
+      await serviceWith().service.publishStory({ ...STORY, mentions: [] });
+
+      expect(calls[1].params.user_tags).toBeUndefined();
+    });
+
+    it('reports a story whose media_publish got no clear answer as unknown', async () => {
+      graphApi({ publish: 'timeout' });
+
+      await expect(serviceWith().service.publishStory(STORY)).resolves.toEqual({
+        status: 'unknown',
+        error: 'ECONNABORTED',
+      });
+    });
+  });
+
+  describe('server errors', () => {
+    it('tries a container again after a server error', async () => {
+      const calls = graphApi({ containerServerErrors: 2 });
+      const { service } = serviceWith();
+
+      await expect(
+        service.publishStory({
+          imageUrl: 'https://img.tulum-app.com/s.jpg',
+          mentions: [],
+        }),
+      ).resolves.toMatchObject({ status: 'published' });
+      expect(calls.filter((call) => call.path === '/1789/media')).toHaveLength(
+        3,
+      );
+    });
+
+    it('gives up on a container after three server errors', async () => {
+      const calls = graphApi({ containerServerErrors: 3 });
+      const { service } = serviceWith();
+
+      await expect(
+        service.publishStory({
+          imageUrl: 'https://img.tulum-app.com/s.jpg',
+          mentions: [],
+        }),
+      ).resolves.toEqual({
+        status: 'failed',
+        error: 'Service temporarily unavailable [2]',
+      });
+      expect(calls.filter((call) => call.path === '/1789/media')).toHaveLength(
+        3,
+      );
+      expect(calls.some((call) => call.path.endsWith('/media_publish'))).toBe(
+        false,
+      );
+    });
+
+    it('never sends media_publish twice', async () => {
+      const calls = graphApi({ publish: 'server-error' });
+
+      await expect(
+        serviceWith().service.publishCarousel(SLIDES, 'caption'),
+      ).resolves.toMatchObject({ status: 'unknown' });
+      expect(
+        calls.filter((call) => call.path.endsWith('/media_publish')),
+      ).toHaveLength(1);
     });
   });
 

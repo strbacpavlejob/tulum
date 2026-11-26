@@ -14,6 +14,7 @@ import {
   PostEvent,
   postWindow,
   slideText,
+  withoutPromoted,
 } from './instagram-post-rules';
 
 function event(
@@ -285,5 +286,25 @@ describe('dates and text on the slides', () => {
     expect(slideText('🎉 Đorđe & Београд ✨ 🇿🇦\n  night ❤️‍🔥')).toBe(
       'Đorđe & Београд night',
     );
+  });
+});
+
+describe('withoutPromoted', () => {
+  it('leaves out promoted events, and others with a promoted title', () => {
+    const events = [
+      event({ id: 'a' }),
+      event({ id: 'b', title: 'Jazz Night 🎷' }),
+      event({ id: 'c' }),
+      event({ id: 'd', title: '🎉' }),
+    ];
+
+    expect(
+      withoutPromoted(events, [
+        { eventId: 'a', title: 'Event a' },
+        { eventId: 'elsewhere', title: 'JAZZ night' },
+        // A title of emoji alone leaves out nothing else.
+        { eventId: 'emoji', title: '🎶' },
+      ]).map((e) => e.id),
+    ).toEqual(['c', 'd']);
   });
 });

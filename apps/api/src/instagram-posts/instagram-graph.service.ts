@@ -34,6 +34,11 @@ const STATUS_CHECK_INTERVAL_MS = 3_000;
 
 const MAX_STATUS_CHECKS = 40;
 
+/* A container call that gets no answer, or a server error, is tried again
+ * after these waits. media_publish never is: a second call could post
+ * twice. */
+const TRANSIENT_RETRY_DELAYS_MS = [2_000, 5_000];
+
 /* An Instagram Login token renewed by the API. Railway's variable keeps the
  * token it was set to, so the renewed one has to live somewhere the API can
  * write. */
@@ -56,6 +61,13 @@ export interface CarouselSlide {
   imageUrl: string;
   /** Accounts tagged on the slide, at x and y between 0 and 1. */
   userTags: { username: string; x: number; y: number }[];
+}
+
+export interface StoryImage {
+  /** A public 9:16 JPEG, which Instagram downloads. */
+  imageUrl: string;
+  /** Accounts the story mentions; a story's tags take no position. */
+  mentions: string[];
 }
 
 export type PublishResult =
@@ -139,7 +151,14 @@ export class InstagramGraphService {
       accountId = await this.account(token);
       const children: string[] = [];
       for (const slide of slides) {
-        children.push(await this.createSlideContainer(accountId, slide, token));
+        children.push(
+          await this.createTaggedContainer(
+            accountId,
+            { image_url: slide.imageUrl, is_carousel_item: 'true' },
+            slide.userTags,
+            token,
+          ),
+        );
       }
       for (const child of children) await this.waitUntilReady(child, token);
 
@@ -152,30 +171,35 @@ export class InstagramGraphService {
     } catch (error) {
       return { status: 'failed', error: describe(error) };
     }
+    return this.publishContainer(accountId, carouselId, token);
+  }
 
-    let mediaId: string;
-    try {
-      const published = await this.post<{ id?: string }>(
-        `/${accountId}/media_publish`,
-        { creation_id: carouselId },
-        token,
-      );
-      if (!published.id)
-        throw new Error('media_publish answered without an id');
-      mediaId = String(published.id);
-    } catch (error) {
-      const refused = error instanceof InstagramApiError && error.refused;
-      return { status: refused ? 'failed' : 'unknown', error: describe(error) };
+  /**
+   * Publishes a story: a container for its picture, then media_publish.
+   * Instagram's API can't add stickers (a link, a poll), so the picture
+   * carries the call to action; the venue is mentioned.
+   */
+  async publishStory(story: StoryImage): Promise<PublishResult> {
+    const token = await this.currentToken();
+    if (!token) {
+      return { status: 'failed', error: 'INSTAGRAM_ACCESS_TOKEN is not set' };
     }
 
-    const permalink = await this.get<{ permalink?: string }>(
-      `/${mediaId}`,
-      { fields: 'permalink' },
-      token,
-    )
-      .then((media) => media.permalink ?? null)
-      .catch(() => null);
-    return { status: 'published', mediaId, permalink };
+    let accountId: string;
+    let containerId: string;
+    try {
+      accountId = await this.account(token);
+      containerId = await this.createTaggedContainer(
+        accountId,
+        { media_type: 'STORIES', image_url: story.imageUrl },
+        story.mentions.map((username) => ({ username })),
+        token,
+      );
+      await this.waitUntilReady(containerId, token);
+    } catch (error) {
+      return { status: 'failed', error: describe(error) };
+    }
+    return this.publishContainer(accountId, containerId, token);
   }
 
   /**
@@ -270,26 +294,59 @@ export class InstagramGraphService {
     return this.accountId;
   }
 
-  /* A slide's container. Instagram's docs don't say whether a carousel's
-   * slides take user tags, so a slide whose tags are refused goes untagged. */
-  private async createSlideContainer(
+  /* media_publish, the only call that puts anything on the account, then
+   * the post's link. Without a clear answer the post may have gone out. */
+  private async publishContainer(
     accountId: string,
-    slide: CarouselSlide,
+    containerId: string,
+    token: string,
+  ): Promise<PublishResult> {
+    let mediaId: string;
+    try {
+      const published = await this.post<{ id?: string }>(
+        `/${accountId}/media_publish`,
+        { creation_id: containerId },
+        token,
+      );
+      if (!published.id)
+        throw new Error('media_publish answered without an id');
+      mediaId = String(published.id);
+    } catch (error) {
+      const refused = error instanceof InstagramApiError && error.refused;
+      return { status: refused ? 'failed' : 'unknown', error: describe(error) };
+    }
+
+    const permalink = await this.get<{ permalink?: string }>(
+      `/${mediaId}`,
+      { fields: 'permalink' },
+      token,
+    )
+      .then((media) => media.permalink ?? null)
+      .catch(() => null);
+    return { status: 'published', mediaId, permalink };
+  }
+
+  /* A slide's or a story's container, with its tags. Instagram's docs don't
+   * say whether a carousel's slides take user tags, and an account can
+   * refuse to be tagged, so a picture whose tags are refused goes untagged. */
+  private async createTaggedContainer(
+    accountId: string,
+    params: Record<string, string>,
+    userTags: object[],
     token: string,
   ): Promise<string> {
-    const params = { image_url: slide.imageUrl, is_carousel_item: 'true' };
-    if (slide.userTags.length > 0) {
+    if (userTags.length > 0) {
       try {
         return await this.createContainer(
           accountId,
-          { ...params, user_tags: JSON.stringify(slide.userTags) },
+          { ...params, user_tags: JSON.stringify(userTags) },
           token,
         );
       } catch (error) {
         if (!(error instanceof InstagramApiError) || !error.refused)
           throw error;
         this.logger.warn(
-          `Instagram refused a slide's tags; it goes untagged: ${describe(error)}`,
+          `Instagram refused a picture's tags; it goes untagged: ${describe(error)}`,
         );
       }
     }
@@ -301,10 +358,8 @@ export class InstagramGraphService {
     params: Record<string, string>,
     token: string,
   ): Promise<string> {
-    const container = await this.post<{ id?: string }>(
-      `/${accountId}/media`,
-      params,
-      token,
+    const container = await this.retryTransient(() =>
+      this.post<{ id?: string }>(`/${accountId}/media`, params, token),
     );
     if (!container.id) throw new Error('A container was made without an id');
     return String(container.id);
@@ -316,10 +371,13 @@ export class InstagramGraphService {
     token: string,
   ): Promise<void> {
     for (let check = 1; check <= MAX_STATUS_CHECKS; check++) {
-      const container = await this.get<{
-        status_code?: string;
-        status?: string;
-      }>(`/${containerId}`, { fields: 'status_code,status' }, token);
+      const container = await this.retryTransient(() =>
+        this.get<{ status_code?: string; status?: string }>(
+          `/${containerId}`,
+          { fields: 'status_code,status' },
+          token,
+        ),
+      );
       if (container.status_code === 'FINISHED') return;
       if (
         container.status_code === 'ERROR' ||
@@ -334,7 +392,30 @@ export class InstagramGraphService {
     throw new Error(`Container ${containerId} wasn't ready after two minutes`);
   }
 
-  /* Waits between status checks; the specs replace it. */
+  /* Sends a request again after a server error or no answer. Instagram
+   * refusing it (a 4xx answer) is final. */
+  private async retryTransient<T>(send: () => Promise<T>): Promise<T> {
+    for (let retry = 0; ; retry++) {
+      try {
+        return await send();
+      } catch (error) {
+        const delay = TRANSIENT_RETRY_DELAYS_MS[retry];
+        if (
+          delay === undefined ||
+          !(error instanceof InstagramApiError) ||
+          error.refused
+        ) {
+          throw error;
+        }
+        this.logger.warn(
+          `Instagram didn't answer clearly; trying again: ${describe(error)}`,
+        );
+        await this.sleep(delay);
+      }
+    }
+  }
+
+  /* Waits between status checks and retries; the specs replace it. */
   private sleep = (ms: number) =>
     new Promise<void>((resolve) => setTimeout(resolve, ms));
 

@@ -100,11 +100,15 @@ Setting it up, or checking it:
 
 ## Instagram
 
-The weekly posts need `INSTAGRAM_ACCESS_TOKEN` on the `tulum-api` service:
-a token for Tulum's professional Instagram account (tulum_app) from the Meta
-app Tulum Posts, plus `INSTAGRAM_USER_ID`, the account's ID. Without the
-token the posts are off. Setting it up, the optional variables and the
-checks before the first post are in
+The weekly posts and the Stories need `INSTAGRAM_ACCESS_TOKEN` on the
+`tulum-api` service: a token for Tulum's professional Instagram account
+(tulum_app) from the Meta app Tulum Posts, plus `INSTAGRAM_USER_ID`, the
+account's ID. Without the token both are off. The Stories also need the
+publishing history's migration
+(`20261126213507_social_media_publications.sql`); until it is applied they
+don't go out, and the posts go out without the history. Setting it up, the
+optional variables (`INSTAGRAM_POSTS_*`, `INSTAGRAM_STORIES_SCHEDULE`,
+`_EVENTS`, `_WINDOW_HOURS`) and the checks before the first post are in
 [instagram-posts.md](instagram-posts.md#setup). The app's Unified login
 token never expires; a token that stops working is reported in the logs.
 

@@ -267,9 +267,34 @@ export function pickEvents(
   return picked.sort(byStart);
 }
 
-function byStart(a: PostEvent, b: PostEvent): number {
+/** Events in date order. */
+export function byStart(a: PostEvent, b: PostEvent): number {
   return (
     Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.id.localeCompare(b.id)
+  );
+}
+
+/** An event in the history the Stories and the posts share. */
+export interface PromotedEvent {
+  eventId: string;
+  title: string;
+}
+
+/**
+ * The events neither a story nor a post has promoted: an event is promoted
+ * once. Another event with a promoted one's title is left out too, as the
+ * same act is often listed twice.
+ */
+export function withoutPromoted<T extends Pick<PostEvent, 'id' | 'title'>>(
+  events: readonly T[],
+  promoted: readonly PromotedEvent[],
+): T[] {
+  const ids = new Set(promoted.map((event) => event.eventId));
+  const titles = new Set(
+    promoted.map((event) => normalizeText(event.title)).filter(Boolean),
+  );
+  return events.filter(
+    (event) => !ids.has(event.id) && !titles.has(normalizeText(event.title)),
   );
 }
 

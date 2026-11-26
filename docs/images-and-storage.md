@@ -2,8 +2,8 @@
 
 All pictures are WebP files in one Cloudflare R2 bucket. Only the API talks to
 R2 (`apps/api/src/r2/r2.service.ts`); the database stores public URLs. The
-one exception is the Instagram slides: JPEGs, which stay in the bucket only
-while Instagram fetches them.
+one exception is the Instagram slides and stories: JPEGs, which stay in the
+bucket only while Instagram fetches them.
 
 | Picture      | Size             | Made where                                          | Key in the bucket          |
 | ------------ | ---------------- | --------------------------------------------------- | -------------------------- |
@@ -15,6 +15,7 @@ while Instagram fetches them.
 | Manual Instagram scrape (`instagram/`) | posts 500×375, profiles 200×200 | on the API (`downloadAndUpload`) | `scraped/instagram/<handle>/…` |
 | Imported venue's Instagram picture | 200×200, cropped | the hourly venue picture job, on the API with sharp, WebP 80% ([scrapers.md](scrapers.md#venue-pictures)) | `venue-images/scraped/<venueId>/instagram-profile.webp` |
 | Instagram slide | 1080×1350 JPEG | the weekly posts, on the API with Satori and sharp ([instagram-posts.md](instagram-posts.md#slides)) | `instagram-posts/<date>-<kind>-<run>/NN.jpg`, deleted once posted; dry runs under `instagram-posts/preview/` |
+| Instagram story | 1080×1920 JPEG | the Stories, the same way ([instagram-posts.md](instagram-posts.md#the-picture)) | `instagram-stories/<date>T<time>-<run>/NN.jpg`, deleted once posted; dry runs under `instagram-stories/preview/` |
 
 ## Upload path
 

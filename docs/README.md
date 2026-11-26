@@ -22,7 +22,7 @@ build, test and ship it. App READMEs only point here.
 | [refactoring.md](refactoring.md)           | The safe order for cleanups and the dead-code check                      |
 | [images-and-storage.md](images-and-storage.md) | Picture sizes, the upload path and Cloudflare R2                     |
 | [moderation-runbook.md](moderation-runbook.md) | Handling guest reports before and during an event                    |
-| [instagram-posts.md](instagram-posts.md) | The weekly Instagram carousels of the week's events, and their setup |
+| [instagram-posts.md](instagram-posts.md) | The weekly Instagram carousels, the daily Stories, the publishing history they share, and their setup |
 
 Tool-specific instructions live next to the tools: [loadtest/README.md](../loadtest/README.md)
 and [scripts/poster-kit/README.md](../scripts/poster-kit/README.md).
