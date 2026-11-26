@@ -5,7 +5,9 @@ import {
   formatDateRange,
   formatDay,
   formatTime,
+  GROUP_VENUE_TYPES,
   groupOfVenueType,
+  isVenueType,
   maxSlides,
   parseSchedule,
   pickEvents,
@@ -17,13 +19,15 @@ import {
 function event(
   overrides: Partial<PostEvent> & Pick<PostEvent, 'id'>,
 ): PostEvent {
+  const group = overrides.group ?? 'bars';
   return {
     title: `Event ${overrides.id}`,
     startsAt: '2026-11-27T19:00:00Z',
     pictureUrl: `https://img.tulum-app.com/event-images/${overrides.id}.webp`,
     venueId: `venue-${overrides.id}`,
     venueName: `Venue ${overrides.id}`,
-    group: 'bars',
+    venueType: GROUP_VENUE_TYPES[group][0],
+    group,
     instagramHandle: null,
     guestCount: 0,
     ...overrides,
@@ -109,7 +113,7 @@ describe('postWindow', () => {
   });
 });
 
-describe('groupOfVenueType', () => {
+describe('venue types', () => {
   it('puts each venue type in its post', () => {
     expect(groupOfVenueType('bar')).toBe('bars');
     expect(groupOfVenueType('tavern')).toBe('bars');
@@ -117,8 +121,13 @@ describe('groupOfVenueType', () => {
     expect(groupOfVenueType('restaurant')).toBe('food');
     expect(groupOfVenueType('cafe')).toBe('food');
     expect(groupOfVenueType('event_venue')).toBe('culture');
-    expect(groupOfVenueType('stadium')).toBeNull();
-    expect(groupOfVenueType(null)).toBeNull();
+  });
+
+  it('knows which venues.venue_type values the posts show', () => {
+    expect(isVenueType('tavern')).toBe(true);
+    expect(isVenueType('event_venue')).toBe(true);
+    expect(isVenueType('stadium')).toBe(false);
+    expect(isVenueType(null)).toBe(false);
   });
 });
 

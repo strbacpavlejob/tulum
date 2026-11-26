@@ -26,8 +26,17 @@ export const POST_KINDS: readonly PostKind[] = [
   'culture',
 ];
 
-/** The venue types (venues.venue_type) each group shows. */
-const GROUP_VENUE_TYPES: Record<EventGroup, readonly string[]> = {
+/** venues.venue_type, the venue_type_enum values. */
+export type VenueType =
+  | 'bar'
+  | 'tavern'
+  | 'club'
+  | 'restaurant'
+  | 'cafe'
+  | 'event_venue';
+
+/** The venue types each group shows; a group's cover shows its first. */
+export const GROUP_VENUE_TYPES: Record<EventGroup, readonly VenueType[]> = {
   bars: ['bar', 'tavern'],
   clubs: ['club'],
   food: ['restaurant', 'cafe'],
@@ -174,6 +183,7 @@ export interface PostEvent {
   pictureUrl: string;
   venueId: string;
   venueName: string;
+  venueType: VenueType;
   group: EventGroup;
   /** The venue's Instagram username, tagged on its slide; null when unknown. */
   instagramHandle: string | null;
@@ -181,14 +191,22 @@ export interface PostEvent {
   guestCount: number;
 }
 
-/** The group a venue type belongs to; null for a type no post shows. */
-export function groupOfVenueType(
-  venueType: string | null | undefined,
-): EventGroup | null {
-  if (!venueType) return null;
+/** The group a venue type belongs to. */
+export function groupOfVenueType(venueType: VenueType): EventGroup {
+  const group = GROUP_ORDER.find((g) =>
+    GROUP_VENUE_TYPES[g].includes(venueType),
+  );
+  if (!group) throw new Error(`No post shows venue type ${venueType}`);
+  return group;
+}
+
+/** Whether a venues.venue_type value is a type the posts show. */
+export function isVenueType(value: unknown): value is VenueType {
   return (
-    GROUP_ORDER.find((group) => GROUP_VENUE_TYPES[group].includes(venueType)) ??
-    null
+    typeof value === 'string' &&
+    GROUP_ORDER.some((group) =>
+      (GROUP_VENUE_TYPES[group] as readonly string[]).includes(value),
+    )
   );
 }
 

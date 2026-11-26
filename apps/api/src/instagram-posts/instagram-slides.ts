@@ -8,9 +8,11 @@ import {
   formatTime,
   GROUP_LABELS,
   GROUP_SHORT_LABELS,
+  GROUP_VENUE_TYPES,
   PostEvent,
   PostKind,
   slideText,
+  VenueType,
 } from './instagram-post-rules';
 
 /*
@@ -63,15 +65,19 @@ const GROUP_COLORS: Record<EventGroup, { background: string; text: string }> = {
   culture: { background: '#ec4899', text: WHITE },
 };
 
-/* The capybara on each group's slides, and on the closing slide. The
- * pictures are the landing page's (apps/host/public/images/mascots). */
-const MASCOT_FILES = {
-  bars: 'mascot-bars.webp',
-  clubs: 'mascot-clubs.webp',
-  food: 'mascot-food.webp',
-  culture: 'mascot-culture.webp',
+/* The capybara on an event's slide, by its venue's type; a group's cover
+ * shows its first type's. The week's cover and the closing slide have the
+ * landing page's (apps/host/public/images/mascots). */
+const MASCOT_FILES: Record<VenueType | 'week' | 'app', string> = {
+  bar: 'mascot-bar.webp',
+  tavern: 'mascot-tavern.webp',
+  club: 'mascot-club.webp',
+  restaurant: 'mascot-restaurant.webp',
+  cafe: 'mascot-cafe.webp',
+  event_venue: 'mascot-event-venue.webp',
+  week: 'mascot-week.webp',
   app: 'mascot-app.webp',
-} as const;
+};
 
 type Mascot = keyof typeof MASCOT_FILES;
 
@@ -240,7 +246,7 @@ function coverSlide(
       [
         glow(-160, 180, 620, 'rgba(139, 92, 246, 0.55)'),
         glow(620, 760, 640, 'rgba(236, 72, 153, 0.35)'),
-        image(mascots.culture, {
+        image(mascots.week, {
           position: 'absolute',
           left: -40,
           bottom: 150,
@@ -291,7 +297,7 @@ function coverSlide(
     [
       glow(560, -120, 640, 'rgba(139, 92, 246, 0.5)'),
       glow(-220, 820, 700, `${colors.background}55`),
-      image(mascots[slide.kind], {
+      image(mascots[GROUP_VENUE_TYPES[slide.kind][0]], {
         position: 'absolute',
         right: -30,
         bottom: 40,
@@ -363,7 +369,7 @@ function eventSlide(
         backgroundImage:
           'linear-gradient(180deg, rgba(20, 10, 48, 0.55) 0%, rgba(20, 10, 48, 0.7) 45%, rgba(20, 10, 48, 0.94) 72%, rgba(20, 10, 48, 0.98) 100%)',
       }),
-      image(mascots[event.group], {
+      image(mascots[event.venueType], {
         position: 'absolute',
         right: -60,
         bottom: -20,

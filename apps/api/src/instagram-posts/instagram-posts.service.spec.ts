@@ -8,7 +8,7 @@ import {
   PublishResult,
   TokenRenewal,
 } from './instagram-graph.service';
-import { PostEvent } from './instagram-post-rules';
+import { GROUP_VENUE_TYPES, PostEvent } from './instagram-post-rules';
 import { InstagramPostsDataService } from './instagram-posts-data.service';
 import { InstagramPostsService, PostRecord } from './instagram-posts.service';
 import * as slides from './instagram-slides';
@@ -22,13 +22,15 @@ const RECORD_KEY = 'instagram-posts:published:2026-11-30:week';
 function event(
   overrides: Partial<PostEvent> & Pick<PostEvent, 'id'>,
 ): PostEvent {
+  const group = overrides.group ?? 'bars';
   return {
     title: `Event ${overrides.id}`,
     startsAt: '2026-12-01T19:00:00Z',
     pictureUrl: `${BUCKET}event-images/${overrides.id}.webp`,
     venueId: `venue-${overrides.id}`,
     venueName: `Venue ${overrides.id}`,
-    group: 'bars',
+    venueType: GROUP_VENUE_TYPES[group][0],
+    group,
     instagramHandle: null,
     guestCount: 0,
     ...overrides,

@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { countTicketsByEvent } from '../common/ticket-counts';
 import { SupabaseService } from '../supabase/supabase.service';
 import { normalizeInstagramHandle } from '../venue-pictures/venue-picture-rules';
-import { groupOfVenueType, PostEvent } from './instagram-post-rules';
+import {
+  groupOfVenueType,
+  isVenueType,
+  PostEvent,
+} from './instagram-post-rules';
 
 const EVENTS_TABLE = 'events';
 
@@ -64,9 +68,9 @@ export class InstagramPostsDataService {
 
     return rows.flatMap((row): PostEvent[] => {
       const venue = first(row.venues);
-      const group = groupOfVenueType(venue?.venue_type);
+      const venueType = venue?.venue_type;
       const pictureUrl = row.picture_url || venue?.picture_url;
-      if (!venue || !group || !pictureUrl) return [];
+      if (!venue || !isVenueType(venueType) || !pictureUrl) return [];
 
       return [
         {
@@ -76,7 +80,8 @@ export class InstagramPostsDataService {
           pictureUrl,
           venueId: venue.id,
           venueName: venue.name,
-          group,
+          venueType,
+          group: groupOfVenueType(venueType),
           instagramHandle: normalizeInstagramHandle(
             first(venue.venue_contacts)?.instagram_handle,
           ),

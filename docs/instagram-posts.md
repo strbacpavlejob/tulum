@@ -52,11 +52,15 @@ capybara) and a closing slide with tulum-app.com. The code is in
   file is registered under its own name, because Satori only falls back to a
   font with a different name, and Serbian Latin and Cyrillic titles need the
   fallback. Emoji are left out of slide text; the caption keeps them.
-- The capybaras are in `apps/api/assets/instagram-posts/`, copied from the
-  landing page (`apps/host/public/images/mascots`): bars have the one with
-  sunglasses and a drink, clubs the disco ball, culture the ticket, food the
-  magnifying glass, and the closing slide the phone. Food and cafés have no
-  picture of their own yet.
+- The capybaras are in `apps/api/assets/instagram-posts/`, one per venue
+  type, and an event's slide shows its venue's: a martini for bars, a beer
+  for taverns, a disco ball for clubs, a knife and fork for restaurants, a
+  latte for cafés and headphones for event venues. A post's cover shows its
+  first venue type's (the bars' cover has the martini). The week's cover
+  (the ticket) and the closing slide (the phone) have the landing page's
+  (`apps/host/public/images/mascots`). They are 720-px WebPs with
+  transparency, named `mascot-<venue type>.webp` and listed in
+  `MASCOT_FILES` (`instagram-slides.ts`).
 - Event pictures are the stored 500×375 copies, shown at 840×630, so they are
   a little soft, and posters are cropped to 4:3 as they were at import.
 - The slides are stored in R2 under `instagram-posts/<date>-<kind>-<run>/`
