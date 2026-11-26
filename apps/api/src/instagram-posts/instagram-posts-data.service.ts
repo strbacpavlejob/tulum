@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toUtcIsoString } from '../common/db-timestamp';
 import { countTicketsByEvent } from '../common/ticket-counts';
 import { SupabaseService } from '../supabase/supabase.service';
 import { normalizeInstagramHandle } from '../venue-pictures/venue-picture-rules';
@@ -70,13 +71,18 @@ export class InstagramPostsDataService {
       const venue = first(row.venues);
       const venueType = venue?.venue_type;
       const pictureUrl = row.picture_url || venue?.picture_url;
-      if (!venue || !isVenueType(venueType) || !pictureUrl) return [];
+      // start_date_time holds UTC without an offset, which JavaScript would
+      // read as the server's local time (common/db-timestamp.ts).
+      const startsAt = toUtcIsoString(row.start_date_time);
+      if (!venue || !isVenueType(venueType) || !pictureUrl || !startsAt) {
+        return [];
+      }
 
       return [
         {
           id: row.id,
           title: row.title,
-          startsAt: row.start_date_time,
+          startsAt,
           pictureUrl,
           venueId: venue.id,
           venueName: venue.name,
