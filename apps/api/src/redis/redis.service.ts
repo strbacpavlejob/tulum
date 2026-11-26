@@ -53,6 +53,33 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  /**
+   * Sets key to value for ttlSeconds unless the key holds something: true
+   * when it was set, false when it was taken. Null when Redis didn't answer,
+   * so a caller can tell "taken" from "unknown".
+   */
+  async setIfAbsent(
+    key: string,
+    value: unknown,
+    ttlSeconds: number,
+  ): Promise<boolean | null> {
+    try {
+      const result = await this.client.set(
+        key,
+        JSON.stringify(value),
+        'EX',
+        ttlSeconds,
+        'NX',
+      );
+      return result === 'OK';
+    } catch (err) {
+      this.logger.warn(
+        `Cache set-if-absent failed for key "${key}": ${(err as Error).message}`,
+      );
+      return null;
+    }
+  }
+
   async del(key: string): Promise<void> {
     try {
       await this.client.del(key);

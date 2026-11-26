@@ -67,6 +67,7 @@ NestJS 11, one module per feature under `src/`:
 | `scrape`, `instagram`, `duplicate-checker`, `geocoder` | Imports, see [scrapers.md](scrapers.md) |
 | `venue-pictures`  | The hourly job that gives imported venues their Instagram profile picture within an Apify budget, see [scrapers.md](scrapers.md#venue-pictures) |
 | `external-pictures` | Stores in R2 the event and venue pictures scrapers link from other sites, after each scrape and hourly, see [scrapers.md](scrapers.md#pictures-from-sources) |
+| `instagram-posts` | Posts the week's events on Tulum's Instagram as carousels, Monday to Friday evenings, see [instagram-posts.md](instagram-posts.md) |
 | `supabase`        | `SupabaseService` (the client), `ScrapedDataService` (scraper reads and writes), `scraped-rows.ts` (pure row mapping) |
 | `r2`, `redis`     | Storage and cache clients                                              |
 | `seed`            | Development seed data                                                  |

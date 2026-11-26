@@ -12,6 +12,7 @@ review and check before merging.
 | Auth            | Clerk    | development instance (production instance created, not live) | | |
 | Pictures        | Cloudflare R2 | bucket `tulum-images` | uploads from the API | https://img.tulum-app.com (`R2_PUBLIC_URL`) |
 | Scraping actors | Apify    | free plan, one account | runs started by the API | https://console.apify.com |
+| Instagram posts | Meta     | an app with the Instagram API, Tulum's account | posts from the API | https://developers.facebook.com/apps |
 
 ## Vercel (site and web app)
 
@@ -96,6 +97,16 @@ Setting it up, or checking it:
    `apifyBudget`: the usage, the ceiling and when the cycle ends. If it is
    null, the token can't read the usage. Billing → Current period, and each
    run under Runs, show what was spent.
+
+## Instagram
+
+The weekly posts need `INSTAGRAM_ACCESS_TOKEN` on the `tulum-api` service:
+a token for Tulum's professional Instagram account (tulum_app) from the Meta
+app Tulum Posts, plus `INSTAGRAM_USER_ID`, the account's ID. Without the
+token the posts are off. Setting it up, the optional variables and the
+checks before the first post are in
+[instagram-posts.md](instagram-posts.md#setup). The app's Unified login
+token never expires; a token that stops working is reported in the logs.
 
 ## DNS
 
