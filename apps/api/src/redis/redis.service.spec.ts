@@ -113,3 +113,34 @@ describe('RedisService remember', () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('RedisService setIfAbsent', () => {
+  it('sets a free key, leaves a taken one, and says when Redis did not answer', async () => {
+    const { service, client, store } = serviceWithClient('ready');
+    client.set.mockImplementation((key, value, ...options) => {
+      if (options.includes('NX') && store.has(key)) {
+        return Promise.resolve(null as unknown as string);
+      }
+      store.set(key, value);
+      return Promise.resolve('OK');
+    });
+
+    await expect(service.setIfAbsent('claim', { run: 1 }, 60)).resolves.toBe(
+      true,
+    );
+    expect(client.set).toHaveBeenCalledWith(
+      'claim',
+      JSON.stringify({ run: 1 }),
+      'EX',
+      60,
+      'NX',
+    );
+    await expect(service.setIfAbsent('claim', { run: 2 }, 60)).resolves.toBe(
+      false,
+    );
+    expect(store.get('claim')).toBe(JSON.stringify({ run: 1 }));
+
+    client.set.mockRejectedValueOnce(new Error('Connection is closed.'));
+    await expect(service.setIfAbsent('other', 1, 60)).resolves.toBeNull();
+  });
+});

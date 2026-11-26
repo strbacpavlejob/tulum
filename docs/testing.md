@@ -7,7 +7,7 @@ the counts are what main already has, so only differences are regressions.
 
 | App           | Command (from the app folder)                          | Baseline (18 Nov 2026)                    |
 | ------------- | ------------------------------------------------------ | ----------------------------------------- |
-| `apps/api`    | `./node_modules/.bin/jest`                             | 60 suites, 654 tests, all pass (24 Nov)   |
+| `apps/api`    | `./node_modules/.bin/jest`                             | 64 suites, 711 tests, all pass (26 Nov)   |
 |               | `./node_modules/.bin/tsc --noEmit -p tsconfig.json`    | 0 errors (specs included)                 |
 |               | `./node_modules/.bin/eslint "src/**/*.ts" "test/**/*.ts"` | about 245 errors, mostly `no-unsafe-*` on mocks in specs |
 |               | `./node_modules/.bin/nest build`                       | passes                                    |

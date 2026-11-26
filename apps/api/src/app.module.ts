@@ -21,6 +21,7 @@ import { UsersModule } from './users/users.module';
 import { VenuesModule } from './venues/venues.module';
 import { VenuePicturesModule } from './venue-pictures/venue-pictures.module';
 import { ExternalPicturesModule } from './external-pictures/external-pictures.module';
+import { InstagramPostsModule } from './instagram-posts/instagram-posts.module';
 import { RedisModule } from './redis/redis.module';
 import { GuestsModule } from './guests/guests.module';
 import { SeedModule } from './seed/seed.module';
@@ -49,6 +50,7 @@ import { RetentionModule } from './retention/retention.module';
     VenuesModule,
     VenuePicturesModule,
     ExternalPicturesModule,
+    InstagramPostsModule,
     GuestsModule,
     SeedModule,
     SettingsModule,
