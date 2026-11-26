@@ -62,6 +62,8 @@ In order, from `apps/api/supabase/`:
 6. `data-fixes/20261111_kst_venue.sql` and `20261111_kst_maskenbal_event.sql`
    (the venue's position and the event), once the date is known
 7. `data-fixes/20261111_r2_custom_domain_urls.sql`: applied 24 November
+8. `migrations/20261126213507_social_media_publications.sql` (the Instagram
+   publishing history; the Stories wait for it)
 
 ## Completion criteria
 

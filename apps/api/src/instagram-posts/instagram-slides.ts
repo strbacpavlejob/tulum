@@ -17,12 +17,21 @@ import {
 
 /*
  * Draws a weekly post's slides as 1080×1350 JPEGs (4:5, the tallest shape
- * Instagram's feed shows). Satori lays a slide out and turns its text into
- * shapes, so no fonts need installing where the API runs, and sharp draws it.
+ * Instagram's feed shows), and a story as a 1080×1920 one (9:16). Satori
+ * lays a picture out and turns its text into shapes, so no fonts need
+ * installing where the API runs, and sharp draws it.
  */
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
+
+export const STORY_WIDTH = 1080;
+export const STORY_HEIGHT = 1920;
+
+/* Instagram covers a story's top with the account and the progress bars,
+ * and its bottom with the reply field, so text stays out of these bands. */
+export const STORY_SAFE_TOP = 250;
+export const STORY_SAFE_BOTTOM = 280;
 
 /** Where on an event's slide its venue is tagged: the picture's middle. */
 export const VENUE_TAG_POSITION = { x: 0.5, y: 0.44 };
@@ -39,6 +48,13 @@ export type Slide =
     }
   | { type: 'event'; event: PostEvent; picture: Buffer }
   | { type: 'closing' };
+
+export interface Story {
+  event: PostEvent;
+  picture: Buffer;
+  /** "Tonight", "Tomorrow", "Saturday": storyDay in instagram-story-rules. */
+  day: string;
+}
 
 export interface SlidePage {
   number: number;
@@ -136,6 +152,14 @@ interface SlideNode {
   props: { style: Style; src?: string; children?: (SlideNode | string)[] };
 }
 
+interface Size {
+  width: number;
+  height: number;
+}
+
+const SLIDE_SIZE: Size = { width: SLIDE_WIDTH, height: SLIDE_HEIGHT };
+const STORY_SIZE: Size = { width: STORY_WIDTH, height: STORY_HEIGHT };
+
 interface SlideAssets {
   fonts: {
     name: string;
@@ -162,16 +186,30 @@ export async function renderSlide(
       : slide.type === 'event'
         ? eventSlide(
             slide.event,
-            await eventPicture(slide.picture),
+            await eventPicture(slide.picture, SLIDE_SIZE),
             page,
             loaded,
           )
         : closingSlide(page, loaded);
+  return draw(tree, SLIDE_SIZE, loaded);
+}
 
+/** Draws a story as a JPEG. */
+export async function renderStory(story: Story): Promise<Buffer> {
+  const loaded = await loadAssets();
+  const picture = await eventPicture(story.picture, STORY_SIZE);
+  return draw(storyFrame(story, picture, loaded), STORY_SIZE, loaded);
+}
+
+async function draw(
+  tree: SlideNode,
+  size: Size,
+  { fonts }: SlideAssets,
+): Promise<Buffer> {
   const svg = await satori(tree as unknown as Parameters<typeof satori>[0], {
-    width: SLIDE_WIDTH,
-    height: SLIDE_HEIGHT,
-    fonts: loaded.fonts,
+    width: size.width,
+    height: size.height,
+    fonts,
   });
   // Full-resolution colour keeps the text's edges sharp.
   return sharp(Buffer.from(svg))
@@ -215,18 +253,18 @@ async function readAssets(): Promise<SlideAssets> {
 }
 
 /* The event's picture for its card, and blurred and darkened for the
- * slide's background. */
-async function eventPicture(picture: Buffer) {
+ * background. */
+async function eventPicture(picture: Buffer, size: Size) {
   const card = await sharp(picture)
     .resize(CARD_WIDTH, CARD_HEIGHT, { fit: 'cover' })
     .jpeg({ quality: 90 })
     .toBuffer();
   // Blurred small, then enlarged: the same look for a fraction of the work.
   const backdrop = await sharp(picture)
-    .resize(SLIDE_WIDTH / 5, SLIDE_HEIGHT / 5, { fit: 'cover' })
+    .resize(size.width / 5, size.height / 5, { fit: 'cover' })
     .blur(10)
     .modulate({ brightness: 0.75, saturation: 1.3 })
-    .resize(SLIDE_WIDTH, SLIDE_HEIGHT)
+    .resize(size.width, size.height)
     .jpeg({ quality: 80 })
     .toBuffer();
   return {
@@ -447,6 +485,103 @@ function closingSlide(
 }
 
 /*
+ * A story: the event's picture over a blur of it, its group, title, day and
+ * time and venue, its venue type's capybara, and the call to action. The
+ * text keeps to the band between STORY_SAFE_TOP and STORY_SAFE_BOTTOM.
+ */
+function storyFrame(
+  { event, day }: Story,
+  picture: { card: string; backdrop: string },
+  { mascots, logo }: SlideAssets,
+): SlideNode {
+  const title = slideText(event.title);
+  const time = formatTime(event.startsAt);
+  // Midnight is what the sources store when they give no time.
+  const when =
+    time === '00:00'
+      ? formatDay(event.startsAt)
+      : `${formatDay(event.startsAt)} · ${time}`;
+
+  return canvas(
+    STORY_SIZE,
+    `${STORY_SAFE_TOP}px ${PADDING}px ${STORY_SAFE_BOTTOM}px`,
+    NIGHT,
+    [
+      image(picture.backdrop, {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: STORY_WIDTH,
+        height: STORY_HEIGHT,
+      }),
+      box({
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: STORY_WIDTH,
+        height: STORY_HEIGHT,
+        backgroundImage:
+          'linear-gradient(180deg, rgba(20, 10, 48, 0.6) 0%, rgba(20, 10, 48, 0.62) 30%, rgba(20, 10, 48, 0.92) 58%, rgba(20, 10, 48, 0.98) 100%)',
+      }),
+      glow(-220, 60, 640, 'rgba(139, 92, 246, 0.45)'),
+      image(mascots[event.venueType], {
+        position: 'absolute',
+        right: -60,
+        bottom: STORY_SAFE_BOTTOM - 10,
+        width: 456,
+        height: 380,
+      }),
+    ],
+    box(
+      {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+      },
+      brand(logo),
+      box(
+        { display: 'flex', fontSize: 46, fontWeight: 900 },
+        highlight(day, 46),
+      ),
+    ),
+    image(picture.card, {
+      alignSelf: 'center',
+      marginTop: 40,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      borderRadius: 34,
+      border: `10px solid ${WHITE}`,
+      transform: 'rotate(-2deg)',
+      boxShadow: '0 24px 60px rgba(0, 0, 0, 0.55)',
+    }),
+    box(
+      { display: 'flex', marginTop: 44 },
+      chip(event.group, GROUP_LABELS[event.group], 34),
+    ),
+    box(
+      {
+        display: 'block',
+        marginTop: 22,
+        maxWidth: 680,
+        fontSize: title.length > 42 ? 60 : 72,
+        fontWeight: 900,
+        lineHeight: 1.06,
+        lineClamp: 3,
+      },
+      title,
+    ),
+    infoRow('calendar', when, { marginTop: 22 }),
+    infoRow('pin', slideText(event.venueName), { marginTop: 10 }),
+    box({ flexGrow: 1 }),
+    box(
+      { display: 'flex', alignSelf: 'flex-start', marginTop: 28 },
+      swipePill('Join on tulum-app.com', BRAND, WHITE),
+    ),
+  );
+}
+
+/*
  * The slide: its background, the absolutely placed layers (lights, the
  * capybara, a backdrop picture), then the content in a column. Like a
  * browser, Satori paints positioned boxes over static ones, so the content
@@ -457,13 +592,23 @@ function frame(
   layers: Child[],
   ...content: Child[]
 ): SlideNode {
+  return canvas(SLIDE_SIZE, PADDING, background, layers, ...content);
+}
+
+function canvas(
+  size: Size,
+  padding: string | number,
+  background: string,
+  layers: Child[],
+  ...content: Child[]
+): SlideNode {
   return box(
     {
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
-      width: SLIDE_WIDTH,
-      height: SLIDE_HEIGHT,
+      width: size.width,
+      height: size.height,
       color: WHITE,
       fontFamily: FONT_FAMILY,
       ...(background.startsWith('linear-gradient')
@@ -471,14 +616,14 @@ function frame(
         : { backgroundColor: background }),
     },
     ...layers,
-    // Grows to the slide's height; a height of 100% would add the padding.
+    // Grows to the picture's height; a height of 100% would add the padding.
     box(
       {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
         flexGrow: 1,
-        padding: PADDING,
+        padding,
       },
       ...content,
     ),
@@ -493,11 +638,7 @@ function header(page: SlidePage, logo: string): SlideNode {
       justifyContent: 'space-between',
       width: '100%',
     },
-    box(
-      { display: 'flex', alignItems: 'center', gap: 16 },
-      image(logo, { width: 67, height: 56 }),
-      box({ fontSize: 50, fontWeight: 900, letterSpacing: -0.5 }, 'tulum'),
-    ),
+    brand(logo),
     box(
       {
         display: 'flex',
@@ -509,6 +650,15 @@ function header(page: SlidePage, logo: string): SlideNode {
       },
       `${page.number}/${page.total}`,
     ),
+  );
+}
+
+/* Tulum's logo and name. */
+function brand(logo: string): SlideNode {
+  return box(
+    { display: 'flex', alignItems: 'center', gap: 16 },
+    image(logo, { width: 67, height: 56 }),
+    box({ fontSize: 50, fontWeight: 900, letterSpacing: -0.5 }, 'tulum'),
   );
 }
 

@@ -1,7 +1,14 @@
 import { describe, expect, it } from '@jest/globals';
 import sharp from 'sharp';
 import { EventGroup, VenueType } from './instagram-post-rules';
-import { renderSlide, SLIDE_HEIGHT, SLIDE_WIDTH } from './instagram-slides';
+import {
+  renderSlide,
+  renderStory,
+  SLIDE_HEIGHT,
+  SLIDE_WIDTH,
+  STORY_HEIGHT,
+  STORY_WIDTH,
+} from './instagram-slides';
 
 /* Instagram takes JPEGs in sRGB, up to 8 MB and 1440 px wide, from 4:5 to
  * 1.91:1. */
@@ -117,6 +124,50 @@ describe('renderSlide', () => {
           { number: 1, total: 7 },
         ),
       );
+    },
+    30_000,
+  );
+});
+
+describe('renderStory', () => {
+  it.each<[VenueType, EventGroup, string]>([
+    ['club', 'clubs', 'SEVENGILL, URSTAAT, FRAKHTAL'],
+    ['event_venue', 'culture', '🎉 Đorđe Balašević tribute – Београд ноћ ✨'],
+  ])(
+    "draws a %s's event as a 9:16 story",
+    async (venueType, group, title) => {
+      const picture = await sharp({
+        create: { width: 500, height: 375, channels: 3, background: '#55aa33' },
+      })
+        .webp()
+        .toBuffer();
+
+      const jpeg = await renderStory({
+        event: {
+          id: `e-${venueType}`,
+          title,
+          startsAt: '2026-11-28T19:00:00Z',
+          pictureUrl: `https://img.tulum-app.com/event-images/e-${venueType}.webp`,
+          venueId: `v-${venueType}`,
+          venueName: 'Fabrika Alternativne Kulturne Scene',
+          venueType,
+          group,
+          instagramHandle: null,
+          guestCount: 0,
+        },
+        picture,
+        day: 'Tomorrow',
+      });
+
+      // Instagram recommends 9:16 for stories: JPEG, sRGB, up to 8 MB.
+      const metadata = await sharp(jpeg).metadata();
+      expect(metadata).toMatchObject({
+        format: 'jpeg',
+        width: STORY_WIDTH,
+        height: STORY_HEIGHT,
+        space: 'srgb',
+      });
+      expect(jpeg.length).toBeLessThan(8 * 1024 * 1024);
     },
     30_000,
   );

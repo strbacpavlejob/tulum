@@ -21,9 +21,15 @@ import {
   PostSchedule,
   postWindow,
   PostWindow,
+  PromotedEvent,
+  withoutPromoted,
 } from './instagram-post-rules';
 import { InstagramPostsDataService } from './instagram-posts-data.service';
 import { renderSlide, Slide, VENUE_TAG_POSITION } from './instagram-slides';
+import {
+  PublicationHistoryMissingError,
+  PublicationHistoryService,
+} from './publication-history.service';
 
 export type InstagramPostOutcome =
   | 'published'
@@ -92,6 +98,13 @@ interface EventWithPicture {
   picture: Buffer;
 }
 
+/* A post's events in the history the posts share with the Stories, while
+ * the post goes out. Null where the history table isn't there yet. */
+interface HistoryClaim {
+  runKey: string;
+  eventIds: string[];
+}
+
 /* A slide to draw, and the venue tagged on it. */
 interface SlideToStore {
   slide: Slide;
@@ -121,7 +134,9 @@ const WEEKDAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 /**
  * The weekly Instagram posts: picks the week's events for a post, draws its
  * slides, stores them in R2 for Instagram to fetch, and publishes them as a
- * carousel. A day's post goes out once, however many runs try.
+ * carousel. A day's post goes out once, however many runs try, and an event
+ * is promoted once: a post leaves out the events the Stories or an earlier
+ * post showed, through the history they share.
  */
 @Injectable()
 export class InstagramPostsService {
@@ -132,6 +147,7 @@ export class InstagramPostsService {
     private readonly graph: InstagramGraphService,
     private readonly r2Service: R2Service,
     private readonly redisService: RedisService,
+    private readonly history: PublicationHistoryService,
   ) {}
 
   /** Today's scheduled post, unless it went out already: the cron's run. */
@@ -219,7 +235,7 @@ export class InstagramPostsService {
       if (record) return recordedRun(run, record);
     }
 
-    const post = await this.pickWithPictures(kind, window);
+    let post = await this.pickWithPictures(kind, window);
     run.events = post.map(({ event }) => plannedEvent(event));
     if (post.length < MIN_EVENTS_PER_POST) {
       this.logger.log(
@@ -227,17 +243,18 @@ export class InstagramPostsService {
       );
       return { ...run, outcome: 'not-enough-events' };
     }
-    const caption = buildCaption(
+    let caption = buildCaption(
       kind,
       post.map(({ event }) => event),
       window,
     );
     run.caption = caption;
+    const id = runId();
 
     if (dryRun) {
       await this.deleteSlides(PREVIEW_FOLDER);
       const slides = await this.storeSlides(
-        `${PREVIEW_FOLDER}${runFolder(window, kind)}/`,
+        `${PREVIEW_FOLDER}${runFolder(window, kind, id)}/`,
         kind,
         post,
         window,
@@ -268,8 +285,41 @@ export class InstagramPostsService {
       return recordedRun(run, await this.redisService.get<PostRecord>(key));
     }
 
+    let historyClaim: HistoryClaim | null;
+    try {
+      historyClaim = await this.claimEvents(
+        post.map(({ event }) => event.id),
+        `feed:${window.date}:${kind}:${id}`,
+      );
+    } catch (error) {
+      // Without the claim, a story could show the same events meanwhile.
+      await this.redisService.del(key);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Instagram ${kind} post for ${window.date} not posted: ${message}`,
+      );
+      return { ...run, outcome: 'failed', error: message };
+    }
+    if (historyClaim && historyClaim.eventIds.length < post.length) {
+      // A story claimed some of them since they were picked.
+      const claimedIds = new Set(historyClaim.eventIds);
+      post = post.filter(({ event }) => claimedIds.has(event.id));
+      run.events = post.map(({ event }) => plannedEvent(event));
+      if (post.length < MIN_EVENTS_PER_POST) {
+        await this.releaseEvents(historyClaim);
+        await this.redisService.del(key);
+        return { ...run, outcome: 'not-enough-events', caption: null };
+      }
+      caption = buildCaption(
+        kind,
+        post.map(({ event }) => event),
+        window,
+      );
+      run.caption = caption;
+    }
+
     await this.graph.renewTokenIfDue(now);
-    const folder = `${SLIDES_FOLDER}${runFolder(window, kind)}/`;
+    const folder = `${SLIDES_FOLDER}${runFolder(window, kind, id)}/`;
     let result: PublishResult;
     try {
       const slides = await this.storeSlides(folder, kind, post, window);
@@ -283,7 +333,57 @@ export class InstagramPostsService {
       // Instagram keeps its own copies once the containers are ready.
       await this.deleteSlides(folder);
     }
+    await this.recordEvents(historyClaim, result);
     return this.record(key, run, result);
+  }
+
+  /* Claims the post's events in the history; null without the history
+   * table, which the posts can do without. */
+  private async claimEvents(
+    eventIds: string[],
+    runKey: string,
+  ): Promise<HistoryClaim | null> {
+    try {
+      const claimed = await this.history.claim(eventIds, 'feed', runKey);
+      return { runKey, eventIds: eventIds.filter((id) => claimed.has(id)) };
+    } catch (error) {
+      if (error instanceof PublicationHistoryMissingError) return null;
+      throw error;
+    }
+  }
+
+  /* Marks the post's events in the history as Instagram answered: promoted,
+   * maybe promoted, or free again. */
+  private async recordEvents(
+    claim: HistoryClaim | null,
+    result: PublishResult,
+  ): Promise<void> {
+    if (!claim) return;
+    try {
+      if (result.status === 'published') {
+        await this.history.markPublished(claim.eventIds, claim.runKey, {
+          mediaId: result.mediaId,
+          permalink: result.permalink,
+        });
+      } else if (result.status === 'unknown') {
+        await this.history.markUnknown(
+          claim.eventIds,
+          claim.runKey,
+          result.error,
+        );
+      } else {
+        await this.history.release(claim.eventIds, claim.runKey);
+      }
+    } catch (error) {
+      // The claims stay, so the events aren't promoted again either way.
+      this.logger.error(
+        `Couldn't record ${claim.runKey}'s events as ${result.status} in the history: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async releaseEvents(claim: HistoryClaim): Promise<void> {
+    await this.recordEvents(claim, { status: 'failed', error: 'released' });
   }
 
   /* Keeps what happened to the day's post, and returns the run. */
@@ -329,12 +429,31 @@ export class InstagramPostsService {
     return { ...run, outcome: 'failed', error: result.error };
   }
 
-  /* The week's events with a picture stored in R2. */
+  /* The week's events with a picture stored in R2 that neither a story
+   * nor an earlier post promoted. */
   private async candidates(window: PostWindow): Promise<PostEvent[]> {
-    const events = await this.data.fetchEvents(window.from, window.until);
-    return events.filter(
-      (event) => this.r2Service.extractKeyFromUrl(event.pictureUrl) !== null,
+    const [events, promoted] = await Promise.all([
+      this.data.fetchEvents(window.from, window.until),
+      this.promoted(window),
+    ]);
+    return withoutPromoted(
+      events.filter(
+        (event) => this.r2Service.extractKeyFromUrl(event.pictureUrl) !== null,
+      ),
+      promoted,
     );
+  }
+
+  /* The week's promoted events. Until the history's migration is applied
+   * there are none, and the posts go out as they did before it. */
+  private async promoted(window: PostWindow): Promise<PromotedEvent[]> {
+    try {
+      return await this.history.promotedEvents(window.from, window.until);
+    } catch (error) {
+      if (!(error instanceof PublicationHistoryMissingError)) throw error;
+      this.logger.warn(`Instagram posts without the history: ${error.message}`);
+      return [];
+    }
   }
 
   /* The post's events with their pictures. An event whose picture won't
@@ -453,10 +572,15 @@ function recordKey(date: string, kind: PostKind): string {
   return `${RECORD_KEY_PREFIX}:${date}:${kind}`;
 }
 
-/* A run's own folder: Cloudflare caches a stored file for a day, so a run
- * that tries again never gets the slides an earlier run drew. */
-function runFolder(window: PostWindow, kind: PostKind): string {
-  return `${window.date}-${kind}-${Date.now().toString(36)}`;
+/* A run's own id, for its folder and its history claims. Cloudflare caches
+ * a stored file for a day, so a run that tries again never gets the slides
+ * an earlier run drew. */
+function runId(): string {
+  return Date.now().toString(36);
+}
+
+function runFolder(window: PostWindow, kind: PostKind, id: string): string {
+  return `${window.date}-${kind}-${id}`;
 }
 
 /* A run that found the day's post recorded: published, maybe published, or

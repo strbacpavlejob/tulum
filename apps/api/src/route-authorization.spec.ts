@@ -34,6 +34,8 @@ import { EventsController } from './events/events.controller';
 import { InstagramScraperController } from './instagram/instagram-scraper.controller';
 import { InstagramPostsController } from './instagram-posts/instagram-posts.controller';
 import { InstagramPostsService } from './instagram-posts/instagram-posts.service';
+import { InstagramStoriesController } from './instagram-posts/instagram-stories.controller';
+import { InstagramStoriesService } from './instagram-posts/instagram-stories.service';
 import { InstagramVenueScraperService } from './instagram/instagram-venue-scraper.service';
 import { MatchesController } from './matches/matches.controller';
 import { MatchesService } from './matches/matches.service';
@@ -164,6 +166,10 @@ const instagramPostsService = {
   plan: resolved({}),
   publish: resolved({}),
 };
+const instagramStoriesService = {
+  plan: resolved({}),
+  publish: resolved({}),
+};
 
 describe('Route authorization (BUG-004)', () => {
   let app: INestApplication<App>;
@@ -203,6 +209,7 @@ describe('Route authorization (BUG-004)', () => {
         VenuePicturesController,
         ExternalPicturesController,
         InstagramPostsController,
+        InstagramStoriesController,
       ],
       providers: [
         { provide: APP_GUARD, useValue: clerkGuard },
@@ -231,6 +238,7 @@ describe('Route authorization (BUG-004)', () => {
           useValue: externalPicturesService,
         },
         { provide: InstagramPostsService, useValue: instagramPostsService },
+        { provide: InstagramStoriesService, useValue: instagramStoriesService },
       ],
     }).compile();
 
@@ -610,6 +618,8 @@ describe('Route authorization (BUG-004)', () => {
       // Posts on Tulum's Instagram account
       ['get', '/instagram-posts/plan'],
       ['post', '/instagram-posts/publish?kind=week&dryRun=true'],
+      ['get', '/instagram-stories/plan'],
+      ['post', '/instagram-stories/publish?dryRun=true'],
     ];
 
     it.each(adminOnly)(

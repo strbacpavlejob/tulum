@@ -12,6 +12,12 @@ import { GROUP_VENUE_TYPES, PostEvent } from './instagram-post-rules';
 import { InstagramPostsDataService } from './instagram-posts-data.service';
 import { InstagramPostsService, PostRecord } from './instagram-posts.service';
 import * as slides from './instagram-slides';
+import {
+  Publication,
+  PublicationFormat,
+  PublicationHistoryMissingError,
+  PublicationHistoryService,
+} from './publication-history.service';
 
 // Monday 30 November, 18:05 in Belgrade: the week's post is due.
 const MONDAY = new Date('2026-11-30T17:05:00Z');
@@ -60,6 +66,10 @@ function setup({
   publishResults = [PUBLISHED],
   missingPictures = [] as string[],
   redisDown = false,
+  promoted = [] as Publication[],
+  /** Events a story claims between the post's pick and its claim. */
+  takenByStories = [] as string[],
+  history: historyState = 'ok',
 } = {}) {
   const store = new Map<string, unknown>();
   const redis = {
@@ -119,13 +129,62 @@ function setup({
       ),
     );
 
+  const failure = () =>
+    Promise.reject(
+      historyState === 'missing'
+        ? new PublicationHistoryMissingError()
+        : new Error('Supabase is down'),
+    );
+  const history = {
+    promotedEvents: jest.fn(() =>
+      historyState === 'missing' ? failure() : Promise.resolve(promoted),
+    ),
+    claim: jest.fn(
+      (ids: readonly string[], format: PublicationFormat, runKey: string) => {
+        void format;
+        void runKey;
+        return historyState === 'ok'
+          ? Promise.resolve(
+              new Set(ids.filter((id) => !takenByStories.includes(id))),
+            )
+          : failure();
+      },
+    ),
+    markPublished: jest.fn<
+      (
+        ids: readonly string[],
+        runKey: string,
+        media: { mediaId: string; permalink: string | null },
+      ) => Promise<void>
+    >(() => Promise.resolve()),
+    markUnknown: jest.fn<
+      (ids: readonly string[], runKey: string, error: string) => Promise<void>
+    >(() => Promise.resolve()),
+    release: jest.fn<(ids: readonly string[], runKey: string) => Promise<void>>(
+      () => Promise.resolve(),
+    ),
+  };
+
   const service = new InstagramPostsService(
     data as unknown as InstagramPostsDataService,
     graph as unknown as InstagramGraphService,
     r2 as unknown as R2Service,
     redis as unknown as RedisService,
+    history as unknown as PublicationHistoryService,
   );
-  return { service, data, graph, r2, redis, uploads, render };
+  return { service, data, graph, r2, redis, history, uploads, render };
+}
+
+function promotedEvent(eventId: string, title: string): Publication {
+  return {
+    eventId,
+    title,
+    venueId: `venue-${eventId}`,
+    format: 'story',
+    status: 'published',
+    runKey: 'story:2026-11-30T10:00:abc',
+    createdAt: '2026-11-30T09:01:00Z',
+  };
 }
 
 describe('InstagramPostsService', () => {
@@ -352,5 +411,111 @@ describe('InstagramPostsService', () => {
     expect(plan.caption).toContain('@kptm.bar');
     expect(render).not.toHaveBeenCalled();
     expect(uploads).toHaveLength(0);
+  });
+  describe('the history it shares with the Stories', () => {
+    it('leaves out events a story or an earlier post promoted, and their titles', async () => {
+      const { service } = setup({
+        events: [...WEEK, event({ id: 'bar-2', title: 'Event gig' })],
+        promoted: [
+          promotedEvent('club', 'Event club'),
+          promotedEvent('elsewhere', 'Event gig'),
+        ],
+      });
+
+      const plan = await service.plan('week', MONDAY);
+
+      expect(plan.events.map((e) => e.id)).toEqual(['bar', 'dinner']);
+    });
+
+    it("claims the post's events, and marks them published once Instagram confirms", async () => {
+      const { service, history } = setup();
+
+      await service.publish('week', { now: MONDAY });
+
+      const [ids, format, runKey] = history.claim.mock.calls[0];
+      expect(ids).toEqual(['bar', 'gig', 'dinner', 'club']);
+      expect(format).toBe('feed');
+      expect(runKey).toMatch(/^feed:2026-11-30:week:[a-z0-9]+$/);
+      expect(history.markPublished).toHaveBeenCalledWith(ids, runKey, {
+        mediaId: 'media-1',
+        permalink: 'https://www.instagram.com/p/abc/',
+      });
+    });
+
+    it('frees the events of a failed post, and keeps those of a post that may have gone out', async () => {
+      const failed = setup({
+        publishResults: [{ status: 'failed', error: 'Container is ERROR' }],
+      });
+      await failed.service.publish('week', { now: MONDAY });
+      expect(failed.history.release).toHaveBeenCalledTimes(1);
+      expect(failed.history.markPublished).not.toHaveBeenCalled();
+
+      const unknown = setup({
+        publishResults: [{ status: 'unknown', error: 'ECONNABORTED' }],
+      });
+      await unknown.service.publish('week', { now: MONDAY });
+      expect(unknown.history.markUnknown).toHaveBeenCalledWith(
+        ['bar', 'gig', 'dinner', 'club'],
+        expect.stringMatching(/^feed:/),
+        'ECONNABORTED',
+      );
+      expect(unknown.history.release).not.toHaveBeenCalled();
+    });
+
+    it('posts without the events a story claimed meanwhile', async () => {
+      const { service, graph } = setup({
+        events: [
+          ...WEEK,
+          event({ id: 'bar-2', startsAt: '2026-12-05T20:00:00Z' }),
+        ],
+        takenByStories: ['gig'],
+      });
+
+      const run = await service.publish('week', { now: MONDAY });
+
+      expect(run.outcome).toBe('published');
+      expect(run.events.map((e) => e.id)).not.toContain('gig');
+      expect(run.caption).not.toContain('Event gig');
+      expect(graph.publishCarousel.mock.calls[0][1]).toBe(run.caption);
+    });
+
+    it('lets the next run try when stories took too many of its events', async () => {
+      const { service, graph, history, redis } = setup({
+        takenByStories: ['gig', 'club'],
+      });
+
+      await expect(
+        service.publish('week', { now: MONDAY }),
+      ).resolves.toMatchObject({ outcome: 'not-enough-events', caption: null });
+      expect(history.release).toHaveBeenCalledWith(
+        ['bar', 'dinner'],
+        expect.stringMatching(/^feed:/),
+      );
+      expect(redis.store.has(RECORD_KEY)).toBe(false);
+      expect(graph.publishCarousel).not.toHaveBeenCalled();
+    });
+
+    it("posts as before while the history's migration isn't applied", async () => {
+      const { service, history } = setup({ history: 'missing' });
+
+      await expect(
+        service.publish('week', { now: MONDAY }),
+      ).resolves.toMatchObject({ outcome: 'published' });
+      expect(history.markPublished).not.toHaveBeenCalled();
+    });
+
+    it("posts nothing when the history can't claim the events", async () => {
+      const { service, graph, redis } = setup({ history: 'down' });
+
+      await expect(
+        service.publish('week', { now: MONDAY }),
+      ).resolves.toMatchObject({
+        outcome: 'failed',
+        error: 'Supabase is down',
+      });
+      expect(graph.publishCarousel).not.toHaveBeenCalled();
+      // The next hourly run tries again.
+      expect(redis.store.has(RECORD_KEY)).toBe(false);
+    });
   });
 });
