@@ -233,31 +233,34 @@ export default function EmailSignInScreen() {
     await finishSignIn();
   };
 
-  // The instance requires a username, which the app makes up: again if it
-  // is taken, and none if the field is turned off in the dashboard. The
-  // guest's own password goes as typed; Clerk's refusals of it are shown.
+  // The guest's own password goes as typed; Clerk's refusals of it are
+  // shown. Username is turned off in Clerk, so none is sent; if the
+  // dashboard turns it back on, Clerk lists it as missing and the app makes
+  // one up (again if it is taken).
   const createSignUp = async (emailAddress: string) => {
-    let username: string | undefined = generatedUsername(emailAddress);
-    for (let attempt = 1; ; attempt += 1) {
-      const created = await retryOnRateLimit(
-        () =>
-          signUp.create({
-            emailAddress,
-            password,
-            ...(username ? { username } : {}),
-          }),
+    const created = await retryOnRateLimit(
+      () => signUp.create({ emailAddress, password }),
+      showWaiting,
+    );
+    if (created.error) return created.error;
+    for (
+      let attempt = 1;
+      signUp.missingFields.includes("username");
+      attempt += 1
+    ) {
+      const named = await retryOnRateLimit(
+        () => signUp.update({ username: generatedUsername(emailAddress) }),
         showWaiting,
       );
-      if (!created.error) return null;
-      const first = firstClerkError(created.error);
-      if (first?.paramName !== "username" || !username || attempt >= 3) {
-        return created.error;
+      if (!named.error) break;
+      if (
+        firstClerkError(named.error)?.code !== "form_identifier_exists" ||
+        attempt >= 3
+      ) {
+        return named.error;
       }
-      username =
-        first.code === "form_identifier_exists"
-          ? generatedUsername(emailAddress)
-          : undefined;
     }
+    return null;
   };
 
   const createAccount = async () => {

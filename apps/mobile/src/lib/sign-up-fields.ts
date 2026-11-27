@@ -1,6 +1,7 @@
-// The Clerk instance requires a username and a password at sign-up. Guests
-// never use the username, so the app makes one up; a password is chosen only
-// by guests who sign up with email, so a Google sign-up gets a made-up one.
+// Fields a Clerk sign-up may still need that guests never see. Username is
+// turned off on both instances (27 November 2026), but the app still makes
+// one up if Clerk asks for it; a password is chosen only by guests who sign
+// up with email, so a Google sign-up that needs one gets a made-up one.
 
 const CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -29,4 +30,44 @@ export function generatedUsername(emailAddress: string | null | undefined) {
 /** A long random password nobody types, to satisfy the instance. */
 export function generatedPassword() {
   return `Tl!${randomCharacters(24)}#${Date.now()}`;
+}
+
+/** What completeMissingSignUpFields uses of a Clerk sign-up. */
+type IncompleteSignUp = {
+  status?: string | null;
+  missingFields?: string[];
+  emailAddress?: string | null;
+  createdSessionId?: string | null;
+  update?: (params: {
+    username?: string;
+    lastName?: string;
+    password?: string;
+  }) => Promise<{ createdSessionId?: string | null }>;
+};
+
+/**
+ * Finishes a Google or Apple sign-up that Clerk left at
+ * "missing_requirements" by filling in what the instance requires and the
+ * provider didn't give (a last name, most often), and returns the new
+ * session's id; null when there is nothing it can fill in.
+ */
+export async function completeMissingSignUpFields(
+  signUp: IncompleteSignUp | null | undefined,
+): Promise<string | null> {
+  if (!signUp?.update || signUp.status !== "missing_requirements") {
+    return null;
+  }
+  const missing = signUp.missingFields ?? [];
+  if (!missing.length) return null;
+
+  const fields: { username?: string; lastName?: string; password?: string } =
+    {};
+  if (missing.includes("username")) {
+    fields.username = generatedUsername(signUp.emailAddress);
+  }
+  if (missing.includes("last_name")) fields.lastName = "User";
+  if (missing.includes("password")) fields.password = generatedPassword();
+
+  const updated = await signUp.update(fields);
+  return updated.createdSessionId ?? signUp.createdSessionId ?? null;
 }

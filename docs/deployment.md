@@ -68,9 +68,13 @@ Production keys only work on `tulum-app.com` and its subdomains, so local
 
 **Keep the two instances alike.** Their settings were identical when
 production was set up (27 November 2026): sign-up with an email address and
-a password, the address confirmed with an email code; username, first and
-last name required; Google; Device Trust, so a password sign-in on a new
-device asks for an email code. Change a setting in both dashboards. The one
+a password, the address confirmed with an email code; first and last name
+required; username turned off (the same day: a required username sent first
+Google sign-ups to Clerk's hosted page, which then went to the site); Google;
+Device Trust, so a password sign-in on a new device asks for an email code.
+In the browser, Google sign-in redirects in the same tab and comes back to
+`/sso-callback`, which also finishes a sign-up Clerk still needs a field for
+(`apps/mobile/src/app/(auth)/sso-callback.tsx`). Change a setting in both dashboards. The one
 deliberate difference is Apple: on in development (Clerk's shared
 credentials), off in production until it has Apple credentials, so Clerk's
 sign-in form on the site shows no Apple button there. The guest app hides

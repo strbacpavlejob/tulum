@@ -15,7 +15,7 @@ import {
 import { chromeIntentUrl } from "@/lib/in-app-browser";
 import { savePendingJoin } from "@/lib/pending-join";
 import { APPLE_SIGN_IN_ENABLED } from "@/lib/sign-in-options";
-import { generatedPassword, generatedUsername } from "@/lib/sign-up-fields";
+import { completeMissingSignUpFields } from "@/lib/sign-up-fields";
 import { useAuth, useClerk, useSSO } from "@clerk/expo";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
@@ -26,6 +26,7 @@ import { Mail } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   View,
   useWindowDimensions,
@@ -108,9 +109,13 @@ export default function SignInScreen() {
     if (join) savePendingJoin(join, src);
   }, [join, src]);
 
-  const redirectUrl = Linking.createURL("/(auth)/sso-callback", {
-    queryParams: join ? { join, ...(src ? { src } : {}) } : undefined,
-  });
+  // The browser comes back to sso-callback's own address in this tab; the
+  // native app to the scheme URL allowlisted in Clerk
+  // (tulumapp:///(auth)/sso-callback).
+  const redirectUrl = Linking.createURL(
+    Platform.OS === "web" ? "/sso-callback" : "/(auth)/sso-callback",
+    { queryParams: join ? { join, ...(src ? { src } : {}) } : undefined },
+  );
 
   const isCompact = screenHeight < 750;
 
@@ -121,57 +126,13 @@ export default function SignInScreen() {
 
   const completeSsoSignUpIfNeeded = async (result: {
     setActive?: ((params: { session: string }) => Promise<void>) | null;
-    signUp?: {
-      status?: string | null;
-      missingFields?: string[];
-      emailAddress?: string | null;
-      update?: (params: {
-        username?: string;
-        lastName?: string;
-        password?: string;
-      }) => Promise<{
-        status?: string | null;
-        createdSessionId?: string | null;
-      }>;
-      createdSessionId?: string | null;
-    } | null;
+    signUp?: Parameters<typeof completeMissingSignUpFields>[0];
   }) => {
-    const signUp = result.signUp;
-
-    if (!signUp || !result.setActive) return false;
-    if (signUp.status !== "missing_requirements") return false;
-
-    const missing = signUp.missingFields ?? [];
-    if (!missing.length || !signUp.update) return false;
-
-    const updatePayload: {
-      username?: string;
-      lastName?: string;
-      password?: string;
-    } = {};
-
-    if (missing.includes("username")) {
-      updatePayload.username = generatedUsername(signUp.emailAddress);
-    }
-
-    if (missing.includes("last_name")) {
-      updatePayload.lastName = "User";
-    }
-
-    if (missing.includes("password")) {
-      updatePayload.password = generatedPassword();
-    }
-
-    const updatedSignUp = await signUp.update(updatePayload);
-
-    const sessionId = updatedSignUp.createdSessionId ?? signUp.createdSessionId;
-
-    if (sessionId) {
-      await result.setActive({ session: sessionId });
-      return true;
-    }
-
-    return false;
+    if (!result.setActive) return false;
+    const sessionId = await completeMissingSignUpFields(result.signUp);
+    if (!sessionId) return false;
+    await result.setActive({ session: sessionId });
+    return true;
   };
 
   const handleSSOSignIn = async (strategy: "oauth_apple" | "oauth_google") => {
@@ -179,8 +140,26 @@ export default function SignInScreen() {
 
     ssoInProgress.current = true;
     setLoadingProvider(strategy);
+    // Set once this tab is on its way to Google, so the button keeps its
+    // spinner until the page is gone.
+    let leavingPage = false;
 
     try {
+      if (Platform.OS === "web") {
+        // In a browser, Google takes this tab over and comes back to
+        // sso-callback, which finishes the sign-in. A popup (what
+        // startSSOFlow opens on web) stayed open as a second, signed-in tab.
+        const signIn = clerk.client?.signIn;
+        if (!signIn) throw new Error(t("authSignInLoading"));
+        await signIn.authenticateWithRedirect({
+          strategy,
+          redirectUrl,
+          redirectUrlComplete: Linking.createURL("/onboarding"),
+        });
+        leavingPage = true;
+        return;
+      }
+
       const result = await startSSOFlow({
         strategy,
         redirectUrl,
@@ -220,9 +199,11 @@ export default function SignInScreen() {
         err instanceof Error ? err.message : t("authSsoSignInFailed"),
       );
     } finally {
-      ssoInProgress.current = false;
-      setLoadingProvider(null);
       setWaiting(false);
+      if (!leavingPage) {
+        ssoInProgress.current = false;
+        setLoadingProvider(null);
+      }
     }
   };
 
