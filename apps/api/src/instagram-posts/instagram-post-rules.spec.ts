@@ -11,6 +11,7 @@ import {
   maxSlides,
   parseSchedule,
   pickEvents,
+  POST_KINDS,
   PostEvent,
   postWindow,
   slideText,
@@ -198,7 +199,7 @@ describe('buildCaption', () => {
   // Thursday 26 November, 18:05 in Belgrade.
   const window = postWindow(new Date('2026-11-26T17:05:00Z'));
 
-  it('lists the events with their venues tagged, how Tulum works and hashtags', () => {
+  it('asks for a send, lists the events with their venues tagged, asks for a tag, says how Tulum works and adds hashtags', () => {
     const caption = buildCaption(
       'bars',
       [
@@ -219,16 +220,39 @@ describe('buildCaption', () => {
     );
     expect(caption).toBe(
       [
-        'Bars & taverns this week 🍸 26 – 29 Nov',
+        'SEND THIS TO YOUR GROUP CHAT 💬',
+        'Bars & taverns in Belgrade this week 🍸 26 – 29 Nov',
         '',
         '🍸 Fri 27 Nov · Jazz Night at @kptm.bar',
         '🍸 Sat 28 Nov · Quiz at Bar Central',
         '',
+        "Made it to the last slide? Tag who you're going with 👇",
+        '',
         'Join an event on Tulum, check in when you get there and meet the people who are there too 👉 tulum-app.com',
         '',
-        '#beograd #belgrade #belgradeevents #thingstodoinbelgrade #tulumapp #belgradebars #kafana #beogradnocu',
+        '#beograd #belgrade #tulumapp #beogradnocu #belgradebars',
       ].join('\n'),
     );
+  });
+
+  it('opens with another ask each day', () => {
+    const openings = ['2026-11-30', '2026-12-01', '2026-12-02', '2026-12-03']
+      .map((date) => postWindow(new Date(`${date}T17:05:00Z`)))
+      .map((day) => buildCaption('week', [event({ id: 'a' })], day))
+      .map((caption) => caption.split('\n')[0]);
+    expect(openings).toEqual([
+      'SEND THIS TO YOUR CREW 👯',
+      'SAVE THE LIST 📌',
+      'SEND THIS TO YOUR GROUP CHAT 💬',
+      'SEND THIS TO YOUR CREW 👯',
+    ]);
+  });
+
+  it('has at most 5 hashtags, the most Instagram allows, in every post', () => {
+    for (const kind of POST_KINDS) {
+      const caption = buildCaption(kind, [event({ id: 'a' })], window);
+      expect(caption.match(/#\S+/g)).toHaveLength(5);
+    }
   });
 
   it("drops a title's own @ and #, so only the venues are tagged", () => {
@@ -247,7 +271,7 @@ describe('buildCaption', () => {
     expect(caption.match(/@/g)).toHaveLength(1);
   });
 
-  it("keeps within Instagram's 2,200 characters, 20 tags and 30 hashtags", () => {
+  it("keeps within Instagram's 2,200 characters, 20 tags and 5 hashtags", () => {
     const events = Array.from({ length: 30 }, (_, i) =>
       event({
         id: `e${i}`,
@@ -258,7 +282,7 @@ describe('buildCaption', () => {
     const caption = buildCaption('week', events, window);
     expect(caption.length).toBeLessThanOrEqual(2_200);
     expect((caption.match(/@/g) ?? []).length).toBeLessThanOrEqual(20);
-    expect((caption.match(/#/g) ?? []).length).toBeLessThanOrEqual(30);
+    expect((caption.match(/#/g) ?? []).length).toBeLessThanOrEqual(5);
     expect(caption).toContain('tulum-app.com');
   });
 });

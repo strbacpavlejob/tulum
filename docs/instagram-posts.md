@@ -83,12 +83,53 @@ so an event is promoted once: in a story or in a post. The code is in
 
 ### Caption
 
-A heading with the dates, a line per event with the venue's Instagram
-tagged, a line on how Tulum works, and hashtags. It keeps within Instagram's
-limits (2,200 characters, 30 hashtags, 20 @ tags); a title's own @ and # are
-dropped, so only the venues are tagged. Each venue is also tagged on its
-slide. Meta's docs don't say whether a carousel's slides take user tags, so
-a slide whose tags are refused is posted untagged.
+Modelled on [@belgradish](https://www.instagram.com/belgradish/)'s venue
+lists and on the venues' own posts ([why](#where-the-caption-style-comes-from)):
+
+- An ask in capitals to send or save the post, with the heading under it,
+  so the feed shows both before "more": "SEND THIS TO YOUR CREW 👯",
+  "Bars & taverns in Belgrade this week 🍸 26 – 29 Nov". Three asks take
+  turns by day.
+- A line per event with the venue's Instagram tagged. Each venue is also
+  tagged on its slide. Meta's docs don't say whether a carousel's slides
+  take user tags, so a slide whose tags are refused is posted untagged.
+- "Made it to the last slide? Tag who you're going with 👇"
+- A line on how Tulum works, with tulum-app.com.
+- Five hashtags: #beograd #belgrade #tulumapp and two for the post's
+  kind (`HASHTAGS` in `instagram-post-rules.ts`).
+
+It keeps within Instagram's limits: 2,200 characters, 20 @ tags and 5
+hashtags (Instagram has allowed 5 since December 2025; the API still took
+the first post's 8, but past 5 they may not count). A title's own @ and #
+are dropped, so only the venues are tagged.
+
+#### Where the caption style comes from
+
+Looked at on 27 November 2026 through Apify:
+
+- **@belgradish** (a Belgrade guide with 99k followers), its last 100
+  posts, 30 July to 26 November: 90 are carousels of 17–20 slides, nearly
+  all with a place tagged. Its lists of venues, with
+  every venue @-tagged, had a median of 1,233 likes against 857 for its
+  other posts. The best of them (7.1k likes, 90 comments) opens with "send
+  this to your crew" in capitals and ends by asking whoever made it to the
+  last slide to leave an emoji. Its best fifth had the shortest captions
+  (median 242 characters, against 622 for the worst fifth), 3–5 hashtags
+  (#beograd #belgrade #belgradish and one on the topic), and nearly all end
+  with the same sign-off line.
+- **The venues' accounts**: 4,161 recent posts of the 363 venue accounts in
+  the database with 1,000 followers or more (from the venue picture job's
+  lookups on 24–25 November). Posts tagging 3–7 accounts had 2.6 times the
+  engagement of posts tagging none, and collab posts 1.9 times that of the
+  others. Three in four used no hashtags and did no worse. Carousels had the
+  most engagement (median 1.1% of followers liked or commented), then Reels
+  (0.9%) and single photos (0.7%); posts selling tickets or tables had the
+  least (0.55%). #beograd, #belgrade, #livemusic, #beogradnocu and
+  #belgradenightlife were the tags most accounts used.
+- **Tulum's first post** (26 November, 8 hashtags, 5 followers): 11 views
+  from 3 accounts in its first 17 hours, none of them from hashtags. Until the account
+  has followers, its reach is the tagged venues sharing a post and people
+  sending it on.
 
 ### Publishing (posts and stories)
 
@@ -306,7 +347,11 @@ it again, or for another account:
 
 - Events at venues made in the dashboard (see above).
 - Collaborator posts with venues: not tried. Meta's overview documents
-  collaborators for Facebook Login.
+  collaborators for Facebook Login. Among the venues' own posts, collab
+  posts had 1.9 times the engagement of the rest.
+- A location on posts: @belgradish tags one on nearly every post. The API
+  takes a `location_id`, the ID of a Facebook Page with a location, which
+  hasn't been looked up.
 - English only; the caption, slide and story text await approval.
 - Link stickers on stories: Instagram's API doesn't publish stickers.
 - Story metrics (views, link taps): not read yet. Meta keeps them for 24

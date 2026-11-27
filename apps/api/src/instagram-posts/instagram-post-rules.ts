@@ -351,37 +351,53 @@ export function slideText(value: string): string {
     .trim();
 }
 
-/* Instagram refuses a caption over 2,200 characters, 30 hashtags or 20 @
- * tags. Titles' own @ and # are dropped, so the post's tags are the venues
- * and the list below. */
+/* Instagram refuses a caption over 2,200 characters or 20 @ tags, and since
+ * December 2025 it allows 5 hashtags a post. Its API still took the first
+ * post's 8 (26 November 2026), but past 5 they may not count. Titles' own @
+ * and # are dropped, so the post's tags are the venues and the lists below. */
 const MAX_CAPTION_LENGTH = 2_200;
 
 const MAX_MENTIONS = 20;
 
 const MAX_TITLE_LENGTH = 80;
 
-const COMMON_HASHTAGS = [
-  '#beograd',
-  '#belgrade',
-  '#belgradeevents',
-  '#thingstodoinbelgrade',
-  '#tulumapp',
+/* The tags Belgrade's venues and @belgradish use most, and ours. */
+const COMMON_HASHTAGS = ['#beograd', '#belgrade', '#tulumapp'];
+
+/* Two per post, from the tags Belgrade's venues give such events. */
+const HASHTAGS: Record<PostKind, string[]> = {
+  week: ['#beogradnocu', '#gdeizaci'],
+  bars: ['#beogradnocu', '#belgradebars'],
+  clubs: ['#beogradnocu', '#belgradenightlife'],
+  food: ['#belgradefood', '#beogradrestorani'],
+  culture: ['#livemusic', '#koncert'],
+};
+
+/*
+ * The caption's first line, the one the feed shows before "more": an ask to
+ * send or save the post, in capitals, the way @belgradish's most liked lists
+ * open. Sends and saves bring a post to people who don't follow the account.
+ * The asks take turns by day.
+ */
+const CAPTION_HOOKS = [
+  'SEND THIS TO YOUR CREW 👯',
+  'SAVE THE LIST 📌',
+  'SEND THIS TO YOUR GROUP CHAT 💬',
 ];
 
-const HASHTAGS: Record<PostKind, string[]> = {
-  week: ['#belgradenightlife', '#beogradnocu'],
-  bars: ['#belgradebars', '#kafana', '#beogradnocu'],
-  clubs: ['#belgradenightlife', '#clubbing', '#beogradnocu'],
-  food: ['#belgradefood', '#belgraderestaurants', '#belgradecafe'],
-  culture: ['#belgradeculture', '#koncert', '#livemusic'],
-};
+/* Asks for a swipe to the end and a comment, and a tagged friend sees the
+ * post too. */
+const CAPTION_QUESTION =
+  "Made it to the last slide? Tag who you're going with 👇";
 
 const CAPTION_CLOSING =
   'Join an event on Tulum, check in when you get there and meet the people who are there too 👉 tulum-app.com';
 
 /**
- * The post's caption: what it covers, a line per event with the venue's
- * Instagram tagged, how Tulum works, and hashtags.
+ * The post's caption: an ask to send or save it, what it covers, a line per
+ * event with the venue's Instagram tagged, an ask to tag a friend, how Tulum
+ * works, and hashtags. docs/instagram-posts.md says where the style comes
+ * from.
  */
 export function buildCaption(
   kind: PostKind,
@@ -392,7 +408,9 @@ export function buildCaption(
   const heading =
     kind === 'week'
       ? `This week in Belgrade ✨ ${range}`
-      : `${GROUP_LABELS[kind]} this week ${GROUP_EMOJI[kind]} ${range}`;
+      : `${GROUP_LABELS[kind]} in Belgrade this week ${GROUP_EMOJI[kind]} ${range}`;
+  // One line break, so that the feed shows the heading under the ask.
+  const opening = `${captionHook(window.date)}\n${heading}`;
 
   let mentions = 0;
   const lines = events.map((event) => {
@@ -406,12 +424,24 @@ export function buildCaption(
   const hashtags = [...COMMON_HASHTAGS, ...HASHTAGS[kind]].join(' ');
 
   const caption = (eventLines: string[]) =>
-    [heading, eventLines.join('\n'), CAPTION_CLOSING, hashtags].join('\n\n');
+    [
+      opening,
+      eventLines.join('\n'),
+      CAPTION_QUESTION,
+      CAPTION_CLOSING,
+      hashtags,
+    ].join('\n\n');
   // Event lines past the limit are left to the slides.
   while (lines.length > 0 && caption(lines).length > MAX_CAPTION_LENGTH) {
     lines.pop();
   }
   return caption(lines);
+}
+
+/* The ask a post made on `date` (YYYY-MM-DD) opens with. */
+function captionHook(date: string): string {
+  const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
+  return CAPTION_HOOKS[day % CAPTION_HOOKS.length];
 }
 
 /* A title or venue name in the caption: on one line, without @ or #, and
