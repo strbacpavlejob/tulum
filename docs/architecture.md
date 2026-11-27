@@ -86,7 +86,7 @@ web export on Vercel (mobile.tulum-app.com); Android and iOS builds follow.
 The code is in `src/`; `assets/`, `scripts/` and the configs stay at the app
 root ([conventions.md](conventions.md#folder-structure)).
 
-- `src/app/`: routes only. `(auth)/` sign-in, email code, sign-up, onboarding;
+- `src/app/`: routes only. `(auth)/` sign-in, email and password, sign-up, onboarding;
   `(tabs)/` the feed (`index`), tickets, matches, inbox, profile;
   `event-details/[id]`; `e/[id]` (the QR join link).
 - `src/components/<screen>/`: pieces of one screen (`profile/`, `matches/`,

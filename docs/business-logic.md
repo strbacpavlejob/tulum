@@ -7,8 +7,12 @@ one.
 
 ## People
 
-- **Guests** use the app. They sign in with Google, Apple or an email code
-  (Clerk), then finish a short onboarding: first name, birthday, gender, who
+- **Guests** use the app. They sign in with Google or with an email and a
+  password (Clerk; a new account confirms its address with an emailed code,
+  and "Forgot password?" resets it with one). Apple is hidden until Clerk
+  production has Apple credentials
+  (`apps/mobile/src/lib/sign-in-options.ts`). They then finish a short
+  onboarding: first name, birthday, gender, who
   they want to meet, and at least one photo
   (`apps/mobile/src/components/onboarding/onboarding-steps.ts`). Onboarding counts
   as complete once gender and "interested in" are set

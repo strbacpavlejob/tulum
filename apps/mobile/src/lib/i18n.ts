@@ -54,7 +54,7 @@ const resources = {
       authInvalidCode: "Invalid code. Please try again.",
       authVerifyCodeFailed: "Failed to verify code.",
       authContinueWithEmail: "Continue with email",
-      authEmailSubtitle: "We'll email you a 6-digit code. No password needed.",
+      authEmailSubtitle: "Sign in with your email and password.",
       authSendCode: "Send code",
       authCodeTitle: "Check your email",
       authCodeSubtitle: "Enter the 6-digit code we sent to {{email}}.",
@@ -73,10 +73,43 @@ const resources = {
         "Lots of people are joining. Try again in {{seconds}} s.",
       authInAppTitle: "Open Tulum in your browser",
       authInAppBodyAndroid:
-        "Google and Apple sign-in don't work in {{app}}'s browser. Open Tulum in Chrome, or continue with email.",
+        "Google sign-in doesn't work in {{app}}'s browser. Open Tulum in Chrome, or continue with email.",
       authInAppBodyIos:
-        "Google and Apple sign-in don't work in {{app}}'s browser. Tap ⋯ at the top and choose to open it in your browser, or continue with email.",
+        "Google sign-in doesn't work in {{app}}'s browser. Tap ⋯ at the top and choose to open it in your browser, or continue with email.",
       authOpenInChrome: "Open in Chrome",
+      authEmailSignInTitle: "Sign in with email",
+      authPassword: "Password",
+      authNewPassword: "New password",
+      authShowPassword: "Show password",
+      authHidePassword: "Hide password",
+      authSignInButton: "Sign in",
+      authForgotPassword: "Forgot password?",
+      authNoAccountPrompt: "New to Tulum?",
+      authCreateAccountLink: "Create an account",
+      authHaveAccountPrompt: "Already have an account?",
+      authSignInLink: "Sign in",
+      authCreateAccountTitle: "Create your account",
+      authCreateAccountSubtitle:
+        "Choose a password of at least 8 characters. We'll email you a code to confirm your address.",
+      authCreateAccountButton: "Create account",
+      authDeviceCodeSubtitle:
+        "You're signing in on a new device. Enter the 6-digit code we sent to {{email}}.",
+      authResetTitle: "Reset your password",
+      authResetSubtitle: "Enter your email and we'll send you a 6-digit code.",
+      authResetCodeSubtitle:
+        "Enter the code we sent to {{email}} and choose a new password.",
+      authResetButton: "Save new password",
+      authBackToSignIn: "Back to sign in",
+      authWrongPassword: "Wrong email or password.",
+      authNoAccount: "No account uses this email yet.",
+      authEmailTaken: "This email already has an account. Sign in instead.",
+      authPasswordTooShort: "Use at least 8 characters.",
+      authPasswordPwned:
+        "This password has appeared in a data breach. Choose a different one.",
+      authPasswordPwnedSignIn:
+        "This password has appeared in a data breach and can't be used anymore. Tap “Forgot password?” to choose a new one.",
+      authNoPasswordYet:
+        "This account doesn't have a password yet. Continue with Google, or tap “Forgot password?” to set one.",
 
       // Onboarding
       onboardingStepNameTitle: "What's your name?",
@@ -573,8 +606,7 @@ const resources = {
       authInvalidCode: "Neispravan kod. Pokušaj ponovo.",
       authVerifyCodeFailed: "Provera koda nije uspela.",
       authContinueWithEmail: "Nastavi sa email adresom",
-      authEmailSubtitle:
-        "Poslaćemo ti šestocifreni kod na email. Lozinka nije potrebna.",
+      authEmailSubtitle: "Prijavi se email adresom i lozinkom.",
       authSendCode: "Pošalji kod",
       authCodeTitle: "Proveri email",
       authCodeSubtitle: "Unesi šestocifreni kod koji smo poslali na {{email}}.",
@@ -594,10 +626,43 @@ const resources = {
         "Mnogo ljudi se upravo prijavljuje. Pokušaj ponovo za {{seconds}} s.",
       authInAppTitle: "Otvori Tulum u pregledaču",
       authInAppBodyAndroid:
-        "Prijava preko Google-a i Apple-a ne radi u pregledaču aplikacije {{app}}. Otvori Tulum u Chrome-u ili nastavi sa email adresom.",
+        "Prijava preko Google-a ne radi u pregledaču aplikacije {{app}}. Otvori Tulum u Chrome-u ili nastavi sa email adresom.",
       authInAppBodyIos:
-        "Prijava preko Google-a i Apple-a ne radi u pregledaču aplikacije {{app}}. Dodirni ⋯ na vrhu i izaberi otvaranje u pregledaču ili nastavi sa email adresom.",
+        "Prijava preko Google-a ne radi u pregledaču aplikacije {{app}}. Dodirni ⋯ na vrhu i izaberi otvaranje u pregledaču ili nastavi sa email adresom.",
       authOpenInChrome: "Otvori u Chrome-u",
+      authEmailSignInTitle: "Prijava email adresom",
+      authPassword: "Lozinka",
+      authNewPassword: "Nova lozinka",
+      authShowPassword: "Prikaži lozinku",
+      authHidePassword: "Sakrij lozinku",
+      authSignInButton: "Prijavi se",
+      authForgotPassword: "Zaboravljena lozinka?",
+      authNoAccountPrompt: "Prvi put ovde?",
+      authCreateAccountLink: "Napravi nalog",
+      authHaveAccountPrompt: "Već imaš nalog?",
+      authSignInLink: "Prijavi se",
+      authCreateAccountTitle: "Napravi nalog",
+      authCreateAccountSubtitle:
+        "Izaberi lozinku od najmanje 8 karaktera. Poslaćemo ti kod na email da potvrdimo adresu.",
+      authCreateAccountButton: "Napravi nalog",
+      authDeviceCodeSubtitle:
+        "Prijavljuješ se sa novog uređaja. Unesi šestocifreni kod koji smo poslali na {{email}}.",
+      authResetTitle: "Resetuj lozinku",
+      authResetSubtitle: "Unesi email i poslaćemo ti šestocifreni kod.",
+      authResetCodeSubtitle:
+        "Unesi kod koji smo poslali na {{email}} i izaberi novu lozinku.",
+      authResetButton: "Sačuvaj novu lozinku",
+      authBackToSignIn: "Nazad na prijavu",
+      authWrongPassword: "Pogrešan email ili lozinka.",
+      authNoAccount: "Nijedan nalog ne koristi ovaj email.",
+      authEmailTaken: "Ovaj email već ima nalog. Prijavi se.",
+      authPasswordTooShort: "Koristi najmanje 8 karaktera.",
+      authPasswordPwned:
+        "Ova lozinka se pojavila u curenju podataka. Izaberi drugu.",
+      authPasswordPwnedSignIn:
+        "Ova lozinka se pojavila u curenju podataka i više ne može da se koristi. Dodirni „Zaboravljena lozinka?” da izabereš novu.",
+      authNoPasswordYet:
+        "Ovaj nalog još nema lozinku. Nastavi preko Google-a ili dodirni „Zaboravljena lozinka?” da je postaviš.",
 
       // Onboarding
       onboardingStepNameTitle: "Kako se zoveš?",
@@ -1100,8 +1165,7 @@ const resources = {
       authInvalidCode: "Неверный код. Попробуйте снова.",
       authVerifyCodeFailed: "Не удалось подтвердить код.",
       authContinueWithEmail: "Продолжить с email",
-      authEmailSubtitle:
-        "Мы отправим 6-значный код на вашу почту. Пароль не нужен.",
+      authEmailSubtitle: "Войдите с помощью email и пароля.",
       authSendCode: "Отправить код",
       authCodeTitle: "Проверьте почту",
       authCodeSubtitle: "Введите 6-значный код, отправленный на {{email}}.",
@@ -1120,10 +1184,43 @@ const resources = {
         "Сейчас входит много людей. Попробуйте снова через {{seconds}} с.",
       authInAppTitle: "Откройте Tulum в браузере",
       authInAppBodyAndroid:
-        "Вход через Google и Apple не работает во встроенном браузере {{app}}. Откройте Tulum в Chrome или продолжите с email.",
+        "Вход через Google не работает во встроенном браузере {{app}}. Откройте Tulum в Chrome или продолжите с email.",
       authInAppBodyIos:
-        "Вход через Google и Apple не работает во встроенном браузере {{app}}. Нажмите ⋯ вверху и выберите открытие в браузере или продолжите с email.",
+        "Вход через Google не работает во встроенном браузере {{app}}. Нажмите ⋯ вверху и выберите открытие в браузере или продолжите с email.",
       authOpenInChrome: "Открыть в Chrome",
+      authEmailSignInTitle: "Вход по email",
+      authPassword: "Пароль",
+      authNewPassword: "Новый пароль",
+      authShowPassword: "Показать пароль",
+      authHidePassword: "Скрыть пароль",
+      authSignInButton: "Войти",
+      authForgotPassword: "Забыли пароль?",
+      authNoAccountPrompt: "Впервые в Tulum?",
+      authCreateAccountLink: "Создать аккаунт",
+      authHaveAccountPrompt: "Уже есть аккаунт?",
+      authSignInLink: "Войти",
+      authCreateAccountTitle: "Создайте аккаунт",
+      authCreateAccountSubtitle:
+        "Придумайте пароль не короче 8 символов. Мы отправим код на вашу почту, чтобы подтвердить адрес.",
+      authCreateAccountButton: "Создать аккаунт",
+      authDeviceCodeSubtitle:
+        "Вы входите с нового устройства. Введите 6-значный код, отправленный на {{email}}.",
+      authResetTitle: "Сброс пароля",
+      authResetSubtitle: "Введите email, и мы отправим вам 6-значный код.",
+      authResetCodeSubtitle:
+        "Введите код, отправленный на {{email}}, и придумайте новый пароль.",
+      authResetButton: "Сохранить новый пароль",
+      authBackToSignIn: "Назад ко входу",
+      authWrongPassword: "Неверный email или пароль.",
+      authNoAccount: "С этим email ещё нет аккаунта.",
+      authEmailTaken: "С этим email уже есть аккаунт. Войдите.",
+      authPasswordTooShort: "Используйте не меньше 8 символов.",
+      authPasswordPwned:
+        "Этот пароль встречался в утечке данных. Выберите другой.",
+      authPasswordPwnedSignIn:
+        "Этот пароль встречался в утечке данных и больше не подходит. Нажмите «Забыли пароль?», чтобы задать новый.",
+      authNoPasswordYet:
+        "У этого аккаунта ещё нет пароля. Продолжите через Google или нажмите «Забыли пароль?», чтобы задать его.",
 
       // Onboarding
       onboardingStepNameTitle: "Как вас зовут?",

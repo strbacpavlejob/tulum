@@ -10,6 +10,11 @@
 // `supabase secrets set CLERK_DELETE_USER_SIGNING_SECRET=whsec_...`. Every
 // Clerk endpoint has its own secret and every function sees all the
 // project's secrets, hence a name for this endpoint only.
+//
+// Clerk's development and production instances both send here (there is one
+// Supabase project), each from its own endpoint with its own secret, so the
+// value can hold several secrets separated by spaces:
+// `supabase secrets set CLERK_DELETE_USER_SIGNING_SECRET="whsec_dev whsec_prod"`.
 
 import '@supabase/functions-js/edge-runtime.d.ts';
 import { verifyWebhook } from 'npm:@clerk/backend@3.4.13/webhooks';
@@ -101,6 +106,25 @@ function secretKey(): string | undefined {
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 }
 
+/** The endpoints' signing secrets, separated by spaces or commas. */
+function signingSecrets(name: string): string[] {
+  return (Deno.env.get(name) ?? '').split(/[\s,]+/).filter(Boolean);
+}
+
+/** The event, verified with whichever of the secrets signed it. */
+async function verifyWithAnySecret(req: Request, secrets: string[]) {
+  let refusal: unknown;
+  for (const signingSecret of secrets) {
+    try {
+      // verifyWebhook reads the body, so each try gets its own copy.
+      return await verifyWebhook(req.clone(), { signingSecret });
+    } catch (err) {
+      refusal = err;
+    }
+  }
+  throw refusal;
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -117,10 +141,10 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  const signingSecret = Deno.env.get('CLERK_DELETE_USER_SIGNING_SECRET');
+  const secrets = signingSecrets('CLERK_DELETE_USER_SIGNING_SECRET');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseKey = secretKey();
-  if (!signingSecret || !supabaseUrl || !supabaseKey) {
+  if (!secrets.length || !supabaseUrl || !supabaseKey) {
     console.error(
       'delete-user: CLERK_DELETE_USER_SIGNING_SECRET, SUPABASE_URL or the secret key is not set',
     );
@@ -130,7 +154,7 @@ Deno.serve(async (req: Request) => {
   let event: Awaited<ReturnType<typeof verifyWebhook>>;
   try {
     // Checks the svix-* headers against the body, so only Clerk can delete.
-    event = await verifyWebhook(req, { signingSecret });
+    event = await verifyWithAnySecret(req, secrets);
   } catch (err) {
     console.warn(
       'delete-user: webhook verification failed:',

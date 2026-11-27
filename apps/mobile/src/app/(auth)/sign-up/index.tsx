@@ -4,6 +4,7 @@ import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
+import { APPLE_SIGN_IN_ENABLED } from "@/lib/sign-in-options";
 
 import { useSSO } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
@@ -101,20 +102,22 @@ export default function SignUpScreen() {
           </Text>
 
           {/* Apple */}
-          <Button
-            disabled={loadingProvider !== null}
-            onPress={() => handleSSO("apple")}
-            className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-          >
-            {loadingProvider === "apple" ? (
-              <ActivityIndicator color={theme.color} />
-            ) : (
-              <AppleIcon />
-            )}
-            <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
-              Continue with Apple
-            </Text>
-          </Button>
+          {APPLE_SIGN_IN_ENABLED && (
+            <Button
+              disabled={loadingProvider !== null}
+              onPress={() => handleSSO("apple")}
+              className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
+            >
+              {loadingProvider === "apple" ? (
+                <ActivityIndicator color={theme.color} />
+              ) : (
+                <AppleIcon />
+              )}
+              <Text className="text-base font-semibold text-light-colorStrong dark:text-dark-colorStrong">
+                Continue with Apple
+              </Text>
+            </Button>
+          )}
 
           {/* Google */}
           <Button

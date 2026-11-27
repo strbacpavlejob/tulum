@@ -9,7 +9,7 @@ review and check before merging.
 | Guest web app   | Vercel   | `tulum-mobile`    | `apps/mobile` (`expo export --platform web`) | https://mobile.tulum-app.com |
 | API             | Railway  | `tulum-api` (production) | `apps/api` | https://api.tulum-app.com (custom domain since 24 November 2026; https://tulum-api-production.up.railway.app still answers) |
 | Database, edge functions | Supabase | one project for every environment | `apps/api/supabase`, `apps/host/supabase/functions` | |
-| Auth            | Clerk    | development instance (production instance created, not live) | | |
+| Auth            | Clerk    | production instance (`clerk.tulum-app.com`) for the deployed apps once their keys are switched; development instance for local work | | |
 | Pictures        | Cloudflare R2 | bucket `tulum-images` | uploads from the API | https://img.tulum-app.com (`R2_PUBLIC_URL`) |
 | Scraping actors | Apify    | free plan, one account | runs started by the API | https://console.apify.com |
 | Instagram posts | Meta     | an app with the Instagram API, Tulum's account | posts from the API | https://developers.facebook.com/apps |
@@ -49,14 +49,67 @@ review and check before merging.
   Supabase CLI (`pnpm exec supabase functions deploy <name>`, the CLI is a root
   dev dependency), after setting their secrets: each endpoint has its own
   Clerk signing secret, and `CLERK_FRONTEND_API` is the host name without
-  `https://`.
+  `https://`. Both Clerk instances send to the same two functions, so
+  `CLERK_CREATE_USER_SIGNING_SECRET` and `CLERK_DELETE_USER_SIGNING_SECRET`
+  each hold the development and the production endpoint's secret, separated
+  by a space; a request signed with either passes.
 
 ## Clerk
 
-All environments use the development instance, which caps at 100 users. The
-production instance exists; going live needs its DNS records in Cloudflare
-(DNS only), Google and Apple production credentials, and the mobile SSO
-redirect allowlist. Track this in [launch-plan.md](launch-plan.md).
+The Clerk app `tulum-demo` has two instances:
+
+| Instance    | Used by                                         | Frontend API                          |
+| ----------- | ----------------------------------------------- | ------------------------------------- |
+| Development | local work and debug builds; caps at 100 users  | `useful-serval-81.clerk.accounts.dev` |
+| Production  | the deployed site, web app and API              | `clerk.tulum-app.com`                 |
+
+Production keys only work on `tulum-app.com` and its subdomains, so local
+`.env` files keep the development keys.
+
+**Keep the two instances alike.** Their settings were identical when
+production was set up (27 November 2026): sign-up with an email address and
+a password, the address confirmed with an email code; username, first and
+last name required; Google; Device Trust, so a password sign-in on a new
+device asks for an email code. Change a setting in both dashboards. The one
+deliberate difference is Apple: on in development (Clerk's shared
+credentials), off in production until it has Apple credentials, so Clerk's
+sign-in form on the site shows no Apple button there. The guest app hides
+its Apple button in both (`apps/mobile/src/lib/sign-in-options.ts`); turn
+both back on together. Production also has:
+
+- **DNS:** five CNAME records in Cloudflare, all DNS only: `clerk`,
+  `accounts`, `clkmail`, `clk._domainkey` and `clk2._domainkey` (targets in
+  Clerk → Domains). Clerk issues the certificates once they verify.
+- **Google:** its own OAuth client, "Clerk production (tulum-app.com)", in
+  the Google Cloud project Tulum (`tulum-483210`), with the consent screen
+  published (External, In production; basic scopes need no Google review).
+  Redirect URI `https://clerk.tulum-app.com/v1/oauth_callback`, origins
+  `https://tulum-app.com` and `https://mobile.tulum-app.com`. Its client ID
+  and secret go in Clerk → SSO connections → Google (Use custom credentials).
+  The development instance uses Clerk's shared Google credentials.
+- **Webhooks:** `create-user` (`user.created`) and `delete-user`
+  (`user.deleted`), pointing at the same Supabase functions as development's.
+- **Native apps:** `tulumapp:///(auth)/sso-callback` in the redirect
+  allowlist (production refuses SSO redirects to unlisted app URLs).
+- **Supabase integration** turned on, as in development.
+
+Not copied: users (production started empty, so everyone signs up again and
+gets a new user ID) and development's `supabase` JWT template, which no code
+uses and which would need the Supabase JWT secret.
+
+**Switching the deployed apps to production.** In each service, replace the
+development keys with production's (Clerk → API keys, production instance),
+then redeploy:
+
+- Railway `tulum-api`: `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
+- Vercel `tulum` (site and dashboard): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
+  `CLERK_SECRET_KEY`.
+- Vercel `tulum-mobile` (web app): `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, read
+  at build time.
+
+Until all three run with the new keys, the API refuses the other instance's
+sessions. Signed-in people are signed out and sign up again; an admin flags
+their new account in Supabase (`users.is_admin`).
 
 ## Apify
 
@@ -118,7 +171,9 @@ tulum-app.com's DNS is on Cloudflare since 24 November 2026 (registered at
 Namecheap, nameservers `guss` and `jacqueline.ns.cloudflare.com`). The apex,
 `www` and `mobile` point at Vercel, `api` at Railway (DNS only, with Railway's
 `_railway-verify.api` TXT record), and `img` is the R2 bucket's custom domain
-(proxied, managed by R2).
+(proxied, managed by R2). Clerk production's five CNAME records (`clerk`,
+`accounts`, `clkmail` and two `_domainkey`) are DNS only: proxied, Clerk
+can't verify them or issue their certificates.
 
 ## Checking that a push went live
 
