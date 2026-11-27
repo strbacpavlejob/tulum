@@ -217,10 +217,12 @@ Looked at on 27 November 2026 through Apify:
   the slides: the event's picture on a card over a blur of it, a
   *Tonight*/*Today*/*Tomorrow*/weekday label, the group, title, day and time
   and venue, the venue type's capybara, and a *Join on tulum-app.com* button.
-- Instagram covers a story's top 250 px (the account and progress bars) and
-  bottom 280 px (the reply field), so the text and the button keep to the
-  band between them (`STORY_SAFE_TOP`, `STORY_SAFE_BOTTOM` in
-  `instagram-slides.ts`).
+- Instagram covers a story's top 250 px with the account and the progress
+  bars, so the text starts below them (`STORY_SAFE_TOP` in
+  `instagram-slides.ts`). The button and the capybara sit at the bottom: on
+  today's tall phones Instagram shows the reply field under the story, not
+  over it. A 16:9 phone, such as the iPhone SE, still lays it over the
+  story's bottom, and the button with it.
 - Instagram's API can't add stickers (a link, a poll, a location), so the
   call to action is part of the picture, and the story mentions the venue's
   account (a mention takes no position on a story).

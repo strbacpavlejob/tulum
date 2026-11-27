@@ -29,9 +29,10 @@ export const STORY_WIDTH = 1080;
 export const STORY_HEIGHT = 1920;
 
 /* Instagram covers a story's top with the account and the progress bars,
- * and its bottom with the reply field, so text stays out of these bands. */
+ * so text stays out of this band. On today's tall phones the reply field
+ * sits under the story, not over it, so the call to action and the capybara
+ * go to the bottom (a 16:9 phone, such as the iPhone SE, still covers it). */
 export const STORY_SAFE_TOP = 250;
-export const STORY_SAFE_BOTTOM = 280;
 
 /** Where on an event's slide its venue is tagged: the picture's middle. */
 export const VENUE_TAG_POSITION = { x: 0.5, y: 0.44 };
@@ -487,7 +488,8 @@ function closingSlide(
 /*
  * A story: the event's picture over a blur of it, its group, title, day and
  * time and venue, its venue type's capybara, and the call to action. The
- * text keeps to the band between STORY_SAFE_TOP and STORY_SAFE_BOTTOM.
+ * text starts below STORY_SAFE_TOP, and the call to action and the capybara
+ * sit at the bottom.
  */
 function storyFrame(
   { event, day }: Story,
@@ -504,7 +506,7 @@ function storyFrame(
 
   return canvas(
     STORY_SIZE,
-    `${STORY_SAFE_TOP}px ${PADDING}px ${STORY_SAFE_BOTTOM}px`,
+    `${STORY_SAFE_TOP}px ${PADDING}px ${PADDING}px`,
     NIGHT,
     [
       image(picture.backdrop, {
@@ -527,7 +529,7 @@ function storyFrame(
       image(mascots[event.venueType], {
         position: 'absolute',
         right: -60,
-        bottom: STORY_SAFE_BOTTOM - 10,
+        bottom: -20,
         width: 456,
         height: 380,
       }),
