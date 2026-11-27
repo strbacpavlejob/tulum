@@ -35,11 +35,15 @@ date between 13 and 31 December:
 
 ## Owner tasks (not code)
 
-- **DNS:** moved to Cloudflare on 24 November; next, add the Clerk production
-  CNAME records (DNS only).
-- **Clerk production:** Google and Apple production credentials, the mobile SSO
-  redirect allowlist; then switch the apps' keys to the production instance.
-  The development instance caps at 100 users, so this blocks the launch.
+- **DNS:** moved to Cloudflare on 24 November; the Clerk production CNAME
+  records (DNS only) were added on 27 November.
+- **Clerk production:** set up on 27 November: Google OAuth client, webhooks,
+  mobile SSO redirect allowlist ([deployment.md](deployment.md#clerk)). Apple
+  is off in production and hidden in the app until it has production
+  credentials. Left: the Google
+  client's ID and secret in Clerk, the production webhook signing secrets in
+  Supabase, then switching the apps' keys to the production instance. The
+  development instance caps at 100 users, so this blocks the launch.
 - **Plans:** Supabase Pro and a staging project; Vercel Pro (Hobby is for
   non-commercial use only).
 - **Pictures:** done 24 November. `img.tulum-app.com` serves the bucket, the
@@ -90,9 +94,9 @@ it.
 
 **Accounts and infrastructure**
 
-- [ ] Clerk production is live and both apps use its keys; Google, Apple and
-      email-code sign-in work on iPhone Safari, Android Chrome and the
-      Instagram in-app browser.
+- [ ] Clerk production is live and both apps use its keys; Google and email
+      sign-in (password, sign-up code, password reset) work on iPhone Safari,
+      Android Chrome and the Instagram in-app browser.
 - [ ] Supabase Pro and Vercel Pro are active; Redis is reachable from every
       API instance.
 - [x] Pictures are served from `img.tulum-app.com`.

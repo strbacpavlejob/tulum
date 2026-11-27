@@ -14,6 +14,7 @@ import {
 } from "@/lib/clerk-retry";
 import { chromeIntentUrl } from "@/lib/in-app-browser";
 import { savePendingJoin } from "@/lib/pending-join";
+import { APPLE_SIGN_IN_ENABLED } from "@/lib/sign-in-options";
 import { generatedPassword, generatedUsername } from "@/lib/sign-up-fields";
 import { useAuth, useClerk, useSSO } from "@clerk/expo";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
@@ -416,27 +417,29 @@ export default function SignInScreen() {
           ) : (
             <>
               {/* Apple */}
-              <Button
-                disabled={ssoDisabled}
-                onPress={() => handleSSOSignIn("oauth_apple")}
-                className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-              >
-                {loadingProvider === "oauth_apple" ? (
-                  <ActivityIndicator color={COLORS.purple} />
-                ) : (
-                  <AppleIcon fill="#737373" />
-                )}
-
-                <Text
-                  className="text-light-colorStrong dark:text-dark-colorStrong"
-                  style={{
-                    fontFamily: "Fredoka_600SemiBold",
-                    fontSize: 16,
-                  }}
+              {APPLE_SIGN_IN_ENABLED && (
+                <Button
+                  disabled={ssoDisabled}
+                  onPress={() => handleSSOSignIn("oauth_apple")}
+                  className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
                 >
-                  {t("authContinueWithApple")}
-                </Text>
-              </Button>
+                  {loadingProvider === "oauth_apple" ? (
+                    <ActivityIndicator color={COLORS.purple} />
+                  ) : (
+                    <AppleIcon fill="#737373" />
+                  )}
+
+                  <Text
+                    className="text-light-colorStrong dark:text-dark-colorStrong"
+                    style={{
+                      fontFamily: "Fredoka_600SemiBold",
+                      fontSize: 16,
+                    }}
+                  >
+                    {t("authContinueWithApple")}
+                  </Text>
+                </Button>
+              )}
 
               {/* Google */}
               <Button
@@ -463,8 +466,8 @@ export default function SignInScreen() {
             </>
           )}
 
-          {/* Email code: the fallback for in-app browsers and for anyone
-              without Google or Apple. */}
+          {/* Email and password: for in-app browsers and for anyone
+              without Google. */}
           <Button
             disabled={loadingProvider !== null}
             onPress={openEmailSignIn}

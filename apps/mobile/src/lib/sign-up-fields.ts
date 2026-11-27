@@ -1,6 +1,6 @@
 // The Clerk instance requires a username and a password at sign-up. Guests
-// sign in with Google, Apple or an email code and never use either, so the
-// app fills them in.
+// never use the username, so the app makes one up; a password is chosen only
+// by guests who sign up with email, so a Google sign-up gets a made-up one.
 
 const CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
