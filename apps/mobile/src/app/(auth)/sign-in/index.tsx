@@ -2,16 +2,17 @@ import LanguageSelector from "@/components/language-selector";
 import ClerkCaptcha from "@/components/clerk-captcha";
 import AppleIcon from "@/components/illustrations/apple-logo";
 import GoogleIcon from "@/components/illustrations/google-icon";
+import Logo from "@/components/illustrations/logo";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 
-import { useAppTheme } from "@/hooks/use-app-theme";
 import { useInAppBrowser } from "@/hooks/use-in-app-browser";
 import {
   isRateLimited,
   retryDelayMs,
   retryOnRateLimit,
 } from "@/lib/clerk-retry";
+import { FREDOKA, fredoka, type FredokaWeight } from "@/lib/fredoka";
 import { chromeIntentUrl } from "@/lib/in-app-browser";
 import { savePendingJoin } from "@/lib/pending-join";
 import { APPLE_SIGN_IN_ENABLED } from "@/lib/sign-in-options";
@@ -21,16 +22,11 @@ import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Mail } from "lucide-react-native";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { useTranslation } from "react-i18next";
@@ -47,22 +43,27 @@ const welcomeIllustration = require("@/assets/images/tulum-welcome.webp");
 
 const COLORS = {
   purple: "#6330F5",
-  pink: "#FF45C6",
   white: "#FFFFFF",
+  softWhite: "rgba(255, 255, 255, 0.85)",
+  // The text on white buttons, and the shades over the picture.
+  ink: "#1A0B4A",
 };
 
-// On the links too: ui/text's own size class would beat the size they inherit.
-const LEGAL_TEXT_STYLE = {
-  fontFamily: "Fredoka_500Medium",
-  fontSize: 13,
-  lineHeight: 20,
+// Set here because ui/button's sm: height would win over a class on wide
+// web screens.
+const PILL_STYLE = { height: 54, borderRadius: 999 };
+
+const TEXT_SHADOW = {
+  textShadowColor: "rgba(26, 11, 74, 0.45)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 8,
 };
+
+type Choice = "signUp" | "signIn";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
-  const theme = useAppTheme();
-  const { height: screenHeight } = useWindowDimensions();
+  const { t, i18n } = useTranslation();
 
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { startSSOFlow } = useSSO();
@@ -104,10 +105,20 @@ export default function SignInScreen() {
 
   // An event this guest asked to join (from /e/[id]) is saved, and also
   // rides in the return URL in case storage is lost on the way.
-  const { join, src } = useLocalSearchParams<{ join?: string; src?: string }>();
+  const { join, src, mode } = useLocalSearchParams<{
+    join?: string;
+    src?: string;
+    mode?: string;
+  }>();
   useEffect(() => {
     if (join) savePendingJoin(join, src);
   }, [join, src]);
+  const joinParams = join ? { join, ...(src ? { src } : {}) } : {};
+
+  // The welcome screen asks "Create account" or "Sign in"; the choice opens
+  // this screen again with the ways to do it (Google, email).
+  const choice: Choice | null =
+    mode === "signUp" || mode === "signIn" ? mode : null;
 
   // The browser comes back to sso-callback's own address in this tab; the
   // native app to the scheme URL allowlisted in Clerk
@@ -116,8 +127,6 @@ export default function SignInScreen() {
     Platform.OS === "web" ? "/sso-callback" : "/(auth)/sso-callback",
     { queryParams: join ? { join, ...(src ? { src } : {}) } : undefined },
   );
-
-  const isCompact = screenHeight < 750;
 
   useEffect(() => {
     if (!isAuthLoaded || !isSignedIn) return;
@@ -242,10 +251,28 @@ export default function SignInScreen() {
     }
   };
 
+  // Pushed rather than set, so the phone's or browser's back button
+  // returns to the welcome screen.
+  const choose = (next: Choice) => {
+    router.push({
+      pathname: "/(auth)/sign-in",
+      params: { ...joinParams, mode: next },
+    });
+  };
+
+  const backToWelcome = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({ pathname: "/(auth)/sign-in", params: joinParams });
+    }
+  };
+
+  // The email form opens on the step the guest chose.
   const openEmailSignIn = () => {
     router.push({
       pathname: "/(auth)/sign-in/email",
-      params: join ? { join, ...(src ? { src } : {}) } : {},
+      params: { ...joinParams, mode: choice ?? "signIn" },
     });
   };
 
@@ -256,263 +283,344 @@ export default function SignInScreen() {
 
   const ssoDisabled = loadingProvider !== null || cooldownEndsAt !== null;
 
+  const font = (weight: FredokaWeight) => fredoka(weight, i18n.language);
+  // On the links too: ui/text's own size class would beat the size they
+  // inherit.
+  const legalText = {
+    ...font("medium"),
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.softWhite,
+  };
+  const legalLink = {
+    ...legalText,
+    ...font("semiBold"),
+    color: COLORS.white,
+    textDecorationLine: "underline" as const,
+  };
+  const buttonLabel = { ...font("semiBold"), fontSize: 17 };
+
   if (!isAuthLoaded || isSignedIn || !fontsLoaded) {
     return null;
   }
 
   return (
-    <SafeAreaView
-      edges={["top", "bottom"]}
-      className="flex-1 bg-light-backgroundFocus dark:bg-dark-backgroundFocus"
-    >
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-      >
-        {/* HERO */}
-        <View
-          className="relative flex-1 overflow-hidden"
-          style={{
-            minHeight: isCompact ? 310 : 390,
-            backgroundColor: COLORS.purple,
+    <View className="flex-1" style={{ backgroundColor: COLORS.purple }}>
+      <Image
+        source={welcomeIllustration}
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+        }}
+        contentFit="cover"
+        // Phones crop the picture's sides; wide screens crop its top and
+        // bottom, and this keeps the mascot's face in view there.
+        contentPosition={{ top: "30%", left: "50%" }}
+        accessibilityLabel="Tulum capybara mascot holding a phone"
+      />
+
+      {/* Shades that keep the white text readable on the picture */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={["rgba(26, 11, 74, 0.5)", "rgba(26, 11, 74, 0)"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "35%",
+        }}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={[
+          "rgba(26, 11, 74, 0)",
+          "rgba(26, 11, 74, 0.7)",
+          "rgba(26, 11, 74, 0.95)",
+        ]}
+        locations={[0, 0.5, 1]}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "65%",
+        }}
+      />
+
+      <SafeAreaView edges={["top", "bottom"]} className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "space-between",
           }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
         >
-          {/* Background illustration */}
-          <Image
-            source={welcomeIllustration}
-            style={{
-              position: "absolute",
-              width: "100%",
-              height: "100%",
-            }}
-            contentFit="cover"
-            contentPosition="center"
-            accessibilityLabel="Tulum capybara mascot holding a phone"
-          />
-
-          {/* Language selector */}
-          <View className="absolute right-4 top-4 z-20">
-            <LanguageSelector />
-          </View>
-
-          {/* Brand text */}
-          <View
-            className="absolute bottom-0 left-0 right-0 items-center px-4"
-            style={{
-              paddingBottom: isCompact ? 12 : 20,
-            }}
-          >
-            {/* Tulum logo text */}
-            <View className="flex-row items-center justify-center">
-              <Text
-                style={{
-                  fontFamily: "Fredoka_700Bold",
-                  fontSize: isCompact ? 48 : 58,
-                  lineHeight: isCompact ? 58 : 68,
-                  color: COLORS.white,
-                  letterSpacing: -2,
-                  textShadowColor: "rgba(74, 21, 170, 0.35)",
-                  textShadowOffset: { width: 0, height: 3 },
-                  textShadowRadius: 8,
-                }}
-              >
-                Tulum
-              </Text>
+          <View className="z-20 px-6 pt-4">
+            {/* Language selector */}
+            <View className="z-20 flex-row justify-end">
+              <LanguageSelector />
             </View>
 
-            {/* Tagline */}
-            <Text
-              style={{
-                fontFamily: "Fredoka_500Medium",
-                fontSize: isCompact ? 13 : 16,
-                lineHeight: isCompact ? 19 : 23,
-                color: "rgba(255,255,255,0.92)",
-                textAlign: "center",
-                marginTop: 1,
-                textShadowColor: "rgba(50, 10, 110, 0.3)",
-                textShadowOffset: { width: 0, height: 2 },
-                textShadowRadius: 4,
-              }}
-            >
-              {t("authMeetPeopleTagline")}
-            </Text>
-          </View>
-        </View>
-
-        {/* SIGN-IN CARD */}
-        <View className="rounded-t-[32px] bg-light-background px-6 pb-6 pt-8 dark:bg-dark-background">
-          <Text
-            className="mb-1.5 text-light-colorStrong dark:text-dark-colorStrong"
-            style={{
-              fontFamily: "Fredoka_700Bold",
-              fontSize: 26,
-              lineHeight: 34,
-            }}
-          >
-            {t("authSignInTitle")}
-          </Text>
-
-          <Text
-            className="mb-6 text-light-colorMuted dark:text-dark-colorMuted"
-            style={{
-              fontFamily: "Fredoka_500Medium",
-              fontSize: 15,
-            }}
-          >
-            {t("authSignInSubtitle")}
-          </Text>
-
-          {inAppBrowser ? (
-            <View className="mb-3 rounded-2xl bg-light-backgroundMuted p-4 dark:bg-dark-backgroundMuted">
-              <Text
-                className="mb-1 text-light-colorStrong dark:text-dark-colorStrong"
-                style={{ fontFamily: "Fredoka_600SemiBold", fontSize: 16 }}
-              >
-                {t("authInAppTitle")}
-              </Text>
-              <Text
-                className="text-light-colorMuted dark:text-dark-colorMuted"
-                style={{ fontFamily: "Fredoka_500Medium", fontSize: 14 }}
-              >
-                {inAppBrowser.platform === "android"
-                  ? t("authInAppBodyAndroid", { app: inAppBrowser.app })
-                  : t("authInAppBodyIos", { app: inAppBrowser.app })}
-              </Text>
-              {inAppBrowser.platform === "android" && (
-                <Button
-                  onPress={openInChrome}
-                  className="mt-3 h-12 rounded-2xl bg-light-color dark:bg-dark-color"
-                >
-                  <Text
-                    className="text-white"
-                    style={{ fontFamily: "Fredoka_600SemiBold", fontSize: 16 }}
-                  >
-                    {t("authOpenInChrome")}
-                  </Text>
-                </Button>
-              )}
-            </View>
-          ) : (
-            <>
-              {/* Apple */}
-              {APPLE_SIGN_IN_ENABLED && (
-                <Button
-                  disabled={ssoDisabled}
-                  onPress={() => handleSSOSignIn("oauth_apple")}
-                  className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-                >
-                  {loadingProvider === "oauth_apple" ? (
-                    <ActivityIndicator color={COLORS.purple} />
-                  ) : (
-                    <AppleIcon fill="#737373" />
-                  )}
-
-                  <Text
-                    className="text-light-colorStrong dark:text-dark-colorStrong"
-                    style={{
-                      fontFamily: "Fredoka_600SemiBold",
-                      fontSize: 16,
-                    }}
-                  >
-                    {t("authContinueWithApple")}
-                  </Text>
-                </Button>
-              )}
-
-              {/* Google */}
-              <Button
-                disabled={ssoDisabled}
-                onPress={() => handleSSOSignIn("oauth_google")}
-                className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-              >
-                {loadingProvider === "oauth_google" ? (
-                  <ActivityIndicator color={COLORS.purple} />
-                ) : (
-                  <GoogleIcon />
-                )}
-
+            {/* Logo and name in one row, the tagline under them */}
+            <View className="mt-6 items-center">
+              <View className="flex-row items-center gap-3">
+                <Logo
+                  color={COLORS.white}
+                  variant="knockout"
+                  width={52}
+                  height={44}
+                />
                 <Text
-                  className="text-light-colorStrong dark:text-dark-colorStrong"
                   style={{
-                    fontFamily: "Fredoka_600SemiBold",
-                    fontSize: 16,
+                    // Fredoka in every language: the name is in Latin letters.
+                    fontFamily: FREDOKA.bold,
+                    fontSize: 50,
+                    lineHeight: 58,
+                    letterSpacing: -1.5,
+                    color: COLORS.white,
+                    ...TEXT_SHADOW,
                   }}
                 >
-                  {t("authContinueWithGoogle")}
+                  Tulum
                 </Text>
-              </Button>
-            </>
-          )}
+              </View>
 
-          {/* Email and password: for in-app browsers and for anyone
-              without Google. */}
-          <Button
-            disabled={loadingProvider !== null}
-            onPress={openEmailSignIn}
-            className="mb-3 h-[54px] flex-row items-center justify-center gap-3 rounded-2xl border-[1.5px] border-light-backgroundMuted bg-light-backgroundMuted dark:border-dark-backgroundMuted dark:bg-dark-backgroundMuted"
-          >
-            <Mail size={20} color={theme.colorStrong} />
-            <Text
-              className="text-light-colorStrong dark:text-dark-colorStrong"
-              style={{
-                fontFamily: "Fredoka_600SemiBold",
-                fontSize: 16,
-              }}
-            >
-              {t("authContinueWithEmail")}
-            </Text>
-          </Button>
-
-          {waiting && (
-            <Text
-              className="mt-1 text-center text-light-colorMuted dark:text-dark-colorMuted"
-              style={LEGAL_TEXT_STYLE}
-            >
-              {t("authBusyRetrying")}
-            </Text>
-          )}
-          {cooldownEndsAt !== null && (
-            <Text
-              className="mt-1 text-center text-light-colorMuted dark:text-dark-colorMuted"
-              style={LEGAL_TEXT_STYLE}
-            >
-              {t("authBusyTryAgain", { seconds: cooldownSeconds })}
-            </Text>
-          )}
-
-          <ClerkCaptcha />
-
-          {/* Terms */}
-          <Text
-            className="mt-5 text-center text-light-colorMuted dark:text-dark-colorMuted"
-            style={LEGAL_TEXT_STYLE}
-          >
-            {t("authTermsPrefix")}{" "}
-            <Link href="https://tulum-app.com/terms" asChild>
               <Text
-                accessibilityRole="link"
-                className="text-light-color dark:text-dark-color"
-                style={LEGAL_TEXT_STYLE}
+                style={{
+                  ...font("medium"),
+                  fontSize: 18,
+                  lineHeight: 24,
+                  color: COLORS.white,
+                  textAlign: "center",
+                  marginTop: 4,
+                  ...TEXT_SHADOW,
+                }}
               >
-                {t("authTermsOfService")}
+                {t("authMeetPeopleTagline")}
               </Text>
-            </Link>{" "}
-            {t("authTermsAnd")}{" "}
-            <Link href="https://tulum-app.com/privacy" asChild>
-              <Text
-                accessibilityRole="link"
-                className="text-light-color dark:text-dark-color"
-                style={LEGAL_TEXT_STYLE}
-              >
-                {t("authPrivacyPolicy")}
-              </Text>
-            </Link>
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            </View>
+          </View>
+
+          <View
+            className="w-full self-center px-6 pb-6 pt-10"
+            style={{ maxWidth: 480 }}
+          >
+            {choice ? (
+              <>
+                <Text
+                  style={{
+                    ...font("bold"),
+                    fontSize: 24,
+                    lineHeight: 30,
+                    color: COLORS.white,
+                    textAlign: "center",
+                  }}
+                >
+                  {choice === "signUp"
+                    ? t("authCreateAccountTitle")
+                    : t("authSignInTitle")}
+                </Text>
+
+                {/* Terms */}
+                <Text
+                  style={{
+                    ...legalText,
+                    textAlign: "center",
+                    marginTop: 8,
+                  }}
+                >
+                  {t("authTermsPrefix")}{" "}
+                  <Link href="https://tulum-app.com/terms" asChild>
+                    <Text accessibilityRole="link" style={legalLink}>
+                      {t("authTermsOfService")}
+                    </Text>
+                  </Link>{" "}
+                  {t("authTermsAnd")}{" "}
+                  <Link href="https://tulum-app.com/privacy" asChild>
+                    <Text accessibilityRole="link" style={legalLink}>
+                      {t("authPrivacyPolicy")}
+                    </Text>
+                  </Link>
+                </Text>
+
+                <View className="mt-6 gap-3">
+                  {inAppBrowser ? (
+                    <View className="rounded-2xl border border-white/15 bg-white/10 p-4">
+                      <Text
+                        className="mb-1"
+                        style={{
+                          ...font("semiBold"),
+                          fontSize: 16,
+                          color: COLORS.white,
+                        }}
+                      >
+                        {t("authInAppTitle")}
+                      </Text>
+                      <Text
+                        style={{
+                          ...font("medium"),
+                          fontSize: 14,
+                          color: COLORS.softWhite,
+                        }}
+                      >
+                        {inAppBrowser.platform === "android"
+                          ? t("authInAppBodyAndroid", { app: inAppBrowser.app })
+                          : t("authInAppBodyIos", { app: inAppBrowser.app })}
+                      </Text>
+                      {inAppBrowser.platform === "android" && (
+                        <Button
+                          onPress={openInChrome}
+                          className="mt-3 bg-white active:opacity-80"
+                          style={PILL_STYLE}
+                        >
+                          <Text style={{ ...buttonLabel, color: COLORS.ink }}>
+                            {t("authOpenInChrome")}
+                          </Text>
+                        </Button>
+                      )}
+                    </View>
+                  ) : (
+                    <>
+                      {/* Apple */}
+                      {APPLE_SIGN_IN_ENABLED && (
+                        <Button
+                          disabled={ssoDisabled}
+                          onPress={() => handleSSOSignIn("oauth_apple")}
+                          className="flex-row items-center justify-center gap-3 bg-white active:opacity-80"
+                          style={PILL_STYLE}
+                        >
+                          {loadingProvider === "oauth_apple" ? (
+                            <ActivityIndicator color={COLORS.purple} />
+                          ) : (
+                            <AppleIcon fill="#000000" />
+                          )}
+                          <Text style={{ ...buttonLabel, color: COLORS.ink }}>
+                            {t("authContinueWithApple")}
+                          </Text>
+                        </Button>
+                      )}
+
+                      {/* Google */}
+                      <Button
+                        disabled={ssoDisabled}
+                        onPress={() => handleSSOSignIn("oauth_google")}
+                        className="flex-row items-center justify-center gap-3 bg-white active:opacity-80"
+                        style={PILL_STYLE}
+                      >
+                        {loadingProvider === "oauth_google" ? (
+                          <ActivityIndicator color={COLORS.purple} />
+                        ) : (
+                          <GoogleIcon />
+                        )}
+                        <Text style={{ ...buttonLabel, color: COLORS.ink }}>
+                          {t("authContinueWithGoogle")}
+                        </Text>
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Email and password: for in-app browsers and for anyone
+                      without Google. */}
+                  <Button
+                    disabled={loadingProvider !== null}
+                    onPress={openEmailSignIn}
+                    className="flex-row items-center justify-center gap-3 border-[1.5px] border-white bg-transparent shadow-none active:opacity-80"
+                    style={PILL_STYLE}
+                  >
+                    <Mail size={20} color={COLORS.white} />
+                    <Text style={{ ...buttonLabel, color: COLORS.white }}>
+                      {t("authContinueWithEmail")}
+                    </Text>
+                  </Button>
+                </View>
+
+                {waiting && (
+                  <Text
+                    style={{
+                      ...legalText,
+                      textAlign: "center",
+                      marginTop: 12,
+                    }}
+                  >
+                    {t("authBusyRetrying")}
+                  </Text>
+                )}
+                {cooldownEndsAt !== null && (
+                  <Text
+                    style={{
+                      ...legalText,
+                      textAlign: "center",
+                      marginTop: 12,
+                    }}
+                  >
+                    {t("authBusyTryAgain", { seconds: cooldownSeconds })}
+                  </Text>
+                )}
+
+                <ClerkCaptcha />
+
+                <Button
+                  disabled={loadingProvider !== null}
+                  onPress={backToWelcome}
+                  className="mt-1 bg-transparent shadow-none active:opacity-80"
+                  style={PILL_STYLE}
+                >
+                  <Text style={{ ...buttonLabel, color: COLORS.white }}>
+                    {t("back")}
+                  </Text>
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Terms */}
+                <Text style={{ ...legalText, textAlign: "center" }}>
+                  {t("authWelcomeTermsPrefix", {
+                    createAccount: t("authCreateAccountButton"),
+                    signIn: t("authSignInButton"),
+                  })}{" "}
+                  <Link href="https://tulum-app.com/terms" asChild>
+                    <Text accessibilityRole="link" style={legalLink}>
+                      {t("authTermsOfService")}
+                    </Text>
+                  </Link>
+                  . {t("authWelcomePrivacyPrefix")}{" "}
+                  <Link href="https://tulum-app.com/privacy" asChild>
+                    <Text accessibilityRole="link" style={legalLink}>
+                      {t("authWelcomePrivacyPolicy")}
+                    </Text>
+                  </Link>
+                  .
+                </Text>
+
+                <Button
+                  onPress={() => choose("signUp")}
+                  className="mt-6 bg-white active:opacity-80"
+                  style={PILL_STYLE}
+                >
+                  <Text style={{ ...buttonLabel, color: COLORS.ink }}>
+                    {t("authCreateAccountButton")}
+                  </Text>
+                </Button>
+
+                <Button
+                  onPress={() => choose("signIn")}
+                  className="mt-2 bg-transparent shadow-none active:opacity-80"
+                  style={PILL_STYLE}
+                >
+                  <Text style={{ ...buttonLabel, color: COLORS.white }}>
+                    {t("authSignInButton")}
+                  </Text>
+                </Button>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { isRateLimited, retryOnRateLimit } from "@/lib/clerk-retry";
+import { fredoka } from "@/lib/fredoka";
 import { savePendingJoin } from "@/lib/pending-join";
 import { generatedUsername } from "@/lib/sign-up-fields";
 import {
@@ -78,17 +79,24 @@ function firstClerkError(error: unknown) {
 export default function EmailSignInScreen() {
   const router = useRouter();
   const theme = useAppTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
 
-  const { join, src } = useLocalSearchParams<{ join?: string; src?: string }>();
+  const { join, src, mode } = useLocalSearchParams<{
+    join?: string;
+    src?: string;
+    mode?: string;
+  }>();
   useEffect(() => {
     if (join) savePendingJoin(join, src);
   }, [join, src]);
 
-  const [step, setStep] = useState<Step>("signIn");
+  // A guest who tapped "Create account" on the welcome screen starts on
+  // the sign-up form.
+  const firstStep: Step = mode === "signUp" ? "signUp" : "signIn";
+  const [step, setStep] = useState<Step>(firstStep);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -405,7 +413,7 @@ export default function EmailSignInScreen() {
     });
 
   const goBack = () => {
-    const previous = PREVIOUS_STEP[step];
+    const previous = step === firstStep ? undefined : PREVIOUS_STEP[step];
     if (previous) {
       goTo(previous);
     } else if (router.canGoBack()) {
@@ -497,7 +505,7 @@ export default function EmailSignInScreen() {
           <Text
             className="mb-1.5 text-light-colorStrong dark:text-dark-colorStrong"
             style={{
-              fontFamily: "Fredoka_700Bold",
+              ...fredoka("bold", i18n.language),
               fontSize: 26,
               lineHeight: 34,
             }}
@@ -506,7 +514,7 @@ export default function EmailSignInScreen() {
           </Text>
           <Text
             className="mb-6 text-light-colorMuted dark:text-dark-colorMuted"
-            style={{ fontFamily: "Fredoka_500Medium", fontSize: 15 }}
+            style={{ ...fredoka("medium", i18n.language), fontSize: 15 }}
           >
             {subtitles[step]}
           </Text>

@@ -43,6 +43,10 @@ const resources = {
       authTermsOfService: "Terms of Service",
       authTermsAnd: "and",
       authPrivacyPolicy: "Privacy Policy",
+      authWelcomeTermsPrefix:
+        "By tapping ‘{{createAccount}}’ or ‘{{signIn}}’, you agree to our",
+      authWelcomePrivacyPrefix: "Learn how we process your data in our",
+      authWelcomePrivacyPolicy: "Privacy Policy",
       authSsoSignInFailed: "SSO sign in failed.",
       authEnterEmailOrUsername: "Enter your email or username.",
       authSignInLoading: "Sign in is still loading. Please try again.",
@@ -595,6 +599,10 @@ const resources = {
       authTermsOfService: "Uslovima korišćenja",
       authTermsAnd: "i",
       authPrivacyPolicy: "Politikom privatnosti",
+      authWelcomeTermsPrefix:
+        "Dodirom na „{{createAccount}}“ ili „{{signIn}}“ slažeš se sa našim",
+      authWelcomePrivacyPrefix: "Saznaj kako obrađujemo tvoje podatke u našoj",
+      authWelcomePrivacyPolicy: "Politici privatnosti",
       authSsoSignInFailed: "SSO prijava nije uspela.",
       authEnterEmailOrUsername: "Unesi svoj email ili korisničko ime.",
       authSignInLoading: "Prijava se još učitava. Pokušaj ponovo.",
@@ -1154,6 +1162,11 @@ const resources = {
       authTermsOfService: "Условиями использования",
       authTermsAnd: "и",
       authPrivacyPolicy: "Политикой конфиденциальности",
+      authWelcomeTermsPrefix:
+        "Нажимая «{{createAccount}}» или «{{signIn}}», вы соглашаетесь с нашими",
+      authWelcomePrivacyPrefix:
+        "Узнайте, как мы обрабатываем ваши данные, в нашей",
+      authWelcomePrivacyPolicy: "Политике конфиденциальности",
       authSsoSignInFailed: "SSO вход не удался.",
       authEnterEmailOrUsername: "Введите email или имя пользователя.",
       authSignInLoading: "Вход все еще загружается. Попробуйте снова.",

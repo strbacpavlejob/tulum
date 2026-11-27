@@ -11,7 +11,9 @@ one.
   password (Clerk; a new account confirms its address with an emailed code,
   and "Forgot password?" resets it with one). Apple is hidden until Clerk
   production has Apple credentials
-  (`apps/mobile/src/lib/sign-in-options.ts`). They then finish a short
+  (`apps/mobile/src/lib/sign-in-options.ts`). The sign-in screen first asks
+  "Create account" or "Sign in", then offers Google and email; the email form
+  opens on the step they chose. They then finish a short
   onboarding: first name, birthday, gender, who
   they want to meet, and at least one photo
   (`apps/mobile/src/components/onboarding/onboarding-steps.ts`). Onboarding counts
