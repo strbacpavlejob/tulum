@@ -40,6 +40,12 @@ const Logo = ({
   ...svgProps
 }: LogoProps) => {
   const theme = useAppTheme();
+  // Mask ids are page-wide on web, where a screen left behind stays mounted
+  // and hidden: a second logo's url(#id) would find the hidden one's mask,
+  // which browsers don't apply. useId's punctuation is dropped for url().
+  const maskId = React.useId().replace(/[^a-zA-Z0-9]/g, "");
+  const pinCutoutId = `left-pin-cutout-${maskId}`;
+  const dotCutoutId = `right-dot-cutout-${maskId}`;
   const logoColor = color ?? theme.color;
   const isOutlined = variant === "outlined";
   const isFilled = variant === "filled";
@@ -71,7 +77,7 @@ const Logo = ({
         {...svgProps}
       >
         <Defs>
-          <Mask id="left-pin-cutout" maskUnits="userSpaceOnUse" {...box}>
+          <Mask id={pinCutoutId} maskUnits="userSpaceOnUse" {...box}>
             <Rect {...box} fill="white" />
             <Path
               d={RIGHT_PIN_PATH}
@@ -81,7 +87,7 @@ const Logo = ({
             />
           </Mask>
           {isKnockout && (
-            <Mask id="right-dot-cutout" maskUnits="userSpaceOnUse" {...box}>
+            <Mask id={dotCutoutId} maskUnits="userSpaceOnUse" {...box}>
               <Rect {...box} fill="white" />
               <Circle
                 cx={532.349}
@@ -99,7 +105,7 @@ const Logo = ({
           strokeLinecap={isOutlined ? "round" : undefined}
           strokeLinejoin={isOutlined ? "round" : undefined}
         >
-          <G mask="url(#left-pin-cutout)">
+          <G mask={`url(#${pinCutoutId})`}>
             <Path
               d={LEFT_PIN_PATH}
               fill={
@@ -126,7 +132,7 @@ const Logo = ({
           <Path
             d={RIGHT_PIN_PATH}
             fill={isOutlined ? "none" : logoColor}
-            mask={isKnockout ? "url(#right-dot-cutout)" : undefined}
+            mask={isKnockout ? `url(#${dotCutoutId})` : undefined}
           />
           {!isKnockout && (
             <Circle
