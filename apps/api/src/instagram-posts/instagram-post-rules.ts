@@ -340,12 +340,20 @@ export function formatDateRange(window: PostWindow): string {
     : `${CALENDAR_DATE_FORMAT.format(first)} – ${last}`;
 }
 
+/* Instagram's "fancy" letters: bold, italic or script ones (𝐓𝐫𝐚𝐧𝐳𝐢𝐭), circled
+ * (Ⓣ) and fullwidth (Ｔ). Each one's compatibility form is a plain letter or
+ * digit. */
+const FANCY_LETTERS =
+  /[\u{1D400}-\u{1D7FF}\u{2460}-\u{24FF}\u{FF01}-\u{FF5E}]/gu;
+
 /**
- * Text for the slides. Emoji and flags are left out: the slides' font has
- * none, and they would show as empty boxes.
+ * Text for the slides. Emoji and flags are left out and fancy letters become
+ * plain ones: the slides' font has none of them, and they would show as
+ * empty boxes.
  */
 export function slideText(value: string): string {
   return value
+    .replace(FANCY_LETTERS, (letter) => letter.normalize('NFKC'))
     .replace(/\p{Extended_Pictographic}|\p{Regional_Indicator}|‍|️|⃣/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
