@@ -311,6 +311,12 @@ describe('dates and text on the slides', () => {
       'Đorđe & Београд night',
     );
   });
+
+  it('turns fancy letters, which the font lacks, into plain ones', () => {
+    expect(slideText('𝐓𝐫𝐚𝐧𝐳𝐢𝐭 Bar · 𝘒𝘭𝘶𝘣 ⓇⒺⓍ Ｎｏ１')).toBe(
+      'Tranzit Bar · Klub REX No1',
+    );
+  });
 });
 
 describe('withoutPromoted', () => {
