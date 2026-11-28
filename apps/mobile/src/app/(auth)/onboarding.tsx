@@ -10,7 +10,7 @@ import { signedInHomeHref } from "@/lib/pending-join";
 import useStore from "@/store/use-store";
 import { LookingForGender } from "@/types/user";
 import { useAuth, useUser } from "@clerk/expo";
-import { useFocusEffect, useRouter } from "expo-router";
+import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -59,7 +59,7 @@ export default function OnboardingScreen() {
   const { y: screenTop } = useSafeAreaFrame();
   const router = useRouter();
   const { setUser } = useStore();
-  const { userId, getToken } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { user: clerkUser } = useUser();
 
   const steps = [
@@ -94,16 +94,18 @@ export default function OnboardingScreen() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!userId) {
-      setChecking(false);
-      return;
-    }
+    // Sign-in opens this screen while Clerk is still switching to the new
+    // session, when it reports no user yet. Until it has one, keep loading
+    // instead of showing the form to a guest who may be done with it.
+    if (!isLoaded || !userId) return;
+    let cancelled = false;
     getToken()
       .then((token) => {
         if (!token) throw new Error("No token");
         return fetchGuestMe(token);
       })
       .then(({ guest, isOnboardingComplete }) => {
+        if (cancelled) return;
         if (isOnboardingComplete) {
           router.replace(signedInHomeHref());
         } else {
@@ -117,10 +119,13 @@ export default function OnboardingScreen() {
       })
       .catch(() => {
         // Can't reach API — let them fill out the form anyway
-        setChecking(false);
+        if (!cancelled) setChecking(false);
       });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [isLoaded, userId]);
 
   // Step state
   const [step, setStep] = useState(0);
@@ -366,6 +371,11 @@ export default function OnboardingScreen() {
 
   const progressPercent = ((step + 1) / TOTAL_STEPS) * 100;
   const isLastStep = step === TOTAL_STEPS - 1;
+
+  // The form can't be sent without an account.
+  if (isLoaded && !isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   if (checking) {
     return (
